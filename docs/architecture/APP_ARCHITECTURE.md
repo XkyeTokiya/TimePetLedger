@@ -8,14 +8,14 @@
 
 - **Domain Decision：** 来源已经确定的领域边界，不由架构选择改写。
 - **Engineering Recommendation：** 本文提出的文件组织、依赖、接口与测试方式，不是产品要求。除标记为 Domain Decision 的段落外，本文设计均属这一类。
-- **UNDECIDED：** 产品语义或所需运行平台尚未明确，保留对应 Q 编号，不在实现默认值中作答。
+- **UNDECIDED：** 仍未明确的产品语义保留对应 Q 编号，不在实现默认值中作答；首发平台范围已由 Q-022 确定。
 
 ## Domain Decision：架构必须保留的边界
 
 | 领域决定 | 架构影响 | 依据 |
 | --- | --- | --- |
 | 时间事实与节奏解释分离，annotation 可选 | 模型独立；不能把节奏类别做成 TimeBlock 类型 | TB-008、RH-001–RH-008 |
-| SleepSession 是独立身体事实 | 独立类型与存储映射；不从属 Recovery | SL-001–SL-003 |
+| SleepSession 是独立身体事实 | 独立类型与存储映射；不从属 Recovery | SL-001–SL-005 |
 | 主轴不允许主要事实重叠 | TimeBlock 与 SleepSession 的写入检查必须覆盖彼此 | LEDGER-004 |
 | Gap 与自然日视图派生，Unknown 保存 | 对账计算不写入 Gap / Day；unknown 走正常事实保存 | LEDGER-001–LEDGER-003 |
 | Goal 仅是时间归属 | 功能边界围绕归属，不引入任务管理 | GO-001 |
@@ -89,7 +89,7 @@ feature domain ──> Dart 标准纯计算能力、core/time 中的纯值 / 函
 
 repository 接口放在各 feature 的 `domain`，数据实现依赖接口而不是反向引用。domain 可声明异步存取合同，但纯投影函数不执行 I/O。
 
-跨 feature 关系保持单向：ledger/application 可以读取 goals/domain 的接口用于目标选择或名称；review/application 可以读取 ledger/domain 与 goals/domain 的接口以取得复盘上下文。goals 不依赖 ledger/review 的 presentation 或具体实现。领域关联使用 `goalId`，不把完整 Goal 图嵌进每条事实。读取目标元数据不改变归档过滤政策（Q-006、Q-020）。
+跨 feature 关系保持单向：ledger/application 可以读取 goals/domain 的接口用于目标选择或名称；review/application 可以读取 ledger/domain 与 goals/domain 的接口以取得复盘上下文。goals 不依赖 ledger/review 的 presentation 或具体实现。领域关联使用 `goalId`，不把完整 Goal 图嵌进每条事实。读取目标元数据遵守 Q-006 的归档隐藏规则和 Q-020 的摘要筛选政策。
 
 ## Engineering Recommendation：repository 与持久化实现
 
@@ -101,7 +101,7 @@ repository 接口放在各 feature 的 `domain`，数据实现依赖接口而不
 | ledger/domain 的 LedgerRepository | 按窗口读取完整时间事实及 annotation；在一个写入边界内保存时间事实并检查跨表冲突 | ledger/data |
 | review/domain 的 ReviewRepository | 按复盘日期读取 / 保存解释与 TomorrowFirstStep | review/data |
 
-LedgerRepository 是两类时间事实的共同存取边界，不是合并实体。无需为 annotation 单独暴露可绕开所属 TimeBlock 的任意写入接口，也无需增加通用 UnitOfWork / RepositoryFactory。具体操作按被批准的 Task 增量加入；Q-003、Q-005、Q-006、Q-013 未回答前，不生成默认覆盖、级联删除或任意转换方法。
+LedgerRepository 是两类时间事实的共同存取边界，不是合并实体。无需为 annotation 单独暴露可绕开所属 TimeBlock 的任意写入接口，也无需增加通用 UnitOfWork / RepositoryFactory。具体操作按被批准的 Task 增量加入；Q-003、Q-005、Q-013 未回答前，不生成默认覆盖、级联删除或任意转换方法。
 
 具体 data 实现负责 SQL 与行映射，把读取结果还原成领域值；不把数据库行或驱动类型泄露到 UI。字段名称相近时直接写小型映射函数即可，不强制每层再复制一套 entity / model / DTO。
 
@@ -113,7 +113,7 @@ LedgerRepository 是两类时间事实的共同存取边界，不是合并实体
 
 加载一次日账本时：
 
-1. application 根据已确定的日期政策构造查询窗口；Q-008 / Q-009 未决部分不可设为产品默认行为。
+1. application 使用当前设备时区构造查询窗口；当前日截止和首尾 Gap 口径继续遵守 Q-009。
 2. LedgerRepository 从一致的读取视图取得 TimeBlock、SleepSession 与相关 annotation；以原始事实返回，不预先按日改写事实。
 3. application 把结果交给纯投影函数；如需目标名称，再结合 Goal 元数据。sleepSummary 的整次记录选择按 Q-010，不能只靠裁剪结果猜“昨晚”。
 4. presentation 接收投影并负责格式化、编辑状态和空数据表达，不重复实现时长或 Gap 算法。
@@ -126,13 +126,13 @@ UI state 放在所属 feature/presentation：当前选择日期、输入草稿�
 
 第一版可采用 Flutter 自带的局部状态与小型 controller / view model；需要通知多个 Widget 的 controller 可使用 ChangeNotifier / Listenable。它们只属于 presentation，不进入 domain。状态管理包与路由包不在本轮选定或安装。[Flutter UI 与状态建议](https://docs.flutter.dev/app-architecture/recommendations)
 
-依赖从 app 的组装处通过构造参数传入。数据库具体实例只在那里创建和释放，不使用全局可变 repository 单例。当前时间可作为函数或值注入需要它的操作，无需为每种基础依赖建立通用框架。首次发布平台仍见 Q-022，不能把仓库已有平台目录当成支持承诺。
+依赖从 app 的组装处通过构造参数传入。数据库具体实例只在那里创建和释放，不使用全局可变 repository 单例。当前时间可作为函数或值注入需要它的操作，无需为每种基础依赖建立通用框架。Q-022 已确定第一版正式支持 Android 和 Web；其他平台目录不构成首发支持承诺。
 
 ## Engineering Recommendation：错误与一致性边界
 
 领域校验返回能定位字段或规则的结果，例如 TB-005；data 层将外键、唯一约束、存储忙或读写失败映射成操作可理解的失败。presentation 不显示 SQL 异常原文，也不把技术失败写成 Unknown 时间。
 
-跨表不重叠必须针对写入前最终数据检查。原子性是对已确定规则的工程落实；自动截断、合并或覆盖冲突事实则是产品行为，仍受 Q-011 阻塞。非法数据不能默默丢弃一条后展示成正常完整账本。
+跨表不重叠必须针对写入前最终数据检查。原子拒绝并提示冲突是 Q-011 已确定的产品行为；自动截断、合并或覆盖冲突事实均不允许。非法数据不能默默丢弃一条后展示成正常完整账本。
 
 ## Engineering Recommendation：可测试、可增量、便于 Agent 修改
 
@@ -145,15 +145,15 @@ UI state 放在所属 feature/presentation：当前选择日期、输入草稿�
 
 测试目录可镜像 features 结构，按当前 Task 风险增加必要测试，不为纯转发方法机械造测试。文件名按实体、投影或操作命名；规则测试引用稳定规则编号。一个 Task 只触及该行为需要的 domain、data 或 presentation 文件，不因结构图存在就补齐所有文件。
 
-首版不建立通用实体基类、通用 use-case 系统、额外服务端或同步基础设施。持久化驱动选择在 Q-022 明确后做小范围技术核查，不把具体数据库包泄露到 domain。Epic 顺序见 [IMPLEMENTATION_PLAN](../planning/IMPLEMENTATION_PLAN.md)，具体任务见 [TASKS](../../TASKS.md)；本文不重复安排。
+首版不建立通用实体基类、通用 use-case 系统、额外服务端或同步基础设施。持久化驱动须面向 Q-022 已确定的 Android 与 Web 做小范围技术核查，不把具体数据库包泄露到 domain。Epic 顺序见 [IMPLEMENTATION_PLAN](../planning/IMPLEMENTATION_PLAN.md)，具体任务见 [TASKS](../../TASKS.md)；本文不重复安排。
 
 ## 未决事项如何影响本方案
 
 | 问题 | 影响，及不能擅自作出的选择 |
 | --- | --- |
-| Q-001、Q-002、Q-007、Q-008 | 物理字段或值域，见 DATA_ARCHITECTURE |
-| Q-003–Q-006、Q-013 | 转换、关联与删除操作合同；接口不能默认提供全套行为 |
-| Q-009、Q-010、Q-014、Q-017、Q-020、Q-021 | 派生政策与显示口径；不写入计算函数默认值 |
-| Q-011、Q-012 | 冲突处理和草稿行为；不自动修正事实或保存草稿 |
-| Q-015、Q-016、Q-018、Q-019 | 校验与元数据合同；不能由框架默认行为决定 |
-| Q-022 | 首发平台范围与持久化驱动选择 |
+| Q-003–Q-005、Q-007、Q-013 | 转换、关联、可选值域与删除操作合同；接口不能默认提供全套行为 |
+| Q-009、Q-010、Q-014、Q-020、Q-021 | 派生政策与显示口径；不写入计算函数默认值 |
+| Q-012 | 草稿行为；不自动保存草稿 |
+| Q-019 | Goal 名称唯一与比较规则；不能由框架默认行为决定 |
+
+Q-022 已确定首发平台为 Android 和 Web。该决定限定后续驱动核验与平台验收范围，但不直接选定持久化包、浏览器兼容矩阵或部署方案。

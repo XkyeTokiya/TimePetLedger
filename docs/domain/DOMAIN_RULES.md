@@ -14,10 +14,10 @@
 
 | 编号范围 | 内容 |
 | --- | --- |
-| MODEL-001 | 正式对象字段存在性与可选性 |
+| MODEL-001–MODEL-002 | 正式对象字段存在性、可选性与文本规范 |
 | TB-001–TB-009 | 时间区间、精度、已知性、标题与可选关联 |
 | RH-001–RH-008 | 解释关系、三种节奏语义与可选细节 |
-| SL-001–SL-004 | 独立睡眠、跨日、类型与输入优先级 |
+| SL-001–SL-005 | 独立睡眠、跨日、类型、输入优先级与区间范围 |
 | GO-001–GO-002 | 时间归属与目标状态值域 |
 | DR-001–DR-004 | 复盘唯一性、派生边界与明日第一步 |
 | LEDGER-001–LEDGER-010 | Gap / Unknown、日投影、重叠、统计及回顾记录 |
@@ -37,9 +37,28 @@
 
 **Invalid examples:** 要求每条普通记录必填 note；把正式 DailyReview 的 tomorrowFirstStep 擅自改为可缺失。
 
-**Enforcement layer:** Domain；Database 可镜像已确定的可空约束。文本与元数据细则见 Q-015、Q-018。
+**Enforcement layer:** Domain；Database 可镜像已确定的可空约束。文本规范见 MODEL-002；标识与元数据合同见 Q-018。
 
 **Source:** §4–5、§11、§14、§21–22、§33
+
+
+## RULE MODEL-002
+
+**Title:** 已确定文本字段统一规范化
+
+**Applies to:** Goal.name、TimeBlock.title / note、SleepSession.note、DailyReview.summary / reflection、TomorrowFirstStep.text、RhythmAnnotation.continuationHint
+
+**Rule:** 保存前清理首尾空白，保留内部空格、换行和段落格式。必填文本清理后不得为空；可选文本清理后为空则保存为 null。短文本最多 200 个字符，长文本最多 2,000 个字符；长度由 Domain / Application 校验，数据库字段使用普通 TEXT。Q-007 尚未确定的原因与恢复值域不由本条定型。
+
+**Reason:** 统一空白与空值语义，避免 UI、领域和数据库产生不同文本结果，同时限制异常大输入。
+
+**Examples:** `"  目标一  "` 保存为 `"目标一"`；可选 note 只有空白时保存为 null；长文本内部换行保留。
+
+**Invalid examples:** 必填文本清理后为空；以数据库 TEXT 类型替代长度校验；逐字段擅自采用不同的空串 / null 规则。
+
+**Enforcement layer:** Domain / Application；Database 保持 TEXT，不镜像具体长度上限。
+
+**Source:** Q-015
 
 
 ## RULE TB-001
@@ -48,7 +67,7 @@
 
 **Applies to:** TimeBlock
 
-**Rule:** 必须满足 startedAt < endedAt；近似边界也不豁免此约束。
+**Rule:** 必须满足 startedAt < endedAt；区间按半开区间 `[startedAt, endedAt)` 解释，近似边界也不豁免正区间约束。
 
 **Reason:** 源文档对 time_blocks 明确给出严格不等式。
 
@@ -124,7 +143,7 @@
 
 **Applies to:** TimeBlock.title
 
-**Rule:** knowledgeState=known 时 title 必须存在且不为空。源文档没有定义 trim 后空白、字符限制或规范化策略，相关细则见 Q-015。
+**Rule:** knowledgeState=known 时 title 必须存在且在清理首尾空白后仍非空；适用的长度和规范化规则见 MODEL-002。
 
 **Reason:** known 需要描述大概做了什么。
 
@@ -143,7 +162,7 @@
 
 **Applies to:** TimeBlock.title
 
-**Rule:** knowledgeState=unknown 时 title 可为 null；不得要求编造活动，也不得把“可为空”改成“只能为空”或必须保存固定文案。未规定内容限制与转换清理见 Q-003、Q-015。
+**Rule:** knowledgeState=unknown 时 title 可为 null；不得要求编造活动，也不得把“可为空”改成“只能为空”或必须保存固定文案。可选文本的空白与长度规则见 MODEL-002；转换清理仍见 Q-003。
 
 **Reason:** unknown 本身已经表达合法事实。
 
@@ -200,7 +219,7 @@
 
 **Applies to:** TimeBlock、记录流程
 
-**Rule:** 核心记录不依赖 Category，不能要求分类后才记录；categoryId 只是可选扩展点，首版是否保留见 Q-002。
+**Rule:** 核心记录不依赖 Category，不能要求分类后才记录；首版保留可空 categoryId 作为扩展字段，但不建立 Category 实体、分类管理或分类入口。
 
 **Reason:** 活动文字已足以还原普通时间。
 
@@ -409,7 +428,7 @@
 
 **Applies to:** SleepSession.type、startPrecision / endPrecision
 
-**Rule:** type 仅为 mainSleep 或 nap；起止分别保留 exact / approximate，不用睡眠类型推导时间精度，不自行增加类型时长阈值。
+**Rule:** type 仅为 mainSleep 或 nap；起止分别保留 exact / approximate，不用睡眠类型推导时间精度，不增加类型时长阈值。SleepSession 必须为正区间，允许未来区间，不设置固定历史回溯上限。
 
 **Reason:** 睡眠类型、边界精度是不同维度。
 
@@ -417,9 +436,28 @@
 
 **Invalid examples:** 把 sleepQuality 当 SleepType；强制所有睡眠边界 exact。
 
-**Enforcement layer:** Domain；Database 可限制值域。额外区间校验见 Q-016。
+**Enforcement layer:** Domain；Database 可限制值域和正区间。
 
-**Source:** §4–6、最终定义
+**Source:** §4–6、Q-016
+
+
+## RULE SL-005
+
+**Title:** 时间事实允许补录且不设固定时长边界
+
+**Applies to:** TimeBlock、SleepSession
+
+**Rule:** 两类时间事实均必须满足 startedAt < endedAt；不设置固定最短或最长持续时长，允许未来正区间，也不设置历史补录上限。
+
+**Reason:** 保留回顾补记和用户表达的自由，不以未定义的时长或当前时间阈值阻止合法事实。
+
+**Examples:** 补录很久以前的活动；保存尚未发生的计划时间段；跨日睡眠仍是正区间。
+
+**Invalid examples:** 零时长或反向区间；仅因时长较长或发生在未来而拒绝保存。
+
+**Enforcement layer:** Domain；Application / Presentation 可提供输入提示，不将提示升级为保存禁令。
+
+**Source:** Q-016、TB-001、SL-002
 
 
 ## RULE SL-004
@@ -466,15 +504,15 @@
 
 **Applies to:** Goal.status / archivedAt
 
-**Rule:** status 仅为 active、archived；archivedAt 在源结构中可选。不能仅凭两个值推导 active ↔ archived 均允许、自动填清时间或删除引用的规则，见 Q-006。
+**Rule:** status 仅为 active、archived。Goal 只能以 active 创建；active 与 archived 可双向切换。归档写入当前 UTC archivedAt，恢复时清除；相同状态重复请求幂等且不更新 updatedAt。已有引用保留，archived Goal 不可用于新增关联；未被引用的 Goal 可物理删除，有引用的删除操作归档并隐藏，不新增 deleted 状态。改名实时作用于历史记录。
 
 **Reason:** 值域确定不代表完整转换合同已确定。
 
 **Examples:** 使用 active 或 archived 表达目标状态。
 
-**Invalid examples:** 加入 completed、paused 状态；把任意归档恢复行为当成源文档既定要求。
+**Invalid examples:** 加入 completed、paused、deleted 状态；级联删除有引用的时间事实或复盘；让 archived Goal 进入新的时间归属。
 
-**Enforcement layer:** Domain；Database 可限制值域；生命周期实现待决。
+**Enforcement layer:** Domain / Application；Database 可限制值域，跨表删除与隐藏行为按事务合同落实。
 
 **Source:** §11
 
@@ -485,7 +523,7 @@
 
 **Applies to:** DailyReview.date
 
-**Rule:** 复盘绑定自然日期，review_date 唯一；不需要持久化 Day 实体。不由唯一性推导必须每天填写、禁止补写或限制更新。时区见 Q-008。
+**Rule:** 复盘绑定自然日期，review_date 唯一；不需要持久化 Day 实体。不由唯一性推导必须每天填写、禁止补写或限制更新。保存时的日期按当前设备时区解释；已保存的 review_date 作为 CivilDate 保持不被设备时区变化自动改写。
 
 **Reason:** 源文档明确 review_date UNIQUE。
 
@@ -542,7 +580,7 @@
 
 **Applies to:** DailyReview.tomorrowFirstStep、TomorrowFirstStep
 
-**Rule:** 它回答明天开始先做什么，包含 text 与 intendedDate，goalId 可选；不是每个 Goal 各一份计划，也不是任务生命周期。intendedDate 的确定与保存见 Q-001，文本细则见 Q-015。
+**Rule:** 它回答明天开始先做什么，包含 text 与 intendedDate，goalId 可选；不是每个 Goal 各一份计划，也不是任务生命周期。intendedDate 固定为 DailyReview.date 的下一自然日，不单独持久化；文本细则见 MODEL-002。
 
 **Reason:** 使下一次启动更容易，而非多项目计划管理。
 
@@ -550,7 +588,7 @@
 
 **Invalid examples:** 要求为所有 Goal 填写明日计划；用 continuationHint 自动替代此对象。
 
-**Enforcement layer:** Domain；Application / Presentation；存储日期细节待决。
+**Enforcement layer:** Domain；Application / Presentation；由复盘日期派生，不建立单独存储列。
 
 **Source:** §20–22、§33
 
@@ -599,7 +637,7 @@
 
 **Applies to:** TimeBlock、SleepSession、DayLedgerView
 
-**Rule:** 按自然日窗口查询相交的 TimeBlock 与 SleepSession 并切片生成 DayLedgerView；DayLedgerView 不持久化，也不创建数据库 Day 实体来强迫事实按日拆分。时区和端点细则见 Q-008、Q-017。
+**Rule:** 按当前设备时区确定自然日窗口，查询相交的 TimeBlock 与 SleepSession 并切片生成 DayLedgerView；DayLedgerView 不持久化，也不创建数据库 Day 实体来强迫事实按日拆分。时间事实使用半开区间，端点细则见 Q-017。
 
 **Reason:** 保留事实完整性，同时支持日账本。
 
@@ -618,7 +656,7 @@
 
 **Applies to:** 全部 TimeBlock 与 SleepSession
 
-**Rule:** 同一段时间最多一条主要 TimeBlock / SleepSession；限制涵盖 TimeBlock 之间、SleepSession 之间及两类事实之间。近似不授权并行主事实，次要同时活动可写 note。冲突修正见 Q-011，端点判定见 Q-017。
+**Rule:** 同一段时间最多一条主要 TimeBlock / SleepSession；限制涵盖 TimeBlock 之间、SleepSession 之间及两类事实之间。近似不授权并行主事实，次要同时活动可写 note。冲突写入必须原子拒绝并提示冲突记录，由用户手动调整；不自动截断、拆分、覆盖或移动已有事实。端点判定见 Q-017。
 
 **Reason:** 本产品记录一段时间的主要事实，不实现并行多任务时间轴。
 
@@ -675,7 +713,7 @@
 
 **Applies to:** hasApproximation、时间汇总
 
-**Rule:** 时间聚合应能携带 hasApproximation，参与计算的近似边界不能被呈现为绝对精确；相应时长用“约”等方式表达。跨日切片传播细则见 Q-014，舍入见 Q-017。
+**Rule:** 时间聚合应能携带 hasApproximation，参与计算的近似边界不能被呈现为绝对精确；相应时长用“约”等方式表达。跨日切片传播细则见 Q-014；内部按毫秒计算，展示时最终统一舍入到分钟。
 
 **Reason:** 具体时间值不等于绝对精确的认知。
 
@@ -747,23 +785,15 @@
 
 ## 未决规则边界
 
-以下仅建立依赖，不替 OPEN_QUESTIONS 重复定义候选答案。所有问题仍为 UNDECIDED。
+以下仅登记仍影响规则的未决依赖，不替 OPEN_QUESTIONS 重复定义候选答案。
 
 | 问题 | 受影响规则或后续工作 |
 | --- | --- |
-| Q-001 | DR-004 的 intendedDate 日期关系与存储 |
-| Q-002 | TB-009 的首版 categoryId 字段 |
 | Q-003–Q-005 | TB-004–TB-008、RH-003–RH-008 的组合及转换字段处理 |
-| Q-006 | GO-002 的生命周期、archivedAt 联动与引用 |
 | Q-007 | RH-006–RH-007 的可选值域 |
-| Q-008–Q-010 | DR-001、SL-004、LEDGER-001 / 003 / 006 的日窗口与睡眠口径 |
-| Q-011 | LEDGER-004 的冲突处理 |
+| Q-009–Q-010 | SL-004、LEDGER-001 / 003 / 006 的当前日窗口与睡眠口径 |
 | Q-012–Q-013 | 草稿保存、删除 / 更正及关联处理 |
 | Q-014 | LEDGER-007 的切片精度传播 |
-| Q-015 | TB-005–TB-006、DR-004 等文本的进一步校验 |
-| Q-016 | SleepSession 正区间及时间取值范围的正式校验 |
-| Q-017 | LEDGER-003–LEDGER-007 的端点、分辨率与舍入规则 |
-| Q-018 | MODEL-001 的标识 / 时间戳策略；GO-002 的归档时间仍由 Q-006 跟踪 |
 | Q-019 | Goal 名称是否唯一及重复判定 |
 | Q-020–Q-021 | LEDGER-006 的摘要参与集与缺失数据表达 |
 | Q-023 | LEDGER-010 的非 Gap 时间建议与初始精度 |
@@ -774,4 +804,4 @@
 
 源文档 §18 的示例总量存在算术不一致：五段分别为 70、40、70、50、70 分钟，共 300 分钟（5 小时），正文却写约 4h30m；明确推进 210 分钟与卡住 40 分钟的子项计算一致。本文件不复制错误总量、不修改 Source of Truth，也不将这个可算术核对的问题转成产品未决问题。
 
-`TomorrowFirstStep.intendedDate` 的结构 / 存储示例缺口继续由 Q-001 跟踪。现有 Phase 1 文档无需修改。
+`TomorrowFirstStep.intendedDate` 已确定由 DailyReview.date 的下一自然日派生，不单独持久化。后续实现应保持这一合同。

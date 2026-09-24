@@ -13,14 +13,14 @@
 | 范围编号 | 用户能力与完成边界 | 依据 / 待决入口 |
 | --- | --- | --- |
 | M-01 低成本回顾记录 | 用户主要填写活动，系统提出可修改的时间区间；支持 known / unknown 和独立起止精度。目标、分类、节奏解释都不能成为普通记录的必填门槛 | TB-001–TB-009、LEDGER-010；非 Gap 入口的建议时间见 Q-023 |
-| M-02 一天账本与缺口处理 | 在明确的自然日查询窗口呈现事实切片与派生 Gap；点击 Gap 后带入区间，补活动或确认 Unknown。Unknown 保存为事实且属于 accounted；可以留下未解决 Gap | LEDGER-001–LEDGER-005；Q-008、Q-009、Q-014、Q-017 |
-| M-03 独立睡眠记录 | 支持 mainSleep / nap、近似边界、完整跨日事实；首次打开时优先确认睡眠，已经记录时不重复打扰。睡眠参与账本覆盖，但不变成 recovery | SL-001–SL-004；Q-010、Q-016 |
-| M-04 目标归属与可选节奏 | 可建立并选择简单 Goal，查看其时间归属；TimeBlock 可保持无解释，或由用户确认 progress / stuck / recovery。支持可选 continuationHint 的接续语义；不要求填写卡住原因或恢复细节 | GO-001、GO-002、RH-001–RH-008；Q-004–Q-007、Q-019 |
+| M-02 一天账本与缺口处理 | 在明确的自然日查询窗口呈现事实切片与派生 Gap；点击 Gap 后带入区间，补活动或确认 Unknown。Unknown 保存为事实且属于 accounted；可以留下未解决 Gap | LEDGER-001–LEDGER-005；Q-009、Q-014 |
+| M-03 独立睡眠记录 | 支持 mainSleep / nap、近似边界、完整跨日事实；首次打开时优先确认睡眠，已经记录时不重复打扰。睡眠参与账本覆盖，但不变成 recovery | SL-001–SL-005；Q-010 |
+| M-04 目标归属与可选节奏 | 可建立并选择简单 Goal，查看其时间归属；TimeBlock 可保持无解释，或由用户确认 progress / stuck / recovery。支持可选 continuationHint 的接续语义；不要求填写卡住原因或恢复细节 | GO-001、GO-002、RH-001–RH-008；Q-004、Q-005、Q-007、Q-019 |
 | M-05 描述性基础摘要 | 呈现睡眠背景、已交代 / 未交代 / 其中 Unknown，以及目标相关时间与其中 progress / stuck；recovery 保持独立口径，显示适用的近似提示。摘要全部来自当前事实，不产生评分 | LEDGER-006–LEDGER-009、DERIVED_MODELS；Q-010、Q-014、Q-020、Q-021 |
-| M-06 复盘与下一步 | 同一天至多一份 DailyReview，允许可选 summary / reflection，保留一个 TomorrowFirstStep 及可选 Goal 关联；和单段时间的 continuationHint 区分 | DR-001–DR-004；Q-001、Q-008、Q-013、Q-015 |
-| M-07 可靠保存与一致反馈 | 首发平台上事实和复盘能够保存、重新读取；失败不显示成功；重叠不被静默保存，重算结果反映成功提交的事实。具体纠错交互与更正 / 删除能力按产品答案落实 | LEDGER-004；APP_ARCHITECTURE、DATA_ARCHITECTURE；Q-003、Q-005、Q-006、Q-011、Q-013、Q-018、Q-022 |
+| M-06 复盘与下一步 | 同一天至多一份 DailyReview，允许可选 summary / reflection，保留一个 TomorrowFirstStep 及可选 Goal 关联；和单段时间的 continuationHint 区分 | DR-001–DR-004；Q-013 |
+| M-07 可靠保存与一致反馈 | 首发平台上事实和复盘能够保存、重新读取；失败不显示成功；重叠不被静默保存，重算结果反映成功提交的事实。具体纠错交互与更正 / 删除能力按产品答案落实 | LEDGER-004；APP_ARCHITECTURE、DATA_ARCHITECTURE；Q-003、Q-005、Q-013、Q-022 |
 
-M-04 不把 active / archived 值域偷换成已批准的归档 / 恢复按钮；初始状态、归档及引用行为必须先回答 Q-006。M-07 同样不授权任意 CRUD、自动覆盖冲突、拆分事实或级联删除。涉及生命周期的首版开放范围仍须由对应问题确认，不能在验收时悄悄省略，也不能凭规划自行补齐。
+M-04 的 active / archived 值域已由 Q-006 细化为创建、归档、恢复、引用、删除和改名合同；这不扩展为任务管理。M-07 同样不授权任意 CRUD、自动覆盖冲突、拆分事实或级联删除。Q-003、Q-005、Q-013 尚未确认的操作仍不能在验收时悄悄补齐，也不能凭规划自行选择。
 
 ### 闭环验收场景
 
@@ -50,7 +50,7 @@ Source of Truth 明确排除或暂未纳入核心的能力：
 - timer-first、minute-perfect tracking、并行主要活动时间线或多任务分摊。
 - task manager、habit tracker、streak、失败天数、任务树、里程碑、deadline / completion percentage / priority 等项目管理能力，以及每天为全部 Goal 安排行动。
 - productivity / efficiency / completeness 评分，自动评价用户是否有效、无用活动枚举，以及因果式睡眠分析。
-- 复杂分类和首版分类管理；categoryId 是否保留扩展字段仍为 Q-002，字段不能推导出分类功能。
+- 复杂分类和首版分类管理；首版保留可空 categoryId 扩展字段，但不提供分类功能。
 - 睡眠质量输入、长期睡眠趋势、nap 与 recovery 的关联，以及自动判定进展或恢复效果。
 - 将 keyProgress / mainStuckPoint / recoveryObservation 等候选复盘字段扩展为首版强制结构。
 
@@ -58,6 +58,6 @@ Source of Truth 明确排除或暂未纳入核心的能力：
 
 ## 发布边界与范围控制
 
-首发平台尚未确定（Q-022），仓库已有平台目录不等于发布范围。Must Have 是待实现的目标，不是所有相关问题已解决的声明：涉及的产品合同须先确定，未决问题只阻塞相应能力；已确定的领域与纯计算可以先做。
+首发平台确定为 Android 和 Web（Q-022）。iOS、Linux、macOS、Windows 不纳入首发支持与验收范围；仓库已有平台目录或本机可运行设备不会扩大该范围。Must Have 是待实现的目标，不是所有相关问题已解决的声明：涉及的其他产品合同须先确定，未决问题只阻塞相应能力；已确定的领域与纯计算可以先做。
 
 新增范围必须能追溯到 Source of Truth 或明确的产品决定。不能用“顺手完善”增加新实体、统计评分、额外状态或基础设施。实施顺序与各 Epic 的决策门槛集中在 [IMPLEMENTATION_PLAN](IMPLEMENTATION_PLAN.md)，本文件不拆具体开发 Task。

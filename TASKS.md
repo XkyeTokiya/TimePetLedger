@@ -83,15 +83,15 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 将平台承诺和可运行证据对应起来。
 
-**Depends on:** E0-T01、E0-T02；Q-022 已确认具体平台。
+**Depends on:** E0-T01、E0-T02；Q-022 已确认首发平台为 Android 和 Web。
 
 **Source documents:** PLAN / Epic 0；APP / 平台边界；OQ / Q-022。
 
-**Scope:** 在已选平台验证现有启动工程；仅修复启动所需的最小平台配置并记录实际运行证据。
+**Scope:** 在 Android 与 Web 验证现有启动工程；仅修复启动所需的最小平台配置并记录实际运行证据。
 
 **Out of scope:** 新增业务页面、支持清单外平台、数据库或状态管理依赖。
 
-**Acceptance criteria:** 每个批准平台有启动验证结果；不能运行的平台明确阻塞；不把存在目录视为支持。
+**Acceptance criteria:** Android 与 Web 分别有启动验证结果；不能运行的平台明确阻塞；不把存在目录视为支持，也不扩展到其他平台。
 
 **Validation:** 按平台执行构建 / 启动检查；有代码变更时执行共用代码验证；核对无新增产品功能。
 
@@ -105,7 +105,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 以纯 Dart 表达独立的精度、已知性、节奏和睡眠类型。
 
-**Depends on:** E0-T01；可在 E0-T03 等待 Q-022 时单独交付。
+**Depends on:** E0-T01；可独立于 E0-T03 单独交付。
 
 **Source documents:** MODEL / 领域枚举；RULES / TB-002、TB-004、RH-002、SL-003；APP / domain。
 
@@ -125,13 +125,13 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 为事实和复盘提供一致的时间值及身份 / 时间戳输入边界。
 
-**Depends on:** E0-T02、E1-T01；Q-008、Q-017、Q-018 中适用合同已确定。
+**Depends on:** E0-T02、E1-T01；时间、日期与元数据合同已由 Q-008、Q-017、Q-018 确定。
 
 **Source documents:** MODEL / 字段语义；DATA / 通用类型、Timestamps；APP / core 边界；OQ 对应条目。
 
 **Scope:** 确需共享的 core/time 纯值与函数、身份和元数据的明确输入合同及测试；简单类型足够时不另建包装层。
 
-**Out of scope:** 数据库编码、全局当前时间、默认设备时区、固定 1440 分钟、日账本窗口政策、通用 base entity。
+**Out of scope:** 数据库编码、全局当前时间、账本时区覆盖设置、固定 1440 分钟、日账本窗口政策、通用 base entity。
 
 **Acceptance criteria:** 时间点与自然日期不会混同；采用明确的分辨率和端点合同；当前时间从调用方传入；身份与元数据策略不靠构造器猜测。
 
@@ -145,7 +145,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 表达普通时间事实及其已确定合法性。
 
-**Depends on:** E1-T01、E1-T02；Q-002、Q-004、Q-015、Q-016 中相关字段及校验合同已确定。
+**Depends on:** E1-T01、E1-T02；Q-002、Q-015、Q-016 的字段及校验合同已确定，Q-004 的关联组合仍须明确。
 
 **Source documents:** MODEL / TimeBlock；RULES / MODEL-001、TB-001–TB-009；STATES / TimeBlock。
 
@@ -167,7 +167,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Depends on:** E1-T01、E1-T02；Q-015、Q-016 对睡眠的合同已确定。
 
-**Source documents:** MODEL / SleepSession；RULES / SL-001–SL-003；STATES / SleepSession。
+**Source documents:** MODEL / SleepSession；RULES / SL-001–SL-005；STATES / SleepSession。
 
 **Scope:** ledger/domain 的 SleepSession、校验与测试。
 
@@ -185,7 +185,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 提供简单时间归属对象，不把目标扩展为项目。
 
-**Depends on:** E1-T02；Q-006 的构造 / 状态合同、Q-015、Q-018、Q-019 已确定。
+**Depends on:** E1-T02；Q-006、Q-015、Q-018 已确定，Q-019 的名称规则仍须明确。
 
 **Source documents:** MODEL / Goal；RULES / GO-001、GO-002；STATES / Goal。
 
@@ -225,7 +225,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 表达每日解释和单一下一步意向。
 
-**Depends on:** E1-T02、E1-T05；Q-001、Q-006 的目标引用合同及 Q-015 已确定。
+**Depends on:** E1-T02、E1-T05；Q-001、Q-006、Q-015 的合同已确定。
 
 **Source documents:** MODEL / DailyReview、TomorrowFirstStep；RULES / DR-001–DR-004；STATES / DailyReview。
 
@@ -245,7 +245,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 为两类事实共用不重叠判定。
 
-**Depends on:** E1-T03、E1-T04；Q-017 端点合同已确定。
+**Depends on:** E1-T03、E1-T04；Q-017 端点、分辨率与舍入合同已确定。
 
 **Source documents:** RULES / LEDGER-004；DERIVED / 公共输入；DATA / 事务与重叠。
 
@@ -285,7 +285,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 明确认知更正与字段处理，保持事实合法。
 
-**Depends on:** E1-T03、E1-T06、E1-T08；Q-003、Q-004、Q-013、Q-018 已明确。
+**Depends on:** E1-T03、E1-T06、E1-T08；Q-003、Q-004、Q-013 已明确后执行。
 
 **Source documents:** STATES / TimeBlock 字段矩阵；RULES / TB；OQ 对应条目。
 
@@ -305,7 +305,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 保证解释变化不改写时间事实。
 
-**Depends on:** E1-T06；Q-005、Q-013、Q-018 已明确。
+**Depends on:** E1-T06；Q-005、Q-013 已明确后执行。
 
 **Source documents:** STATES / RhythmAnnotation；RULES / RH-001–RH-008。
 
@@ -325,7 +325,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 落实无生命周期状态的事实更正边界。
 
-**Depends on:** E1-T04、E1-T07、E1-T08；Q-013、Q-016、Q-018 已明确，日期合同沿用 Q-001。
+**Depends on:** E1-T04、E1-T07、E1-T08；Q-013 已明确，日期合同沿用已确认的 Q-001，Q-016、Q-018 已明确。
 
 **Source documents:** STATES / SleepSession、DailyReview；RULES / SL、DR。
 
@@ -345,19 +345,19 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Title:** 核验持久化驱动选择
 
-**Goal:** 为已确认平台选出满足单库事务与测试需求的最小驱动。
+**Goal:** 为 Android 与 Web 选出满足单库事务与测试需求的最小驱动。
 
-**Depends on:** Epic 0 完成；Q-022 已确定。可作 Epic 2 的只读准备，不提前实现存储。
+**Depends on:** Epic 0 完成；Q-022 已确定首发平台为 Android 和 Web。可作 Epic 2 的只读准备，不提前实现存储。
 
 **Source documents:** APP / repository 与持久化；DATA / 持久化、事务；PLAN / Epic 2。
 
-**Scope:** 查阅候选驱动官方资料，核验平台、事务、外键和测试支持；给出工程选型依据及最小依赖清单，记录于任务报告。
+**Scope:** 查阅候选驱动官方资料，分别核验 Android、Web 的事务、外键、本地持久化和测试支持；给出工程选型依据及最小依赖清单，记录于任务报告。
 
 **Out of scope:** 安装包、改 pubspec、实现 schema、自动选择未批准平台。
 
 **Acceptance criteria:** 明确选择建议及证据、限制；区分已批准采用的方案与仅推荐项，不把推荐当产品要求。
 
-**Validation:** 核对官方来源和目标平台支持；检查满足原子写入 / 一致读取的需求；仓库无实现改动。
+**Validation:** 核对官方来源及 Android、Web 支持；检查两个平台满足原子写入 / 一致读取的需求；仓库无实现改动。
 
 ### E2-T02 — 接入单库连接与测试环境
 
@@ -377,7 +377,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Acceptance criteria:** 连接按生命周期释放；若采用 SQLite，逐连接启用并验证外键；测试库隔离且不会接触用户正式数据。
 
-**Validation:** 共用代码验证；真实驱动打开 / 关闭、外键启用、隔离和失败反馈测试；在批准平台验证驱动可运行。
+**Validation:** 共用代码验证；真实驱动打开 / 关闭、外键启用、隔离和失败反馈测试；分别在 Android 与 Web 验证驱动可运行。
 
 ### E2-T03 — 建立五表首版 schema 与约束
 
@@ -387,7 +387,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 将已定稿的数据规范转为正式首版建表定义。
 
-**Depends on:** E2-T02；DATA / Schema 定稿清单全部相关问题已有答案并更新规范，含 Q-001、Q-002、Q-004–Q-008、Q-013、Q-015–Q-019、Q-022。
+**Depends on:** E2-T02；DATA / Schema 定稿清单全部相关问题已有答案并更新规范，含仍影响 schema 的 Q-004、Q-005、Q-007、Q-013、Q-019；Q-022 的平台核验另按 E2-T01 执行。
 
 **Source documents:** DATA / 五表、Foreign keys、Indexes、三类约束；RULES 对应约束。
 
@@ -495,7 +495,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Out of scope:** UI、完整日投影、扩大依赖、把此任务当作前面任务免测理由。
 
-**Acceptance criteria:** 读回事实、关联、复盘与元数据一致；没有 Gap / Day / aggregate 的持久化来源；首发平台存储证据完整，剩余问题不得标成完成。
+**Acceptance criteria:** 读回事实、关联、复盘与元数据一致；没有 Gap / Day / aggregate 的持久化来源；Android 与 Web 的存储证据完整，剩余问题不得标成完成。
 
 **Validation:** 在隔离的实际持久化文件或所选平台等效存储上重开验证，不能仅用内存 mock；共用代码验证并报告平台限制。
 
@@ -505,14 +505,14 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 | Epic | 前置 Epic | 后续拆分方向与验收重点 | 关键决策门槛 |
 | --- | --- | --- | --- |
-| 3 Ledger Projection Engine | 1 | 按切片与覆盖、Gap、节奏 / 目标时长、摘要选择和近似传播分批；以 DERIVED 手算及边界样例验证 | Q-008、Q-009、Q-010、Q-014、Q-017、Q-020、Q-021；不依赖 Epic 2 |
-| 4 Basic Recording | 2、3 | 活动优先输入、可改建议时间、known / unknown 保存与失败反馈 | Q-023、Q-011、Q-003、Q-013 及输入合同 |
-| 5 Sleep Recording | 2、3 | 完整睡眠记录、跨日接入、首次确认与已记录识别 | Q-010、Q-016；不依赖 Epic 4 普通活动编辑器 |
-| 6 Daily Timeline / Gap Resolution | 3、4、5 | 时间轴、Gap 预填、用户确认 Unknown、成功后重算 | Q-008、Q-009、Q-014、Q-017 |
-| 7 Goal + Rhythm Annotation | 2、4、6 | 归属选择、用户解释、获准更正与接续点；可选细节入口另列 Should Have | Q-004–Q-007、Q-013、Q-019 |
+| 3 Ledger Projection Engine | 1 | 按切片与覆盖、Gap、节奏 / 目标时长、摘要选择和近似传播分批；以 DERIVED 手算及边界样例验证 | Q-009、Q-010、Q-014、Q-020、Q-021；不依赖 Epic 2 |
+| 4 Basic Recording | 2、3 | 活动优先输入、可改建议时间、known / unknown 保存与失败反馈 | Q-023、Q-003、Q-013 及输入合同 |
+| 5 Sleep Recording | 2、3 | 完整睡眠记录、跨日接入、首次确认与已记录识别 | Q-010；不依赖 Epic 4 普通活动编辑器 |
+| 6 Daily Timeline / Gap Resolution | 3、4、5 | 时间轴、Gap 预填、用户确认 Unknown、成功后重算 | Q-009、Q-014 |
+| 7 Goal + Rhythm Annotation | 2、4、6 | 归属选择、用户解释、获准更正与接续点；可选细节入口另列 Should Have | Q-004、Q-005、Q-007、Q-013、Q-019 |
 | 8 Statistics / Summaries | 3、5、6、7 | 描述性基础摘要与近似 / 缺失数据展示，不重复计算或存储统计 | Q-010、Q-014、Q-020、Q-021 |
-| 9 Daily Review | 2、7、8 | 单份复盘、一个下一步、可选 Goal、历史日期与失败处理 | Q-001、Q-008、Q-013、Q-015 |
-| 10 Polish / Reliability | 4、5、6、7、8、9 | 完整 MVP 场景、平台可靠性及关键失败路径；不扩充产品 | Q-022 与 Must Have 所涉合同全部明确 |
+| 9 Daily Review | 2、7、8 | 单份复盘、一个下一步、可选 Goal、历史日期与失败处理 | Q-013 |
+| 10 Polish / Reliability | 4、5、6、7、8、9 | 完整 MVP 场景、Android / Web 平台可靠性及关键失败路径；不扩充产品 | Q-022 已决定；Must Have 所涉其他合同全部明确 |
 
 Q-012 的跨启动草稿恢复未进入任务清单；MVP 的 Later / Explicitly Out of Scope 均不生成任务。未决问题的完整影响以 OQ、PLAN 和各职责文档为准，表格不构成穷尽规则。
 

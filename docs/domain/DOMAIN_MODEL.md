@@ -11,7 +11,7 @@
 | 分类 | 成员 | Persistence status |
 | --- | --- | --- |
 | Persisted Domain Entities | Goal、TimeBlock、RhythmAnnotation、SleepSession、DailyReview | YES：领域事实或用户解释 |
-| 领域值对象 | TomorrowFirstStep | 随 DailyReview 保存其内容；不是已确定的独立实体 / 表，日期存储见 Q-001 |
+| 领域值对象 | TomorrowFirstStep | 随 DailyReview 保存其内容；不是已确定的独立实体 / 表，intendedDate 按复盘日期派生 |
 | 领域枚举 | TimePrecision、BlockKnowledgeState、RhythmState、SleepType；Goal.status 的两个值 | 作为所属实体字段保存，无独立生命周期 |
 | Derived Models | DayLedgerView、UnresolvedSpan、时间切片与各项时长 / 汇总 | NO：由事实重新计算 |
 | UI Models | 记录草稿、时间区间建议、时间编辑状态等交互数据 | 不属于已确定的持久化领域事实；草稿保存策略未定义（Q-012） |
@@ -33,9 +33,9 @@ Time is the foundational fact。TimeBlock = what happened；RhythmAnnotation = �
 | updatedAt | 更新时间 | 必需 |
 | archivedAt | 归档时间 | 可选 |
 
-**Relationships:** TimeBlock.goalId 与 TomorrowFirstStep.goalId 可引用 Goal；目标没有必须拥有记录或明日计划的要求。
+**Relationships:** TimeBlock.goalId 与 TomorrowFirstStep.goalId 可引用 Goal；目标没有必须拥有记录或明日计划的要求。Goal 只能以 active 创建；archived Goal 保留历史引用但不用于新增关联。未被引用的 Goal 可物理删除；有引用的删除操作归档并隐藏，保留引用且可恢复、改名。
 
-**Persistence status:** YES。归档、恢复及引用处理的完整行为未定义，见 Q-006。
+**Persistence status:** YES。状态、归档时间、引用、删除与改名行为已按 Q-006 确定。
 
 **What this object must NOT represent:** Category、任务管理器或项目管理器；不包含截止日期、完成百分比、里程碑、任务树、优先级。
 
@@ -51,7 +51,7 @@ Time is the foundational fact。TimeBlock = what happened；RhythmAnnotation = �
 | knowledgeState | BlockKnowledgeState，说明是否知道活动内容 | 必需 |
 | title | 活动描述；known 不能空，unknown 可为空，不等于必须为空 | 条件必需 |
 | goalId | 可选的目标归属 | 可选 |
-| categoryId | 源文档保留的可选扩展点；核心不依赖，不在本轮定义 Category 实体 | 可选；首版是否实际保留见 Q-002 |
+| categoryId | 源文档保留的可选扩展点；核心不依赖，首版不定义 Category 实体 | 可选；首版保留但不提供分类能力，暂不建立外键 |
 | note | 补充说明，也可描述次要并行活动 | 可选 |
 | createdAt / updatedAt | 创建 / 更新时间 | 各自必需 |
 
@@ -130,12 +130,12 @@ Time is the foundational fact。TimeBlock = what happened；RhythmAnnotation = �
 | Fields | Field semantics | Required / optional |
 | --- | --- | --- |
 | text | 第一步的行动文字 | 必需 |
-| intendedDate | 该行动意向对应的日期 | 必需；与复盘日期的精确关系及存储缺口见 Q-001 |
+| intendedDate | 该行动意向对应的日期 | 必需；固定为 DailyReview.date 的下一自然日，由复盘日期派生 |
 | goalId | 这一步可关联的目标 | 可选 |
 
 **Relationships:** 属于 DailyReview，可引用一个 Goal；与 RhythmAnnotation.continuationHint 语义独立。
 
-**Persistence status:** 内容随 DailyReview 保存；源文档未给它独立 id 或独立表。不能因 §33 未列 intendedDate 就删去概念字段，也不能擅自决定日期算法。
+**Persistence status:** 内容随 DailyReview 保存；源文档未给它独立 id 或独立表。`intendedDate` 不单独建列，由 `DailyReview.date + 1` 派生。
 
 **What this object must NOT represent:** 每个 Goal 都必须填写的计划、任务生命周期、接续点的别名。
 
@@ -150,7 +150,7 @@ Time is the foundational fact。TimeBlock = what happened；RhythmAnnotation = �
 | RhythmState：用户节奏解释 | progress：主要产生用户确认的目标推进；stuck：尝试推进目标相关事情但主要消耗于阻力、停滞或反复尝试；recovery：主要作用是重新获得继续行动的可能 | RhythmAnnotation.state 必需；annotation 本身可不存在 | 随 RhythmAnnotation 保存 | neutral、useless、活动类别、自动生产力判断 |
 | SleepType：睡眠类型 | mainSleep：主睡眠；nap：午睡 / 小睡 | SleepSession.type 必需 | 随 SleepSession 保存 | 恢复方式或睡眠质量；不自行添加时长分类阈值 |
 
-Goal.status 明确只有 active、archived；不额外引入新的生命周期值或强制命名一个源文档未命名的类型。状态转换见 [DOMAIN_STATE_MACHINES](DOMAIN_STATE_MACHINES.md)，未确定的行为仍受未决问题约束。
+Goal.status 明确只有 active、archived；不额外引入新的生命周期值或强制命名一个源文档未命名的类型。首版只能创建 active；归档、恢复、引用、删除和改名行为见 [DOMAIN_STATE_MACHINES](DOMAIN_STATE_MACHINES.md)。
 
 ## Derived Models（§23–25、§30）
 
@@ -167,7 +167,7 @@ Goal.status 明确只有 active、archived；不额外引入新的生命周期�
 | progressDuration / stuckDuration / recoveryDuration | 由时间事实与 RhythmAnnotation 派生的节奏时长；恢复在当天背景中单列 | 同上 | NO；不写回 DailyReview |
 | hasApproximation | 汇总可携带的标志，表达参与计算的某些记录边界近似 | 具体切片传播细节未完整定义 | NO；不是独立事实或置信度评分 |
 
-自然日时区、今天的窗口、昨晚睡眠口径及重叠处理问题见 Q-008–Q-011。图示或示例时长不替代正式计算定义。
+自然日按当前设备时区投影；设备时区变化后历史事实按新时区重新投影，原始事实不变。今天的窗口、昨晚睡眠口径及重叠处理问题见 Q-009–Q-011。图示或示例时长不替代正式计算定义。
 
 ## UI Models（§26–29）
 

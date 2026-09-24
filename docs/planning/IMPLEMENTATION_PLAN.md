@@ -32,19 +32,13 @@
 
 | 问题 | 阻塞的交付 / 验收 | 可以先进行的工作 |
 | --- | --- | --- |
-| Q-001 | Epic 2 意向日期存储，Epic 9 历史复盘与下一步日期 | 保留 TomorrowFirstStep 概念字段 |
-| Q-002 | Epic 1 / 2 最终 categoryId 字段映射 | 普通事实的核心语义；不实现分类管理 |
 | Q-003、Q-005、Q-013 | Epic 1 转换合同，Epic 2 引用与写入动作，Epic 4 / 7 / 9 更正与移除；Epic 10 生命周期验收 | 已确定值域及独立事实建模，不默认任意转换 |
 | Q-004 | Epic 1 关联合法性、Epic 2 约束、Epic 7 实际关联输入 | 可选归属 / 解释的分离；不默认全部组合合法 |
-| Q-006、Q-019 | Epic 1 / 2 Goal 状态、名称与引用规则，Epic 7 创建及生命周期入口 | Goal 时间归属语义、已有两状态值域 |
+| Q-019 | Epic 1 / 2 Goal 名称与重复规则，Epic 7 目标入口 | Goal 时间归属语义、已有两状态值域 |
 | Q-007 | Epic 1 细节类型、Epic 2 完整 annotation schema、Epic 7 可选细节入口 | 三种节奏的语义，不把细节变成必填 |
-| Q-008、Q-017 | Epic 1 时间合同、Epic 2 编码 / 查询、Epic 3 日期窗口与端点、Epic 4–9 时间体验 | 显式窗口与事实输入下的算法分析，不固化设备时区或 1440 分钟 |
 | Q-009、Q-014 | Epic 3 / 6 当前日投影、精度传播；Epic 8 近似展示 | 原始起止精度和明确窗口下的集合运算 |
 | Q-010、Q-020、Q-021 | Epic 3 摘要输出，Epic 5 首次睡眠确认，Epic 8 目标参与集与缺失表示 | 完整睡眠事实与明确参与集求和 |
-| Q-011、Q-016 | Epic 1 睡眠校验、Epic 2 时间写入，Epic 4 / 5 / 6 冲突反馈 | 不重叠原则，不静默改写原事实 |
 | Q-012 | 若另行批准退出后恢复草稿，则阻塞该能力 | 正式记录闭环；不新增 draft 领域状态 |
-| Q-015、Q-018 | Epic 1 / 2 文本、身份与元数据合同；各写入口的相应验收 | 已确定必填 / 可选性及 known 标题存在且非空 |
-| Q-022 | Epic 0 平台验证范围、Epic 2 驱动选择、Epic 10 发布检查 | 纯领域与计算工作 |
 | Q-023 | Epic 4 非 Gap 入口的建议时间；Epic 5 若复用普通建议算法同受影响 | Gap 入口的已知区间预填，不凭算法猜测事实 |
 
 完整 schema 的具体待决边界以 DATA_ARCHITECTURE 的清单为准。可选输入暂不显示不能解决 recoveryQuality 类型、外键动作等存储问题。摘要问题也不能通过保存派生统计绕开。未决问题不要求整个项目停工，但涉及该问题的验收必须等待答案。
@@ -55,11 +49,11 @@
 
 **Why now:** 先确认现有工程状态和验证方式，后续变更才能定位影响。
 
-**Dependencies:** 无；首发平台与平台验证范围依赖 Q-022。
+**Dependencies:** 无；Q-022 已确定首发平台为 Android 和 Web。
 
-**Deliverables:** 现有 Flutter 工程基线检查、最小 app / core / features 组织约定、格式化 / 静态分析 / 测试执行方式，以及确认平台后的运行基线。目录按实际文件需要建立，不生成空层级。
+**Deliverables:** 现有 Flutter 工程基线检查、最小 app / core / features 组织约定、格式化 / 静态分析 / 测试执行方式，以及 Android、Web 的运行基线。目录按实际文件需要建立，不生成空层级。
 
-**Acceptance criteria:** 现有启动行为能够验证；明确所支持平台与验证命令；未因初始化覆盖已有文件。未经选择不安装数据库或状态管理包；平台未定时只报告已验证环境，不声称完成发布支持。
+**Acceptance criteria:** 现有启动行为能够验证；Android 与 Web 分别有验证命令和实际结果；未因初始化覆盖已有文件。未经选型任务不安装数据库或状态管理包；其他平台不纳入首发支持声明。
 
 **Explicit non-goals:** 功能页面、庞大设计系统、通用框架、网络服务、提前引入全部依赖。
 
@@ -83,7 +77,7 @@
 
 **Why now:** 记录入口必须有真实持久化和原子约束，不能以界面内存模拟完成闭环。
 
-**Dependencies:** Epic 0、1；DATA_ARCHITECTURE 的 schema 定稿问题及 Q-022 的驱动选择。
+**Dependencies:** Epic 0、1；DATA_ARCHITECTURE 的 schema 定稿问题，以及面向 Android 与 Web 的持久化驱动核验。
 
 **Deliverables:** 对应 feature 的 repository interface / 实现、首版五表 schema、显式映射、必要索引、约束和事务；一致读取与受控写入。采用本地 SQLite 属于现有工程建议，选包前核验首发平台支持。
 
@@ -111,7 +105,7 @@
 
 **Why now:** 有了存储和投影后，可验证核心输入成本及保存反馈。
 
-**Dependencies:** Epic 2、3；Q-023 时间建议、Q-011 冲突反馈及相关输入合同。保存后更正行为依 Q-003 / Q-013。
+**Dependencies:** Epic 2、3；Q-023 时间建议及相关输入合同。保存后更正行为依 Q-003 / Q-013。
 
 **Deliverables:** 普通 TimeBlock 的 known / unknown 记录入口、可改时间建议、独立精度输入、保存反馈与成功后的账本刷新；适用时提供 Should Have 的 note 入口。
 
@@ -125,7 +119,7 @@
 
 **Why now:** 睡眠直接影响一天覆盖，完整 Gap 体验需要先接入真实睡眠。
 
-**Dependencies:** Epic 2、3；Q-010 已记录判断 / 昨晚选择与 Q-016 睡眠校验，以及适用的时间、冲突合同。
+**Dependencies:** Epic 2、3；Q-010 已记录判断 / 昨晚选择，以及适用的时间、冲突合同。
 
 **Deliverables:** mainSleep / nap 记录、起止及精度输入、完整跨日保存与日切片接入；按批准合同实现首次打开时的睡眠确认。可选 note 输入入口按 MVP_SCOPE 的 Should Have 单独排期，不成为 Must Have 验收门槛。
 
@@ -139,7 +133,7 @@
 
 **Why now:** 普通记录和睡眠均已贯通，可完整验证一天的覆盖与补记。
 
-**Dependencies:** Epic 3、4、5；Q-008 / Q-009 日窗口、Q-014 精度传播及相关端点合同。
+**Dependencies:** Epic 3、4、5；Q-009 当前日窗口、Q-014 精度传播及已确认的时间合同。
 
 **Deliverables:** 日窗口查询与时间轴呈现、跨日切片、派生 Gap 入口；从 Gap 预填时间后补 known 或确认 unknown，成功后重读投影。
 
@@ -181,7 +175,7 @@
 
 **Why now:** 事实、归属和基础摘要已可用，复盘无需自行维护另一套统计。
 
-**Dependencies:** Epic 2、7、8；Q-001 intendedDate、Q-008 日期、Q-013 保存 / 更正及 Q-015 文本合同。
+**Dependencies:** Epic 2、7、8；Q-013 保存 / 更正合同；日期和文本合同已确定。
 
 **Deliverables:** 可选 summary / reflection、一个 TomorrowFirstStep、可选 Goal 关联；按日保存和读取；按批准合同处理已有日期及历史复盘。
 
@@ -195,11 +189,11 @@
 
 **Why now:** 各入口已接入，才能发现跨流程的一致性和记录成本问题。
 
-**Dependencies:** Epic 4、5、6、7、8、9；首发平台 Q-022 与 Must Have 涉及的产品合同均已明确。
+**Dependencies:** Epic 4、5、6、7、8、9；Q-022 已确定的 Android、Web 平台验证范围，以及 Must Have 涉及的其他产品合同均已明确。
 
 **Deliverables:** MVP_SCOPE 闭环场景验证、重启读回 / 失败反馈 / 冲突写入 / 跨日 / 近似 / 空数据检查，以及阻碍核心输入和理解的问题修复。
 
-**Acceptance criteria:** Must Have 均有可复现验证，相关格式化、静态分析和测试通过；首发平台的数据保存与重启读回检查通过。批准的更正操作不会留下部分写入或陈旧摘要；没有域外功能、派生数据来源或隐藏产品默认值。未交付 Should Have 如实记录，不将其包装成 Must Have 失败，也不把未决 Must Have 当完成。
+**Acceptance criteria:** Must Have 均有可复现验证，相关格式化、静态分析和测试通过；Android 与 Web 的数据保存与重启读回检查分别通过。批准的更正操作不会留下部分写入或陈旧摘要；没有域外功能、派生数据来源或隐藏产品默认值。未交付 Should Have 如实记录，不将其包装成 Must Have 失败，也不把未决 Must Have 当完成。
 
 **Explicit non-goals:** 扩张 MVP、支持未批准的平台、补齐未来功能、建立巨大测试 / 设计框架。
 

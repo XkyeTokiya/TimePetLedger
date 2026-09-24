@@ -19,28 +19,28 @@
 | goals | 时间归属目标 | GO-001、GO-002 |
 | time_blocks | 普通时间事实，含 known / unknown | TB-001–TB-009 |
 | rhythm_annotations | 附于时间块的可选节奏解释 | RH-001–RH-008 |
-| sleep_sessions | 独立睡眠事实，保留完整跨日区间 | SL-001–SL-003 |
+| sleep_sessions | 独立睡眠事实，保留完整跨日区间 | SL-001–SL-005 |
 | daily_reviews | 每日解释与 TomorrowFirstStep 的内容 | DR-001–DR-004 |
 
 不建立通用 timeline_entries 表来合并 SleepSession 和 TimeBlock；两者共同参与查询不意味着共用一个领域实体。annotation 也不另存起止或时长。
 
 ## Engineering Recommendation：持久化与通用类型
 
-建议使用一个本地 SQLite 关系库，五张表共用同一个事务边界。它适合本轮明确的关系、唯一约束和少量跨表写入协调；具体 Flutter 驱动 / 包在首发平台 Q-022 明确后选择，本轮不固定包或版本。此建议不增加账号、网络服务或同步表。
+建议使用一个本地 SQLite 关系库，五张表共用同一个事务边界。它适合本轮明确的关系、唯一约束和少量跨表写入协调；Q-022 已确定首发平台为 Android 和 Web，具体 Flutter 驱动 / 包须针对两个平台另行核验，本轮不固定包或版本。此建议不增加账号、网络服务或同步表。
 
 所有下述物理类型都是建议；领域字段的存在性与 nullable 仍按源文档。
 
 | 语义类型 | 建议的物理类型 | 合同与未决边界 |
 | --- | --- | --- |
-| 实体标识 | TEXT | 不透明标识；所有实体 id 显式 NOT NULL PRIMARY KEY，外键类型与之相同。生成方式见 Q-018，不在此指定生成包 |
-| 时间点 Instant | INTEGER | 建议统一 UTC epoch 毫秒用于比较 / 排序；这是编码建议，不把 approximate 变 exact，不限制用户输入到分钟。精度 / 舍入见 Q-017，原始时区上下文是否额外保存见 Q-008 |
-| 自然日期 CivilDate | TEXT | 建议统一 YYYY-MM-DD 日期值；不是 UTC 零点时间戳。日期合法性由领域 / 映射验证；日期所属时区仍待 Q-008 |
+| 实体标识 | TEXT | 本地生成 UUID v4 的不透明标识；所有实体 id 显式 NOT NULL PRIMARY KEY，外键类型与之相同 |
+| 时间点 Instant | INTEGER | 统一 UTC epoch 毫秒用于比较 / 排序；不把 approximate 变 exact。用户界面采用分钟级输入，内部按毫秒计算，展示时最终舍入到分钟 |
+| 自然日期 CivilDate | TEXT | 统一 YYYY-MM-DD 日期值；不是 UTC 零点时间戳。时间事实的自然日按当前设备时区投影；已保存的 CivilDate 不因设备时区变化自动改写 |
 | 已确定枚举 | TEXT | 固定、区分大小写的代码，见枚举表；不用 Dart enum 序号，也不存本地化文案 |
-| 普通文字 | TEXT | 保留文字；不擅自 trim、设长度上限或将空串改为 null（Q-015） |
+| 普通文字 | TEXT | 保存前清理首尾空白；必填文本非空，可选空文本为 null；短文本最多 200 个字符，长文本最多 2,000 个字符，由 Domain / Application 校验 |
 
 data 映射按上述合同绑定和读回整数 / 文本，不通过隐式字符串转换掩盖类型错误；类型声明不能替代领域值解析。
 
-UTC 数值只保存一个时间点，不能重建用户输入时的时区名称。若 Q-008 选择按记录时区解释日期，需明确补充的时区 / 偏移字段，不能宣称上述时间列已解决该问题。schema 定稿前也不能自动采用当前设备时区填补语义。
+UTC 数值保存事实时间点；自然日查询使用当前设备时区。设备时区变化会重新投影历史事实，但不修改 UTC 时间、精度或其他事实字段。账本时区覆盖能力属于后续开发，不要求首版为每条记录保存时区上下文。
 
 ### 枚举表示
 
@@ -73,7 +73,7 @@ Domain Decision：对象及字段见 DOMAIN_MODEL / Goal。表内物理类型属
 
 **Indexes:** 初始只需要主键；小规模目标列表不预先增加 status / name 索引。查询确有需要时再验证。
 
-**Pending:** 不添加 `archived ⇒ archived_at IS NOT NULL` 或 `active ⇒ archived_at IS NULL` 的 CHECK，不用数据库触发器自行定义归档 / 恢复语义（Q-006）。
+**Constraint:** 应用层按 Q-006 维护 `archivedAt` 联动；数据库可镜像 `archived ⇒ archived_at IS NOT NULL` 与 `active ⇒ archived_at IS NULL`，但不依赖触发器定义归档 / 恢复操作。
 
 ## time_blocks
 
@@ -89,7 +89,7 @@ Domain Decision：所有普通时间事实使用此表，unknown 也正常保存
 | knowledge_state | TEXT | NO | known / unknown |
 | title | TEXT | YES，条件必需 | known 时必须存在且非空；unknown 可为空，不强制清空 |
 | goal_id | TEXT | YES | 引用 goals.id；是否受状态组合限制见 Q-004 |
-| category_id | 首版存在性待定；若保留建议 TEXT | 若保留则 YES | 条件列，Q-002；不能默认新建 categories 表或空悬外键 |
+| category_id | TEXT | YES | 首版保留可空扩展字段；不建立 Category 表、分类入口或外键 |
 | note | TEXT | YES | 补充说明 |
 | created_at | INTEGER（Instant） | NO | 创建时间 |
 | updated_at | INTEGER（Instant） | NO | 更新时间 |
@@ -113,7 +113,7 @@ CHECK (
 )
 ```
 
-上述是文档中的约束片段，不是独立可执行 DDL。必须与表中的 NOT NULL 配合：SQLite 的 CHECK 表达式结果为 NULL 时不会失败，因此不能仅写 `CHECK (knowledge_state <> 'known' OR length(title) > 0)` 来确保 known 的 title 存在。此处未用 trim，不替 Q-015 决定空白政策。[SQLite CHECK 语义](https://www.sqlite.org/lang_createtable.html#check_constraints)
+上述是文档中的约束片段，不是独立可执行 DDL。必须与表中的 NOT NULL 配合：SQLite 的 CHECK 表达式结果为 NULL 时不会失败，因此不能仅写 `CHECK (knowledge_state <> 'known' OR length(title) > 0)` 来确保 known 的 title 存在。文本先由 Domain / Application 清理首尾空白并执行长度校验，数据库保持 TEXT；[SQLite CHECK 语义](https://www.sqlite.org/lang_createtable.html#check_constraints)
 
 ## rhythm_annotations
 
@@ -162,7 +162,7 @@ Domain Decision：独立保存完整睡眠事实；跨日不拆行，不与普�
 
 **Indexes:** 建议 started_at 非唯一索引用于窗口查询及重叠候选检索。
 
-**Pending:** Q-016 尚未明确 SleepSession 正区间及其他范围校验。**Engineering Recommendation：** 建议确认后同样采用 `started_at < ended_at` 并在 domain / database 双层落实；本条不把建议写成已批准规则，也不表示零 / 负时长已获允许。实际建表与保存实现必须先确定该合同。睡眠摘要日期归属 Q-010 不应被提前固化成 sleep_date 列。
+**Constraint:** SleepSession 必须满足 `started_at < ended_at`；不设置固定最短 / 最长时长，允许未来正区间，不设置历史补录上限。该约束在 domain / database 双层落实。睡眠摘要日期归属 Q-010 不应提前固化成 sleep_date 列。
 
 ## daily_reviews
 
@@ -175,7 +175,6 @@ Domain Decision：按日期唯一保存复盘解释，TomorrowFirstStep 作为�
 | summary | TEXT | YES | 可选概述 |
 | reflection | TEXT | YES | 可选反思 |
 | tomorrow_first_step_text | TEXT | NO | 对应 TomorrowFirstStep.text；进一步文本校验见 Q-015 |
-| tomorrow_first_step_intended_date | 条件列；若保存建议 TEXT（CivilDate） | 若保存则 NO | 领域 intendedDate 必需，但物理保存 / 派生方式待 Q-001 |
 | tomorrow_first_step_goal_id | TEXT | YES | 引用 goals.id；不要求所有 Goal 各有第一步 |
 | created_at | INTEGER（Instant） | NO | 创建时间 |
 | updated_at | INTEGER（Instant） | NO | 更新时间 |
@@ -186,12 +185,7 @@ Domain Decision：按日期唯一保存复盘解释，TomorrowFirstStep 作为�
 
 **Indexes:** review_date 的唯一索引支撑按日读取，不重复创建日期索引；建议 tomorrow_first_step_goal_id 非唯一索引用于引用查找。
 
-**intendedDate 的两个待决分支（Q-001）：**
-
-- 若产品确认显式保存意向日期，保留上述非空日期列；其与 review_date 的关系仍须确定。
-- 若产品确认完全由复盘日期和明确规则派生，不保存该列，由领域构造时按确定规则提供 intendedDate。
-
-不能因为源文档存储示例漏列就删除领域字段，不能擅自默认 `review_date + 1`，也不能用 nullable 日期列表示未决定。这里未选择任一分支。
+`TomorrowFirstStep.intendedDate` 固定为 `review_date` 的下一自然日，由领域构造时派生，不建立单独数据库列。
 
 **明确不存：** progress_minutes、stuck_minutes、recovery_minutes、睡眠总量、Gap 总量、目标汇总或整份 DayLedgerView JSON。
 
@@ -199,11 +193,11 @@ Domain Decision：按日期唯一保存复盘解释，TomorrowFirstStep 作为�
 
 | 子列 | 父键 | 可空性 | 关系依据 / 工程落实 | 删除 / 更新动作 |
 | --- | --- | --- | --- | --- |
-| time_blocks.goal_id | goals.id | 可空 | 目标归属已确定；用数据库 FK 兜底是工程建议 | Q-006、Q-018 待决 |
-| rhythm_annotations.time_block_id | time_blocks.id | 非空 | RH-001 / 源文档 §33 明确 UNIQUE FK | Q-013、Q-018 待决 |
-| daily_reviews.tomorrow_first_step_goal_id | goals.id | 可空 | 可选目标关联已确定；数据库 FK 为工程建议 | Q-006、Q-018 待决 |
+| time_blocks.goal_id | goals.id | 可空 | 目标归属已确定；用数据库 FK 兜底是工程建议 | 物理删除使用 RESTRICT；已有引用的界面删除转为归档，archived Goal 不得新增关联 |
+| rhythm_annotations.time_block_id | time_blocks.id | 非空 | RH-001 / 源文档 §33 明确 UNIQUE FK | Q-013 待决 |
+| daily_reviews.tomorrow_first_step_goal_id | goals.id | 可空 | 可选目标关联已确定；数据库 FK 为工程建议 | 物理删除使用 RESTRICT；已有引用的界面删除转为归档 |
 
-不在文档中默认选 CASCADE、SET NULL 或 RESTRICT 来代表删除产品行为，也不借 ORM 默认动作绕过 Q-006 / Q-013。执行完整 DDL 前应显式选择和验证对应动作；当前表结构说明不授权任何删除操作。Q-002 未解决前，category_id 不生成指向虚构表的 FK。
+Goal 引用使用 RESTRICT 保护已有事实和复盘；应用层在有引用时将界面删除解释为归档并隐藏，在无引用时才执行物理删除。TimeBlock、RhythmAnnotation、DailyReview 的其他删除 / 更正动作仍按 Q-013 确定，不能借 ORM 默认动作绕过产品合同。`category_id` 不生成指向虚构表的 FK。
 
 **Engineering Recommendation：** 若采用 SQLite，每个连接在事务开始前显式开启并核验外键约束；父 id 使用声明的主键，子列类型保持一致。仅在文本中写出 FK 不等于运行时已执行外键校验。[SQLite 外键启用与索引要求](https://www.sqlite.org/foreignkeys.html)
 
@@ -229,16 +223,16 @@ Domain Decision：按日期唯一保存复盘解释，TomorrowFirstStep 作为�
 
 **Domain Decision：** 五类实体都有 createdAt / updatedAt；Goal 另有可空 archivedAt；TimeBlock 与 SleepSession 的事实边界和这类元数据是两种不同时间。补记昨天的记录，不意味着 created_at 必须等于 started_at。
 
-**Engineering Recommendation：** 由一个操作获取可注入的当前时间并交给 data 写入；创建时可采用同一次取时填 created_at / updated_at。UTC 数值编码采用前述通用表示建议。具体“哪些编辑更新 updated_at”、同状态重复请求是否更新、时钟回拨如何处理仍属 Q-018；不自动添加 `created_at <= updated_at` CHECK 或自动更新时间触发器。archived_at 按 Q-006 的生命周期决定。
+**Engineering Recommendation：** 由一个操作获取可注入的当前时间并交给 data 写入；创建时可采用同一次取时填 created_at / updated_at。UUID v4 和 UTC epoch milliseconds 采用前述合同。`created_at` 创建后不变；`updated_at` 仅在实体内容实际发生变化并成功保存后更新，查询、失败写入和无变化重复请求不更新。`archived_at` 按 Q-006 的生命周期决定。
 
-自然日期字符串在 domain / 映射边界检查实际日历合法性，不能只靠长度十位。数据库的日期唯一约束不负责决定用户时区；Q-008 未确定前，不添加按数据库本地时区生成 review_date 的默认表达式。
+自然日期字符串在 domain / 映射边界检查实际日历合法性，不能只靠长度十位。数据库的日期唯一约束不负责决定用户时区；review_date 在当前设备时区下选择并作为已保存 CivilDate 保持稳定。
 
 ## 三类约束的职责
 
 | 类别 | 负责的约束 | 边界 |
 | --- | --- | --- |
 | **Database-enforced constraint** | 各列 NOT NULL、PK、已确定枚举 CHECK、TimeBlock 正区间及条件标题 CHECK、annotation 的 UNIQUE FK、review_date UNIQUE；建议增加两个 Goal FK | 防止违反已确定结构；不能判断用户是否真的推进，不能以简单行 CHECK 处理跨表重叠 |
-| **Domain-enforced constraint** | TB / RH / SL / GO / DR 的已确定单对象语义；纯时间冲突判定、日期值解析、派生计算及精度传播 | 不执行 I/O；未决组合、转换、睡眠校验和传播政策须先明确；不能通过标题自动评判节奏 |
+| **Domain-enforced constraint** | TB / RH / SL / GO / DR 的已确定单对象语义；纯时间冲突判定、日期值解析、派生计算及精度传播 | 不执行 I/O；未决组合、转换和传播政策须先明确；不能通过标题自动评判节奏 |
 | **Application-enforced constraint** | 协调关联查找、跨表重叠检查与原子写入；按批准合同处理转换 / 删除；保存失败不报告成功 | 在 application 发起，在 data 的同一事务内完成读取 / 复核 / 写入；不靠 UI 预检单独保证一致性 |
 
 一个规则可有领域校验与数据库兜底，并不意味着复制两套互相冲突的产品定义。完整规则仍以 DOMAIN_RULES 为准；架构新增的是执行位置。
@@ -252,14 +246,14 @@ SQLite 的普通 CHECK 不能包含子查询，无法直接检查另一行或另
 1. 在读取冲突候选前取得写事务；选定驱动后使用等效于 `BEGIN IMMEDIATE` 的事务能力，不能先在事务外查一次再插入。
 2. 查两张事实表中与候选区间相交的完整记录；若是已经批准的原地更正，只排除正在修改的同表同 id 记录，不能误排除另一表碰巧相同 id 的对象。
 3. 调用领域重叠判定并核验必要引用。按已确定的 Q-017 端点约定处理相接；不能因 approximate 而忽略冲突。
-4. 无冲突才写入该操作全部事实 / 解释；失败整体回滚。冲突结果交回应用处理，用户是否调整、拆分等仍见 Q-011，不自动改其他事实。
+4. 无冲突才写入该操作全部事实 / 解释；失败整体回滚。冲突结果原子拒绝并交回应用提示，用户手动调整；不自动截断、拆分、覆盖或移动其他事实。
 5. 成功提交后通知上层重读投影。读取一份日账本所需的多表数据时，使用同一读取事务取得一致视图，避免把不同提交时刻的事实与解释拼在一起。
 
-例如，若最终采用半开区间的工程建议，正时长重叠候选条件可为 `existing.started_at < new.ended_at AND existing.ended_at > new.started_at`；这里不替 Q-017 定案。切片和重叠判断应复用同一约定。
+采用半开区间时，正时长重叠候选条件为 `existing.started_at < new.ended_at AND existing.ended_at > new.started_at`。切片和重叠判断复用同一约定。
 
 SQLite 允许同时存在多个读事务，但只有一个写事务；立即写事务仍可能遇到忙错误，data 层必须暴露失败或在确认回滚后重试整个操作，不能静默忽略失败或只重试最后一条写语句。[SQLite 事务语义](https://www.sqlite.org/lang_transaction.html)
 
-所有应用内主要事实写入应经过上述路径。直接绕开 repository 的任意 SQL 写入不受此跨表保护，因此不向 feature/presentation 暴露原始连接。第一版不增加触发器体系或通用事务框架；目标删除等跨 feature 操作待 Q-006 / Q-013 确定后再给出具体事务合同。
+所有应用内主要事实写入应经过上述路径。直接绕开 repository 的任意 SQL 写入不受此跨表保护，因此不向 feature/presentation 暴露原始连接。第一版不增加触发器体系或通用事务框架；TimeBlock、RhythmAnnotation 与 DailyReview 的删除 / 更正仍待 Q-013 确定具体事务合同。
 
 ## 明确不持久化
 
@@ -276,19 +270,15 @@ Unknown TimeBlock 不在此列表中，它是正式事实。UI 草稿不是已�
 
 | 问题 | 对物理设计 / 实施的影响 |
 | --- | --- |
-| Q-001 | intendedDate 保存列还是确定规则派生；不能丢失领域语义 |
-| Q-002 | category_id 是否进入首版；不创建分类系统 |
 | Q-004、Q-005 | 跨字段 / 跨表组合和转换；不提前添加清理触发器或条件 CHECK |
-| Q-006、Q-013 | 删除 / 更正合同、外键动作；不预先级联或解除引用 |
+| Q-013 | 删除 / 更正合同中仍未确定的非 Goal 动作；不预先级联或解除引用 |
 | Q-007 | 原因与恢复方式值域、recovery_quality 物理类型 |
-| Q-008 | 时间点编码之外是否需保存记录时区 / 偏移上下文 |
-| Q-015、Q-016 | 文本额外校验、SleepSession 区间校验 |
-| Q-017、Q-018 | 时间分辨率、端点、标识生成及元数据写入合同 |
 | Q-019 | 是否增加 Goal 名称唯一约束与比较规则 |
-| Q-022 | 首发平台、驱动及本地存储运行支持 |
 
 Q-009、Q-010、Q-014、Q-020、Q-021 影响派生与展示，不通过新增持久化汇总字段绕开。Q-003 的转换字段处理与 Q-012 草稿行为也不能被建表默认值替代。以上问题保持 UNDECIDED；本文的技术建议不把它们标成已解决。
 
+Q-022 已确定首发平台为 Android 和 Web，因此不再属于 schema 的产品待决项。驱动、包及 Web 本地存储实现仍须在 E2-T01 中核验，并在两个首发平台取得对应运行证据；平台决定本身不等于技术选型完成。
+
 ## 本阶段自检基准
 
-五个对象均有逐列映射，optional 字段没有升级成记录门槛。没有强制 unknown.title 为空，没有把 SleepSession 塞入 recovery，没有持久化 Gap / Day / 统计，也没有把 intendedDate 的源文档缺口悄悄定案。检查式明确处理 known.title 的 NULL 情况；不重叠通过单一事务写入边界协调而非仅靠逐表校验。
+五个对象均有逐列映射，optional 字段没有升级成记录门槛。没有强制 unknown.title 为空，没有把 SleepSession 塞入 recovery，没有持久化 Gap / Day / 统计，也没有把 intendedDate 重复存储。检查式明确处理 known.title 的 NULL 情况；不重叠通过单一事务写入边界协调而非仅靠逐表校验。

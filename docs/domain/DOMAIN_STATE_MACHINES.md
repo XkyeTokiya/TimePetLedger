@@ -16,7 +16,7 @@
 
 | 对象 | 是否需要生命周期状态机 | 本轮结论 |
 | --- | --- | --- |
-| Goal | 存在 active / archived 生命周期维度 | 记录两个状态及待定转换；不能画成已批准的双向闭环 |
+| Goal | 存在 active / archived 生命周期维度 | 创建、归档、恢复、引用、删除、改名和重复请求合同已按 Q-006 确定 |
 | TimeBlock | 存在 known / unknown 认知状态维度，不是工作生命周期 | 分析认知更正及目标状态约束；完整转换合同仍待定 |
 | RhythmAnnotation | 没有阶段式生命周期 | 分析 add / edit / remove 与 0..1 关系；三个节奏值不构成阶段顺序 |
 | SleepSession | 没有已定义生命周期状态 | 记录、更正与删除不是入睡 / 醒来的实时状态机 |
@@ -24,34 +24,34 @@
 
 ## Goal
 
-来源：§11；规则 GO-001、GO-002；未决 Q-006、Q-018、Q-019。
+来源：§11；规则 GO-001、GO-002；Q-006、Q-018；名称唯一性仍见 Q-019。
 
 ### States
 
-`active`、`archived`。这是生命周期维度，不是目标完成度。`archivedAt` 是可选字段，不是第三个状态。源文档未确定新建 Goal 的默认状态。
+`active`、`archived`。这是生命周期维度，不是目标完成度。`archivedAt` 是可选字段，不是第三个状态。Goal 只能以 active 创建。
 
 ### Events
 
-“归档”“恢复为 active”是分析两个状态之间变化所用的事件名称，不是已获批准的完整操作合同。创建、重命名、删除也不能仅凭字段清单推导全部行为。
+“归档”“恢复为 active”“重命名”“删除”是已批准的 Goal 操作。删除是否物理执行取决于是否存在引用；不引入 deleted 状态。
 
 ### Allowed transitions
 
 | 起点 | 事件 / 终点 | 已确定的含义 | 许可与前置条件 |
 | --- | --- | --- | --- |
-| 尚无对象 | 创建为 active 或 archived | 对象只能使用这两个状态值 | 初始默认值、能否直接创建 archived 未定（Q-006） |
-| active | 归档 → archived | 若执行，结果属于 archived 状态 | 开放条件、archivedAt 写入及引用影响未定（Q-006） |
-| archived | 恢复 → active | 若执行，结果属于 active 状态 | 是否支持恢复、archivedAt 清理或保留未定（Q-006） |
-| active / archived | 重复请求相同状态 | 不是新增状态 | 无操作成功、提示或其他重复请求行为未定（Q-006） |
+| 尚无对象 | 创建为 active | 对象只能使用这两个状态值 | 不支持直接创建 archived |
+| active | 归档 → archived | 结果属于 archived 状态 | 写入当前 UTC archivedAt；保留既有引用，禁止新增关联 |
+| archived | 恢复 → active | 结果属于 active 状态 | 清除 archivedAt；恢复新增关联资格 |
+| active / archived | 重复请求相同状态 | 不是新增状态 | 幂等成功，不更新 updatedAt |
 
-此表分析 `active ↔ archived`，不声明两条边均已允许；当前没有来源充分的完整转换矩阵。
+此表定义 `active ↔ archived` 双向转换及重复请求结果。
 
 ### Invalid transitions
 
-不得转换到 completed、paused 等未定义状态；不得以“归档”为名引入百分比、里程碑或任务树。归档是否阻止新关联、是否允许既有记录继续引用等，属于待定事项，不列为已知无效转换。
+不得转换到 completed、paused、deleted 等未定义状态；不得以“归档”为名引入百分比、里程碑或任务树。archived Goal 不得用于新增关联，但既有引用继续有效。
 
 ### Deletion / correction semantics
 
-删除不是第三个 status。删除 Goal、解除或保留 TimeBlock / TomorrowFirstStep 引用，以及归档时是否影响这些引用，均见 Q-006。不能自行选择级联删除时间事实。重命名的文本与重名校验见 Q-015、Q-019；id 与更新时间合同见 Q-018。
+删除不是第三个 status。未被 TimeBlock 或 TomorrowFirstStep 引用的 Goal 可以物理删除；有引用的 Goal 的界面删除操作执行归档并隐藏，保留引用且支持恢复和改名。archived Goal 可仅在已有时间记录中显示，不能进入新的归属选择。改名实时作用于历史记录，不保存名称快照。重名校验见 Q-019；文本、id 与更新时间合同见 Q-015、Q-018。
 
 ## TimeBlock
 
@@ -91,10 +91,10 @@ Gap 是派生的未处理区间，不是 TimeBlock 的起始状态或第三个�
 | goalId | 是否保留、解除及允许的组合未定（Q-003、Q-004） | 是否沿用或要求重选未定；不能新增“一定关联 Goal”的要求（Q-003、Q-004） |
 | RhythmAnnotation | 是否保留、移除、要求用户确认未定；不能自动改为 recovery（Q-003、Q-004） | 不能因恢复记忆自动添加 progress；原关联如何处理未定（Q-003、Q-004） |
 | note | 不因状态名推导清空或保留政策（Q-003） | 同左（Q-003） |
-| categoryId | 首版字段本身未定；若保留，转换处理也未定（Q-002、Q-003） | 同左 |
+| categoryId | 首版保留可空扩展字段；转换时不因 knowledgeState 自动清理，具体更正操作仍见 Q-003 | 同左 |
 | startedAt / endedAt | 状态名不授权改变区间；结果仍满足 TB-001。是否同次编辑区间见 Q-003、Q-013 | 同左 |
 | startPrecision / endPrecision | unknown 不意味着 approximate；更正精度须独立表达，不能从已知性推断 | known 不意味着 exact；两个边界仍独立 |
-| id / createdAt / updatedAt | 原地更正或其他操作合同、时间戳触发规则未定（Q-013、Q-018） | 同左 |
+| id / createdAt / updatedAt | id 和时间戳合同已由 Q-018 确定；原地更正或其他操作合同仍见 Q-013 | 同左 |
 
 若在同一个窗口中仅改变 knowledgeState、区间不变，则 accountedDuration 不变；unknownDuration 按该区间是否被标为 unknown 改变。这是投影上的条件性结果，不代表源文档已经选定字段保留策略。
 
@@ -147,7 +147,7 @@ add 后同一 TimeBlock 存在两份有效解释；用 neutral 表示 remove 的
 
 **No meaningful state machine required.**
 
-来源：§4、§17；规则 SL-001–SL-003、LEDGER-003–LEDGER-004。
+来源：§4、§17；规则 SL-001–SL-005、LEDGER-003–LEDGER-004。
 
 - **States:** 没有生命周期 status；mainSleep / nap 是类型，exact / approximate 是边界精度，均不组成睡眠过程状态机。
 - **Events:** 记录睡眠、更正输入、删除是事实操作，不是“开始睡眠 / 正在睡眠 / 已醒”的实时追踪。
@@ -165,8 +165,8 @@ add 后同一 TimeBlock 存在两份有效解释；用 neutral 表示 remove 的
 - **Events:** 保存解释与明天第一步；更正或删除的具体支持方式见 Q-013。
 - **Allowed transitions:** 无阶段式生命周期可定义。正式保存结果遵循一天最多一条及字段存在性规则；不推导每天必须提交、过日自动锁定或只能当天填写。
 - **Invalid transitions:** 以统计值达到阈值自动“完成复盘”；为明天第一步新增任务完成状态；把派生分钟数保存为复盘事实源。
-- **Deletion / correction semantics:** 复盘内容与时间事实分层。修正时间事实会改变派生统计，不自动授权重写用户反思；删除复盘不等于删除当天事实。实际删除 / 更正合同见 Q-013，intendedDate 处理见 Q-001。不存在可随之级联删除的数据库 Day 实体。
+  - **Deletion / correction semantics:** 复盘内容与时间事实分层。修正时间事实会改变派生统计，不自动授权重写用户反思；删除复盘不等于删除当天事实。`intendedDate` 固定为 review.date 的下一自然日并由其派生，不单独持久化。复盘删除 / 更正合同仍见 Q-013；不存在可随之级联删除的数据库 Day 实体。
 
 ## Engineering Recommendation（不是产品要求）
 
-当前只有局部状态维度与普通事实操作，不需要通用状态机框架。后续开发可用明确的操作及前后置校验表达已确定行为，待 Q-003、Q-005、Q-006、Q-013 等获得答案后再补全转换合同。本建议不授权越过未决产品行为实现任意转换。
+当前只有局部状态维度与普通事实操作，不需要通用状态机框架。后续开发可用明确的操作及前后置校验表达已确定行为，待 Q-003、Q-005、Q-013 等获得答案后再补全转换合同。本建议不授权越过未决产品行为实现任意转换。

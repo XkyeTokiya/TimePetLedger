@@ -14,9 +14,13 @@
 
 **Possible options:** 显式保存且限定为 review.date 的次日；按 review.date 派生；允许用户明确选择意向日期。源文档没有唯一选择。
 
-**Current status:** UNDECIDED
+**Decision:** `intendedDate` 固定为 `DailyReview.date` 的下一自然日；领域对象提供该值，但数据库不单独保存 `intendedDate` 列，由 `review.date + 1` 派生。
 
-**Blocks implementation:** 是：日期校验、存储设计及历史复盘行为；不阻塞保留概念字段。
+**Decision source:** 产品负责人于 2026-09-25 确认。
+
+**Current status:** DECIDED
+
+**Blocks implementation:** 否：日期关系和存储方式已确定。
 
 ## Q-002
 
@@ -28,9 +32,13 @@
 
 **Possible options:** 首版省略该字段；保留可空扩展字段但不实现分类能力。任何选项都不引入复杂分类系统。
 
-**Current status:** UNDECIDED
+**Decision:** 首版保留可空 `categoryId`；不建立 Category 实体、分类管理或分类入口，暂不为该字段建立外键约束。
 
-**Blocks implementation:** 是：TimeBlock 首版最终字段与 schema；不阻塞核心活动记录语义。
+**Decision source:** 产品负责人于 2026-09-25 确认。
+
+**Current status:** DECIDED
+
+**Blocks implementation:** 否：首版字段存在性和不提供分类能力已确定。
 
 ## Q-003
 
@@ -84,9 +92,13 @@
 
 **Possible options:** 归档后允许或禁止新增关联；支持或不支持恢复；删除可禁止、限制为未引用目标或解除引用保留事实。每个维度需分别决定。
 
-**Current status:** UNDECIDED
+**Decision:** Goal 只能以 `active` 创建；支持 `active ↔ archived` 双向切换。归档写入当前 UTC `archivedAt`，恢复时清除；相同状态的重复请求幂等且不更新 `updatedAt`。已有 TimeBlock / DailyReview 引用保留，archived Goal 不可用于新增关联，并可仅在已有时间记录中显示。未被引用的 Goal 可物理删除；有引用的 Goal 的界面删除操作执行归档并隐藏，保留引用且支持恢复和改名。改名实时作用于历史记录，不保存名称快照；不新增 `deleted` 状态。
 
-**Blocks implementation:** 是：Goal 生命周期与引用处理；不阻塞定义两个已有状态。
+**Decision source:** 产品负责人于 2026-09-25 逐项确认。
+
+**Current status:** DECIDED
+
+**Blocks implementation:** 否：Goal 生命周期、引用、删除和改名语义已确定。
 
 ## Q-007
 
@@ -112,9 +124,13 @@
 
 **Possible options:** 按当前设备时区投影；按固定用户时区；按记录时的日期上下文。
 
-**Current status:** UNDECIDED
+**Decision:** 自然日按当前设备时区确定。TimeBlock 和 SleepSession 的起止时间保存为绝对时间；设备时区变化后，历史事实按新时区重新投影，原始时间事实不变。账本时区覆盖能力列入后续开发；未设置覆盖时使用设备时区。
 
-**Blocks implementation:** 是：自然日查询、跨日统计与日期一致性。
+**Decision source:** 产品负责人于 2026-09-25 确认。
+
+**Current status:** DECIDED
+
+**Blocks implementation:** 否：自然日投影和跨设备行为已确定；时区覆盖属于后续能力。
 
 ## Q-009
 
@@ -154,9 +170,13 @@
 
 **Possible options:** 阻止保存并提示冲突；引导用户手动调整；提供可确认的区间修正方案。无选项允许并行主时间轴。
 
-**Current status:** UNDECIDED
+**Decision:** 发生 TimeBlock / SleepSession 重叠时原子拒绝保存并提示冲突记录，由用户手动调整；不自动截断、拆分、覆盖或移动已有事实。
 
-**Blocks implementation:** 是：冲突处理交互与保存流程；不阻塞继承不重叠原则。
+**Decision source:** 产品负责人于 2026-09-25 确认。
+
+**Current status:** DECIDED
+
+**Blocks implementation:** 否：冲突保存结果和用户修正边界已确定。
 
 ## Q-012
 
@@ -212,9 +232,13 @@
 
 **Possible options:** 分别确定必需文字的非空白语义；保留原文或规范化空白；为空的可选文字保留空串或统一 null；按字段决定是否设置长度限制。
 
-**Current status:** UNDECIDED
+**Decision:** 保存前清理首尾空白；必填文本清理后不得为空；可选空文本保存为 `null`；内部空格、换行和段落格式保留。短文本最多 200 个字符，长文本最多 2,000 个字符；长度由领域 / 应用校验，数据库使用普通 `TEXT`。Q-007 尚未确定的代码和值域字段不由本决定定型。
 
-**Blocks implementation:** 是：超出 known.title 明确非空要求的文本校验、表单反馈与存储限制。
+**Decision source:** 产品负责人于 2026-09-25 确认。
+
+**Current status:** DECIDED
+
+**Blocks implementation:** 否：已确认文本规范化、必填语义和长度策略。
 
 ## Q-016
 
@@ -226,9 +250,13 @@
 
 **Possible options:** 为 SleepSession 明确采用严格正区间；分别确定是否需要持续时长上下限，以及未来 / 历史时间的拒绝或提示政策。未决定前不把候选边界写成既定要求。
 
-**Current status:** UNDECIDED
+**Decision:** TimeBlock 和 SleepSession 均采用严格正区间；不设置固定最短或最长持续时长；允许未来正区间；不设置历史补录上限。
 
-**Blocks implementation:** 是：SleepSession 区间校验及两类事实的额外时间范围校验；TimeBlock 的严格正区间已确定，不重新开放。
+**Decision source:** 产品负责人于 2026-09-25 确认。
+
+**Current status:** DECIDED
+
+**Blocks implementation:** 否：睡眠区间及两类时间事实的取值范围已确定。
 
 ## Q-017
 
@@ -240,9 +268,13 @@
 
 **Possible options:** 明确使用半开区间或其他能正确处理相邻端点的约定；保留较细时间值仅显示时舍入，或明确输入量化方式；选择并说明汇总舍入规则。精度表示不等于要求用户按分钟精确追踪。
 
-**Current status:** UNDECIDED
+**Decision:** 时间区间采用半开区间 `[startedAt, endedAt)`；时间点以 UTC epoch milliseconds 存储；用户界面采用分钟级输入；内部按毫秒计算和汇总，最终展示时统一四舍五入到分钟，不对单条记录先行舍入。
 
-**Blocks implementation:** 是：重叠、切片、边界 Gap 与时长展示的最终计算合同；禁止并行主要事实的原则已确定。
+**Decision source:** 产品负责人于 2026-09-25 逐项确认。
+
+**Current status:** DECIDED
+
+**Blocks implementation:** 否：重叠、切片、边界 Gap 和时长展示的时间合同已确定。
 
 ## Q-018
 
@@ -254,9 +286,13 @@
 
 **Possible options:** 标识生成与时间戳表示可在架构阶段提出明确标注的 Engineering Recommendation；更新时间触发条件和顺序约束需单独确认。Goal.archivedAt 的状态联动继续见 Q-006。
 
-**Current status:** UNDECIDED
+**Decision:** 实体标识采用本地生成的 UUID v4，并以不透明字符串保存。`createdAt`、`updatedAt` 和 `archivedAt` 使用 UTC epoch milliseconds；`createdAt` 创建后不变，`updatedAt` 仅在实体内容实际发生变化并成功保存后更新。查询、失败写入和无变化的重复请求不更新 `updatedAt`；当前时间由调用方注入。
 
-**Blocks implementation:** 是：标识与时间戳的具体实现及额外校验；不阻塞既定字段存在性。
+**Decision source:** 产品负责人于 2026-09-25 逐项确认。
+
+**Current status:** DECIDED
+
+**Blocks implementation:** 否：标识、时间戳表示和更新时间触发条件已确定。
 
 ## Q-019
 
@@ -314,9 +350,13 @@
 
 **Possible options:** 首版聚焦明确列出的移动平台；移动加指定桌面平台；包含 Web 并明确其本地数据保存要求。需由产品确认具体平台清单，再做驱动选择。
 
-**Current status:** UNDECIDED
+**Decision:** 第一版正式支持 Android 和 Web。iOS、Linux、macOS、Windows 不纳入首发支持与验收范围。此决定只确定平台范围，不直接选择持久化驱动、具体包、浏览器兼容矩阵或部署方案。
 
-**Blocks implementation:** 是：持久化驱动最终选择、平台接入及发布验证；不阻塞纯领域模型、规则和已明确窗口下的派生逻辑。
+**Decision source:** 产品负责人于 2026-09-25 明确确认。
+
+**Current status:** DECIDED
+
+**Blocks implementation:** 否。平台范围已确定；持久化驱动仍须针对 Android 与 Web 完成技术核验，两个平台的接入及发布验证仍须在对应 Task 中取得实际证据。
 
 <!-- Phase 5：核心记录入口的验收依赖明确的时间建议合同。 -->
 
