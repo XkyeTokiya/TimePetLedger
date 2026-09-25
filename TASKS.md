@@ -145,7 +145,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 表达普通时间事实及其已确定合法性。
 
-**Depends on:** E1-T01、E1-T02；Q-002、Q-015、Q-016 的字段及校验合同已确定，Q-004 的关联组合仍须明确。
+**Depends on:** E1-T01、E1-T02；Q-002、Q-004、Q-015、Q-016 的字段及校验合同已确定。
 
 **Source documents:** MODEL / TimeBlock；RULES / MODEL-001、TB-001–TB-009；STATES / TimeBlock。
 
@@ -185,7 +185,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 提供简单时间归属对象，不把目标扩展为项目。
 
-**Depends on:** E1-T02；Q-006、Q-015、Q-018 已确定，Q-019 的名称规则仍须明确。
+**Depends on:** E1-T02；Q-006、Q-015、Q-018、Q-019 已确定。
 
 **Source documents:** MODEL / Goal；RULES / GO-001、GO-002；STATES / Goal。
 
@@ -193,7 +193,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Out of scope:** 归档 / 恢复执行、跨记录名称查询、关联记录删除、任务树和进度字段。
 
-**Acceptance criteria:** 字段与可空性一致，状态仅 active / archived；初始状态和 archivedAt 条件有确定依据。名称唯一性若需集合查询，保留至存储操作，不伪装为单对象校验。
+**Acceptance criteria:** 字段与可空性一致，状态仅 active / archived；初始状态和 archivedAt 条件有确定依据。按 Q-019 允许同名，创建和改名不拒绝重名，不增加名称唯一约束。
 
 **Validation:** 共用代码验证；字段及确定的状态 / 文本边界测试，确认无数据库或 UI 依赖。
 
@@ -285,7 +285,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 明确认知更正与字段处理，保持事实合法。
 
-**Depends on:** E1-T03、E1-T06、E1-T08；Q-003、Q-004、Q-013 已明确后执行。
+**Depends on:** E1-T03、E1-T06、E1-T08；Q-003、Q-013 已明确后执行。
 
 **Source documents:** STATES / TimeBlock 字段矩阵；RULES / TB；OQ 对应条目。
 
@@ -387,7 +387,7 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **Goal:** 将已定稿的数据规范转为正式首版建表定义。
 
-**Depends on:** E2-T02；DATA / Schema 定稿清单全部相关问题已有答案并更新规范，含仍影响 schema 的 Q-004、Q-005、Q-007、Q-013、Q-019；Q-022 的平台核验另按 E2-T01 执行。
+**Depends on:** E2-T02；DATA / Schema 定稿清单全部相关问题已有答案并更新规范，遵循已确定的 Q-005、Q-007、Q-013、Q-019；Q-022 的平台核验另按 E2-T01 执行。
 
 **Source documents:** DATA / 五表、Foreign keys、Indexes、三类约束；RULES 对应约束。
 
@@ -509,12 +509,12 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 | 4 Basic Recording | 2、3 | 活动优先输入、可改建议时间、known / unknown 保存与失败反馈 | Q-023、Q-003、Q-013 及输入合同 |
 | 5 Sleep Recording | 2、3 | 完整睡眠记录、跨日接入、首次确认与已记录识别 | Q-010；不依赖 Epic 4 普通活动编辑器 |
 | 6 Daily Timeline / Gap Resolution | 3、4、5 | 时间轴、Gap 预填、用户确认 Unknown、成功后重算 | Q-009、Q-014 |
-| 7 Goal + Rhythm Annotation | 2、4、6 | 归属选择、用户解释、获准更正与接续点；可选细节入口另列 Should Have | Q-004、Q-005、Q-007、Q-013、Q-019 |
+| 7 Goal + Rhythm Annotation | 2、4、6 | 归属选择、用户解释、获准更正与接续点；可选细节入口另列 Should Have | Q-005、Q-007、Q-013、Q-019 |
 | 8 Statistics / Summaries | 3、5、6、7 | 描述性基础摘要与近似 / 缺失数据展示，不重复计算或存储统计 | Q-010、Q-014、Q-020、Q-021 |
 | 9 Daily Review | 2、7、8 | 单份复盘、一个下一步、可选 Goal、历史日期与失败处理 | Q-013 |
 | 10 Polish / Reliability | 4、5、6、7、8、9 | 完整 MVP 场景、Android / Web 平台可靠性及关键失败路径；不扩充产品 | Q-022 已决定；Must Have 所涉其他合同全部明确 |
 
-Q-012 的跨启动草稿恢复未进入任务清单；MVP 的 Later / Explicitly Out of Scope 均不生成任务。未决问题的完整影响以 OQ、PLAN 和各职责文档为准，表格不构成穷尽规则。
+Q-012 已批准普通记录、睡眠及复盘的本机自动草稿与跨启动 / Web 刷新恢复，合同见 IMPLEMENTATION_PLAN；具体实施任务仍待在对应阶段拆分，本次澄清不视为已实现。MVP 的 Later / Explicitly Out of Scope 均不生成任务。未决问题的完整影响以 OQ、PLAN 和各职责文档为准，表格不构成穷尽规则。
 
 ## Epic 完成核对与停止点
 

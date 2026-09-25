@@ -52,7 +52,7 @@ UTC 数值保存事实时间点；自然日查询使用当前设备时区。设�
 | sleep_sessions.sleep_type | mainSleep、nap | NOT NULL + CHECK IN |
 | goals.status | active、archived | NOT NULL + CHECK IN；不设隐含 active 默认值 |
 
-不为 stuck_reason_code、recovery_method 或 recovery_quality 从示例擅自生成封闭枚举（Q-007）。映射遇到未知代码应报告数据错误，不降级成 unknown、neutral 或任意默认状态。
+stuck_reason_code、recovery_method、recovery_quality 按 Q-007 已批准的选项保存为可空 TEXT 代码，完整代码表见 DOMAIN_MODEL；非空值必须属于对应值域。映射遇到未知代码应报告数据错误，不降级成 unknown、neutral 或任意默认状态。
 
 ## goals
 
@@ -61,7 +61,7 @@ Domain Decision：对象及字段见 DOMAIN_MODEL / Goal。表内物理类型属
 | Column | 建议类型 | Nullable | 约束 / 语义 |
 | --- | --- | --- | --- |
 | id | TEXT | NO | PK；目标身份 |
-| name | TEXT | NO | 名称；非空白和长度见 Q-015，名称唯一性见 Q-019 |
+| name | TEXT | NO | 名称；非空白和长度见 Q-015；允许同名，不设 UNIQUE（Q-019） |
 | status | TEXT | NO | CHECK 值域 active / archived；初始状态见 Q-006 |
 | created_at | INTEGER（Instant） | NO | 创建时间，写入策略见时间戳章节 |
 | updated_at | INTEGER（Instant） | NO | 更新时间，触发条件见 Q-018 |
@@ -69,7 +69,7 @@ Domain Decision：对象及字段见 DOMAIN_MODEL / Goal。表内物理类型属
 
 **Foreign keys:** 本表无外键；被 time_blocks.goal_id 与 daily_reviews.tomorrow_first_step_goal_id 引用。
 
-**Unique constraints:** id 主键唯一。`name UNIQUE` 未确定，不作为已确定约束；不把“尚未加 UNIQUE”当成已批准的重名产品行为。
+**Unique constraints:** 仅 id 主键唯一；按 Q-019 不设置 name UNIQUE，active / archived 都允许同名，创建和改名不进行重名拒绝。
 
 **Indexes:** 初始只需要主键；小规模目标列表不预先增加 status / name 索引。查询确有需要时再验证。
 
@@ -88,7 +88,7 @@ Domain Decision：所有普通时间事实使用此表，unknown 也正常保存
 | end_precision | TEXT | NO | exact / approximate；独立于 start_precision |
 | knowledge_state | TEXT | NO | known / unknown |
 | title | TEXT | YES，条件必需 | known 时必须存在且非空；unknown 可为空，不强制清空 |
-| goal_id | TEXT | YES | 引用 goals.id；是否受状态组合限制见 Q-004 |
+| goal_id | TEXT | YES | 引用 goals.id；可与 known / unknown 及任一 RhythmState 组合；新增关联仍受 Q-006 约束 |
 | category_id | TEXT | YES | 首版保留可空扩展字段；不建立 Category 表、分类入口或外键 |
 | note | TEXT | YES | 补充说明 |
 | created_at | INTEGER（Instant） | NO | 创建时间 |
@@ -124,11 +124,11 @@ Domain Decision：保存当前附于 TimeBlock 的解释，一个 TimeBlock 最�
 | id | TEXT | NO | PK |
 | time_block_id | TEXT | NO | UNIQUE FK → time_blocks.id，源文档明确要求 |
 | state | TEXT | NO | CHECK IN progress / stuck / recovery |
-| stuck_reason_code | 建议 TEXT | YES | 代码值域未定（Q-007） |
-| stuck_reason_text | TEXT | YES | 与 code 均可为空；关系细则见 Q-007 |
-| recovery_method | 建议 TEXT 代码 | YES | 正式代码表未定（Q-007），不从候选方式建硬编码 CHECK |
-| recovery_quality | 物理类型待 Q-007 | YES | 不擅自选整数等级、评分或文字枚举；不是用 null 占位就算完成 schema |
-| continuation_hint | TEXT | YES | 接续点；状态组合见 Q-005 |
+| stuck_reason_code | TEXT | YES | 可选单选代码；值域见 DOMAIN_MODEL（Q-007） |
+| stuck_reason_text | TEXT | YES | 可独立填写或补充任一 code；other 不强制文字（Q-007） |
+| recovery_method | TEXT | YES | 可选单选代码；值域见 DOMAIN_MODEL（Q-007） |
+| recovery_quality | TEXT | YES | notRecovered / partlyRecovered / readyToContinue；主观描述代码，不保存数字评分（Q-007） |
+| continuation_hint | TEXT | YES | 接续点；三种节奏均可填写，切换保留（Q-005） |
 | created_at | INTEGER（Instant） | NO | 创建时间 |
 | updated_at | INTEGER（Instant） | NO | 更新时间 |
 
@@ -138,7 +138,9 @@ Domain Decision：保存当前附于 TimeBlock 的解释，一个 TimeBlock 最�
 
 **Indexes:** time_block_id 的唯一索引已满足连接与外键子列查找，不再重复创建普通索引。首版不为 state 单独建立索引；按已选窗口的 TimeBlock 找 annotation 即可。
 
-**Pending:** 类型和值域 Q-007；不同 state 的附属字段保留 / 清理 Q-005；移除解释和历史处理 Q-013。不得添加“stuck 必须有原因”或“recovery 必须有方式 / 质量”的 CHECK。
+**Decision（Q-005）：** 状态可任意互换，切换保留所有已填细节和接续点；不添加按状态自动清空的触发器或要求不适用字段必须为 NULL 的 CHECK。读取 / 展示只使用当前状态适用的细节，接续点适用于全部状态。
+
+**Decision（Q-013）：** 允许编辑及移除解释，不保存历史版本；删除 TimeBlock 时一并删除解释，单独移除解释保留 TimeBlock。不得添加“stuck 必须有原因”或“recovery 必须有方式 / 质量”的 CHECK。
 
 ## sleep_sessions
 
@@ -158,11 +160,11 @@ Domain Decision：独立保存完整睡眠事实；跨日不拆行，不与普�
 
 **Foreign keys:** 无。没有 time_block_id、goal_id、day_id 或 recovery annotation 关联。
 
-**Unique constraints:** 仅 id；不能从“昨晚睡眠”推导“一天只能一条睡眠”或入睡日期唯一。
+**Unique constraints:** 仅 id；Q-010 明确同一醒来日期允许多段主睡眠和小睡，不设置日期唯一约束。
 
 **Indexes:** 建议 started_at 非唯一索引用于窗口查询及重叠候选检索。
 
-**Constraint:** SleepSession 必须满足 `started_at < ended_at`；不设置固定最短 / 最长时长，允许未来正区间，不设置历史补录上限。该约束在 domain / database 双层落实。睡眠摘要日期归属 Q-010 不应提前固化成 sleep_date 列。
+**Constraint:** SleepSession 必须满足 `started_at < ended_at`；不设置固定最短 / 最长时长，允许未来正区间，不设置历史补录上限。该约束在 domain / database 双层落实。睡眠摘要按 Q-010 从 endedAt 与当前设备时区派生醒来日期，不新增 sleep_date 列。
 
 ## daily_reviews
 
@@ -181,7 +183,7 @@ Domain Decision：按日期唯一保存复盘解释，TomorrowFirstStep 作为�
 
 **Foreign keys:** 建议 tomorrow_first_step_goal_id → goals.id；没有指向数据库 Day 或某条 TimeBlock 的必需关联。
 
-**Unique constraints:** id；review_date 非空唯一（DR-001）。如何处理已存在日期的保存请求见 Q-013，不由 UNIQUE 自动决定覆盖或提示。
+**Unique constraints:** id；review_date 非空唯一（DR-001）。Q-013 允许原地更正 review_date，但目标日期已被其他复盘占用时违反唯一性，拒绝保存，不自动覆盖另一份复盘。
 
 **Indexes:** review_date 的唯一索引支撑按日读取，不重复创建日期索引；建议 tomorrow_first_step_goal_id 非唯一索引用于引用查找。
 
@@ -194,10 +196,10 @@ Domain Decision：按日期唯一保存复盘解释，TomorrowFirstStep 作为�
 | 子列 | 父键 | 可空性 | 关系依据 / 工程落实 | 删除 / 更新动作 |
 | --- | --- | --- | --- | --- |
 | time_blocks.goal_id | goals.id | 可空 | 目标归属已确定；用数据库 FK 兜底是工程建议 | 物理删除使用 RESTRICT；已有引用的界面删除转为归档，archived Goal 不得新增关联 |
-| rhythm_annotations.time_block_id | time_blocks.id | 非空 | RH-001 / 源文档 §33 明确 UNIQUE FK | Q-013 待决 |
+| rhythm_annotations.time_block_id | time_blocks.id | 非空 | RH-001 / 源文档 §33 明确 UNIQUE FK | ON DELETE CASCADE（Q-013）；删除 TimeBlock 同时删除解释 |
 | daily_reviews.tomorrow_first_step_goal_id | goals.id | 可空 | 可选目标关联已确定；数据库 FK 为工程建议 | 物理删除使用 RESTRICT；已有引用的界面删除转为归档 |
 
-Goal 引用使用 RESTRICT 保护已有事实和复盘；应用层在有引用时将界面删除解释为归档并隐藏，在无引用时才执行物理删除。TimeBlock、RhythmAnnotation、DailyReview 的其他删除 / 更正动作仍按 Q-013 确定，不能借 ORM 默认动作绕过产品合同。`category_id` 不生成指向虚构表的 FK。
+Goal 引用使用 RESTRICT 保护已有事实和复盘；应用层在有引用时将界面删除解释为归档并隐藏，在无引用时才执行物理删除。TimeBlock、SleepSession、DailyReview 按 Q-013 原地更正或删除；单独移除 annotation 保留其事实，不建立历史版本。`category_id` 不生成指向虚构表的 FK。
 
 **Engineering Recommendation：** 若采用 SQLite，每个连接在事务开始前显式开启并核验外键约束；父 id 使用声明的主键，子列类型保持一致。仅在文本中写出 FK 不等于运行时已执行外键校验。[SQLite 外键启用与索引要求](https://www.sqlite.org/foreignkeys.html)
 
@@ -215,7 +217,7 @@ Goal 引用使用 RESTRICT 保护已有事实和复盘；应用层在有引用�
 | idx_time_blocks_goal_started_at | goal_id, started_at | 单目标窗口查询；目标引用查找 |
 | idx_daily_reviews_first_step_goal | tomorrow_first_step_goal_id | 明日第一步目标引用查找 |
 
-日窗口查询按区间相交检索，不能只找 started_at 落在当天的记录，否则会漏掉前一晚开始的睡眠。data 返回完整起止与精度，由 domain/projection 裁剪；多个表及 annotation 的读取使用下文的一致视图。
+日窗口查询按区间相交检索，不能只找 started_at 落在当天的记录，否则会漏掉前一晚开始的睡眠。睡眠摘要另按 Q-010 查询 endedAt 落在醒来日期当地零点至次日零点的完整记录（含起点、不含终点），不能仅复用对账窗口相交结果。data 返回完整起止与精度，由 domain/projection 裁剪；多个表及 annotation 的读取使用下文的一致视图。
 
 区间相交检索同时涉及 started_at 与 ended_at；单个 started_at 索引不保证所有区间查询都高效。先用少量索引与实际查询计划验证，再依据数据量考虑 ended_at 等额外索引，不建立每字段索引或独立统计表。
 
@@ -232,7 +234,7 @@ Goal 引用使用 RESTRICT 保护已有事实和复盘；应用层在有引用�
 | 类别 | 负责的约束 | 边界 |
 | --- | --- | --- |
 | **Database-enforced constraint** | 各列 NOT NULL、PK、已确定枚举 CHECK、TimeBlock 正区间及条件标题 CHECK、annotation 的 UNIQUE FK、review_date UNIQUE；建议增加两个 Goal FK | 防止违反已确定结构；不能判断用户是否真的推进，不能以简单行 CHECK 处理跨表重叠 |
-| **Domain-enforced constraint** | TB / RH / SL / GO / DR 的已确定单对象语义；纯时间冲突判定、日期值解析、派生计算及精度传播 | 不执行 I/O；未决组合、转换和传播政策须先明确；不能通过标题自动评判节奏 |
+| **Domain-enforced constraint** | TB / RH / SL / GO / DR 的已确定单对象语义；纯时间冲突判定、日期值解析、派生计算及精度传播 | 不执行 I/O；组合、更正与近似传播按 Q-004、Q-013、Q-014 已批准合同执行；不能通过标题自动评判节奏 |
 | **Application-enforced constraint** | 协调关联查找、跨表重叠检查与原子写入；按批准合同处理转换 / 删除；保存失败不报告成功 | 在 application 发起，在 data 的同一事务内完成读取 / 复核 / 写入；不靠 UI 预检单独保证一致性 |
 
 一个规则可有领域校验与数据库兜底，并不意味着复制两套互相冲突的产品定义。完整规则仍以 DOMAIN_RULES 为准；架构新增的是执行位置。
@@ -253,7 +255,7 @@ SQLite 的普通 CHECK 不能包含子查询，无法直接检查另一行或另
 
 SQLite 允许同时存在多个读事务，但只有一个写事务；立即写事务仍可能遇到忙错误，data 层必须暴露失败或在确认回滚后重试整个操作，不能静默忽略失败或只重试最后一条写语句。[SQLite 事务语义](https://www.sqlite.org/lang_transaction.html)
 
-所有应用内主要事实写入应经过上述路径。直接绕开 repository 的任意 SQL 写入不受此跨表保护，因此不向 feature/presentation 暴露原始连接。第一版不增加触发器体系或通用事务框架；TimeBlock、RhythmAnnotation 与 DailyReview 的删除 / 更正仍待 Q-013 确定具体事务合同。
+所有应用内主要事实写入应经过上述路径。直接绕开 repository 的任意 SQL 写入不受此跨表保护，因此不向 feature/presentation 暴露原始连接。第一版不增加触发器体系或通用事务框架；按 Q-013，TimeBlock 与 annotation 组合更正置于同一事务，删除 TimeBlock 及其解释同样原子完成；不自动重写或删除复盘。缺失对象编辑失败，缺失对象删除幂等完成；已有 annotation 时 add 拒绝，无 annotation 时 edit 拒绝，不以 upsert 静默覆盖或创建。
 
 ## 明确不持久化
 
@@ -264,18 +266,19 @@ SQLite 允许同时存在多个读事务，但只有一个写事务；立即写�
 - aggregate statistics：sleepSummary、goalSummaries、accountedDuration、unknownDuration、unresolvedDuration、progressDuration、stuckDuration、recoveryDuration。
 - hasApproximation 聚合标志：从事实的独立边界精度派生。
 
-Unknown TimeBlock 不在此列表中，它是正式事实。UI 草稿不是已批准的持久化对象（Q-012），不因 schema 未决就给正式表新增 draft、通用 payload 或占位状态。未来读取时重新计算投影，具体算法只维护在 DERIVED_MODELS。
+Unknown TimeBlock 不在此列表中，它是正式事实。UI 草稿按 Q-012 独立保存到本机，但不属于正式事实源；不在正式表新增 draft、通用 payload 或占位状态。未来读取时重新计算投影，具体算法只维护在 DERIVED_MODELS。
 
-## Schema 定稿的待决清单
+## 本机输入草稿（Q-012）
 
-| 问题 | 对物理设计 / 实施的影响 |
-| --- | --- |
-| Q-004、Q-005 | 跨字段 / 跨表组合和转换；不提前添加清理触发器或条件 CHECK |
-| Q-013 | 删除 / 更正合同中仍未确定的非 Goal 动作；不预先级联或解除引用 |
-| Q-007 | 原因与恢复方式值域、recovery_quality 物理类型 |
-| Q-019 | 是否增加 Goal 名称唯一约束与比较规则 |
+普通记录、睡眠记录和每日复盘的未保存输入自动写入独立本机草稿存储，支持页面离开、应用关闭和网页刷新后恢复。草稿允许未完成输入，不占据正式事实表，也不参与账本、摘要或跨事实重叠检查；编辑已有记录的草稿不得提前更改原事实。
 
-Q-009、Q-010、Q-014、Q-020、Q-021 影响派生与展示，不通过新增持久化汇总字段绕开。Q-003 的转换字段处理与 Q-012 草稿行为也不能被建表默认值替代。以上问题保持 UNDECIDED；本文的技术建议不把它们标成已解决。
+正式保存仍须满足全部领域和原子写入约束；正式提交成功后清除对应草稿，失败保留，用户主动放弃时清除。具体存储机制由对应实现任务落实，不在本次文档决定中引入依赖。Android 关闭后恢复与 Web 刷新后恢复均需在对应任务取得实际验证证据。
+
+## Schema 产品决定状态
+
+原列入 schema 定稿清单的 Q-005、Q-007、Q-013、Q-019 均已明确，按本文及对应领域合同落实。产品问题已解决不代表 schema 已实现或平台验证已通过。
+
+Q-021 已确定摘要缺失表达；记录存在性、实际时长和近似标志均从事实派生，不新增持久化汇总字段。Q-009 已确定当前日截至当前时刻、未来日期无缺口及首尾空白纳入的对账窗口政策，不新增持久化汇总字段。Q-003 已确定双向更正时保留已有字段和解释，不通过建表默认值自动清空；通用操作合同仍见 Q-013。
 
 Q-022 已确定首发平台为 Android 和 Web，因此不再属于 schema 的产品待决项。驱动、包及 Web 本地存储实现仍须在 E2-T01 中核验，并在两个首发平台取得对应运行证据；平台决定本身不等于技术选型完成。
 

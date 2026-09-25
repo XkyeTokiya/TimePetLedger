@@ -101,11 +101,11 @@ repository 接口放在各 feature 的 `domain`，数据实现依赖接口而不
 | ledger/domain 的 LedgerRepository | 按窗口读取完整时间事实及 annotation；在一个写入边界内保存时间事实并检查跨表冲突 | ledger/data |
 | review/domain 的 ReviewRepository | 按复盘日期读取 / 保存解释与 TomorrowFirstStep | review/data |
 
-LedgerRepository 是两类时间事实的共同存取边界，不是合并实体。无需为 annotation 单独暴露可绕开所属 TimeBlock 的任意写入接口，也无需增加通用 UnitOfWork / RepositoryFactory。具体操作按被批准的 Task 增量加入；Q-003、Q-005、Q-013 未回答前，不生成默认覆盖、级联删除或任意转换方法。
+LedgerRepository 是两类时间事实的共同存取边界，不是合并实体。无需为 annotation 单独暴露可绕开所属 TimeBlock 的任意写入接口，也无需增加通用 UnitOfWork / RepositoryFactory。具体操作按被批准的 Task 增量加入；更正与删除遵循已确定的 Q-003、Q-005、Q-013，不生成范围外覆盖或转换方法。
 
 具体 data 实现负责 SQL 与行映射，把读取结果还原成领域值；不把数据库行或驱动类型泄露到 UI。字段名称相近时直接写小型映射函数即可，不强制每层再复制一套 entity / model / DTO。
 
-未来一个允许同时保存 TimeBlock 与 annotation 的操作应形成单个原子写入，而不是页面先保存时间块、再独立保存解释。是否提供该组合编辑、空 annotation 参数表示保留还是移除，必须先依据 Q-013 明确，不能用通用 upsert 偷偷决定。
+Q-013 已允许组合更正 TimeBlock 与 annotation，必须形成单个原子写入，全部成功或全部失败。接口明确表达保留、添加、编辑或移除解释的意图；未请求修改解释时保留，不以空参数或通用 upsert 静默删除、覆盖或重建。
 
 ## Engineering Recommendation：纯派生逻辑与调用流程
 
@@ -113,16 +113,16 @@ LedgerRepository 是两类时间事实的共同存取边界，不是合并实体
 
 加载一次日账本时：
 
-1. application 使用当前设备时区构造查询窗口；当前日截止和首尾 Gap 口径继续遵守 Q-009。
+1. application 使用当前设备时区并显式提供当前时刻，按 Q-009 构造对账窗口：历史日完整、今天截至当前时刻、未来日为空；首尾空白纳入 Gap。
 2. LedgerRepository 从一致的读取视图取得 TimeBlock、SleepSession 与相关 annotation；以原始事实返回，不预先按日改写事实。
-3. application 把结果交给纯投影函数；如需目标名称，再结合 Goal 元数据。sleepSummary 的整次记录选择按 Q-010，不能只靠裁剪结果猜“昨晚”。
+3. application 把结果交给纯投影函数；如需目标名称，再结合 Goal 元数据。sleepSummary 按 Q-010 加载醒来日期对应的完整记录，主睡眠与小睡分别汇总，不能只靠对账窗口裁剪结果。
 4. presentation 接收投影并负责格式化、编辑状态和空数据表达，不重复实现时长或 Gap 算法。
 
 写入时，domain 校验单对象及纯重叠判定；application 发起已定义操作；data 实现在同一事务内读取相关事实、再次检查冲突并写入，不能仅依赖事务外的 UI 预检。成功提交后重新加载受影响窗口 / 汇总；失败保留编辑输入并暴露操作结果，不伪装保存成功。原子性方案集中见 DATA_ARCHITECTURE。
 
 ## Engineering Recommendation：UI state 与依赖注入
 
-UI state 放在所属 feature/presentation：当前选择日期、输入草稿、正在保存、错误提示、展示投影等。它们不新增领域实体状态；“正在保存”不写入 DailyReview.status，编辑草稿是否跨启动保存仍见 Q-012。
+UI state 放在所属 feature/presentation：当前选择日期、输入草稿、正在保存、错误提示、展示投影等。它们不新增领域实体状态；“正在保存”不写入 DailyReview.status，按 Q-012 自动保存本机草稿并跨启动 / 网页刷新恢复，草稿存储由所属 feature 的 application / data 协调，正式 domain 实体不因此增加状态。编辑期间正式事实保持原样，成功提交或主动放弃后清除对应草稿，失败保留。
 
 第一版可采用 Flutter 自带的局部状态与小型 controller / view model；需要通知多个 Widget 的 controller 可使用 ChangeNotifier / Listenable。它们只属于 presentation，不进入 domain。状态管理包与路由包不在本轮选定或安装。[Flutter UI 与状态建议](https://docs.flutter.dev/app-architecture/recommendations)
 
@@ -147,13 +147,8 @@ UI state 放在所属 feature/presentation：当前选择日期、输入草稿�
 
 首版不建立通用实体基类、通用 use-case 系统、额外服务端或同步基础设施。持久化驱动须面向 Q-022 已确定的 Android 与 Web 做小范围技术核查，不把具体数据库包泄露到 domain。Epic 顺序见 [IMPLEMENTATION_PLAN](../planning/IMPLEMENTATION_PLAN.md)，具体任务见 [TASKS](../../TASKS.md)；本文不重复安排。
 
-## 未决事项如何影响本方案
+## 产品决定与实施边界
 
-| 问题 | 影响，及不能擅自作出的选择 |
-| --- | --- |
-| Q-003–Q-005、Q-007、Q-013 | 转换、关联、可选值域与删除操作合同；接口不能默认提供全套行为 |
-| Q-009、Q-010、Q-014、Q-020、Q-021 | 派生政策与显示口径；不写入计算函数默认值 |
-| Q-012 | 草稿行为；不自动保存草稿 |
-| Q-019 | Goal 名称唯一与比较规则；不能由框架默认行为决定 |
+Q-001–Q-023 均已决定；普通记录时间建议按 Q-023 的分支实现，具体入口与初始精度见 DOMAIN_RULES。完成产品澄清不等于相关接口或功能已经实现，仍按用户指定 Task 执行。
 
 Q-022 已确定首发平台为 Android 和 Web。该决定限定后续驱动核验与平台验收范围，但不直接选定持久化包、浏览器兼容矩阵或部署方案。

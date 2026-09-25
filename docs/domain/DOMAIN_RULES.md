@@ -48,7 +48,7 @@
 
 **Applies to:** Goal.name、TimeBlock.title / note、SleepSession.note、DailyReview.summary / reflection、TomorrowFirstStep.text、RhythmAnnotation.continuationHint
 
-**Rule:** 保存前清理首尾空白，保留内部空格、换行和段落格式。必填文本清理后不得为空；可选文本清理后为空则保存为 null。短文本最多 200 个字符，长文本最多 2,000 个字符；长度由 Domain / Application 校验，数据库字段使用普通 TEXT。Q-007 尚未确定的原因与恢复值域不由本条定型。
+**Rule:** 保存前清理首尾空白，保留内部空格、换行和段落格式。必填文本清理后不得为空；可选文本清理后为空则保存为 null。短文本最多 200 个字符，长文本最多 2,000 个字符；清理后按 Unicode 码点（Dart `runes`）计数，不按 UTF-16 代码单元或用户可见字素簇计数。TimeBlock.title 为短文本，TimeBlock.note 为长文本。长度由 Domain / Application 校验，数据库字段使用普通 TEXT。原因与恢复代码值域由 Q-007 及 DOMAIN_MODEL 定义，不由本条文本规则推导。
 
 **Reason:** 统一空白与空值语义，避免 UI、领域和数据库产生不同文本结果，同时限制异常大输入。
 
@@ -124,7 +124,7 @@
 
 **Applies to:** TimeBlock.knowledgeState
 
-**Rule:** knowledgeState 仅为 known 或 unknown。known 表示知道大概发生了什么；unknown 表示知道时间过去了但无法恢复内容。状态切换的字段处理见 Q-003，组合限制见 Q-004。
+**Rule:** knowledgeState 仅为 known 或 unknown。known 表示知道大概发生了什么；unknown 表示知道时间过去了但无法恢复内容。两种已知性均可与可选 Goal 和可选 RhythmAnnotation 组合；允许双向更正，不设置额外转换门槛；转换不自动清空已有内容或解释，转为 known 时必须填写合法活动名称，允许同次修改区间和独立精度。保存仍须满足既有规则，详见 Q-003 和 DOMAIN_STATE_MACHINES。
 
 **Reason:** 语义清晰度不等于边界精度。
 
@@ -162,7 +162,7 @@
 
 **Applies to:** TimeBlock.title
 
-**Rule:** knowledgeState=unknown 时 title 可为 null；不得要求编造活动，也不得把“可为空”改成“只能为空”或必须保存固定文案。可选文本的空白与长度规则见 MODEL-002；转换清理仍见 Q-003。
+**Rule:** knowledgeState=unknown 时 title 可为 null；不得要求编造活动，也不得把“可为空”改成“只能为空”或必须保存固定文案。可选文本的空白与长度规则见 MODEL-002；转为 unknown 时保留原有标题，用户可修改或清空（Q-003）。
 
 **Reason:** unknown 本身已经表达合法事实。
 
@@ -181,7 +181,7 @@
 
 **Applies to:** TimeBlock.goalId
 
-**Rule:** TimeBlock 可以不关联 Goal；有 goalId 时表达一个目标归属，不是活动类别。解释与已知性对关联的具体组合要求未定，不由本条扩展，见 Q-004。
+**Rule:** TimeBlock 可以不关联 Goal；有 goalId 时表达一个目标归属，不是活动类别。Goal 和 RhythmAnnotation 都是可选的，known / unknown 与解释之间不设额外组合限制。archived Goal 不得用于新增关联，见 Q-006。
 
 **Reason:** 普通生活事实也属于账本。
 
@@ -238,7 +238,7 @@
 
 **Applies to:** RhythmAnnotation.timeBlockId
 
-**Rule:** 每条 RhythmAnnotation 必须引用一个 TimeBlock；每个 TimeBlock 最多一个有效 annotation。源文档明确 time_block_id UNIQUE FK，不因此引入多版本或软删除模型；删除处理见 Q-013。
+**Rule:** 每条 RhythmAnnotation 必须引用一个 TimeBlock；每个 TimeBlock 最多一个有效 annotation。源文档明确 time_block_id UNIQUE FK，不因此引入多版本或软删除模型；按 Q-013，删除 TimeBlock 同时删除其解释；单独移除解释保留 TimeBlock，不保存历史版本。
 
 **Reason:** 同一时间事实只承载一套节奏解释。
 
@@ -276,7 +276,7 @@
 
 **Applies to:** RhythmAnnotation.state=progress
 
-**Rule:** 表示该时间段主要产生了用户能够确认的目标推进；不能只凭活动看起来像工作自动判定。显式 Goal 关联要求见 Q-004。
+**Rule:** 表示该时间段主要产生了用户能够确认的目标推进；不能只凭活动看起来像工作自动判定，也不强制关联 Goal。
 
 **Reason:** 同样是查论文，是否推进取决于用户确认。
 
@@ -333,7 +333,7 @@
 
 **Applies to:** RhythmAnnotation.stuckReasonCode / stuckReasonText
 
-**Rule:** 标记 stuck 本身可以成立；两个原因字段均可为空，不要求至少填一项。正式值域和字段组合细则见 Q-007、Q-005。
+**Rule:** 标记 stuck 本身可以成立；两个原因字段均可为空，不要求至少填一项。卡住原因单选值域见 Q-007 和 DOMAIN_MODEL；文字可独立填写或补充任一选项，选择“其他”不强制补充；切换离开 stuck 时保留原因，但仅在 stuck 展示和使用（Q-005）。
 
 **Reason:** 卡住时应保持最低记录成本。
 
@@ -343,7 +343,7 @@
 
 **Enforcement layer:** Domain；Database 允许可空；Presentation 不设必填。
 
-**Source:** §14–15、§33
+**Source:** §14–15、§33；Q-007（2026-09-25 产品决定）
 
 
 ## RULE RH-007
@@ -352,7 +352,7 @@
 
 **Applies to:** RhythmAnnotation.recoveryMethod / recoveryQuality
 
-**Rule:** 标记 recovery 本身可以成立；方式与质量都可为空。候选恢复方式不是擅自固定枚举的依据，值域见 Q-007。
+**Rule:** 标记 recovery 本身可以成立；方式与质量都可为空。方式与效果均为可选单选，正式值域见 Q-007 和 DOMAIN_MODEL；效果为“没缓过来、缓过来一些、可以继续了”的主观描述，不换算分数。切换离开 recovery 时保留方式与质量，但仅在 recovery 展示和使用（Q-005）。
 
 **Reason:** 可鼓励细化，但不能挡住记录。
 
@@ -362,7 +362,7 @@
 
 **Enforcement layer:** Domain；Database 允许可空；Presentation 不设必填。
 
-**Source:** §14、§16–17、§33
+**Source:** §14、§16–17、§33；Q-007（2026-09-25 产品决定）
 
 
 ## RULE RH-008
@@ -371,7 +371,7 @@
 
 **Applies to:** RhythmAnnotation.continuationHint
 
-**Rule:** continuationHint 可为空；progress / stuck 可附接续点，回答回到这件事从哪里接上，不代表指定明天先做什么。recovery 能否填写与状态切换清理见 Q-005。
+**Rule:** continuationHint 可为空；progress / stuck / recovery 均可附接续点，回答回到这件事从哪里接上，不代表指定明天先做什么。三种节奏允许任意双向更正，无先后顺序或额外转换门槛；切换保留已有细节与接续点，仅使用当前状态适用的细节（Q-005）。
 
 **Reason:** 避免把工作上下文与每日行动意向混合。
 
@@ -381,7 +381,7 @@
 
 **Enforcement layer:** Domain 语义与可选性；Application / Presentation 区分两种输入。
 
-**Source:** §14、§20、§22
+**Source:** §14、§20、§22；Q-005（2026-09-25 产品决定）
 
 
 ## RULE SL-001
@@ -466,7 +466,7 @@
 
 **Applies to:** 每日首次打开的记录流程
 
-**Rule:** 优先确认昨晚几点睡、今天几点醒，不以先设置 Goal 为前提；若已记录则不重复打扰。“昨晚”和“已记录”的识别口径见 Q-010。
+**Rule:** 每日首次打开时优先确认主睡眠起止，不以先设置 Goal 为前提。按 Q-010，当前设备时区下今天醒来、且 endedAt 不晚于当前时刻的 mainSleep 至少有一条，就不再主动询问；只有 nap 不满足免打扰条件。摘要使用“主睡眠”标题，按醒来日期分别列出并合计全部主睡眠，小睡单独汇总；日账本覆盖仍按窗口切片。当前时刻由调用方提供，完整计算见 DERIVED_MODELS。
 
 **Reason:** 先保留重要身体背景。
 
@@ -476,7 +476,7 @@
 
 **Enforcement layer:** Application / Presentation；不是数据库必填整日睡眠的约束。
 
-**Source:** §29
+**Source:** §29；Q-010（2026-09-25 产品决定）
 
 
 ## RULE GO-001
@@ -485,7 +485,7 @@
 
 **Applies to:** Goal
 
-**Rule:** Goal 表达阶段性目标的时间归属，与 Category 不同；不引入截止日期、百分比、里程碑、任务树、优先级等项目管理字段。
+**Rule:** Goal 表达阶段性目标的时间归属，与 Category 不同；按 Q-019，active / archived 均允许同名，创建与改名不因重名而拒绝，记录和统计按 id 独立，不自动合并；不引入截止日期、百分比、里程碑、任务树、优先级等项目管理字段。
 
 **Reason:** 目标时间理解无需项目管理系统。
 
@@ -599,7 +599,7 @@
 
 **Applies to:** UnresolvedSpan、DayLedgerView
 
-**Rule:** Gap 从时间轴未覆盖部分派生为 UnresolvedSpan，不作为数据库领域对象持久化；没记录不意味着用户已经确认未知。窗口边缘与当前日截止见 Q-009。
+**Rule:** Gap 从时间轴未覆盖部分派生为 UnresolvedSpan，不作为数据库领域对象持久化；没记录不意味着用户已经确认未知。按 Q-009，历史日检查完整当地自然日，今天仅检查零点至当前时刻，未来日期无 Gap 或补账提示；范围内首尾空白均纳入，完全无记录时整个非空范围为 Gap。TimeBlock（含 Unknown）及 SleepSession 均参与覆盖；当前时刻由调用方提供。
 
 **Reason:** 系统发现空白与用户交代事实不同。
 
@@ -694,7 +694,7 @@
 
 **Applies to:** 时间统计与目标汇总
 
-**Rule:** 所有统计从时间事实及其解释派生；目标相关时间不等于明确推进或卡住时间，允许关联 Goal 而未解释的时间；恢复单独作为当天背景描述。计算细节见 [DERIVED_MODELS](DERIVED_MODELS.md)。
+**Rule:** 所有统计从时间事实及其解释派生；目标相关时间不等于明确推进或卡住时间，允许关联 Goal 而未解释的时间；恢复单独作为当天背景描述。按 Q-020，目标摘要仅列出窗口内有记录贡献的目标，包含归档目标并标注；每目标输出总时长及推进、卡住、恢复、未标记四项。无目标时间不进入目标列表，但计入全局统计；全局恢复与目标恢复不重复相加。计算细节见 [DERIVED_MODELS](DERIVED_MODELS.md)。
 
 **Reason:** 没有解释的目标时间不能被擅自判为推进、卡住或无用。
 
@@ -713,7 +713,7 @@
 
 **Applies to:** hasApproximation、时间汇总
 
-**Rule:** 时间聚合应能携带 hasApproximation，参与计算的近似边界不能被呈现为绝对精确；相应时长用“约”等方式表达。跨日切片传播细则见 Q-014；内部按毫秒计算，展示时最终统一舍入到分钟。
+**Rule:** 时间聚合应能携带 hasApproximation，参与计算的近似边界不能被呈现为绝对精确；相应时长用“约”等方式表达。按 Q-014，每项切片、Gap 与汇总分别携带该标志：保留的近似事实边界才传播，被裁掉的边界不传播；Gap 继承其实际采用的相邻边界精度；汇总任一参与时长近似则为近似。unresolvedDuration 从实际 Gap 标志汇总，不直接继承 accountedDuration 或全日标志。内部按毫秒计算，展示时最终统一舍入到分钟。
 
 **Reason:** 具体时间值不等于绝对精确的认知。
 
@@ -770,7 +770,7 @@
 
 **Applies to:** 记录与补账流程
 
-**Rule:** 以事后补记为主，时间区间由系统提出可修改的假设，活动是主要输入；从 Gap 补账可预填其边界，想不起来则由用户确认未知。草稿持久化见 Q-012；非 Gap 入口的时间建议及初始精度见 Q-023。
+**Rule:** 以事后补记为主，时间区间由系统提出可修改的假设，活动是主要输入；从 Gap 补账可预填其边界，想不起来则由用户确认未知。普通记录、睡眠和复盘输入按 Q-012 自动保存为独立本机草稿，支持离开页面、关闭应用或刷新网页后恢复；草稿不参与覆盖、统计或重叠判断，编辑已有记录时正式记录保持原样。成功保存或主动放弃后清除对应草稿，失败保留；正式保存仍完整校验。Q-023 的普通入口分支与初始精度规则见下表。
 
 **Reason:** 降低还原一天的输入成本。
 
@@ -783,20 +783,30 @@
 **Source:** §1、§27–28
 
 
-## 未决规则边界
+## 时间建议合同（Q-023）
 
-以下仅登记仍影响规则的未决依赖，不替 OPEN_QUESTIONS 重复定义候选答案。
-
-| 问题 | 受影响规则或后续工作 |
+| 入口 / 条件（按下述优先顺序） | 行为 |
 | --- | --- |
-| Q-003–Q-005 | TB-004–TB-008、RH-003–RH-008 的组合及转换字段处理 |
-| Q-007 | RH-006–RH-007 的可选值域 |
-| Q-009–Q-010 | SL-004、LEDGER-001 / 003 / 006 的当前日窗口与睡眠口径 |
-| Q-012–Q-013 | 草稿保存、删除 / 更正及关联处理 |
-| Q-014 | LEDGER-007 的切片精度传播 |
-| Q-019 | Goal 名称是否唯一及重复判定 |
-| Q-020–Q-021 | LEDGER-006 的摘要参与集与缺失数据表达 |
-| Q-023 | LEDGER-010 的非 Gap 时间建议与初始精度 |
+| 用户点击明确 Gap 的补账入口 | 直接预填所选 Gap 的区间 |
+| 普通入口查看未来日期、没有 Gap，或所查看对账窗口完全无事实 | 用户手动填写起止，不推测一笔覆盖整段空白 |
+| 普通入口查看今天，已有事实且存在截至当前时刻的尾部 Gap | 直接建议该尾部 Gap |
+| 普通入口其余情况，包括历史日期有 Gap | 展示 Gap 供选择，即使只有一个也先由用户确认 |
+
+新建输入的起止精度默认 approximate；系统建议、Gap 预填或手动输入都不自动声称 exact，用户可分别明确选择精度。编辑已有记录保留其已存精度，修改时间值本身不自动改变精度。所有建议均可修改，正式保存仍满足正区间、不重叠等规则。当前时刻由调用方提供，Gap 按 Q-009 的对账窗口与已有正式事实派生，草稿不计入覆盖。
+
+## 摘要缺失表达（Q-021）
+
+各摘要分别提供记录存在性、实际时长和 hasApproximation，不能仅凭分钟数为 0 判断缺失。没有主睡眠 / 小睡分别显示“尚未记录主睡眠” / “尚未记录小睡”；空目标列表显示“这段时间还没有目标相关记录”。目标中缺少节奏记录用“未记录推进”等表达，不声称活动未发生；没有未标记项则明确为“没有未标记节奏的记录”。正时长按 Q-017 舍入后为 0 分钟时显示“少于 1 分钟”，近似时显示“约少于 1 分钟”。一般时长仍最终汇总后四舍五入，详细返回合同见 DERIVED_MODELS。
+
+## 更正与删除的已确认合同（Q-013）
+
+TimeBlock、SleepSession、DailyReview 允许原地修改和删除，保留修改对象的身份，不保存历史版本；元数据遵循 Q-018。复盘日期可改但必须保持同日唯一，intendedDate 按 Q-001 随之派生。时间事实的修改 / 删除不自动改写复盘文字，复盘删除不影响当天事实。
+
+TimeBlock 与 RhythmAnnotation 可同次修改，必须原子成功或失败；删除 TimeBlock 同时删除解释，单独移除解释保留事实。删除缺失对象幂等成功；编辑缺失对象失败，不自动重建。已有解释时 add 提示改用编辑，无解释时 edit 提示先添加。全部结果仍须满足既有文本、时间、引用及唯一性规则。完整操作表见 DOMAIN_STATE_MACHINES。
+
+## 问题状态
+
+截至 2026-09-25，Q-001–Q-023 均已有产品决定，本文件的原未决规则已按对应合同同步。后续若发现新的产品歧义，仍按 OPEN_QUESTIONS 登记，不以实现默认值替代决定。
 
 ## 本阶段一致性检查
 

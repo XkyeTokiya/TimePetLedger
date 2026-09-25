@@ -14,7 +14,7 @@
 | 领域值对象 | TomorrowFirstStep | 随 DailyReview 保存其内容；不是已确定的独立实体 / 表，intendedDate 按复盘日期派生 |
 | 领域枚举 | TimePrecision、BlockKnowledgeState、RhythmState、SleepType；Goal.status 的两个值 | 作为所属实体字段保存，无独立生命周期 |
 | Derived Models | DayLedgerView、UnresolvedSpan、时间切片与各项时长 / 汇总 | NO：由事实重新计算 |
-| UI Models | 记录草稿、时间区间建议、时间编辑状态等交互数据 | 不属于已确定的持久化领域事实；草稿保存策略未定义（Q-012） |
+| UI Models | 记录草稿、时间区间建议、时间编辑状态等交互数据 | 独立本机草稿可持久化，但不属于正式领域事实（Q-012） |
 
 Time is the foundational fact。TimeBlock = what happened；RhythmAnnotation = 部分时间的目标节奏解释；SleepSession = independent sleep fact；DailyReview = interpretation and next action。
 
@@ -39,6 +39,8 @@ Time is the foundational fact。TimeBlock = what happened；RhythmAnnotation = �
 
 **What this object must NOT represent:** Category、任务管理器或项目管理器；不包含截止日期、完成百分比、里程碑、任务树、优先级。
 
+**名称与身份（Q-019）：** active / archived 均允许同名，创建与改名不做名称唯一校验；不同 id 的记录与统计独立，不自动合并，名称仍遵守 Q-015。
+
 ### TimeBlock（§5–12、§33）
 
 **Purpose:** 一段时间主要发生了什么，包括无法回忆内容的合法事实。
@@ -59,7 +61,7 @@ Time is the foundational fact。TimeBlock = what happened；RhythmAnnotation = �
 
 **Persistence status:** YES，包括 knowledgeState = unknown 的记录。Gap 不保存为 TimeBlock；只有用户确认未知后才产生 Unknown 事实。
 
-**What this object must NOT represent:** progress / stuck / recovery 类型、计时器运行状态、未处理 Gap、精确时间的保证或并行多任务分摊。起止必须构成正区间；详细规则见 [DOMAIN_RULES](DOMAIN_RULES.md)。known / unknown 字段转换及关联组合见 Q-003、Q-004。
+**What this object must NOT represent:** progress / stuck / recovery 类型、计时器运行状态、未处理 Gap、精确时间的保证或并行多任务分摊。起止必须构成正区间；详细规则见 [DOMAIN_RULES](DOMAIN_RULES.md)。known / unknown 字段转换见 Q-003；已知性、Goal 与解释之间不设额外组合限制。
 
 ### RhythmAnnotation（§12–20）
 
@@ -70,16 +72,26 @@ Time is the foundational fact。TimeBlock = what happened；RhythmAnnotation = �
 | id | 解释标识 | 必需 |
 | timeBlockId | 所解释的 TimeBlock | 必需 |
 | state | RhythmState | 必需 |
-| stuckReasonCode | 卡住原因代码；源文档给出例子但未定完整代码表 | 可选 |
-| stuckReasonText | 卡住原因文字 | 可选 |
-| recoveryMethod | 恢复方式；源文档给出候选集合，不视为最终枚举规范 | 可选 |
-| recoveryQuality | 用户补充的恢复质量；值域未定义 | 可选 |
-| continuationHint | 下次回到这件事从哪里接上；明确可附于 progress / stuck | 可选 |
+| stuckReasonCode | 卡住原因单选代码；正式值域见下表（Q-007） | 可选 |
+| stuckReasonText | 可选文字补充；可独立填写，“其他”不强制补充 | 可选 |
+| recoveryMethod | 恢复方式单选代码；正式值域见下表（Q-007） | 可选 |
+| recoveryQuality | 用户主观恢复效果单选代码；不换算分数（Q-007） | 可选 |
+| continuationHint | 下次回到这件事从哪里接上；可附于 progress / stuck / recovery（Q-005） | 可选 |
 | createdAt / updatedAt | 创建 / 更新时间 | 各自必需 |
 
-**Relationships:** 每条解释属于一个 TimeBlock，一个 TimeBlock 最多一个有效解释。Goal 归属位于 TimeBlock；解释自身没有独立 goalId。是否要求所有状态关联 Goal 未被完整确定（Q-004）。
+**Relationships:** 每条解释属于一个 TimeBlock，一个 TimeBlock 最多一个有效解释。Goal 归属位于 TimeBlock；解释自身没有独立 goalId。任何 RhythmState 都不强制要求 TimeBlock 关联 Goal；已有解释与目标归属可按已知性自由组合，但新增关联仍须遵守 Q-006。
 
-**Persistence status:** YES，作为用户解释独立于时间事实保存。无 annotation 就是不需要解释，无 neutral 状态。切换状态时附属字段处理见 Q-005；附属字段值域见 Q-007。
+**可选细节正式值域（Q-007）：** 以下代码是已确认选项的稳定内部命名；均可为空，不增加必填门槛。
+
+| 字段 | 代码 → 展示含义 |
+| --- | --- |
+| stuckReasonCode | taskTooLarge → 任务太大；unclearNextStep → 不知道下一步；sleepy → 困；brainFog → 脑雾；anxious → 焦虑；interrupted → 被打断；unsure → 说不清；other → 其他 |
+| recoveryMethod | walk → 散步；meal → 吃饭；shower → 洗澡；empty → 放空；entertainment → 娱乐；switchTask → 切换任务；breakDownTask → 拆小任务；askForHelp → 寻求帮助；other → 其他 |
+| recoveryQuality | notRecovered → 没缓过来；partlyRecovered → 缓过来一些；readyToContinue → 可以继续了 |
+
+stuckReasonText 可以独立于代码填写，也可补充任一选项；选择 other 不强制填写文字。recoveryQuality 是主观描述，不映射为分数；睡眠不进入 recoveryMethod。
+
+**Persistence status:** YES，作为用户解释独立于时间事实保存。无 annotation 就是不需要解释，无 neutral 状态。三种节奏可任意互换；切换保留附属字段，仅当前状态适用的细节参与展示和使用，接续点适用于全部状态（Q-005）；附属字段值域见 Q-007。
 
 **What this object must NOT represent:** TimeBlock 类型、独立时间区间、自动效率评价、SleepSession 或明天第一步。标记 stuck / recovery 本身即可成立，不要求原因或质量。
 
@@ -167,18 +179,18 @@ Goal.status 明确只有 active、archived；不额外引入新的生命周期�
 | progressDuration / stuckDuration / recoveryDuration | 由时间事实与 RhythmAnnotation 派生的节奏时长；恢复在当天背景中单列 | 同上 | NO；不写回 DailyReview |
 | hasApproximation | 汇总可携带的标志，表达参与计算的某些记录边界近似 | 具体切片传播细节未完整定义 | NO；不是独立事实或置信度评分 |
 
-自然日按当前设备时区投影；设备时区变化后历史事实按新时区重新投影，原始事实不变。今天的窗口、昨晚睡眠口径及重叠处理问题见 Q-009–Q-011。图示或示例时长不替代正式计算定义。
+自然日按当前设备时区投影；设备时区变化后历史事实按新时区重新投影，原始事实不变。今天对账截至当前时刻（Q-009）；睡眠摘要按醒来日期归属，主睡眠与小睡分别列出并合计整次时长（Q-010）；重叠保存按 Q-011 原子拒绝。图示或示例时长不替代正式计算定义。
 
 ## UI Models（§26–29）
 
 **Purpose:** 支撑时间建议、活动输入、补账草稿及时间编辑。
 
-**Fields / Field semantics:** 源文档展示补账草稿的 startedAt / endedAt 和可修改时间建议，但没有定义正式 UI 对象字段清单。
+**Fields / Field semantics:** 补账草稿包含可修改的起止与独立精度；Q-023 定义尾部 Gap 建议、候选选择和无法推断时手动输入，新建默认 approximate，用户可独立明确选择精度；具体 UI 类型按实现职责组织。
 
 **Relationships:** 草稿可由 UnresolvedSpan 预填，确认后形成领域事实；系统猜测本身不等于用户确认的记录。
 
 **Required / optional:** 未定义，不从示意交互推导新的领域必填项。
 
-**Persistence status:** 不作为领域 Source of Truth；是否保存临时草稿尚未确定（Q-012）。
+**Persistence status:** 按 Q-012 自动保存普通记录、睡眠记录和每日复盘的未保存输入到本机，支持离开页面、关闭应用或网页刷新后恢复。与正式事实分开，不参与覆盖、统计或重叠判断；编辑草稿不修改原正式记录。成功保存或主动放弃后清除对应草稿，失败保留；正式保存仍执行完整校验。
 
 **What these objects must NOT represent:** 新增持久化 Gap、运行中的计时器领域实体、额外 Day 实体或强制记录流程状态。
