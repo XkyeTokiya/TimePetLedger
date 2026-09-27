@@ -1,0 +1,9 @@
+targets:
+  $default:
+    builders:
+      drift_dev:
+        generate_for:
+          - lib/core/persistence/app_database.dart
+          - lib/features/**/data/*_table.dart
+        options:
+          generate_manager: false

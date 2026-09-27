@@ -272,6 +272,14 @@
 
 **Decision:** 保存前清理首尾空白；必填文本清理后不得为空；可选空文本保存为 `null`；内部空格、换行和段落格式保留。短文本最多 200 个字符，长文本最多 2,000 个字符；清理后按 Unicode 码点（Dart `runes`）计数，不按 UTF-16 代码单元或用户可见字素簇计数。长度由领域 / 应用校验，数据库使用普通 `TEXT`。代码和值域字段由 Q-007 的独立决定定型，不由本条文本规则推导。
 
+**Decision supplement (E1-T06):** RhythmAnnotation.stuckReasonText 与 continuationHint 均为可选长文本，清理后最多 2,000 个 Unicode 码点；沿用首尾空白清理、空值归一为 null 和内部格式保留规则。
+
+**E1-T06 supplement source:** 产品负责人于 2026-09-25 明确授权 agent 选择适合的长度分类并继续；agent 选择两个字段均为长文本，以容纳多行原因说明与接续上下文。
+
+**Decision supplement (E1-T07):** DailyReview.summary、reflection 均为可选长文本，TomorrowFirstStep.text 为必填长文本，清理后均最多 2,000 个 Unicode 码点。沿用首尾空白清理、可选空文本归一为 null、必填文本非空和内部格式保留规则；下一步仍为单一行动意向。
+
+**E1-T07 supplement source:** 产品负责人于 2026-09-26 明确授权 agent 自主决定这三个字段的长度分类；agent 选择均为长文本，以容纳多行概述、反思与具体行动说明。
+
 **Decision supplement source:** 产品负责人于 2026-09-25 执行 E1-T03 时明确选择“按 Unicode 码点计数（Dart runes，无需新增依赖）”。
 
 **Decision source:** 产品负责人于 2026-09-25 确认。

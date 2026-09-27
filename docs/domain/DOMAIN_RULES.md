@@ -46,9 +46,9 @@
 
 **Title:** 已确定文本字段统一规范化
 
-**Applies to:** Goal.name、TimeBlock.title / note、SleepSession.note、DailyReview.summary / reflection、TomorrowFirstStep.text、RhythmAnnotation.continuationHint
+**Applies to:** Goal.name、TimeBlock.title / note、SleepSession.note、DailyReview.summary / reflection、TomorrowFirstStep.text、RhythmAnnotation.stuckReasonText / continuationHint
 
-**Rule:** 保存前清理首尾空白，保留内部空格、换行和段落格式。必填文本清理后不得为空；可选文本清理后为空则保存为 null。短文本最多 200 个字符，长文本最多 2,000 个字符；清理后按 Unicode 码点（Dart `runes`）计数，不按 UTF-16 代码单元或用户可见字素簇计数。TimeBlock.title 为短文本，TimeBlock.note 为长文本。长度由 Domain / Application 校验，数据库字段使用普通 TEXT。原因与恢复代码值域由 Q-007 及 DOMAIN_MODEL 定义，不由本条文本规则推导。
+**Rule:** 保存前清理首尾空白，保留内部空格、换行和段落格式。必填文本清理后不得为空；可选文本清理后为空则保存为 null。短文本最多 200 个字符，长文本最多 2,000 个字符；清理后按 Unicode 码点（Dart `runes`）计数，不按 UTF-16 代码单元或用户可见字素簇计数。TimeBlock.title 为短文本，TimeBlock.note 为长文本；RhythmAnnotation.stuckReasonText 与 continuationHint 均为可选长文本（Q-015 的 E1-T06 补充决定）。DailyReview.summary、reflection 均为可选长文本，TomorrowFirstStep.text 为必填长文本，清理后均最多 2,000 个 Unicode 码点（Q-015 的 E1-T07 补充决定）。长度由 Domain / Application 校验，数据库字段使用普通 TEXT。原因与恢复代码值域由 Q-007 及 DOMAIN_MODEL 定义，不由本条文本规则推导。
 
 **Reason:** 统一空白与空值语义，避免 UI、领域和数据库产生不同文本结果，同时限制异常大输入。
 
