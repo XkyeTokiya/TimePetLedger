@@ -1,0 +1,1 @@
+void reportDayLedgerPlatformPhase(int completedPhase) {}

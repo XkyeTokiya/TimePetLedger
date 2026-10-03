@@ -21,6 +21,9 @@ final class TomorrowFirstStep {
   final CivilDate intendedDate;
 
   bool isForReviewDate(CivilDate date) => intendedDate == _nextDate(date);
+
+  /// 草稿文字尚未完成时，也使用同一日历规则展示行动日期。
+  static CivilDate dateAfter(CivilDate reviewDate) => _nextDate(reviewDate);
 }
 
 String _requireText(String text) {

@@ -4,7 +4,7 @@
 
 本文回答“按照什么顺序做？”，范围以 [MVP_SCOPE](MVP_SCOPE.md) 为准，产品依据为 [Source of Truth](../../time-ledger-domain-model-v4-proposal.md)、[PRODUCT_DEFINITION](../product/PRODUCT_DEFINITION.md)、[PRODUCT_PRINCIPLES](../product/PRODUCT_PRINCIPLES.md)。实施必须同时满足 [DOMAIN_MODEL](../domain/DOMAIN_MODEL.md)、[DOMAIN_RULES](../domain/DOMAIN_RULES.md)、[DOMAIN_STATE_MACHINES](../domain/DOMAIN_STATE_MACHINES.md)、[DERIVED_MODELS](../domain/DERIVED_MODELS.md)。代码和数据边界引用 [APP_ARCHITECTURE](../architecture/APP_ARCHITECTURE.md)、[DATA_ARCHITECTURE](../architecture/DATA_ARCHITECTURE.md)。
 
-**Engineering / Planning Recommendation：** Epic 划分、顺序、测试安排与采用架构建议的路径属于工程规划，不是新的产品要求。本文只规划未来开发，不创建代码、安装依赖或执行任何 Epic。当前仓库只有基础 Flutter 启动工程；从现状建立首版，不重新生成项目覆盖现有文件。
+**Engineering / Planning Recommendation：** Epic 划分、顺序、测试安排与采用架构建议的路径属于工程规划，不是新的产品要求。本文只规划未来开发，不创建代码、安装依赖或执行任何 Epic。实际工程与前置交付状态以仓库及 docs/reports 的对应任务报告为准；从现状继续首版，不重新生成项目覆盖现有文件。
 
 ## 顺序与依赖
 
@@ -88,9 +88,11 @@ Q-012 已批准本机草稿恢复，须按下文共同交付合同在对应阶�
 
 **Explicit non-goals:** 数据库 Day entity、Gap 持久化、UI、存储访问、评分或睡眠因果推断。
 
+具体任务见 [TASKS / Epic 3](../../TASKS.md#epic-3--ledger-projection-engine)：E3-T01–E3-T07，依次覆盖窗口与时长合同、切片、覆盖与 Gap、节奏 / 目标汇总、完整睡眠摘要、DayLedgerView 组装及纯展示映射。每项自带验证；不等待数据库实现。
+
 ## 输入草稿的共同交付合同（Q-012）
 
-Epic 4 普通记录、Epic 5 睡眠和 Epic 9 复盘均落实独立本机草稿：自动保留未保存输入，离开页面、关闭应用及 Web 刷新后可恢复；草稿不参与正式账本覆盖、统计和重叠判断，编辑时原事实不变；正式保存成功或主动放弃后清除，失败保留。正式提交执行当前完整校验，不新增领域 draft 状态。对应实现需验证 Android 关闭后和 Web 刷新后的恢复，以及失败不清除、编辑不提前改写事实。本次澄清不执行这些 Epic，具体任务尚需在相应阶段拆分。
+Epic 4 普通记录、Epic 5 睡眠和 Epic 9 复盘均落实独立本机草稿：自动保留未保存输入，离开页面、关闭应用及 Web 刷新后可恢复；草稿不参与正式账本覆盖、统计和重叠判断，编辑时原事实不变；正式保存成功或主动放弃后清除，失败保留。正式提交执行当前完整校验，不新增领域 draft 状态。对应实现需验证 Android 关闭后和 Web 刷新后的恢复，以及失败不清除、编辑不提前改写事实。普通记录草稿落实于 E4-T03–E4-T08；睡眠草稿落实于 E5-T02–E5-T08，复盘落实于 E9-T02–E9-T09，不因复用草稿合同而依赖普通活动编辑器。本次只细化任务，不执行这些 Epic。
 
 ## Epic 4 — Basic Recording
 
@@ -106,6 +108,8 @@ Epic 4 普通记录、Epic 5 睡眠和 Epic 9 复盘均落实独立本机草稿�
 
 **Explicit non-goals:** timer-first、分类管理、自动推断节奏、擅自开放所有保存后编辑 / 删除操作。
 
+具体任务见 [TASKS / Epic 4](../../TASKS.md#epic-4--basic-recording)：E4-T01–E4-T08 覆盖日期与读取、时间建议、独立草稿、表单、正式新建、更正删除、闭环及 Android / Web 恢复验证；E4-T09 为可选 note 入口，不阻塞核心完成。仅接普通记录所需入口与结果刷新，完整时间轴、睡眠输入、Goal / annotation 编辑和统计页面仍属后续 Epic。更正 / 删除权限已由 Q-003 / Q-013 批准，本 Epic 按合同开放 TimeBlock 操作，不外推到其他对象 UI。
+
 ## Epic 5 — Sleep Recording
 
 **Goal:** 低成本保存独立睡眠事实并体现其高记录优先级。
@@ -119,6 +123,8 @@ Epic 4 普通记录、Epic 5 睡眠和 Epic 9 复盘均落实独立本机草稿�
 **Acceptance criteria:** 跨日睡眠保存为一条事实；睡眠与普通块重叠时按已确定规则反馈；日窗口展示对应贡献。已记录睡眠时不重复打扰，未记录不能显示为“未睡觉”；sleep 不写入 recovery 或附带普通 RhythmAnnotation。
 
 **Explicit non-goals:** 睡眠质量评分、睡眠因果分析、长期趋势、nap 与 recovery 联动。
+
+具体任务见 [TASKS / Epic 5](../../TASKS.md#epic-5--sleep-recording)：E5-T01–E5-T08 覆盖完整睡眠读取、独立草稿、表单、原子新建、更正删除、首次打开确认、应用闭环及 Android / Web 恢复验证；E5-T09 为可选 note 入口，不阻塞核心完成。复用 Epic 2 / 3 合同，不依赖 Epic 4 普通编辑器；首次打开的本机交互标记不替代正式主睡眠已记录判定。
 
 ## Epic 6 — Daily Timeline / Gap Resolution
 
@@ -134,6 +140,8 @@ Epic 4 普通记录、Epic 5 睡眠和 Epic 9 复盘均落实独立本机草稿�
 
 **Explicit non-goals:** 完整度分数、强制补齐全日、平行时间线、自动拆分 / 合并已存事实。
 
+具体任务见 [TASKS / Epic 6](../../TASKS.md#epic-6--daily-timeline--gap-resolution)：E6-T01–E6-T06 覆盖日期读取、切片与 Gap 时间轴、明确 Gap 补记、原事实更正路由、应用闭环及两平台集成验证。Gap 新草稿两端精度遵守 Q-023，不直接复制 Gap 的显示精度；已有草稿恢复遵守 Q-012。部分读取 / 展示可先行，完整验收仍要求 Epic 3、4、5 完成；统计页面留 Epic 8。
+
 ## Epic 7 — Goal + Rhythm Annotation
 
 **Goal:** 在时间事实之上增加可选的归属和节奏解释。
@@ -147,6 +155,8 @@ Epic 4 普通记录、Epic 5 睡眠和 Epic 9 复盘均落实独立本机草稿�
 **Acceptance criteria:** 无解释仍是合法时间事实；用户明确选择 progress / stuck / recovery，不从标题自动打标；不强制状态链。可不填原因或恢复细节；接续点不成为每日任务。目标相关时间在交互中优先突出区间确认，但 approximate 仍可保存（TB-003）。归档引用、解释切换和删除仅按已批准规则执行，字段不被无依据清空；一块最多一份有效解释的集成测试通过。
 
 **Explicit non-goals:** 任务树、目标进度百分比、deadline、里程碑、优先级、自动效果评价或睡眠 recovery 化。
+
+具体任务见 [TASKS / Epic 7](../../TASKS.md#epic-7--goal--rhythm-annotation)：E7-T01–E7-T07 覆盖目标创建与生命周期、可选归属、节奏和接续点、时间轴回看、应用及两平台验证；E7-T08 单列可选原因 / 恢复细节 Should Have。扩展普通草稿时保留旧输入与未展示字段，不重复建设领域或原子写入。局部任务可按各自前置先行，完整 Epic 依赖保持不变。E7-T01 已完成并归档，目标 active 列表 / 创建及读取失败恢复的证据见 [E7-T01 报告](../reports/E7-T01_GOAL_CREATION_READ_REPORT.md)；E7-T02 已完成并归档，目标生命周期 UI 与引用保留的证据见 [E7-T02 报告](../reports/E7-T02_GOAL_LIFECYCLE_REPORT.md)；E7-T03 已完成并归档，可选目标归属、草稿升级与真实库保存 / 恢复的证据见 [E7-T03 报告](../reports/E7-T03_OPTIONAL_GOAL_ASSOCIATION_REPORT.md)；E7-T04 已完成并归档，可选节奏解释、接续点、草稿升级与原子保存 / 恢复的证据见 [E7-T04 报告](../reports/E7-T04_OPTIONAL_RHYTHM_REPORT.md)；E7-T05 已完成并归档，时间轴目标 / 节奏 / 接续点回看、同源更正及只读刷新重试的证据见 [E7-T05 报告](../reports/E7-T05_TIMELINE_GOAL_RHYTHM_REPORT.md)；E7-T06 已完成并归档，真实文件库完整应用闭环、原子失败与提交后重开恢复的证据见 [E7-T06 报告](../reports/E7-T06_GOAL_RHYTHM_CLOSURE_REPORT.md)；E7-T07 已完成并归档，真实 Android 强停重开 / Web 同页刷新、旧草稿升级和归属 / 解释恢复的证据见 [E7-T07 报告](../reports/E7-T07_GOAL_RHYTHM_PLATFORM_REPORT.md)；E7-T08 已完成并归档，可选原因 / 恢复细节、草稿 v5 升级、真实库写入 / 恢复与受影响两平台草稿恢复的证据见 [E7-T08 报告](../reports/E7-T08_OPTIONAL_RHYTHM_DETAILS_REPORT.md)；Epic 7 核心及独立 Should Have 已交付，E7-T08 不改变原核心依赖。
 
 ## Epic 8 — Statistics / Summaries
 
@@ -162,6 +172,8 @@ Epic 4 普通记录、Epic 5 睡眠和 Epic 9 复盘均落实独立本机草稿�
 
 **Explicit non-goals:** 评分、排行、效率百分比、因果睡眠结论、长期分析系统或新统计存储层。
 
+具体任务见 [TASKS / Epic 8](../../TASKS.md#epic-8--statistics--summaries)：E8-T01–E8-T06 覆盖一致读取、覆盖 / Unknown、完整睡眠、目标四项与全局节奏、重算集成及两平台验证。复用 Epic 3 的投影与格式映射，不建立第二套统计算法或事实源。局部任务可按各自前置先行，完整 Epic 依赖保持不变。E8-T01–E8-T06 已完成，实际交付及验证见 [E8-T01 报告](../reports/E8-T01_SUMMARY_CONTEXT_REPORT.md)、[E8-T02 报告](../reports/E8-T02_COVERAGE_SUMMARY_REPORT.md)、[E8-T03 报告](../reports/E8-T03_SLEEP_SUMMARY_REPORT.md)、[E8-T04 报告](../reports/E8-T04_GOAL_RHYTHM_SUMMARY_REPORT.md)、[E8-T05 报告](../reports/E8-T05_SUMMARY_RECALCULATION_REPORT.md)、[E8-T06 报告](../reports/E8-T06_SUMMARY_PLATFORM_REPORT.md)。Epic 3、5、6、7 已完成，Epic 8 的一致快照、独立近似 / 缺失表达、提交后重算、无草稿 / 复盘数值写回及 Android / Web 实际生命周期验收已逐项满足；Epic 8 核心验收完成，不启动 Epic 9。
+
 ## Epic 9 — Daily Review
 
 **Goal:** 将对一天的解释收束为一次可接续的下一步。
@@ -172,9 +184,11 @@ Epic 4 普通记录、Epic 5 睡眠和 Epic 9 复盘均落实独立本机草稿�
 
 **Deliverables:** 可选 summary / reflection、一个 TomorrowFirstStep、可选 Goal 关联；按日保存和读取；按批准合同处理已有日期及历史复盘。
 
-**Acceptance criteria:** 同日唯一约束验证通过；下一步意向日期采用确定规则，不能擅自取今天或 review.date + 1；不要求给每个 Goal 写计划。continuationHint 与 TomorrowFirstStep 分工清楚；复盘不存派生时长，事实更正不会未经授权重写用户反思。
+**Acceptance criteria:** 同日唯一约束验证通过；下一步意向日期按 Q-001 固定为 review.date 的下一自然日并派生，不单独存储；不能取系统今天或用固定 24 小时代替自然日运算；不要求给每个 Goal 写计划。continuationHint 与 TomorrowFirstStep 分工清楚；复盘不存派生时长，事实更正不会未经授权重写用户反思。
 
 **Explicit non-goals:** 独立任务管理、强制每日打卡、结构化复盘字段扩张、自动评价反思。
+
+具体任务见 [TASKS / Epic 9](../../TASKS.md#epic-9--daily-review)：E9-T01–E9-T09 覆盖按日读取、独立草稿、表单、新建、更正日期、删除、回看路由、应用及两平台恢复验证。正式提交失败与已提交后的草稿清理 / 刷新失败分别处理，避免重复提交。局部任务可按各自前置先行，完整 Epic 依赖保持不变。E9-T01 已完成，按日复盘读取、历史日期、旧响应隔离、CivilDate / 下一自然日展示和复用事实上下文的依据见 [E9-T01 报告](../reports/E9-T01_REVIEW_CONTEXT_REPORT.md)。E9-T02 已完成，独立复盘草稿存储、日期 / 编辑身份隔离、原始输入保留、失败回滚及 app 生命周期装配的依据见 [E9-T02 报告](../reports/E9-T02_REVIEW_DRAFT_STORE_REPORT.md)。E9-T03 已完成，复盘表单、原始输入恢复、串行自动保留 / 离页等待、失败重试、当前草稿放弃和可选 Goal 读取的依据见 [E9-T03 报告](../reports/E9-T03_REVIEW_FORM_REPORT.md)。E9-T04 已完成，新建提交、当前日期 / Goal 约束、正式失败保留输入、提交后清草稿 / 重读失败区分与只重试收尾的依据见 [E9-T04 报告](../reports/E9-T04_REVIEW_SUBMISSION_REPORT.md)。E9-T05 已完成，按源 ID 更正、日期迁移与唯一性、归档 Goal 保留 / 新关联校验、缺失源拒绝重建及提交后只重试收尾的依据见 [E9-T05 报告](../reports/E9-T05_REVIEW_CORRECTION_REPORT.md)。E9-T06 已完成，明确按源 ID 删除、正式表 / 草稿隔离、幂等及失败保留、删除后仅重试清理 / 重读和返回日期一致性的依据见 [E9-T06 报告](../reports/E9-T06_REVIEW_DELETION_REPORT.md)。E9-T07 已完成，日账本 / 摘要的所选日期复盘入口、已有行动读回、改日期 / 删除后的入口一致性、返回重读及事实变化与复盘文字独立的依据见 [E9-T07 报告](../reports/E9-T07_REVIEW_ROUTE_REPORT.md)。E9-T08 已完成，真实文件库完整字段闭环、竞争唯一 / 过期编辑、提交后双故障与完整重开恢复、无重复写入及核心验收对照的依据见 [E9-T08 报告](../reports/E9-T08_REVIEW_CLOSURE_REPORT.md)。E9-T09 已完成，Android 实际强停重开 / Web 同源刷新后的新建、编辑 / 改日期草稿恢复、正式冲突失败保留、成功 / 放弃清理及保存 / 更正 / 删除读回依据见 [E9-T09 报告](../reports/E9-T09_REVIEW_PLATFORM_REPORT.md)。Epic 2、7、8 前置齐备，E9-T01–E9-T09 已逐项交付，Epic 9 核心验收及两平台生命周期门槛完成；不表示 Epic 10 或全 MVP 发布验收完成，不自动细化或执行后续工作包。
 
 ## Epic 10 — Polish / Reliability
 

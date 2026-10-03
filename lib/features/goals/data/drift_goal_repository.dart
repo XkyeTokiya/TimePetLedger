@@ -24,6 +24,17 @@ final class DriftGoalRepository implements GoalRepository {
   });
 
   @override
+  Future<List<Goal>> listArchived() => _guard(() async {
+    final rows = await _database
+        .customSelect(
+          "SELECT * FROM goals WHERE status = 'archived' ORDER BY id",
+          readsFrom: {_database.goals},
+        )
+        .get();
+    return List.unmodifiable(rows.map((row) => goalFromDatabase(row.data)));
+  });
+
+  @override
   Future<Goal?> findById(EntityId id) => _guard(() {
     requireUuidV4(id);
     return _find(id);

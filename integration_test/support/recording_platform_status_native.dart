@@ -1,0 +1,1 @@
+void reportRecordingPlatformPhase(int completedPhase) {}

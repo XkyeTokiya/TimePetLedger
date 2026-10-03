@@ -1,3 +1,6 @@
+import 'package:drift/drift.dart';
+
+import '../../../core/persistence/app_database.dart';
 import '../domain/block_knowledge_state.dart';
 import '../domain/ledger_repository.dart';
 import '../domain/rhythm_annotation.dart';
@@ -154,3 +157,51 @@ class _LedgerRow {
     }
   }
 }
+
+// Write codes use the same explicit mapping as reads, not enum ordinals.
+String _encode<T>(T value, Map<String, T> codes) =>
+    codes.entries.singleWhere((entry) => entry.value == value).key;
+String? _encodeOptional<T>(T? value, Map<String, T> codes) =>
+    value == null ? null : _encode(value, codes);
+
+TimeBlocksCompanion timeBlockToDatabase(TimeBlock block) => TimeBlocksCompanion(
+  id: Value(block.id),
+  startedAt: Value(block.startedAt),
+  endedAt: Value(block.endedAt),
+  startPrecision: Value(_encode(block.startPrecision, _precision)),
+  endPrecision: Value(_encode(block.endPrecision, _precision)),
+  knowledgeState: Value(_encode(block.knowledgeState, _knowledge)),
+  title: Value(block.title),
+  goalId: Value(block.goalId),
+  categoryId: Value(block.categoryId),
+  note: Value(block.note),
+  createdAt: Value(block.createdAt),
+  updatedAt: Value(block.updatedAt),
+);
+
+SleepSessionsCompanion sleepSessionToDatabase(SleepSession sleep) =>
+    SleepSessionsCompanion(
+      id: Value(sleep.id),
+      startedAt: Value(sleep.startedAt),
+      endedAt: Value(sleep.endedAt),
+      startPrecision: Value(_encode(sleep.startPrecision, _precision)),
+      endPrecision: Value(_encode(sleep.endPrecision, _precision)),
+      sleepType: Value(_encode(sleep.type, _sleepType)),
+      note: Value(sleep.note),
+      createdAt: Value(sleep.createdAt),
+      updatedAt: Value(sleep.updatedAt),
+    );
+
+RhythmAnnotationsCompanion rhythmAnnotationToDatabase(RhythmAnnotation a) =>
+    RhythmAnnotationsCompanion(
+      id: Value(a.id),
+      timeBlockId: Value(a.timeBlockId),
+      state: Value(_encode(a.state, _rhythm)),
+      stuckReasonCode: Value(_encodeOptional(a.stuckReasonCode, _reason)),
+      stuckReasonText: Value(a.stuckReasonText),
+      recoveryMethod: Value(_encodeOptional(a.recoveryMethod, _method)),
+      recoveryQuality: Value(_encodeOptional(a.recoveryQuality, _quality)),
+      continuationHint: Value(a.continuationHint),
+      createdAt: Value(a.createdAt),
+      updatedAt: Value(a.updatedAt),
+    );

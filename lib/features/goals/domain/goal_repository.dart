@@ -10,6 +10,9 @@ abstract interface class GoalRepository {
   /// 普通目标选择仅包含 active；返回顺序不构成产品排序合同。
   Future<List<Goal>> listActive();
 
+  /// 仅用于归档管理 / 恢复；不作为新增归属候选，顺序无产品合同。
+  Future<List<Goal>> listArchived();
+
   /// 历史引用 / 恢复操作可按身份读到 archived；不存在返回 null。
   Future<Goal?> findById(EntityId id);
 

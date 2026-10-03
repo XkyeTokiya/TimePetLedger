@@ -5,16 +5,50 @@ import 'package:flutter/material.dart';
 import '../../core/persistence/app_database.dart';
 import '../../core/persistence/database_connection.dart';
 import '../main_app.dart';
+import '../../features/goals/data/drift_goal_repository.dart';
+import '../../features/goals/presentation/goals_page.dart';
+import '../../features/ledger/data/drift_recording_draft_store.dart';
+import '../../features/ledger/application/recording_entry_editor.dart';
+import 'recording_drafts.dart';
+import 'sleep_drafts.dart';
+import 'sleep_entry.dart';
+import 'sleep_ledger.dart';
+import 'day_ledger.dart';
+import 'review_context.dart';
+import 'review_submission.dart';
+import 'review_drafts.dart';
+import '../../features/review/data/drift_review_draft_store.dart';
+import 'sleep_submission.dart';
+import 'sleep_openings.dart';
+import '../../core/time/civil_date.dart';
+import '../../features/ledger/application/sleep_first_open.dart';
+import '../../features/ledger/data/drift_sleep_opening_store.dart';
+import '../../features/ledger/data/drift_sleep_draft_store.dart';
+import 'recording_ledger.dart';
+import 'recording_submission.dart';
 
 Future<AppDatabase> openAppDatabase() async {
   return AppDatabase.open(await connectDatabase('time_pet_ledger'));
 }
 
-/// Owns the single app connection. No raw database is exposed to presentation.
+/// Owns formal and independent draft connections; presentation receives interfaces.
 class AppBootstrap extends StatefulWidget {
-  const AppBootstrap({super.key, this.openDatabase = openAppDatabase});
+  const AppBootstrap({
+    super.key,
+    this.openDatabase = openAppDatabase,
+    this.openDrafts = openRecordingDraftStore,
+    this.openSleepDrafts = openSleepDraftStore,
+    this.openSleepOpenings = openSleepOpeningStore,
+    this.openReviewDrafts = openReviewDraftStore,
+    this.now = DateTime.now,
+  });
 
   final Future<AppDatabase> Function() openDatabase;
+  final Future<DriftRecordingDraftStore> Function() openDrafts;
+  final Future<DriftSleepDraftStore> Function() openSleepDrafts;
+  final Future<DriftSleepOpeningStore> Function() openSleepOpenings;
+  final Future<DriftReviewDraftStore> Function() openReviewDrafts;
+  final DateTime Function() now;
 
   @override
   State<AppBootstrap> createState() => _AppBootstrapState();
@@ -23,6 +57,30 @@ class AppBootstrap extends StatefulWidget {
 class _AppBootstrapState extends State<AppBootstrap> {
   late final Future<void> _ready;
   AppDatabase? _database;
+  DriftRecordingDraftStore? _drafts;
+  Future<DriftSleepOpeningStore>? _openingSleepState;
+  DriftSleepOpeningStore? _sleepState;
+  late final _reviewDrafts = ReviewDraftSession(
+    openStore: widget.openReviewDrafts,
+  );
+
+  Future<bool> _claimSleepOpening(CivilDate date) async {
+    if (!mounted) throw StateError('App has closed.');
+    final pending = _openingSleepState ??= widget.openSleepOpenings();
+    late final DriftSleepOpeningStore store;
+    try {
+      store = await pending;
+    } catch (_) {
+      if (identical(_openingSleepState, pending)) _openingSleepState = null;
+      rethrow;
+    }
+    if (!mounted) {
+      await store.close();
+      throw StateError('App has closed.');
+    }
+    _sleepState = store;
+    return store.claim(date);
+  }
 
   @override
   void initState() {
@@ -32,15 +90,55 @@ class _AppBootstrapState extends State<AppBootstrap> {
 
   Future<void> _open() async {
     final database = await widget.openDatabase();
-    if (!mounted) {
+    DriftRecordingDraftStore? drafts;
+    try {
+      if (!mounted) {
+        await database.close();
+        return;
+      }
+      drafts = await widget.openDrafts();
+      if (!mounted) {
+        await drafts.close();
+        await database.close();
+      } else {
+        _database = database;
+        _drafts = drafts;
+      }
+    } catch (_) {
       await database.close();
-    } else {
-      _database = database;
+      rethrow;
     }
   }
 
   @override
   void dispose() {
+    unawaited(
+      _reviewDrafts.close().catchError((Object error, StackTrace stack) {
+        FlutterError.reportError(
+          FlutterErrorDetails(
+            exception: error,
+            stack: stack,
+            library: 'app bootstrap',
+            context: ErrorDescription('while closing review drafts'),
+          ),
+        );
+      }),
+    );
+    final sleepState = _sleepState;
+    if (sleepState != null) {
+      unawaited(
+        sleepState.close().catchError((Object error, StackTrace stack) {
+          FlutterError.reportError(
+            FlutterErrorDetails(
+              exception: error,
+              stack: stack,
+              library: 'app bootstrap',
+              context: ErrorDescription('while closing sleep opening state'),
+            ),
+          );
+        }),
+      );
+    }
     final database = _database;
     if (database != null) {
       unawaited(
@@ -51,6 +149,21 @@ class _AppBootstrapState extends State<AppBootstrap> {
               stack: stack,
               library: 'app bootstrap',
               context: ErrorDescription('while closing local storage'),
+            ),
+          );
+        }),
+      );
+    }
+    final drafts = _drafts;
+    if (drafts != null) {
+      unawaited(
+        drafts.close().catchError((Object error, StackTrace stack) {
+          FlutterError.reportError(
+            FlutterErrorDetails(
+              exception: error,
+              stack: stack,
+              library: 'app bootstrap',
+              context: ErrorDescription('while closing recording drafts'),
             ),
           );
         }),
@@ -74,7 +187,57 @@ class _AppBootstrapState extends State<AppBootstrap> {
             home: Scaffold(body: Center(child: CircularProgressIndicator())),
           );
         }
-        return const MainApp();
+        final ledger = createRecordingLedgerLoader(_database!);
+        final saver = createRecordingEntrySaver(
+          database: _database!,
+          drafts: _drafts!,
+          ledger: ledger,
+          clock: widget.now,
+        );
+        final sleepLedger = createSleepLedgerLoader(_database!);
+        final reviewLoader = createReviewContextLoader(_database!);
+        return MainApp(
+          goals: DriftGoalRepository(_database!),
+          goalEntry: () => GoalsPage(
+            repository: DriftGoalRepository(_database!),
+            newId: newLocalTimeBlockId,
+            now: () => widget.now().millisecondsSinceEpoch,
+          ),
+          dayLedger: createDayLedgerLoader(_database!),
+          reviewContext: reviewLoader,
+          reviewSaver: createReviewEntrySaver(
+            database: _database!,
+            drafts: _reviewDrafts,
+            loader: reviewLoader,
+            clock: widget.now,
+          ),
+          reviewDrafts: _reviewDrafts,
+          firstSleepOpen: SleepFirstOpenCoordinator(
+            ledger: sleepLedger,
+            claimOpening: _claimSleepOpening,
+          ),
+          sleepLedger: sleepLedger,
+          sleepEntry: (context) => SleepEntry(
+            context: context,
+            openStore: widget.openSleepDrafts,
+            createEditor: createSleepEntryEditor,
+            createSaver: (drafts) => createSleepEntrySaver(
+              database: _database!,
+              drafts: drafts,
+              ledger: sleepLedger,
+              clock: widget.now,
+            ),
+          ),
+          ledger: ledger,
+          drafts: _drafts!,
+          now: widget.now,
+          entrySaver: saver,
+          entryEditor: RecordingEntryEditor(
+            repository: saver.repository,
+            drafts: _drafts!,
+            saver: saver,
+          ),
+        );
       },
     );
   }
