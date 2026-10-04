@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/persistence/app_database.dart';
 import '../../core/persistence/database_connection.dart';
 import '../main_app.dart';
+import '../theme/time_ledger_theme.dart';
 import '../../features/goals/data/drift_goal_repository.dart';
 import '../../features/goals/presentation/goals_page.dart';
 import '../../features/ledger/data/drift_recording_draft_store.dart';
@@ -178,13 +179,19 @@ class _AppBootstrapState extends State<AppBootstrap> {
       future: _ready,
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return const MaterialApp(
-            home: Scaffold(body: Center(child: Text('无法打开本地存储，请重新启动应用。'))),
+          return MaterialApp(
+            theme: timeLedgerTheme,
+            home: const Scaffold(
+              body: Center(child: Text('无法打开本地存储，请重新启动应用。')),
+            ),
           );
         }
         if (snapshot.connectionState != ConnectionState.done) {
-          return const MaterialApp(
-            home: Scaffold(body: Center(child: CircularProgressIndicator())),
+          return MaterialApp(
+            theme: timeLedgerTheme,
+            home: const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            ),
           );
         }
         final ledger = createRecordingLedgerLoader(_database!);
