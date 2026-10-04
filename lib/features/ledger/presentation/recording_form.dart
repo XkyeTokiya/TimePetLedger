@@ -631,9 +631,11 @@ class _RecordingFormState extends State<RecordingForm> {
       ),
     );
     if (!mounted) return;
-    await model.loadGoals();
-    if (!mounted || id == null) return;
-    model.selectGoal(id);
+    if (id == null) {
+      await model.loadGoals();
+    } else {
+      await model.associateCreatedGoal(id);
+    }
   }
 
   Widget _status(BuildContext context) => Container(

@@ -258,6 +258,17 @@ class RecordingFormController extends ChangeNotifier {
     _persist();
   }
 
+  /// Only used after the goal repository has committed creation.
+  Future<void> associateCreatedGoal(EntityId id) async {
+    if (_disposed || !editable) return;
+    _goalRead++;
+    _selectedGoalId = id;
+    goalProvided = true;
+    selectedGoal = null;
+    _persist();
+    await loadGoals();
+  }
+
   void clearGoal() {
     if (!editable) return;
     _goalRead++;

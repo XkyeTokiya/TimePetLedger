@@ -31,7 +31,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(await tester.runAsync(DriftGoalRepository(db).listActive), isEmpty);
-    expect(find.text('补一笔'), findsOneWidget);
+    expect(find.byKey(const ValueKey('root-create')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('root-create')));
     await tester.pumpAndSettle();
     expect(find.text('记录睡眠'), findsOneWidget);

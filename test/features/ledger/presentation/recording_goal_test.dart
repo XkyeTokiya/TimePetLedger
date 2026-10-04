@@ -220,6 +220,86 @@ Future<void> choose(WidgetTester tester, int n) async {
 }
 
 void main() {
+  testWidgets(
+    'cancel creation and invalid name preserve activity without a goal',
+    (t) async {
+      final h = await open(t);
+      final context = RecordingDraftContext.newEntry(date: date);
+      await t.pumpWidget(h.app(context));
+      await textTap(t, '打开');
+      await t.enterText(find.byKey(const ValueKey('activity')), '未完成活动');
+      await textTap(t, '创建目标');
+      await t.enterText(find.byKey(const ValueKey('goal-name')), '   ');
+      await textTap(t, '创建目标');
+      expect(find.text('名称不能为空，去除首尾空白后最多 200 个字符。'), findsOneWidget);
+      expect(await t.runAsync(h.goals.listActive), isEmpty);
+      await t.tap(find.byType(BackButton));
+      await t.pumpAndSettle();
+      expect(find.text('未完成活动'), findsOneWidget);
+      expect(find.text('未关联目标'), findsOneWidget);
+    },
+  );
+  testWidgets(
+    'create from activity returns associated goal and preserves title',
+    (t) async {
+      final h = await open(t);
+      final context = RecordingDraftContext.newEntry(date: date);
+      await t.pumpWidget(h.app(context));
+      await textTap(t, '打开');
+      await t.enterText(find.byKey(const ValueKey('activity')), '保留活动');
+      await textTap(t, '创建目标');
+      await t.enterText(find.byType(TextField).first, '新目标');
+      await textTap(t, '创建目标');
+      expect(find.byKey(const ValueKey('selected-goal')), findsOneWidget);
+      expect(find.text('保留活动'), findsOneWidget);
+      await textTap(t, '保存到账本');
+      final saved = await t.runAsync(() => h.ledger.readTimeBlock(id(9)));
+      expect(saved!.timeBlock.goalId, id(9));
+      await t.pumpWidget(
+        h.app(RecordingDraftContext.edit(date: date, timeBlockId: id(9))),
+      );
+      await textTap(t, '打开');
+      expect(
+        t.widget<Text>(find.byKey(const ValueKey('selected-goal'))).data,
+        '新目标',
+      );
+    },
+  );
+
+  test(
+    'created association survives failed metadata refresh and draft reopen',
+    () async {
+      final queries = GoalQueries();
+      final h = Harness(
+        await AppDatabase.open(NativeDatabase.memory().interceptWith(queries)),
+        await DriftRecordingDraftStore.open(NativeDatabase.memory()),
+      );
+      addTearDown(() async {
+        await h.drafts.close();
+        await h.db.close();
+      });
+      final context = RecordingDraftContext.newEntry(date: date);
+      final c = h.controller(context);
+      await c.initialize();
+      c.setTitle('保留活动');
+      await h.goals.create(id: id(1), name: '已创建', now: 1);
+      queries.fail = true;
+      await c.associateCreatedGoal(id(1));
+      await c.flush();
+      expect(c.goalsError, isNotNull);
+      expect((await h.drafts.read(context))!.goalId, id(1));
+      queries.fail = false;
+      await c.loadGoals();
+      expect(c.selectedGoal!.name, '已创建');
+      expect((await h.goals.listActive()).length, 1);
+      c.dispose();
+      final restored = h.controller(context);
+      await restored.initialize();
+      expect(restored.goalId, id(1));
+      expect(restored.title, '保留活动');
+      restored.dispose();
+    },
+  );
   for (final editing in [false, true]) {
     test(
       '${editing ? 'clear existing' : 'create selected'} committed Goal draft recovers after cleanup failure without a second formal write',
