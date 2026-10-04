@@ -1,3 +1,7 @@
+import 'package:time_pet_ledger/features/ledger/presentation/sleep_summary_view.dart';
+
+import '../support/root_navigation.dart';
+
 import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
@@ -15,10 +19,8 @@ import 'package:time_pet_ledger/features/ledger/domain/block_knowledge_state.dar
 import 'package:time_pet_ledger/features/ledger/domain/sleep_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/sleep_summary_view.dart';
 
-import '../features/ledger/presentation/sleep_form_test.dart'
-    show tapText, enter, showField;
+import '../support/app_sleep_navigation.dart' show tapText, enter, showField;
 import 'sleep_editing_flow_test.dart' show selectDate;
 
 const conflictBlock = '00000000-0000-4000-8000-000000000001';
@@ -213,7 +215,7 @@ Future<void> fill(
 }
 
 Future<void> editSleep(WidgetTester tester, String id) async {
-  final target = find.byKey(ValueKey('sleep-edit-$id'));
+  final target = sleepFact(id);
   await tester.scrollUntilVisible(
     target,
     150,
@@ -255,7 +257,7 @@ void main() {
         approxStart: true,
       );
       await tapText(tester, '保留草稿并返回');
-      expect(find.text('已交代 0 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '0 分钟'), findsOneWidget);
       expect((await summary(tester)).summary.mainSleep.records, isEmpty);
       expect(await tester.runAsync(app.sleeps), isEmpty);
       final draft = (await tester.runAsync(() => app.readDraft(newContext)))!;
@@ -264,8 +266,8 @@ void main() {
       await tapText(tester, '记录睡眠');
       expect(find.text('已恢复上次睡眠输入'), findsOneWidget);
       await tapText(tester, '确认并保存到账本');
-      expect(find.text('已交代 460 分钟'), findsOneWidget);
-      expect(find.text('待补记 260 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '7 小时 40 分钟'), findsOneWidget);
+      expect(ledgerDuration('尚未记录', '4 小时 20 分钟'), findsOneWidget);
       var displayed = (await summary(tester)).summary;
       expect(
         displayed.mainSleep.totalDuration.duration.milliseconds,
@@ -276,14 +278,14 @@ void main() {
         isTrue,
       );
       expect(
-        find.text('约2026-09-28 23:50 → 2026-09-29 07:40 · 完整时长 约470 分钟'),
+        find.text('约2026-09-28 23:50 → 2026-09-29 07:40 · 完整时长 约7 小时 50 分钟'),
         findsOneWidget,
       );
       final original = (await tester.runAsync(app.sleeps))!.single;
       final id = original['id'] as String;
       expect(await tester.runAsync(() => app.readDraft(newContext)), isNull);
       await selectDate(tester, '2026-09-28');
-      expect(find.text('已交代 约10 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '约10 分钟'), findsOneWidget);
       expect((await summary(tester)).summary.mainSleep.records, isEmpty);
       await selectDate(tester, '2026-09-29');
       for (final item in [
@@ -300,8 +302,8 @@ void main() {
         );
         await tapText(tester, '确认并保存到账本');
       }
-      expect(find.text('已交代 约540 分钟'), findsOneWidget);
-      expect(find.text('待补记 约180 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '约9 小时'), findsOneWidget);
+      expect(ledgerDuration('尚未记录', '约3 小时'), findsOneWidget);
       displayed = (await summary(tester)).summary;
       expect(displayed.mainSleep.records, hasLength(2));
       expect(
@@ -311,14 +313,20 @@ void main() {
       expect(displayed.nap.records, hasLength(1));
       expect(displayed.nap.totalDuration.duration.milliseconds, 20 * 60000);
       expect(displayed.nap.totalDuration.duration.hasApproximation, isTrue);
-      expect(find.text('约530 分钟'), findsOneWidget);
-      expect(find.text('约20 分钟'), findsOneWidget);
+      expect(find.text('约8 小时 50 分钟'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(SleepSummaryView),
+          matching: find.text('约20 分钟'),
+        ),
+        findsOneWidget,
+      );
       expect(find.textContaining('完整时长'), findsNWidgets(3));
       await editSleep(tester, id);
       await enter(tester, 'sleep-end', '2026-09-29 07:30');
       expect((await tester.runAsync(app.sleeps))!.first, original);
       await tapText(tester, '保存更正');
-      expect(find.text('已交代 约530 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '约8 小时 50 分钟'), findsOneWidget);
       displayed = (await summary(tester)).summary;
       expect(
         displayed.mainSleep.totalDuration.duration.milliseconds,
@@ -342,8 +350,8 @@ void main() {
       expect((await summary(tester)).summary.mainSleep.records, isEmpty);
       expect(find.text('尚未记录主睡眠'), findsOneWidget);
       await removeSleep(tester, remaining.last['id'] as String);
-      expect(find.text('已交代 0 分钟'), findsOneWidget);
-      expect(find.text('待补记 720 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '0 分钟'), findsOneWidget);
+      expect(ledgerDuration('尚未记录', '12 小时'), findsOneWidget);
       displayed = (await summary(tester)).summary;
       expect(displayed.mainSleep.records, isEmpty);
       expect(displayed.nap.records, isEmpty);
@@ -366,19 +374,19 @@ void main() {
         approxStart: true,
       );
       await tapText(tester, '确认并保存到账本');
-      expect(find.text('已交代 0 分钟'), findsOneWidget);
-      expect(find.text('待补记 720 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '0 分钟'), findsOneWidget);
+      expect(ledgerDuration('尚未记录', '12 小时'), findsOneWidget);
       var displayed = (await summary(tester)).summary;
       expect(displayed.mainSleep.records, hasLength(1));
       expect(
         displayed.mainSleep.totalDuration.duration.milliseconds,
         60 * 60000,
       );
-      expect(find.text('约60 分钟'), findsOneWidget);
+      expect(find.text('约1 小时'), findsOneWidget);
       expect(find.text('尚未记录主睡眠'), findsNothing);
       final id = (await tester.runAsync(app.sleeps))!.single['id'] as String;
       await selectDate(tester, '2026-09-28');
-      expect(find.text('已交代 约60 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '约1 小时'), findsOneWidget);
       expect((await summary(tester)).summary.mainSleep.records, isEmpty);
       await selectDate(tester, '2026-09-29');
       await editSleep(tester, id);
@@ -389,7 +397,7 @@ void main() {
         displayed.mainSleep.totalDuration.duration.milliseconds,
         10 * 60000,
       );
-      expect(find.text('已交代 0 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '0 分钟'), findsOneWidget);
       await removeSleep(tester, id);
       expect((await summary(tester)).summary.mainSleep.records, isEmpty);
       expect(find.text('尚未记录主睡眠'), findsOneWidget);
@@ -472,7 +480,7 @@ void main() {
         () => app.db.customStatement('DROP TRIGGER fail_sleep_insert'),
       );
       await tapText(tester, '确认并保存到账本');
-      expect(find.text('已交代 约120 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '约2 小时'), findsOneWidget);
       expect(await tester.runAsync(() => app.readDraft(newContext)), isNull);
       final inserted = (await tester.runAsync(app.sleeps))!.last;
       final id = inserted['id'] as String;
@@ -487,7 +495,7 @@ void main() {
       await enter(tester, 'sleep-end', '2026-09-29 12:00');
       await enter(tester, 'sleep-start', '2026-09-29 11:15');
       await tapText(tester, '保存更正');
-      expect(find.text('已交代 约105 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '约1 小时 45 分钟'), findsOneWidget);
       expect((await tester.runAsync(app.sleeps))!.last['id'], id);
       await removeSleep(tester, id);
       expect(await tester.runAsync(app.facts), before);
@@ -589,14 +597,14 @@ void main() {
           ),
           isEmpty,
         );
-        expect(find.text('时间账本'), findsOneWidget);
+        expect(find.text('日账本'), findsOneWidget);
       }
       expect(
         (app.trace.inserts, app.trace.updates, app.trace.deletes),
         (1, 1, 1),
       );
-      expect(find.text('已交代 0 分钟'), findsOneWidget);
-      expect(find.text('待补记 720 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '0 分钟'), findsOneWidget);
+      expect(ledgerDuration('尚未记录', '12 小时'), findsOneWidget);
       expect((await summary(tester)).summary.mainSleep.records, isEmpty);
       expect(find.text('尚未记录主睡眠'), findsOneWidget);
       await tester.runAsync(() => app.noOtherFacts());

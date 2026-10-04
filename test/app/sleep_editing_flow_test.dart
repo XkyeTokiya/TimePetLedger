@@ -1,3 +1,6 @@
+import '../support/root_navigation.dart';
+import '../support/ledger_date_selection.dart';
+
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -18,20 +21,15 @@ import 'package:time_pet_ledger/features/ledger/presentation/sleep_form.dart';
 
 import '../features/ledger/application/sleep_entry_editor_test.dart'
     show sleepId, day, at;
-import '../features/ledger/presentation/sleep_form_test.dart'
-    show tapText, enter;
+import '../support/app_sleep_navigation.dart' show tapText, enter;
 
 Future<void> selectDate(WidgetTester tester, String date) async {
-  final input = find.widgetWithText(TextField, '查看日期');
-  await Scrollable.ensureVisible(tester.element(input), alignment: 0.5);
-  await tester.pumpAndSettle();
-  await tester.enterText(input, date);
-  await tester.pumpAndSettle();
+  await selectLedgerDate(tester, date);
   await tapText(tester, '查看记录');
 }
 
 Future<void> edit(WidgetTester tester) async {
-  final target = find.byKey(const ValueKey('sleep-edit-$sleepId'));
+  final target = sleepFact(sleepId);
   await tester.scrollUntilVisible(
     target,
     150,
@@ -41,6 +39,10 @@ Future<void> edit(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await tester.tap(target);
   await tester.pumpAndSettle();
+  if (find.text('编辑完整记录').evaluate().isNotEmpty) {
+    await tester.tap(find.text('编辑完整记录'));
+    await tester.pumpAndSettle();
+  }
 }
 
 void main() {
@@ -86,8 +88,8 @@ void main() {
       );
       await tester.pumpAndSettle();
       await selectDate(tester, '2026-09-28');
-      expect(find.text('已交代 约10 分钟'), findsOneWidget);
-      expect(find.text('主睡眠（跨日原始记录）'), findsOneWidget);
+      expect(ledgerDuration('已交代', '约10 分钟'), findsOneWidget);
+      expect(sleepFact(sleepId), findsOneWidget);
       await edit(tester);
       final c = tester.widget<SleepForm>(find.byType(SleepForm)).controller;
       expect(c.original!.id, sleepId);
@@ -117,17 +119,20 @@ void main() {
       expect(saved.startedAt, at(29, 23, 50));
       expect(saved.endPrecision, TimePrecision.approximate);
       await edit(tester);
-      expect(find.text('已恢复上次睡眠输入'), findsOneWidget);
+      expect(
+        tester.widget<SleepForm>(find.byType(SleepForm)).controller.restored,
+        isTrue,
+      );
       expect(
         tester
-            .widget<TextField>(find.byKey(const ValueKey('sleep-end')))
-            .controller!
-            .text,
+            .widget<SleepForm>(find.byType(SleepForm))
+            .controller
+            .endedAtInput,
         '2026-09-30 07:40',
       );
       await tapText(tester, '保存更正');
-      expect(find.text('已交代 0 分钟'), findsOneWidget);
-      expect(find.byKey(const ValueKey('sleep-edit-$sleepId')), findsNothing);
+      expect(ledgerDuration('已交代', '0 分钟'), findsOneWidget);
+      expect(sleepFact(sleepId), findsNothing);
       final updated = (await tester.runAsync(
         () => repo.readSleepSession(sleepId),
       ))!;
@@ -143,18 +148,21 @@ void main() {
       ))!;
       expect(await tester.runAsync(() => nextStore.read(context28)), isNull);
       await selectDate(tester, '2026-09-29');
-      expect(find.text('已交代 10 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '10 分钟'), findsOneWidget);
+      await tester.ensureVisible(find.text('完整睡眠 · 按醒来日期'));
+      await tester.tap(find.text('完整睡眠 · 按醒来日期'));
+      await tester.pumpAndSettle();
       expect(find.text('尚未记录主睡眠'), findsOneWidget);
       expect(find.text('尚未记录小睡'), findsOneWidget);
       await selectDate(tester, '2026-09-30');
-      expect(find.text('已交代 约460 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '约7 小时 40 分钟'), findsOneWidget);
       await tester.scrollUntilVisible(
-        find.text('约470 分钟'),
+        find.text('约7 小时 50 分钟'),
         100,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('约470 分钟'), findsOneWidget);
-      expect(find.byKey(const ValueKey('sleep-edit-$sleepId')), findsOneWidget);
+      expect(find.text('约7 小时 50 分钟'), findsOneWidget);
+      expect(sleepFact(sleepId), findsOneWidget);
       await edit(
         tester,
       ); // Awake-day summary leads to the same complete source.
@@ -168,7 +176,7 @@ void main() {
         SleepType.mainSleep,
       );
       await tester.scrollUntilVisible(
-        find.text('约470 分钟'),
+        find.text('约7 小时 50 分钟'),
         100,
         scrollable: find.byType(Scrollable).first,
       );
@@ -180,8 +188,8 @@ void main() {
       await tapText(tester, '删除睡眠');
       await tester.tap(find.text('确认删除'));
       await tester.pumpAndSettle();
-      expect(find.text('已交代 0 分钟'), findsOneWidget);
-      expect(find.text('待补记 720 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '0 分钟'), findsOneWidget);
+      expect(ledgerDuration('尚未记录', '12 小时'), findsOneWidget);
       expect(find.text('尚未记录主睡眠'), findsOneWidget);
       expect(find.text('尚未记录小睡'), findsOneWidget);
       expect(
@@ -201,7 +209,7 @@ void main() {
       );
       await tester.runAsync(verify.close);
       await selectDate(tester, '2026-09-29');
-      expect(find.text('已交代 0 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '0 分钟'), findsOneWidget);
       expect(
         await tester.runAsync(
           () => db.customSelect('SELECT * FROM sleep_sessions').get(),
@@ -291,7 +299,7 @@ void main() {
       );
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
-      expect(find.text('已交代 0 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '0 分钟'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
     },

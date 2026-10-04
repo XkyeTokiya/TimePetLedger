@@ -1,3 +1,5 @@
+import '../../../support/recording_fields.dart';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -44,6 +46,14 @@ Widget app(
   ),
 );
 Future<void> tap(WidgetTester tester, String text) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  tester.testTextInput.hide();
+  await tester.pumpAndSettle();
+  if (['保留草稿并返回', '放弃草稿'].contains(text) &&
+      find.text(text).evaluate().isEmpty) {
+    await tester.tap(find.byTooltip('更多'));
+    await tester.pumpAndSettle();
+  }
   final target = find.text(text);
   if (target.evaluate().isEmpty) {
     await tester.scrollUntilVisible(
@@ -59,6 +69,30 @@ Future<void> tap(WidgetTester tester, String text) async {
 }
 
 Future<void> enterTime(WidgetTester tester, String label, String value) async {
+  if (find.text('调整记录时间').evaluate().isEmpty &&
+      find.text(label).evaluate().isEmpty) {
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('edit-recording-time')),
+    );
+    await tester.tap(find.byKey(const ValueKey('edit-recording-time')));
+    await tester.pumpAndSettle();
+  }
+  if (find.text('调整记录时间').evaluate().isNotEmpty) {
+    await tap(tester, '手动输入日期与时间');
+    final field = find.byKey(
+      ValueKey(label == '开始时间' ? 'time-start' : 'time-end'),
+    );
+    await tester.scrollUntilVisible(
+      field,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(field);
+    await tester.enterText(field, value);
+    await tap(tester, '应用时间');
+    return;
+  }
+  await revealRecordingField(tester, label);
   await tap(tester, label);
   await tester.enterText(
     find.byKey(const ValueKey('time-dialog-input')),
@@ -79,14 +113,20 @@ void main() {
         lessThan(tester.getTopLeft(find.text('开始时间')).dy),
       );
       expect(find.text('请选择是否记得这段时间的内容。'), findsOneWidget);
-      expect(find.byKey(const ValueKey('note')), findsOneWidget);
+      expect(find.byKey(const ValueKey('note')), findsNothing);
+      await revealRecordingField(tester, 'note');
       await tester.enterText(find.byKey(const ValueKey('note')), '🐾' * 2001);
+      await tester.pumpAndSettle();
+      FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
       expect(find.text('备注最多 2000 个字符。'), findsOneWidget);
       await tester.enterText(find.byKey(const ValueKey('note')), '🐾' * 2000);
       await tester.pumpAndSettle();
       expect(find.text('备注最多 2000 个字符。'), findsNothing);
       await tap(tester, '记得做了什么');
+      await tester.tap(find.byKey(const ValueKey('activity')));
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
       expect(find.text('请填写活动内容。'), findsOneWidget);
       await tap(tester, '想不起来');
       expect(find.text('请填写活动内容。'), findsNothing);
@@ -117,7 +157,7 @@ void main() {
       app(store, suggestion: TimeCandidates([candidate])),
     );
     await tap(tester, '打开');
-    expect(find.text('未填写'), findsNWidgets(2));
+    expect(find.widgetWithText(ListTile, '未填写'), findsNWidgets(2));
     await tap(
       tester,
       '${formatRecordingTime(candidate.startedAt)} → ${formatRecordingTime(candidate.endedAt)}',
@@ -137,6 +177,7 @@ void main() {
       await tester.pumpWidget(app(store));
       await tap(tester, '打开');
       await tester.enterText(find.byKey(const ValueKey('activity')), '  一半输入');
+      await revealRecordingField(tester, 'note');
       await tester.enterText(find.byKey(const ValueKey('note')), '  未完\n备注  ');
       await tester.pumpAndSettle();
       await tester.tap(find.byType(BackButton));
@@ -152,8 +193,9 @@ void main() {
         ),
       );
       await tap(tester, '打开');
-      expect(find.text('已恢复上次输入'), findsOneWidget);
+      expect(store.value, isNotNull);
       expect(find.text('  一半输入'), findsOneWidget);
+      await revealRecordingField(tester, 'note');
       expect(
         tester
             .widget<TextField>(find.byKey(const ValueKey('note')))
@@ -161,7 +203,7 @@ void main() {
             .text,
         '  未完\n备注  ',
       );
-      expect(find.text('未填写'), findsNWidgets(2));
+      expect(find.widgetWithText(ListTile, '未填写'), findsNWidgets(2));
       await tap(tester, '放弃草稿');
       expect(store.value, isNull);
       expect(find.text('打开'), findsOneWidget);
@@ -242,10 +284,11 @@ void main() {
     await tester.pumpWidget(app(store, saver: saver));
     await tap(tester, '打开');
     await tap(tester, '想不起来');
+    await revealRecordingField(tester, 'note');
     await tester.enterText(find.byKey(const ValueKey('note')), '  补充\n第二行  ');
     await enterTime(tester, '开始时间', '2026-09-28 10:00');
     await enterTime(tester, '结束时间', '2026-09-28 11:00');
-    await tap(tester, '确认并保存到账本');
+    await tap(tester, '保存到账本');
     expect(find.text('打开'), findsOneWidget);
     expect(store.value, isNull);
     final snapshot = await tester.runAsync(
@@ -303,7 +346,7 @@ void main() {
     await tester.enterText(find.byKey(const ValueKey('activity')), '写作');
     await enterTime(tester, '开始时间', '2026-09-28 10:00');
     await enterTime(tester, '结束时间', '2026-09-28 11:00');
-    await tap(tester, '确认并保存到账本');
+    await tap(tester, '保存到账本');
     expect(find.text('时间与已有记录冲突，请手动调整后再保存。'), findsOneWidget);
     expect(find.textContaining(sleepId), findsOneWidget);
     expect(store.value!.title, '写作');
@@ -339,11 +382,11 @@ void main() {
       await tap(tester, '想不起来');
       await enterTime(tester, '开始时间', '2026-09-28 10:00');
       await enterTime(tester, '结束时间', '2026-09-28 11:00');
-      await tap(tester, '确认并保存到账本');
+      await tap(tester, '保存到账本');
       expect(find.text('已正式保存到账本，请不要再次提交。'), findsOneWidget);
       expect(find.text('草稿清理失败，旧草稿仍可能显示；请重试清理。'), findsOneWidget);
       expect(find.text('账本刷新失败，记录已保存；请重试刷新。'), findsOneWidget);
-      expect(find.text('确认并保存到账本'), findsNothing);
+      expect(find.text('保存到账本'), findsNothing);
       store.failClear = false;
       failRefresh = false;
       await tap(tester, '继续清理并刷新');
@@ -410,6 +453,7 @@ void main() {
       await tap(tester, '打开');
       expect(find.text('更正记录'), findsOneWidget);
       expect(find.text('写作'), findsOneWidget);
+      await revealRecordingField(tester, 'note');
       expect(
         tester
             .widget<TextField>(find.byKey(const ValueKey('note')))
@@ -417,7 +461,16 @@ void main() {
             .text,
         '原备注',
       );
-      expect(find.text(formatRecordingTime(end)), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('recording-time-summary')),
+        findsOneWidget,
+      );
+      expect(
+        tester
+            .widget<Text>(find.byKey(const ValueKey('recording-time-summary')))
+            .data,
+        contains(formatRecordingTime(end)),
+      );
       expect(store.value, isNull);
       await tap(tester, '想不起来');
       await tester.enterText(find.byKey(const ValueKey('note')), '  更正\n备注  ');
@@ -436,8 +489,9 @@ void main() {
         '原备注',
       );
       await tap(tester, '打开');
-      expect(find.text('已恢复上次输入'), findsOneWidget);
+      expect(store.value, isNotNull);
       expect(find.text('写作'), findsOneWidget);
+      await revealRecordingField(tester, 'note');
       expect(
         tester
             .widget<TextField>(find.byKey(const ValueKey('note')))
@@ -459,6 +513,7 @@ void main() {
       await tap(tester, '打开');
       await tap(tester, '记得做了什么');
       await tester.enterText(find.byKey(const ValueKey('activity')), '修改后的写作');
+      await revealRecordingField(tester, 'note');
       await tester.enterText(find.byKey(const ValueKey('note')), ' \n ');
       await tap(tester, '保存更正');
       final back = (await tester.runAsync(() => repository.readTimeBlock(id)))!

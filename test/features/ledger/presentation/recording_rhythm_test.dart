@@ -1,3 +1,5 @@
+import '../../../support/recording_fields.dart';
+
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -232,10 +234,31 @@ Future<void> tap(WidgetTester t, Finder target) async {
   await t.pumpAndSettle();
 }
 
-Future<void> textTap(WidgetTester t, String text) => tap(t, find.text(text));
-Future<void> stateTap(WidgetTester t, RhythmState? state) =>
-    tap(t, find.byKey(ValueKey('rhythm-${state?.name ?? 'none'}')));
+Future<void> textTap(WidgetTester t, String text) async {
+  if (['保留草稿并返回', '放弃草稿'].contains(text) &&
+      find.text(text).evaluate().isEmpty) {
+    await t.tap(find.byTooltip('更多'));
+    await t.pumpAndSettle();
+  }
+  if (text == '选择目标' && find.text(text).evaluate().isEmpty) {
+    await tap(t, find.byKey(const ValueKey('recording-goal-toggle')));
+  }
+  await revealRecordingField(t, text);
+  await tap(t, find.text(text));
+}
+
+Future<void> stateTap(WidgetTester t, RhythmState? state) async {
+  if (find
+      .byKey(ValueKey('rhythm-${state?.name ?? 'none'}'))
+      .evaluate()
+      .isEmpty) {
+    await tap(t, find.byKey(const ValueKey('recording-rhythm-toggle')));
+  }
+  await tap(t, find.byKey(ValueKey('rhythm-${state?.name ?? 'none'}')));
+}
+
 Future<void> enter(WidgetTester t, String key, String value) async {
+  await revealRecordingField(t, key);
   final target = find.byKey(ValueKey(key));
   await show(t, target);
   await t.enterText(target, value);
@@ -343,6 +366,7 @@ void main() {
               findsNothing,
             );
           }
+          await revealRecordingField(t, 'continuation-hint');
           await show(t, find.byKey(const ValueKey('continuation-hint')));
           expect(
             t
@@ -399,6 +423,7 @@ void main() {
         await stateTap(t, RhythmState.values.firstWhere((s) => s != state));
         await stateTap(t, null);
         await stateTap(t, state);
+        await revealRecordingField(t, 'continuation-hint');
         await show(t, find.byKey(const ValueKey('continuation-hint')));
         expect(
           t
@@ -414,6 +439,7 @@ void main() {
         expect(draft.continuationHint, text);
         expect(draft.annotationIntent, RecordingAnnotationIntent.add);
         await textTap(t, '打开');
+        await revealRecordingField(t, 'continuation-hint');
         await show(t, find.byKey(const ValueKey('continuation-hint')));
         expect(
           t
@@ -424,7 +450,7 @@ void main() {
               .text,
           text,
         );
-        await textTap(t, '确认并保存到账本');
+        await textTap(t, '保存到账本');
         final saved = (await t.runAsync(() => f.repo.readTimeBlock(id(101))))!;
         expect(saved.annotation!.id, draft.annotationId);
         expect(saved.annotation!.continuationHint, text.trim());
@@ -457,8 +483,10 @@ void main() {
       await textTap(t, '想不起来');
       await stateTap(t, RhythmState.stuck);
       await enter(t, 'continuation-hint', '🐾' * 2001);
+      FocusManager.instance.primaryFocus?.unfocus();
+      await t.pumpAndSettle();
       expect(find.text('接续点最多 2000 个字符。'), findsOneWidget);
-      await textTap(t, '确认并保存到账本');
+      await textTap(t, '保存到账本');
       expect(find.text('请确认活动和时间后再保存。'), findsOneWidget);
       expect(
         (await t.runAsync(() => f.drafts.read(newContext)))!.continuationHint,
@@ -471,7 +499,7 @@ void main() {
         isEmpty,
       );
       await enter(t, 'continuation-hint', '修正\n保留内部格式');
-      await textTap(t, '确认并保存到账本');
+      await textTap(t, '保存到账本');
       expect(
         (await t.runAsync(() => f.repo.readTimeBlock(id(101))))!
             .annotation!
@@ -598,12 +626,14 @@ void main() {
       await textTap(t, '结束时间');
       await enter(t, 'time-dialog-input', '2026-10-01 11:30');
       await textTap(t, '确认');
+      await textTap(t, '应用时间');
       await textTap(t, '保存更正');
       expect(find.text('时间与已有记录冲突，请手动调整后再保存。'), findsOneWidget);
       expect(await t.runAsync(f.snapshot), before);
       await textTap(t, '结束时间');
       await enter(t, 'time-dialog-input', '2026-10-01 11:00');
       await textTap(t, '确认');
+      await textTap(t, '应用时间');
       await textTap(t, '保存更正');
       expect(
         (await t.runAsync(() => f.repo.readTimeBlock(id(8))))!

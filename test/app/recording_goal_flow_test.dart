@@ -1,3 +1,6 @@
+import '../support/recording_fields.dart';
+import '../support/root_navigation.dart';
+
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -17,6 +20,7 @@ import 'support/checked_sleep_opening.dart';
 
 String id(int n) => '00000000-0000-4000-8000-${n.toString().padLeft(12, '0')}';
 Future<void> tap(WidgetTester tester, Finder target) async {
+  FocusManager.instance.primaryFocus?.unfocus();
   tester.testTextInput.hide();
   await tester.pumpAndSettle();
   if (target.evaluate().isEmpty) {
@@ -32,14 +36,18 @@ Future<void> tap(WidgetTester tester, Finder target) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> textTap(WidgetTester tester, String text) =>
-    tap(tester, find.text(text));
+Future<void> textTap(WidgetTester tester, String text) async {
+  if (await tapRootAction(tester, text)) return;
+  await tap(tester, find.text(text));
+}
+
 Future<void> choose(WidgetTester tester, int n) async {
   await textTap(tester, '选择目标');
   await tap(tester, find.byKey(ValueKey('goal-option-${id(n)}')));
 }
 
 Future<void> time(WidgetTester tester, String label, String value) async {
+  await revealRecordingField(tester, label);
   await textTap(tester, label);
   await tester.enterText(
     find.byKey(const ValueKey('time-dialog-input')),
@@ -90,7 +98,7 @@ void main() {
         await DriftGoalRepository(db).create(id: id(2), name: '文件重开目标', now: 1);
       });
       await mount();
-      await textTap(tester, '补一笔');
+      await textTap(tester, '记录活动');
       await tester.enterText(
         find.byKey(const ValueKey('activity')),
         '  原始输入 🐾  ',
@@ -121,7 +129,7 @@ void main() {
         id(2),
       );
       await mount();
-      await textTap(tester, '补一笔');
+      await textTap(tester, '记录活动');
       expect(find.text('已恢复上次输入'), findsOneWidget);
       expect(
         tester
@@ -130,7 +138,7 @@ void main() {
             .text,
         '  原始输入 🐾  ',
       );
-      await textTap(tester, '确认并保存到账本');
+      await textTap(tester, '保存到账本');
       final block = (await tester.runAsync(
         () => DriftLedgerRepository(db).readWindow(
           startedAt: DateTime(2026, 10, 1).millisecondsSinceEpoch,
@@ -138,7 +146,7 @@ void main() {
         ),
       ))!.timeBlocks.single;
       expect(block.goalId, id(2));
-      await tap(tester, find.byKey(ValueKey('edit-${block.id}')));
+      await tap(tester, recordingFact(block.id));
       await textTap(tester, '移除目标归属');
       await textTap(tester, '保留草稿并返回');
       expect(
@@ -155,7 +163,7 @@ void main() {
         () => DriftRecordingDraftStore.open(NativeDatabase(draftFile)),
       ))!;
       await mount();
-      await tap(tester, find.byKey(ValueKey('edit-${block.id}')));
+      await tap(tester, recordingFact(block.id));
       expect(find.text('未关联目标'), findsOneWidget);
       await textTap(tester, '保存更正');
       expect(
@@ -194,11 +202,14 @@ void main() {
       await textTap(tester, '补一笔');
       final form = tester.widget<RecordingForm>(find.byType(RecordingForm));
       expect(form.context.entry, RecordingDraftEntry.gap);
-      expect(find.text('2026-10-01 00:00'), findsOneWidget);
+      expect(
+        recordingTimeSummaryContaining('2026-10-01 00:00'),
+        findsOneWidget,
+      );
       await tester.enterText(find.byKey(const ValueKey('activity')), 'Gap活动');
       await textTap(tester, '记得做了什么');
       await choose(tester, 1);
-      await textTap(tester, '确认并保存到账本');
+      await textTap(tester, '保存到账本');
       final block = (await tester.runAsync(
         () => DriftLedgerRepository(db).readWindow(
           startedAt: DateTime(2026, 10, 1).millisecondsSinceEpoch,

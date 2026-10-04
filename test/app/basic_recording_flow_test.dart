@@ -1,3 +1,12 @@
+import '../support/recording_fields.dart';
+
+import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_timeline.dart';
+import 'package:time_pet_ledger/features/ledger/domain/projection/ledger_segment.dart';
+
+import 'review_form_entry_test.dart' show settleNative;
+import '../support/ledger_date_selection.dart';
+import '../support/root_navigation.dart';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,15 +33,27 @@ int at(int day, int hour, [int minute = 0]) =>
     DateTime(2026, 9, day, hour, minute).millisecondsSinceEpoch;
 
 Future<void> tapVisible(WidgetTester tester, String text) async {
-  final target = find.text(text);
+  if (await tapRootAction(tester, text)) {
+    return;
+  }
+  final target = text == '更正完整记录' || text == '删除完整时间记录'
+      ? find.descendant(
+          of: find.byWidgetPredicate(
+            (widget) =>
+                widget is LedgerFactTimelineTile &&
+                widget.segment is TimeBlockSegment,
+          ),
+          matching: find.byTooltip(text == '删除完整时间记录' ? '删除记录' : text),
+        )
+      : find.text(text);
   tester.testTextInput.hide();
-  await tester.pumpAndSettle();
+  await settleNative(tester);
   if (target.evaluate().isEmpty) {
     tester
         .state<ScrollableState>(find.byType(Scrollable).first)
         .position
         .jumpTo(0);
-    await tester.pumpAndSettle();
+    await settleNative(tester);
     await tester.scrollUntilVisible(
       target,
       250,
@@ -40,12 +61,13 @@ Future<void> tapVisible(WidgetTester tester, String text) async {
     );
   }
   await Scrollable.ensureVisible(tester.element(target.first), alignment: 0.5);
-  await tester.pumpAndSettle();
+  await settleNative(tester);
   await tester.tap(target.first);
-  await tester.pumpAndSettle();
+  await settleNative(tester);
 }
 
 Future<void> enterTime(WidgetTester tester, String label, String value) async {
+  await revealRecordingField(tester, label);
   await tapVisible(tester, label);
   await tester.enterText(
     find.byKey(const ValueKey('time-dialog-input')),
@@ -87,11 +109,17 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tapVisible(tester, '查看记录');
-      expect(find.text('本窗口睡眠记录 1 条'), findsOneWidget);
-      expect(find.text('已交代 60 分钟'), findsOneWidget);
-      await tapVisible(tester, '补一笔');
-      expect(find.text('2026-09-29 09:00'), findsOneWidget);
-      expect(find.text('2026-09-29 12:00'), findsOneWidget);
+      expect(ledgerFactCount(tester, '睡眠'), 1);
+      expect(ledgerDuration('已交代', '1 小时'), findsOneWidget);
+      await tapVisible(tester, '记录活动');
+      expect(
+        recordingTimeSummaryContaining('2026-09-29 09:00'),
+        findsOneWidget,
+      );
+      expect(
+        recordingTimeSummaryContaining('2026-09-29 12:00'),
+        findsOneWidget,
+      );
       expect(find.text('选择要补记的时间，也可以手动填写：'), findsNothing);
       expect(
         tester
@@ -117,10 +145,13 @@ void main() {
         ))!.timeBlocks,
         isEmpty,
       );
-      await tapVisible(tester, '确认并保存到账本');
-      expect(find.text('已交代 约120 分钟'), findsOneWidget);
-      expect(find.text('本窗口睡眠记录 1 条'), findsOneWidget);
-      expect(find.text('约2026-09-29 09:00 → 2026-09-29 10:00'), findsOneWidget);
+      await tapVisible(tester, '保存到账本');
+      expect(ledgerDuration('已交代', '约2 小时'), findsOneWidget);
+      expect(ledgerFactCount(tester, '睡眠'), 1);
+      expect(
+        find.byTooltip('约2026-09-29 09:00 → 2026-09-29 10:00'),
+        findsOneWidget,
+      );
       expect(
         await tester.runAsync(
           () => drafts.read(RecordingDraftContext.newEntry(date: today)),
@@ -139,7 +170,7 @@ void main() {
       expect(saved.timeBlocks.single.startPrecision, TimePrecision.approximate);
       expect(saved.timeBlocks.single.endPrecision, TimePrecision.exact);
 
-      await tapVisible(tester, '更正');
+      await tapVisible(tester, '更正完整记录');
       expect(
         tester
             .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '结束准确'))
@@ -148,8 +179,9 @@ void main() {
       );
       await tapVisible(tester, '想不起来');
       await tapVisible(tester, '保存更正');
-      expect(find.text('其中未知 约60 分钟'), findsOneWidget);
-      expect(find.text('想不起来 · 读书'), findsOneWidget);
+      expect(find.text('其中想不起来：约1 小时（已含在已交代中）'), findsOneWidget);
+      expect(find.text('想不起来 · 已交代'), findsOneWidget);
+      expect(find.text('读书'), findsOneWidget);
       final corrected = (await tester.runAsync(
         () => repository.readTimeBlock(id),
       ))!;
@@ -157,12 +189,12 @@ void main() {
       expect(corrected.timeBlock.knowledgeState, BlockKnowledgeState.unknown);
       expect(corrected.timeBlock.title, '读书');
       expect(corrected.timeBlock.endPrecision, TimePrecision.exact);
-      await tapVisible(tester, '删除');
+      await tapVisible(tester, '删除完整时间记录');
       await tapVisible(tester, '删除记录');
-      expect(find.text('已交代 60 分钟'), findsOneWidget);
-      expect(find.text('待补记 660 分钟'), findsOneWidget);
-      expect(find.text('本窗口睡眠记录 1 条'), findsOneWidget);
-      expect(find.text('本窗口普通记录 0 条'), findsOneWidget);
+      expect(ledgerDuration('已交代', '1 小时'), findsOneWidget);
+      expect(ledgerDuration('尚未记录', '11 小时'), findsOneWidget);
+      expect(ledgerFactCount(tester, '睡眠'), 1);
+      expect(ledgerFactCount(tester, '普通'), 0);
       expect(await tester.runAsync(() => repository.readTimeBlock(id)), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
@@ -210,8 +242,8 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField).first, '2026-09-28');
-      await tapVisible(tester, '补一笔');
+      await selectLedgerDate(tester, '2026-09-28');
+      await tapVisible(tester, '记录活动');
       expect(find.text('选择要补记的时间，也可以手动填写：'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('结束时间'),
@@ -219,14 +251,17 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
-      expect(find.text('未填写'), findsNWidgets(2));
+      expect(find.widgetWithText(ListTile, '未填写'), findsNWidgets(2));
       await tapVisible(
         tester,
         '${formatRecordingTime(at(28, 11))} → ${formatRecordingTime(at(28, 13))}',
       );
-      expect(find.text('2026-09-28 11:00'), findsOneWidget);
+      expect(
+        recordingTimeSummaryContaining('2026-09-28 11:00'),
+        findsOneWidget,
+      );
       await tapVisible(tester, '记得做了什么');
-      await tapVisible(tester, '确认并保存到账本');
+      await tapVisible(tester, '保存到账本');
       await tester.scrollUntilVisible(
         find.byKey(const ValueKey('activity')),
         -250,
@@ -237,7 +272,7 @@ void main() {
       await tester.enterText(find.byKey(const ValueKey('activity')), '整理');
       await enterTime(tester, '开始时间', '2026-09-28 10:30');
       await enterTime(tester, '结束时间', '2026-09-28 12:00');
-      await tapVisible(tester, '确认并保存到账本');
+      await tapVisible(tester, '保存到账本');
       expect(find.text('时间与已有记录冲突，请手动调整后再保存。'), findsOneWidget);
       expect(find.textContaining('冲突记录：睡眠'), findsOneWidget);
       expect(find.text('已保存到账本。'), findsNothing);
@@ -253,9 +288,9 @@ void main() {
         hasLength(1),
       );
       await enterTime(tester, '开始时间', '2026-09-28 11:00');
-      await tapVisible(tester, '确认并保存到账本');
+      await tapVisible(tester, '保存到账本');
       expect(find.text('已保存到账本。'), findsOneWidget);
-      expect(find.text('已交代 约180 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '约3 小时'), findsOneWidget);
       final saved = (await tester.runAsync(
         () => repository.readWindow(startedAt: at(28, 0), endedAt: at(29, 0)),
       ))!;

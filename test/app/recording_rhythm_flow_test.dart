@@ -1,3 +1,6 @@
+import '../support/recording_fields.dart';
+import '../support/root_navigation.dart';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,7 +14,7 @@ import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_timeline.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart';
 
-import '../features/ledger/presentation/recording_rhythm_test.dart' show show;
+import '../support/app_recording_navigation.dart' show show;
 import 'recording_goal_flow_test.dart' show disposeApp, time;
 import 'support/checked_sleep_opening.dart';
 
@@ -21,8 +24,10 @@ Future<void> tap(WidgetTester tester, Finder target) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> textTap(WidgetTester tester, String text) =>
-    tap(tester, find.text(text));
+Future<void> textTap(WidgetTester tester, String text) async {
+  if (await tapRootAction(tester, text)) return;
+  await tap(tester, find.text(text));
+}
 
 void main() {
   for (final gap in [false, true]) {
@@ -47,7 +52,7 @@ void main() {
         );
         await tester.pumpAndSettle();
         if (gap) await textTap(tester, '打开日账本');
-        await textTap(tester, '补一笔');
+        await textTap(tester, gap ? '补一笔' : '记录活动');
         final context = tester
             .widget<RecordingForm>(find.byType(RecordingForm))
             .context;
@@ -61,6 +66,7 @@ void main() {
           await time(tester, '结束时间', '2026-10-01 11:00');
         }
         await tap(tester, find.byKey(const ValueKey('rhythm-stuck')));
+        await revealRecordingField(tester, 'continuation-hint');
         await tester.enterText(
           find.byKey(const ValueKey('continuation-hint')),
           '  下次看笔记\n🐾  ',
@@ -76,8 +82,8 @@ void main() {
           ),
           isEmpty,
         );
-        await textTap(tester, '补一笔');
-        await textTap(tester, '确认并保存到账本');
+        await textTap(tester, gap ? '补一笔' : '记录活动');
+        await textTap(tester, '保存到账本');
         final window = (await tester.runAsync(
           () => repo.readWindow(
             startedAt: DateTime(2026, 10, 1).millisecondsSinceEpoch,
@@ -99,7 +105,7 @@ void main() {
             ? find.byKey(
                 ValueKey((type: LedgerFactType.timeBlock, id: block.id)),
               )
-            : find.byKey(ValueKey('edit-${block.id}'));
+            : recordingFact(block.id);
         await tap(tester, entry());
         await tap(tester, find.byKey(const ValueKey('rhythm-recovery')));
         await textTap(tester, '保存更正');

@@ -1,3 +1,8 @@
+import 'package:time_pet_ledger/features/ledger/presentation/sleep_summary_view.dart';
+
+import '../support/ledger_date_selection.dart';
+import '../support/root_navigation.dart';
+
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -16,10 +21,8 @@ import 'package:time_pet_ledger/features/ledger/domain/sleep_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_session.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/sleep_summary_view.dart';
 
-import '../features/ledger/presentation/sleep_form_test.dart'
-    show tapText, enter;
+import '../support/app_sleep_navigation.dart' show tapText, enter;
 
 void main() {
   testWidgets(
@@ -54,6 +57,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       await tapText(tester, '查看记录');
+      await tapText(tester, '完整睡眠 · 按醒来日期');
       expect(find.text('尚未记录主睡眠'), findsOneWidget);
       expect(find.text('尚未记录小睡'), findsOneWidget);
       await tapText(tester, '记录睡眠');
@@ -63,16 +67,16 @@ void main() {
       await tapText(tester, '入睡大约');
       await tapText(tester, '醒来准确');
       await tapText(tester, '确认并保存到账本');
-      expect(find.text('已交代 460 分钟'), findsOneWidget);
-      expect(find.text('待补记 260 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '7 小时 40 分钟'), findsOneWidget);
+      expect(ledgerDuration('尚未记录', '4 小时 20 分钟'), findsOneWidget);
       await tester.scrollUntilVisible(
-        find.text('约470 分钟'),
+        find.text('约7 小时 50 分钟'),
         100,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('约470 分钟'), findsOneWidget);
+      expect(find.text('约7 小时 50 分钟'), findsOneWidget);
       expect(
-        find.text('约2026-09-28 23:50 → 2026-09-29 07:40 · 完整时长 约470 分钟'),
+        find.text('约2026-09-28 23:50 → 2026-09-29 07:40 · 完整时长 约7 小时 50 分钟'),
         findsOneWidget,
       );
       expect(find.text('尚未记录小睡'), findsOneWidget);
@@ -95,14 +99,23 @@ void main() {
       await tapText(tester, '入睡准确');
       await tapText(tester, '醒来准确');
       await tapText(tester, '确认并保存到账本');
-      expect(find.text('已交代 480 分钟'), findsOneWidget);
-      expect(find.text('待补记 240 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '8 小时'), findsOneWidget);
+      expect(ledgerDuration('尚未记录', '4 小时'), findsOneWidget);
       await tester.scrollUntilVisible(
-        find.text('20 分钟'),
+        find.descendant(
+          of: find.byType(SleepSummaryView),
+          matching: find.text('20 分钟'),
+        ),
         100,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.text('20 分钟'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(SleepSummaryView),
+          matching: find.text('20 分钟'),
+        ),
+        findsOneWidget,
+      );
       expect(
         find.text('2026-09-29 07:40 → 2026-09-29 08:00 · 完整时长 20 分钟'),
         findsOneWidget,
@@ -132,12 +145,9 @@ void main() {
       ))!;
       expect(await tester.runAsync(() => verify.read(context)), isNull);
       await tester.runAsync(verify.close);
-      final dateField = find.widgetWithText(TextField, '查看日期');
-      await tester.ensureVisible(dateField);
-      await tester.enterText(dateField, '2026-09-28');
-      await tester.pumpAndSettle();
+      await selectLedgerDate(tester, '2026-09-28');
       await tapText(tester, '查看记录');
-      expect(find.text('已交代 约10 分钟'), findsOneWidget);
+      expect(ledgerDuration('已交代', '约10 分钟'), findsOneWidget);
       expect(find.text('尚未记录主睡眠'), findsOneWidget);
       expect(find.text('尚未记录小睡'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
@@ -197,7 +207,7 @@ void main() {
           home: Scaffold(body: SleepSummaryView(summary: summary)),
         ),
       );
-      expect(find.text('约120 分钟'), findsOneWidget);
+      expect(find.text('约2 小时'), findsOneWidget);
       expect(find.text('少于 1 分钟'), findsOneWidget);
       expect(find.textContaining('完整时长'), findsNWidgets(3));
       expect(find.textContaining('尚未记录'), findsNothing);

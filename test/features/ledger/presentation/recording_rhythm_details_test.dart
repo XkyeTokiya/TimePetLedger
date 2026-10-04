@@ -17,6 +17,7 @@ Future<void> mount(
 ) async {
   await t.pumpWidget(f.app(c));
   await support.textTap(t, '打开');
+  await support.tap(t, find.byKey(const ValueKey('recording-rhythm-toggle')));
 }
 
 void main() {
@@ -109,7 +110,7 @@ void main() {
         isTrue,
       );
       await support.stateTap(t, RhythmState.stuck);
-      await support.textTap(t, '确认并保存到账本');
+      await support.textTap(t, '保存到账本');
       final saved = (await t.runAsync(
         () => f.repo.readWindow(startedAt: support.start, endedAt: support.end),
       ));

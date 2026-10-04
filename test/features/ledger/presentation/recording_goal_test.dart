@@ -197,8 +197,23 @@ Future<void> tap(WidgetTester tester, Finder target) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> textTap(WidgetTester tester, String text) =>
-    tap(tester, find.text(text));
+Future<void> textTap(WidgetTester tester, String text) async {
+  if (['保留草稿并返回', '放弃草稿'].contains(text) &&
+      find.text(text).evaluate().isEmpty) {
+    await tester.tap(find.byTooltip('更多'));
+    await tester.pumpAndSettle();
+  }
+  await tap(tester, find.text(text));
+  if (text == '打开' &&
+      find
+          .byKey(const ValueKey('recording-goal-toggle'))
+          .evaluate()
+          .isNotEmpty &&
+      find.text('选择目标').evaluate().isEmpty) {
+    await tap(tester, find.byKey(const ValueKey('recording-goal-toggle')));
+  }
+}
+
 Future<void> choose(WidgetTester tester, int n) async {
   await textTap(tester, '选择目标');
   await tap(tester, find.byKey(ValueKey('goal-option-${id(n)}')));
@@ -292,7 +307,7 @@ void main() {
       );
       queries.fail = false;
       await textTap(tester, '重试读取目标');
-      expect(find.text('保留选择'), findsOneWidget);
+      expect(find.text('保留选择'), findsNWidgets(2));
       expect(
         tester
             .widget<TextField>(find.byKey(const ValueKey('activity')))
@@ -336,7 +351,7 @@ void main() {
             '普通生活',
           );
         }
-        await textTap(tester, '确认并保存到账本');
+        await textTap(tester, '保存到账本');
         final saved = (await tester.runAsync(
           () => h.ledger.readTimeBlock(id(9)),
         ))!.timeBlock;
@@ -384,7 +399,10 @@ void main() {
         findsOneWidget,
       );
       expect(
-        find.textContaining('约 ${formatRecordingTime(start)}'),
+        find.descendant(
+          of: find.byKey(const ValueKey('goal-time-confirmation')),
+          matching: find.textContaining('约 ${formatRecordingTime(start)}'),
+        ),
         findsOneWidget,
       );
       expect(
@@ -394,7 +412,7 @@ void main() {
             .text,
         '  保留活动  ',
       );
-      await textTap(tester, '确认并保存到账本');
+      await textTap(tester, '保存到账本');
       final saved = (await tester.runAsync(
         () => h.ledger.readTimeBlock(id(9)),
       ))!.timeBlock;
@@ -435,7 +453,7 @@ void main() {
               await h.goals.delete(id: id(1), now: 2);
             }
           });
-          await textTap(tester, editing ? '保存更正' : '确认并保存到账本');
+          await textTap(tester, editing ? '保存更正' : '保存到账本');
           expect(find.text('正式保存失败，输入和草稿已保留，请重试。'), findsOneWidget);
           final draft = (await tester.runAsync(() => h.drafts.read(context)))!;
           expect(draft.goalId, id(1));
@@ -456,7 +474,7 @@ void main() {
             expect(find.textContaining('已不存在'), findsOneWidget);
           }
           await choose(tester, 2);
-          await textTap(tester, editing ? '保存更正' : '确认并保存到账本');
+          await textTap(tester, editing ? '保存更正' : '保存到账本');
           final saved = (await tester.runAsync(
             () => h.ledger.readTimeBlock(id(editing ? 8 : 9)),
           ))!.timeBlock;
@@ -535,7 +553,7 @@ void main() {
       await textTap(tester, '打开');
       await textTap(tester, '想不起来');
       await choose(tester, 1);
-      await textTap(tester, '确认并保存到账本');
+      await textTap(tester, '保存到账本');
       expect(find.text('正式保存失败，输入和草稿已保留，请重试。'), findsOneWidget);
       expect(
         (await tester.runAsync(() => h.drafts.read(context)))!.goalId,
@@ -548,7 +566,7 @@ void main() {
       await tester.runAsync(
         () => h.db.customStatement('DROP TRIGGER reject_block'),
       );
-      await textTap(tester, '确认并保存到账本');
+      await textTap(tester, '保存到账本');
       expect(
         (await tester.runAsync(() => h.ledger.readTimeBlock(id(9))))!
             .timeBlock

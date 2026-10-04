@@ -1,3 +1,6 @@
+import '../support/ledger_date_selection.dart';
+import '../support/root_navigation.dart';
+
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -48,6 +51,18 @@ Future<void> settleNative(WidgetTester t) async {
 }
 
 Future<void> tapText(WidgetTester t, String text) async {
+  if (text == '刷新事实上下文' && find.text(text).evaluate().isEmpty) {
+    await tapText(t, '查看当日事实');
+  }
+  if (['删除复盘', '保留草稿并返回', '放弃此复盘草稿', '返回复盘读取'].contains(text) &&
+      find.text(text).evaluate().isEmpty) {
+    await t.tap(find.byTooltip('更多'));
+    await settleNative(t);
+  }
+  if (await tapRootAction(t, text)) {
+    await settleNative(t);
+    return;
+  }
   final finder = find.text(text).last;
   await t.ensureVisible(finder);
   await t.tap(finder);
@@ -207,6 +222,7 @@ void main() {
       await settleNative(t);
       await tapText(t, '打开按日复盘');
       await tapText(t, '填写复盘');
+      await tapText(t, '再写几句 ＋');
       await t.enterText(
         find.byKey(const ValueKey('review-reflection')),
         '当天独立草稿',
@@ -214,31 +230,35 @@ void main() {
       await settleNative(t);
       await tapText(t, '保留草稿并返回');
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
-      await t.enterText(find.byType(TextField), '2025-12-31');
+      await selectLedgerDate(t, '2025-12-31');
       await settleNative(t);
       await tapText(t, '编辑复盘草稿');
       expect(find.text('下一步目标：旧归档目标（已归档）'), findsOneWidget);
+      await tapText(t, '再写几句 ＋');
       await t.enterText(
         find.byKey(const ValueKey('review-reflection')),
         '未提交的\n反思😀',
       );
       await settleNative(t);
+      await tapText(t, '修改日期');
       await t.enterText(
         find.byKey(const ValueKey('review-date')),
         '2024-02-29',
       );
+      await tapText(t, '应用日期');
       await settleNative(t);
       await tapText(t, '保留草稿并返回');
       expect(find.text('已存原反思'), findsOneWidget);
       await tapText(t, '编辑复盘草稿');
-      expect(find.text('已恢复未保存的复盘输入。'), findsOneWidget);
       expect(
-        t
-            .widget<TextField>(find.byKey(const ValueKey('review-date')))
-            .controller!
-            .text,
+        t.widget<ReviewForm>(find.byType(ReviewForm)).controller.restored,
+        isTrue,
+      );
+      expect(
+        t.widget<ReviewForm>(find.byType(ReviewForm)).controller.dateInput,
         '2024-02-29',
       );
+      await tapText(t, '再写几句 ＋');
       expect(
         t
             .widget<TextField>(find.byKey(const ValueKey('review-reflection')))
@@ -260,7 +280,7 @@ void main() {
         ),
       );
       await tapText(t, '刷新事实上下文');
-      expect(find.text('已交代：60 分钟'), findsOneWidget);
+      expect(find.text('已交代：1 小时'), findsOneWidget);
       expect(
         t
             .widget<TextField>(find.byKey(const ValueKey('review-reflection')))

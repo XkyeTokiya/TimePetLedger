@@ -20,17 +20,37 @@ import 'review_form_controller_test.dart'
         reviewId;
 
 Future<void> tap(WidgetTester t, String text) async {
+  if (['保留草稿并返回', '放弃此复盘草稿'].contains(text)) {
+    await t.tap(find.byTooltip('更多'));
+    await t.pumpAndSettle();
+  }
+  if (text == '刷新事实上下文' && find.text(text).evaluate().isEmpty) {
+    await tap(t, '查看当日事实');
+  }
   final finder = find.text(text).last;
   await t.ensureVisible(finder);
   await t.tap(finder);
-  await t.pumpAndSettle();
+  await t.pump();
+  await t.pump(const Duration(milliseconds: 400));
+  if (text != '修改日期' && text != '应用日期') await t.pumpAndSettle();
 }
 
 Future<void> enter(WidgetTester t, String key, String value) async {
+  if (key == 'review-date') {
+    await tap(t, '修改日期');
+  }
+  if (['review-summary', 'review-reflection'].contains(key) &&
+      find.byKey(ValueKey(key)).evaluate().isEmpty) {
+    await tap(t, '再写几句 ＋');
+  }
   final field = find.byKey(ValueKey(key));
   await t.ensureVisible(field);
   await t.enterText(field, value);
-  await t.pumpAndSettle();
+  await t.pump();
+  await t.pump(const Duration(milliseconds: 400));
+  if (key == 'review-date') {
+    await tap(t, '应用日期');
+  }
 }
 
 Future<void> host(
@@ -98,10 +118,9 @@ void main() {
       );
       await host(t, model, loader);
       await enter(t, 'review-reflection', '用户原文\n😀');
-      final field = find.byKey(const ValueKey('review-date'));
-      await t.enterText(field, '2024-02-28');
+      await enter(t, 'review-date', '2024-02-28');
       await t.pump();
-      await t.enterText(field, '2024-02-29');
+      await enter(t, 'review-date', '2024-02-29');
       await t.pump();
       expect(pending.map((p) => p.date), ['2024-02-28', '2024-02-29']);
       pending.last.response.complete(
@@ -110,12 +129,13 @@ void main() {
       await t.pumpAndSettle();
       pending.first.response.completeError(StateError('old facts failed'));
       await t.pumpAndSettle();
+      await tap(t, '查看当日事实');
       expect(find.text('当天事实上下文：2024-02-29'), findsOneWidget);
       expect(find.textContaining('事实上下文读取失败'), findsNothing);
       expect(fieldText(t, 'review-reflection'), '用户原文\n😀');
-      await t.enterText(field, '2026-04-30');
+      await enter(t, 'review-date', '2026-04-30');
       await t.pump();
-      await t.enterText(field, '2026-');
+      await enter(t, 'review-date', '2026-');
       await t.pump();
       pending.last.response.complete(
         contextFor(parseReviewDate('2026-04-30')!),
@@ -153,17 +173,18 @@ void main() {
         },
       );
       await host(t, model, loader);
-      expect(find.text('已恢复未保存的复盘输入。'), findsOneWidget);
+      expect(model.restored, isTrue);
+      await tap(t, '再写几句 ＋');
       expect(fieldText(t, 'review-summary'), '草稿\n\n段落😀');
-      expect(find.textContaining('正式保存时需要填写一个非空白'), findsOneWidget);
-      expect(find.text('下一自然日：2026-01-01'), findsOneWidget);
+      expect(model.firstStepError, isNotNull);
+      expect(find.text('1月1日，先做什么？'), findsOneWidget);
       await enter(t, 'review-step', '  先做\n\n  一件事 😀  ');
       final within = '  ${'😀' * 2000}  ';
       await enter(t, 'review-summary', within);
       expect(model.summaryError, isNull);
       final over = ' ${within.trim()}界 ';
       await enter(t, 'review-summary', over);
-      expect(find.textContaining('最多 2000 个 Unicode'), findsOneWidget);
+      expect(model.summaryError, contains('最多 2000 个 Unicode'));
       expect(fieldText(t, 'review-summary'), over);
       await enter(t, 'review-summary', '  用户改写\n\n内部段落  ');
       fail = true;
@@ -192,7 +213,7 @@ void main() {
       );
       await host(t, model, loader);
       await enter(t, 'review-date', '2024-02-29');
-      expect(find.text('下一自然日：2024-03-01'), findsOneWidget);
+      expect(find.text('3月1日，先做什么？'), findsOneWidget);
       await enter(t, 'review-reflection', '多行\n\n😀反思');
       await enter(t, 'review-step', ' \n ');
       await t.binding.handlePopRoute();
@@ -202,7 +223,8 @@ void main() {
       model.dispose();
       final reopened = ReviewFormController(context: entry, store: store);
       await host(t, reopened, loader);
-      expect(fieldText(t, 'review-date'), '2024-02-29');
+      expect(reopened.dateInput, '2024-02-29');
+      await tap(t, '再写几句 ＋');
       expect(fieldText(t, 'review-step'), ' \n ');
       expect(fieldText(t, 'review-reflection'), '多行\n\n😀反思');
       await tap(t, '放弃此复盘草稿');
@@ -267,14 +289,14 @@ void main() {
       );
       expect(find.text('下一步目标：同名（已归档）'), findsOneWidget);
       await enter(t, 'review-date', '2026-04-30');
-      expect(find.text('下一自然日：2026-05-01'), findsOneWidget);
+      expect(find.text('5月1日，先做什么？'), findsOneWidget);
       await tap(t, '选择下一步目标');
       expect(find.text(goals.old.id), findsNothing);
       expect(find.text('标识：${goals.active.id}'), findsOneWidget);
       await tap(t, '标识：${goals.active.id}');
       expect(find.text('下一步目标：同名'), findsOneWidget);
       await tap(t, '清空目标关联');
-      expect(find.text('下一步目标：未关联（可选）'), findsOneWidget);
+      expect(model.goalId, isNull);
       expect(original.date, entryDate);
       expect(original.tomorrowFirstStep.goalId, goals.old.id);
       await tap(t, '保留草稿并返回');

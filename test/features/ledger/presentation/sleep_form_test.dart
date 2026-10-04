@@ -7,6 +7,21 @@ import 'package:time_pet_ledger/features/ledger/presentation/sleep_form.dart';
 import 'sleep_form_controller_test.dart' show FormSleepStore, model;
 
 Future<void> tapText(WidgetTester tester, String label) async {
+  if (['保留草稿并返回', '放弃草稿', '删除睡眠'].contains(label) &&
+      find.text(label).evaluate().isEmpty) {
+    await tester.tap(find.byTooltip('更多'));
+    await tester.pumpAndSettle();
+  }
+  if (['入睡准确', '入睡大约', '醒来准确', '醒来大约'].contains(label)) {
+    await tapText(tester, '调整入睡与醒来');
+    await tester.tap(
+      find
+          .widgetWithText(ChoiceChip, label.endsWith('准确') ? '准确' : '大约')
+          .at(label.startsWith('入睡') ? 0 : 1),
+    );
+    await tapText(tester, '应用时间');
+    return;
+  }
   final target = find.text(label);
   await tester.scrollUntilVisible(
     target,
@@ -27,14 +42,25 @@ Future<void> enter(WidgetTester tester, String key, String value) async {
   await tester.ensureVisible(target);
   await tester.enterText(target, value);
   await tester.pumpAndSettle();
+  if (key != 'sleep-note') await tapText(tester, '应用时间');
 }
 
-Future<void> showField(WidgetTester tester, String key) =>
-    tester.scrollUntilVisible(
-      find.byKey(ValueKey(key)),
-      key == 'sleep-note' ? 150 : -150,
-      scrollable: find.byType(Scrollable).first,
-    );
+Future<void> showField(WidgetTester tester, String key) async {
+  if (find.byKey(ValueKey(key)).evaluate().isEmpty) {
+    if (key == 'sleep-note') {
+      await tester.tap(find.byKey(const ValueKey('sleep-note-toggle')));
+      await tester.pumpAndSettle();
+    } else {
+      await tapText(tester, '调整入睡与醒来');
+      await tapText(tester, '手动输入日期与时间');
+    }
+  }
+  await tester.scrollUntilVisible(
+    find.byKey(ValueKey(key)),
+    150,
+    scrollable: find.byType(Scrollable).first,
+  );
+}
 
 Future<void> open(WidgetTester tester, FormSleepStore store) async {
   await tester.pumpWidget(
@@ -66,7 +92,12 @@ void main() {
     (tester) async {
       final store = FormSleepStore();
       await open(tester, store);
-      expect(find.text('请选择睡眠类型。'), findsOneWidget);
+      expect(
+        tester
+            .widgetList<ChoiceChip>(find.byType(ChoiceChip))
+            .every((chip) => !chip.selected),
+        isTrue,
+      );
       expect(find.textContaining('Goal'), findsNothing);
       await tapText(tester, '主睡眠');
       await enter(tester, 'sleep-start', '2026-09-28 23:50');
@@ -85,7 +116,7 @@ void main() {
       expect(find.text('打开睡眠'), findsOneWidget);
       await tester.tap(find.text('打开睡眠'));
       await tester.pumpAndSettle();
-      expect(find.text('已恢复上次睡眠输入'), findsOneWidget);
+      await showField(tester, 'sleep-start');
       expect(
         tester
             .widget<TextField>(find.byKey(const ValueKey('sleep-start')))
@@ -93,10 +124,12 @@ void main() {
             .text,
         '2026-09-28 23:40',
       );
+      await tapText(tester, '应用时间');
       await tapText(tester, '放弃草稿');
       expect(store.value, isNull);
       await tester.tap(find.text('打开睡眠'));
       await tester.pumpAndSettle();
+      await showField(tester, 'sleep-start');
       expect(
         tester
             .widget<TextField>(find.byKey(const ValueKey('sleep-start')))
@@ -113,11 +146,11 @@ void main() {
       final store = FormSleepStore();
       await open(tester, store);
       await enter(tester, 'sleep-start', '2026-09-29 07:40');
-      expect(find.text('请填写有效的入睡和醒来日期时间。'), findsOneWidget);
+      expect(store.value!.endedAt, isNull);
       await enter(tester, 'sleep-end', '2026-09-29 07:40');
-      expect(find.text('醒来时间必须晚于入睡时间。'), findsOneWidget);
+      expect(store.value!.endedAt, store.value!.startedAt);
       await enter(tester, 'sleep-end', '2026-09-29 06:00');
-      expect(find.text('醒来时间必须晚于入睡时间。'), findsOneWidget);
+      expect(store.value!.endedAt!, lessThan(store.value!.startedAt!));
       await enter(tester, 'sleep-start', '1900-01-01 00:00');
       await enter(tester, 'sleep-end', '2200-01-01 00:00');
       expect(find.text('醒来时间必须晚于入睡时间。'), findsNothing);
@@ -139,6 +172,7 @@ void main() {
       expect(find.text('睡眠草稿保存失败，输入仍在此页，请重试。'), findsOneWidget);
       await showField(tester, 'sleep-start');
       expect(find.byKey(const ValueKey('sleep-start')), findsOneWidget);
+      await tapText(tester, '应用时间');
       store.failSave = false;
       await tapText(tester, '重试保存草稿');
       store.failClear = true;
@@ -163,7 +197,7 @@ void main() {
       store.failRead = false;
       await tester.tap(find.text('重试读取'));
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('sleep-start')), findsOneWidget);
+      expect(find.text('调整入睡与醒来'), findsOneWidget);
     },
   );
 }

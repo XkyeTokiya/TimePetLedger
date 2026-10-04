@@ -1,3 +1,5 @@
+import '../support/ledger_date_selection.dart';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -113,10 +115,7 @@ void main() {
       await confirm(t);
       expect(find.byType(ReviewForm), findsNothing);
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
-      expect(
-        (t.widget<TextField>(find.byType(TextField).first).controller!).text,
-        '2025-12-31',
-      );
+      expect(t.widget<Text>(find.text('日期：2025-12-31')).data, '日期：2025-12-31');
       final after = (await t.runAsync(() => formalFacts(h)))!;
       for (final table in [
         'goals',
@@ -138,6 +137,7 @@ void main() {
             .text,
         '同日独立新建草稿',
       );
+      await tapText(t, '再写几句 ＋');
       expect(
         t
             .widget<TextField>(find.byKey(const ValueKey('review-reflection')))
@@ -147,8 +147,7 @@ void main() {
       );
       await tapText(t, '保留草稿并返回');
       expect(await t.runAsync(() => h.reviews.findByDate(reviewDate)), isNull);
-      final date = find.byType(TextField).first;
-      await t.enterText(date, '2026-01-01');
+      await selectLedgerDate(t, '2026-01-01');
       await settleNative(t);
       expect(find.text('其他复盘第一步'), findsOneWidget);
       await unmount(t);
@@ -194,9 +193,10 @@ void main() {
       await host(t);
       await t.runAsync(() => h.failClear(true));
       h.failRefresh = true;
-      final deleteButton = find.widgetWithText(TextButton, '删除复盘');
-      await t.ensureVisible(deleteButton);
-      final openDialog = t.widget<TextButton>(deleteButton).onPressed!;
+      final menu = t.widget<PopupMenuButton<String>>(
+        find.byType(PopupMenuButton<String>),
+      );
+      void openDialog() => menu.onSelected!('删除复盘');
       openDialog();
       openDialog();
       await settleNative(t);
@@ -208,7 +208,7 @@ void main() {
       answer();
       await settleNative(t);
       expect(find.byType(ReviewForm), findsOneWidget);
-      expect(find.text('此复盘已删除。'), findsOneWidget);
+      expect(find.text('已删除'), findsOneWidget);
       expect(find.textContaining('草稿清理和读回失败'), findsOneWidget);
       expect(find.text('保存更正'), findsNothing);
       expect(find.text('删除复盘'), findsNothing);
@@ -216,12 +216,18 @@ void main() {
         t.widget<TextField>(find.byKey(const ValueKey('review-step'))).enabled,
         false,
       );
+      await t.tap(find.byTooltip('更多'));
+      await settleNative(t);
       expect(
         t
-            .widget<TextButton>(find.widgetWithText(TextButton, '放弃此复盘草稿'))
-            .onPressed,
-        isNull,
+            .widget<PopupMenuItem<String>>(
+              find.widgetWithText(PopupMenuItem<String>, '放弃此复盘草稿'),
+            )
+            .enabled,
+        isFalse,
       );
+      await t.binding.handlePopRoute();
+      await settleNative(t);
       expect(await t.runAsync(() => h.reviews.findByDate(reviewDate)), isNull);
       await t.runAsync(() => h.failClear(false));
       await tapText(t, '重试删除收尾');

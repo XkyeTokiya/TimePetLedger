@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/editor_body.dart';
+import '../../ledger/presentation/recording_optional_section.dart';
+
 import '../../../core/time/civil_date.dart';
 import '../../goals/domain/goal_status.dart';
 import '../application/review_context_loader.dart';
@@ -42,6 +45,62 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
   bool closing = false;
   bool confirmingDelete = false;
   CivilDate? factsDate;
+  final stepFocus = FocusNode();
+  final summaryFocus = FocusNode();
+  final reflectionFocus = FocusNode();
+  bool writing = false;
+  bool showErrors = false;
+  FocusNode? lastWritingFocus;
+
+  Future<void> _date() async {
+    final input = TextEditingController(text: date.text);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('修改日期'),
+        content: TextField(
+          key: const ValueKey('review-date'),
+          controller: input,
+          enabled: model.editable,
+          decoration: InputDecoration(
+            labelText: '复盘日期 YYYY-MM-DD',
+            errorText: model.dateError,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, input.text),
+            child: const Text('应用日期'),
+          ),
+        ],
+      ),
+    );
+    if (mounted && result != null) {
+      date.text = result;
+      model.setDateInput(result);
+    }
+    // The route may still be animating its TextField out.
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    input.dispose();
+  }
+
+  void _focus(FocusNode node) {
+    lastWritingFocus = node;
+    node.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && node.context != null) {
+        Scrollable.ensureVisible(node.context!, alignment: .2);
+      }
+    });
+  }
+
+  void _focusChanged() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void initState() {
@@ -50,6 +109,9 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
     model.addListener(_changed);
     facts.addListener(_factsChanged);
     model.initialize();
+    for (final node in [stepFocus, summaryFocus, reflectionFocus]) {
+      node.addListener(_focusChanged);
+    }
   }
 
   void _changed() {
@@ -138,7 +200,16 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
 
   Future<void> _submit({bool finish = false}) async {
     if (closing) return;
+    setState(() {
+      showErrors = true;
+      if (model.summaryError != null || model.reflectionError != null) {
+        writing = true;
+      }
+    });
     final result = finish ? await model.retryFinish() : await model.submit();
+    if (mounted && result == null && model.firstStepError != null) {
+      _focus(stepFocus);
+    }
     if (!mounted || result == null) return;
     await _pop(result.ledger.date);
   }
@@ -197,6 +268,9 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
     summary.dispose();
     reflection.dispose();
     step.dispose();
+    stepFocus.dispose();
+    summaryFocus.dispose();
+    reflectionFocus.dispose();
     super.dispose();
   }
 
@@ -208,11 +282,125 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
     },
     child: Scaffold(
       appBar: AppBar(
-        title: Text(model.context.isEditing ? '编辑复盘草稿' : '填写复盘'),
+        title: Text(model.context.isEditing ? '编辑复盘' : '填写复盘'),
         leading: BackButton(onPressed: _leave),
+        actions: [
+          PopupMenuButton<String>(
+            tooltip: '更多',
+            onSelected: (value) {
+              if (value == '删除复盘') {
+                _delete();
+              } else {
+                _leave(discard: value == '放弃此复盘草稿');
+              }
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                enabled:
+                    !model.loading &&
+                    !model.discarding &&
+                    !model.leaving &&
+                    !model.submitting &&
+                    !closing,
+                value: '保留草稿并返回',
+                child: Text(
+                  model.committed != null || model.deleted != null
+                      ? '返回复盘读取'
+                      : '保留草稿并返回',
+                ),
+              ),
+              PopupMenuItem(
+                enabled: model.editable,
+                value: '放弃此复盘草稿',
+                child: const Text('放弃此复盘草稿'),
+              ),
+              if (model.context.isEditing &&
+                  model.entrySaver != null &&
+                  model.committed == null &&
+                  model.deleted == null)
+                PopupMenuItem(
+                  enabled: model.editable && !closing && !confirmingDelete,
+                  value: '删除复盘',
+                  child: const Text('删除复盘'),
+                ),
+            ],
+          ),
+        ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: EditorBody(
+        status: model.storageError != null
+            ? '草稿未保留'
+            : model.saving
+            ? '正在保留…'
+            : model.committed != null
+            ? '已保存'
+            : model.deleted != null
+            ? '已删除'
+            : '尚未正式保存',
+        action: FilledButton(
+          onPressed: !model.submitting && !closing && model.deleted != null
+              ? () => model.deleted!.complete
+                    ? _pop(model.deleted!.original.date)
+                    : _submit(finish: true)
+              : !model.submitting && !closing && model.committed != null
+              ? () => model.committed!.complete
+                    ? _pop(model.committed!.review.date)
+                    : _submit(finish: true)
+              : model.editable && !closing && model.entrySaver != null
+              ? _submit
+              : null,
+          child: Text(
+            model.deleted != null
+                ? (model.deleted!.complete ? '返回复盘读取' : '重试删除收尾')
+                : model.committed != null
+                ? (model.committed!.complete ? '返回已存复盘' : '重试复盘收尾')
+                : model.submitting
+                ? '正在保存…'
+                : model.context.isEditing
+                ? '保存更正'
+                : '保存复盘',
+          ),
+        ),
+        accessory:
+            stepFocus.hasFocus ||
+                summaryFocus.hasFocus ||
+                reflectionFocus.hasFocus
+            ? Wrap(
+                spacing: 8,
+                children: [
+                  TextButton(
+                    onPressed: stepFocus.hasFocus
+                        ? null
+                        : () => _focus(
+                            reflectionFocus.hasFocus ? summaryFocus : stepFocus,
+                          ),
+                    child: const Text('上一项'),
+                  ),
+                  TextButton(
+                    onPressed: reflectionFocus.hasFocus
+                        ? null
+                        : () {
+                            setState(() => writing = true);
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (mounted) {
+                                _focus(
+                                  stepFocus.hasFocus
+                                      ? summaryFocus
+                                      : reflectionFocus,
+                                );
+                              }
+                            });
+                          },
+                    child: const Text('下一项'),
+                  ),
+                  TextButton(
+                    onPressed: () =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    child: const Text('完成'),
+                  ),
+                ],
+              )
+            : null,
         children: [
           if (model.loading) const LinearProgressIndicator(),
           if (model.loadError case final error?) ...[
@@ -222,73 +410,91 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
               child: const Text('重试读取草稿'),
             ),
           ],
-          if (model.restored &&
-              model.committed == null &&
-              model.deleted == null)
-            const Text('已恢复未保存的复盘输入。'),
-          Text(
-            model.deleted != null
-                ? '此复盘已删除。'
-                : model.committed != null
-                ? '此复盘已正式保存。'
-                : '输入自动保留为草稿，尚未正式保存复盘。',
+          Row(
+            children: [
+              Expanded(child: Text('复盘 · ${model.dateInput}')),
+              TextButton(
+                onPressed: model.editable ? _date : null,
+                child: const Text('修改日期'),
+              ),
+            ],
           ),
-          TextField(
-            key: const ValueKey('review-date'),
-            controller: date,
-            enabled: model.editable,
-            decoration: InputDecoration(
-              labelText: '复盘日期 YYYY-MM-DD',
-              errorText: synced ? model.dateError : null,
-            ),
-            onChanged: model.setDateInput,
-          ),
+          if (showErrors && model.dateError != null) Text(model.dateError!),
           if (model.intendedDate case final next?)
-            Text('下一自然日：${formatReviewDate(next)}'),
-          TextField(
-            key: const ValueKey('review-summary'),
-            controller: summary,
-            enabled: model.editable,
-            minLines: 2,
-            maxLines: null,
-            decoration: InputDecoration(
-              labelText: '当天概述（可选）',
-              errorText: model.summaryError,
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text('${next.month}月${next.day}日，先做什么？'),
             ),
-            onChanged: model.setSummary,
-          ),
-          TextField(
-            key: const ValueKey('review-reflection'),
-            controller: reflection,
-            enabled: model.editable,
-            minLines: 2,
-            maxLines: null,
-            decoration: InputDecoration(
-              labelText: '反思（可选）',
-              errorText: model.reflectionError,
-            ),
-            onChanged: model.setReflection,
-          ),
           TextField(
             key: const ValueKey('review-step'),
             controller: step,
+            focusNode: stepFocus,
             enabled: model.editable,
-            minLines: 2,
+            minLines: 3,
             maxLines: null,
+            style: const TextStyle(fontSize: 20, height: 1.6),
             decoration: InputDecoration(
-              labelText: '明天第一步',
-              errorText: synced ? model.firstStepError : null,
+              hintText: '明天第一步',
+              errorText: showErrors ? model.firstStepError : null,
             ),
             onChanged: model.setFirstStep,
           ),
-          const SizedBox(height: 12),
-          Text(
-            model.goalId == null
-                ? '下一步目标：未关联（可选）'
-                : model.selectedGoal == null
-                ? '下一步目标：暂不可用（${model.goalId}）'
-                : '下一步目标：${model.selectedGoal!.name}${model.selectedGoal!.status == GoalStatus.archived ? '（已归档）' : ''}',
+          const SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: model.editable
+                ? () {
+                    setState(() => writing = !writing);
+                    if (writing) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) _focus(summaryFocus);
+                      });
+                    }
+                  }
+                : null,
+            child: Text(writing ? '收起补充文字' : '再写几句 ＋'),
           ),
+          if (!writing &&
+              (model.summary.isNotEmpty || model.reflection.isNotEmpty))
+            Text(
+              recordingDetailPreview('${model.summary}\n${model.reflection}'),
+            ),
+          if (writing || (showErrors && model.summaryError != null))
+            TextField(
+              key: const ValueKey('review-summary'),
+              controller: summary,
+              focusNode: summaryFocus,
+              enabled: model.editable,
+              minLines: 2,
+              maxLines: null,
+              decoration: InputDecoration(
+                labelText: '当天概述',
+                errorText: showErrors ? model.summaryError : null,
+              ),
+              onChanged: model.setSummary,
+            ),
+          if (writing || (showErrors && model.reflectionError != null))
+            TextField(
+              key: const ValueKey('review-reflection'),
+              controller: reflection,
+              focusNode: reflectionFocus,
+              enabled: model.editable,
+              minLines: 2,
+              maxLines: null,
+              decoration: InputDecoration(
+                labelText: '反思',
+                errorText: showErrors ? model.reflectionError : null,
+              ),
+              onChanged: model.setReflection,
+            ),
+          const SizedBox(height: 12),
+          if (model.goalId != null)
+            Text(
+              model.goalId == null
+                  ? ''
+                  : model.selectedGoal == null
+                  ? '下一步目标：暂不可用（${model.goalId}）'
+                  : '下一步目标：${model.selectedGoal!.name}${model.selectedGoal!.status == GoalStatus.archived ? '（已归档）' : ''}',
+            ),
           if (model.goalsLoading) const LinearProgressIndicator(),
           if (model.goalsError case final error?) ...[
             Text(error),
@@ -307,15 +513,15 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
                     : null,
                 child: const Text('选择下一步目标'),
               ),
-              TextButton(
-                onPressed: model.editable && model.goalId != null
-                    ? model.clearGoal
-                    : null,
-                child: const Text('清空目标关联'),
-              ),
+              if (model.goalId != null)
+                TextButton(
+                  onPressed: model.editable && model.goalId != null
+                      ? model.clearGoal
+                      : null,
+                  child: const Text('清空目标关联'),
+                ),
             ],
           ),
-          if (model.saving) const Text('正在保留草稿…'),
           if (model.storageError case final error?) ...[
             Text(error),
             TextButton(
@@ -324,77 +530,41 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
             ),
           ],
           if (model.submitError case final error?) Text(error),
-          if (model.deletedMessage case final message?) ...[
-            Text(message),
-            FilledButton(
-              onPressed: !model.submitting && !closing
-                  ? model.deleted!.complete
-                        ? () => _pop(model.deleted!.original.date)
-                        : () => _submit(finish: true)
-                  : null,
-              child: Text(model.deleted!.complete ? '返回复盘读取' : '重试删除收尾'),
-            ),
-          ] else if (model.committedMessage case final message?) ...[
-            Text(message),
-            FilledButton(
-              onPressed: !model.submitting && !closing
-                  ? model.committed!.complete
-                        ? () => _pop(model.committed!.review.date)
-                        : () => _submit(finish: true)
-                  : null,
-              child: Text(model.committed!.complete ? '返回已存复盘' : '重试复盘收尾'),
-            ),
-          ] else if (model.entrySaver != null)
-            FilledButton(
-              onPressed: model.editable && !closing ? _submit : null,
-              child: Text(model.context.isEditing ? '保存更正' : '保存复盘'),
-            ),
-          if (model.context.isEditing &&
-              model.entrySaver != null &&
-              model.committed == null &&
-              model.deleted == null)
-            TextButton(
-              onPressed: model.editable && !closing && !confirmingDelete
-                  ? _delete
-                  : null,
-              child: const Text('删除复盘'),
-            ),
+          if (model.deletedMessage case final message?) Text(message),
+          if (model.committedMessage case final message?) Text(message),
           if (model.submitting) const LinearProgressIndicator(),
-          Wrap(
-            spacing: 12,
+          const SizedBox(height: 16),
+          ExpansionTile(
+            title: const Text('查看当日事实'),
+            onExpansionChanged: (open) {
+              if (open) {
+                lastWritingFocus =
+                    [
+                      stepFocus,
+                      summaryFocus,
+                      reflectionFocus,
+                    ].where((node) => node.hasFocus).firstOrNull ??
+                    lastWritingFocus;
+                FocusManager.instance.primaryFocus?.unfocus();
+              }
+            },
             children: [
-              FilledButton(
-                onPressed:
-                    !model.loading &&
-                        !model.discarding &&
-                        !model.leaving &&
-                        !model.submitting &&
-                        !closing
-                    ? _leave
-                    : null,
-                child: Text(
-                  model.committed == null && model.deleted == null
-                      ? '保留草稿并返回'
-                      : '返回复盘读取',
-                ),
+              OutlinedButton(
+                onPressed: synced && model.date != null ? facts.refresh : null,
+                child: const Text('刷新事实上下文'),
               ),
+              if (facts.status == ReviewReadStatus.loading)
+                const LinearProgressIndicator(),
+              if (facts.status == ReviewReadStatus.failed)
+                const Text('事实上下文读取失败，输入仍保留，请刷新重试。'),
+              if (facts.context case final loaded?)
+                ReviewFactsView(ledger: loaded.ledger),
               TextButton(
-                onPressed: model.editable ? () => _leave(discard: true) : null,
-                child: const Text('放弃此复盘草稿'),
+                onPressed: () => _focus(lastWritingFocus ?? stepFocus),
+                child: const Text('继续写作'),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          OutlinedButton(
-            onPressed: synced && model.date != null ? facts.refresh : null,
-            child: const Text('刷新事实上下文'),
-          ),
-          if (facts.status == ReviewReadStatus.loading)
-            const LinearProgressIndicator(),
-          if (facts.status == ReviewReadStatus.failed)
-            const Text('事实上下文读取失败，输入仍保留，请刷新重试。'),
-          if (facts.context case final loaded?)
-            ReviewFactsView(ledger: loaded.ledger),
         ],
       ),
     ),

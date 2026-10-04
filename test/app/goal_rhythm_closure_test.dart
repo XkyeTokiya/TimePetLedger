@@ -1,3 +1,5 @@
+import '../support/root_navigation.dart';
+
 import 'dart:io';
 
 import 'package:drift/drift.dart'
@@ -20,7 +22,7 @@ import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart';
 
-import '../features/ledger/presentation/recording_rhythm_test.dart'
+import '../support/app_recording_navigation.dart'
     show show, tap, textTap, enter, stateTap;
 import 'day_ledger_editing_flow_test.dart' show controller;
 import 'day_ledger_resolution_flow_test.dart' show BlockReadFailure;
@@ -118,7 +120,7 @@ class ClosureApp {
 }
 
 Future<void> back(WidgetTester t) async {
-  await t.pageBack();
+  await backFromPage(t);
   await t.pumpAndSettle();
 }
 
@@ -161,11 +163,11 @@ void main() {
     'file-backed bootstrap closes the optional Goal/rhythm/lifecycle loop and preserves old fields',
     (t) async {
       final app = await ClosureApp.open(t);
-      await textTap(t, '补一笔');
+      await textTap(t, '记录活动');
       await textTap(t, '想不起来');
       await time(t, '开始时间', '2026-10-02 08:00');
       await time(t, '结束时间', '2026-10-02 09:00');
-      await textTap(t, '确认并保存到账本');
+      await textTap(t, '保存到账本');
       var rows = (await t.runAsync(app.snapshot))!;
       expect(rows['goals'], isEmpty);
       expect(rows['rhythm_annotations'], isEmpty);
@@ -184,7 +186,7 @@ void main() {
       final goal = await createGoal(t, app);
       expect(goal, isNot(unusedGoal));
       await back(t);
-      await textTap(t, '补一笔');
+      await textTap(t, '记录活动');
       await fill(t, goal: goal);
       await enter(t, 'note', '原备注');
       final draftContext = context(t);
@@ -197,7 +199,7 @@ void main() {
       expect(raw.continuationHint, '  从第二段接上\n检查字段 🐾  ');
       await app.reopen(t);
       expect(await t.runAsync(app.snapshot), beforeSave);
-      await textTap(t, '补一笔');
+      await textTap(t, '记录活动');
       expect(find.text('已恢复上次输入'), findsOneWidget);
       await show(t, find.byKey(const ValueKey('continuation-hint')));
       expect(
@@ -207,7 +209,7 @@ void main() {
             .text,
         raw.continuationHint,
       );
-      await textTap(t, '确认并保存到账本');
+      await textTap(t, '保存到账本');
       expect(await t.runAsync(() => app.drafts.read(draftContext)), isNull);
       rows = (await t.runAsync(app.snapshot))!;
       final blockId =
@@ -323,7 +325,7 @@ void main() {
       await textTap(t, '打开目标');
       final goal = await createGoal(t, app);
       await back(t);
-      await textTap(t, '补一笔');
+      await textTap(t, '记录活动');
       await fill(t, goal: goal);
       final draftContext = context(t);
       final before = (await t.runAsync(app.snapshot))!;
@@ -332,7 +334,7 @@ void main() {
           "CREATE TRIGGER fail_annotation AFTER INSERT ON rhythm_annotations BEGIN SELECT RAISE(ABORT, 'test'); END",
         ),
       );
-      await textTap(t, '确认并保存到账本');
+      await textTap(t, '保存到账本');
       expect(find.byType(RecordingForm), findsOneWidget);
       expect(await t.runAsync(app.snapshot), before);
       expect(find.text('正式保存失败，输入和草稿已保留，请重试。'), findsOneWidget);
@@ -343,7 +345,7 @@ void main() {
       await t.runAsync(
         () => app.db.customStatement('DROP TRIGGER fail_annotation'),
       );
-      await textTap(t, '确认并保存到账本');
+      await textTap(t, '保存到账本');
       var rows = (await t.runAsync(app.snapshot))!;
       final id = rows['time_blocks']!.single['id']! as String;
       expect(rows['rhythm_annotations'], hasLength(1));
@@ -417,17 +419,17 @@ void main() {
       await textTap(t, '打开目标');
       final goal = await createGoal(t, app);
       await back(t);
-      await textTap(t, '补一笔');
+      await textTap(t, '记录活动');
       await fill(t, goal: goal);
       final draftContext = context(t);
       final draft = (await t.runAsync(() => app.drafts.read(draftContext)))!;
       app.reads.arm = true;
       app.clear.fail = true;
-      await textTap(t, '确认并保存到账本');
+      await textTap(t, '保存到账本');
       expect(find.text('已正式保存到账本，请不要再次提交。'), findsOneWidget);
       expect(find.text('草稿清理失败，旧草稿仍可能显示；请重试清理。'), findsOneWidget);
       expect(find.text('账本刷新失败，记录已保存；请重试刷新。'), findsOneWidget);
-      expect(find.text('确认并保存到账本'), findsNothing);
+      expect(find.text('保存到账本'), findsNothing);
       final committed = (await t.runAsync(app.snapshot))!;
       expect(committed['time_blocks'], hasLength(1));
       expect(committed['rhythm_annotations']!.single['id'], draft.annotationId);
@@ -441,10 +443,10 @@ void main() {
       app.reads.arm = false;
       app.reads.failReads = false;
       await app.reopen(t);
-      await textTap(t, '补一笔');
+      await textTap(t, '记录活动');
       await show(t, find.text('已正式保存到账本，请不要再次提交。'));
       expect(find.text('已正式保存到账本，请不要再次提交。'), findsOneWidget);
-      expect(find.text('确认并保存到账本'), findsNothing);
+      expect(find.text('保存到账本'), findsNothing);
       expect(await t.runAsync(app.snapshot), committed);
       app.clear.fail = false;
       app.clock = DateTime(2026, 10, 2, 12, 2);

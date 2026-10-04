@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/widgets/editor_body.dart';
+import 'editor_time_page.dart';
+import 'sleep_time_input.dart';
+
+import 'package:flutter/services.dart';
+
 import '../../../core/time/civil_date.dart';
 import '../../goals/domain/goal_repository.dart';
 import '../../goals/domain/goal_status.dart';
@@ -13,6 +19,7 @@ import '../domain/recording_draft_store.dart';
 import '../domain/time_precision.dart';
 import 'recording_form_controller.dart';
 import 'recording_rhythm_input.dart';
+import 'recording_optional_section.dart';
 
 String formatRecordingTime(int? value) {
   if (value == null) return '未填写';
@@ -63,15 +70,25 @@ Future<int?> editRecordingTime(
   BuildContext context, {
   required String label,
   int? initial,
+  CivilDate? initialDate,
 }) => showDialog<int>(
   context: context,
-  builder: (_) => _RecordingTimeDialog(label: label, initial: initial),
+  builder: (_) => _RecordingTimeDialog(
+    label: label,
+    initial: initial,
+    initialDate: initialDate,
+  ),
 );
 
 class _RecordingTimeDialog extends StatefulWidget {
-  const _RecordingTimeDialog({required this.label, this.initial});
+  const _RecordingTimeDialog({
+    required this.label,
+    this.initial,
+    this.initialDate,
+  });
   final String label;
   final int? initial;
+  final CivilDate? initialDate;
   @override
   State<_RecordingTimeDialog> createState() => _RecordingTimeDialogState();
 }
@@ -81,24 +98,110 @@ class _RecordingTimeDialogState extends State<_RecordingTimeDialog> {
     text: widget.initial == null ? '' : formatRecordingTime(widget.initial),
   );
   String? error;
+  final dateFocus = FocusNode();
+  final pickerFocus = FocusNode();
   @override
   void dispose() {
     text.dispose();
+    dateFocus.dispose();
+    pickerFocus.dispose();
     super.dispose();
+  }
+
+  DateTime get _base {
+    final value = parseRecordingTime(text.text) ?? widget.initial;
+    if (value != null) return DateTime.fromMillisecondsSinceEpoch(value);
+    final date = widget.initialDate!;
+    return DateTime(date.year, date.month, date.day);
+  }
+
+  Future<void> _pickDate() async {
+    final base = _base;
+    if (base.year < 1 || base.year > 9999) return;
+    final date = await showDatePicker(
+      context: context,
+      initialDate: base,
+      // Material's fixed calendar cells clip two-digit days with large text.
+      // Use its date input mode rather than reducing the user's font size.
+      initialEntryMode: MediaQuery.textScalerOf(context).scale(16) > 20
+          ? DatePickerEntryMode.inputOnly
+          : DatePickerEntryMode.calendar,
+      firstDate: DateTime(1),
+      lastDate: DateTime(9999, 12, 31),
+      helpText: '选择${widget.label}的日期',
+    );
+    if (!mounted) return;
+    dateFocus.requestFocus();
+    if (date == null) return;
+    _setPicked(date.year, date.month, date.day, base.hour, base.minute);
+  }
+
+  Future<void> _pickTime() async {
+    final base = _base;
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: base.hour, minute: base.minute),
+    );
+    if (!mounted) return;
+    pickerFocus.requestFocus();
+    if (time == null) return;
+    _setPicked(base.year, base.month, base.day, time.hour, time.minute);
+  }
+
+  void _setPicked(int year, int month, int day, int hour, int minute) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    // Keep the chosen civil minute literal. The existing parser rejects a
+    // nonexistent local minute instead of DateTime silently normalizing it.
+    final y = '${year < 0 ? '-' : ''}${year.abs().toString().padLeft(4, '0')}';
+    text.text = '$y-${two(month)}-${two(day)} ${two(hour)}:${two(minute)}';
+    setState(
+      () => error = parseRecordingTime(text.text) == null
+          ? '请选择有效的当地日期和时间。'
+          : null,
+    );
   }
 
   @override
   Widget build(BuildContext context) => AlertDialog(
+    scrollable: true,
     title: Text(widget.label),
-    content: TextField(
-      key: const ValueKey('time-dialog-input'),
-      controller: text,
-      autofocus: true,
-      decoration: InputDecoration(
-        labelText: '年-月-日 时:分',
-        hintText: '2026-09-28 14:30',
-        errorText: error,
-      ),
+    content: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextField(
+          key: const ValueKey('time-dialog-input'),
+          controller: text,
+          textInputAction: TextInputAction.next,
+          decoration: InputDecoration(
+            labelText: '年-月-日 时:分',
+            hintText: '2026-09-28 14:30',
+            errorText: error,
+          ),
+        ),
+        if (widget.initialDate != null) ...[
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: [
+              TextButton.icon(
+                focusNode: dateFocus,
+                onPressed: _base.year >= 1 && _base.year <= 9999
+                    ? _pickDate
+                    : null,
+                icon: const Icon(Icons.calendar_month_outlined),
+                label: const Text('选择日期'),
+              ),
+              TextButton.icon(
+                focusNode: pickerFocus,
+                onPressed: _pickTime,
+                icon: const Icon(Icons.schedule),
+                label: const Text('选择时间'),
+              ),
+            ],
+          ),
+          const Text('也可手动输入完整日期时间；确认后才应用。'),
+        ],
+      ],
     ),
     actions: [
       TextButton(
@@ -146,6 +249,22 @@ class _RecordingFormState extends State<RecordingForm> {
   final note = TextEditingController();
   final continuationHint = TextEditingController();
   final stuckReasonText = TextEditingController();
+  final titleFocus = FocusNode();
+  final noteFocus = FocusNode();
+  final goalFocus = FocusNode();
+  final startTimeFocus = FocusNode();
+  final endTimeFocus = FocusNode();
+  final statusKey = GlobalKey();
+  final titleKey = GlobalKey();
+  final noteKey = GlobalKey();
+  final timeKey = GlobalKey();
+  bool showErrors = false;
+  bool focusErrors = false;
+  bool titleVisited = false;
+  bool noteVisited = false;
+  bool timeVisited = false;
+  bool timeExpanded = false;
+  String? revealedError;
   bool allowPop = false;
   bool exiting = false;
   @override
@@ -159,6 +278,12 @@ class _RecordingFormState extends State<RecordingForm> {
       entryEditor: widget.entryEditor,
       goals: widget.goals,
     );
+    titleFocus.addListener(() {
+      if (!titleFocus.hasFocus && mounted) setState(() => titleVisited = true);
+    });
+    noteFocus.addListener(() {
+      if (!noteFocus.hasFocus && mounted) setState(() => noteVisited = true);
+    });
     model.addListener(_changed);
     _initialize();
   }
@@ -170,11 +295,62 @@ class _RecordingFormState extends State<RecordingForm> {
       note.text = model.note;
       continuationHint.text = model.continuationHint;
       stuckReasonText.text = model.stuckReasonText;
+      setState(() => showErrors = model.restored);
+      _revealErrors();
     }
   }
 
   void _changed() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {});
+      _revealErrors();
+    }
+  }
+
+  void _revealErrors() {
+    final committed = model.committed;
+    final phaseError =
+        model.storageError ??
+        (committed != null && !committed.complete
+            ? 'committed:${committed.draftCleared}:${committed.refreshed != null}'
+            : null) ??
+        (model.submitError != null && model.submitError != '请确认活动和时间后再保存。'
+            ? model.submitError
+            : null);
+    final rhythmOnlyError =
+        model.titleError == null &&
+        model.timeError == null &&
+        model.noteError == null &&
+        (model.hintError != null || model.reasonError != null);
+    final message =
+        phaseError ??
+        (rhythmOnlyError ? null : model.submitError) ??
+        (showErrors
+            ? model.titleError ?? model.timeError ?? model.noteError
+            : null);
+    if (message == null) {
+      revealedError = null;
+      return;
+    }
+    if (message == revealedError) return;
+    revealedError = message;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final target = phaseError != null
+          ? statusKey
+          : showErrors && model.titleError != null
+          ? titleKey
+          : showErrors && model.timeError != null
+          ? timeKey
+          : showErrors && model.noteError != null
+          ? noteKey
+          : statusKey;
+      final field = target.currentContext;
+      if (field != null) await Scrollable.ensureVisible(field, alignment: .2);
+      if (!mounted) return;
+      if (focusErrors && target == titleKey) titleFocus.requestFocus();
+      if (focusErrors && target == noteKey) noteFocus.requestFocus();
+    });
   }
 
   @override
@@ -185,6 +361,11 @@ class _RecordingFormState extends State<RecordingForm> {
     note.dispose();
     continuationHint.dispose();
     stuckReasonText.dispose();
+    titleFocus.dispose();
+    noteFocus.dispose();
+    goalFocus.dispose();
+    startTimeFocus.dispose();
+    endTimeFocus.dispose();
     super.dispose();
   }
 
@@ -208,6 +389,12 @@ class _RecordingFormState extends State<RecordingForm> {
   }
 
   Future<void> _submit() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() {
+      showErrors = true;
+      focusErrors = true;
+      revealedError = null;
+    });
     final refreshed = await model.submit();
     if (mounted && refreshed != null) _complete(refreshed);
   }
@@ -224,12 +411,18 @@ class _RecordingFormState extends State<RecordingForm> {
   }
 
   Future<void> _time(bool start) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => timeExpanded = true);
     final value = await editRecordingTime(
       context,
       label: start ? '开始时间' : '结束时间',
       initial: start ? model.time.startedAt : model.time.endedAt,
+      initialDate: widget.context.date,
     );
-    if (!mounted || value == null || !model.editable) return;
+    if (!mounted) return;
+    (start ? startTimeFocus : endTimeFocus).requestFocus();
+    if (value == null || !model.editable) return;
+    setState(() => timeVisited = true);
     model.setTime(
       start: start ? value : model.time.startedAt,
       end: start ? model.time.endedAt : value,
@@ -237,33 +430,82 @@ class _RecordingFormState extends State<RecordingForm> {
   }
 
   Future<void> _chooseGoal() async {
-    final id = await showDialog<String>(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('选择目标'),
-        children: [
-          for (final goal in model.activeGoals)
-            ListTile(
-              key: ValueKey('goal-option-${goal.id}'),
-              title: Text(goal.name),
-              subtitle:
-                  model.activeGoals
-                          .where((other) => other.name == goal.name)
-                          .length >
-                      1
-                  ? Text('标识：${goal.id}')
-                  : null,
-              onTap: () => Navigator.pop(context, goal.id),
+    FocusManager.instance.primaryFocus?.unfocus();
+    Widget choices(BuildContext sheet) => SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('选择目标', style: Theme.of(sheet).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            if (model.selectedGoal?.status == GoalStatus.archived)
+              Text('当前归属：${model.selectedGoal!.name}（已归档，可保留原引用）'),
+            _goalChoice(sheet, '', '不关联', null),
+            for (final goal in model.activeGoals)
+              _goalChoice(sheet, goal.id, goal.name, '标识：${goal.id}'),
+            TextButton(
+              onPressed: () => Navigator.pop(sheet),
+              child: const Text('取消'),
             ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-        ],
+          ],
+        ),
       ),
     );
-    if (mounted && id != null) model.selectGoal(id);
+    final String? id;
+    if (MediaQuery.sizeOf(context).width < 840) {
+      id = await showModalBottomSheet<String>(
+        context: context,
+        isScrollControlled: true,
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * .85,
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: choices,
+      );
+    } else {
+      id = await showDialog<String>(
+        context: context,
+        builder: (sheet) => Dialog(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: choices(sheet),
+          ),
+        ),
+      );
+    }
+    if (!mounted) return;
+    goalFocus.requestFocus();
+    if (id == '') {
+      model.clearGoal();
+    } else if (id != null) {
+      model.selectGoal(id);
+    }
   }
+
+  Widget _goalChoice(
+    BuildContext sheet,
+    String id,
+    String name,
+    String? detail,
+  ) => Semantics(
+    selected: (model.goalId ?? '') == id,
+    inMutuallyExclusiveGroup: true,
+    child: ListTile(
+      key: ValueKey('goal-option-$id'),
+      leading: Icon(
+        (model.goalId ?? '') == id
+            ? Icons.radio_button_checked
+            : Icons.radio_button_unchecked,
+      ),
+      title: Text(name),
+      subtitle: detail == null ? null : Text(detail),
+      onTap: () => Navigator.pop(sheet, id),
+    ),
+  );
 
   Widget _goalSection(BuildContext context) {
     final goal = model.selectedGoal;
@@ -272,7 +514,7 @@ class _RecordingFormState extends State<RecordingForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('目标归属（可选）'),
+        Text('目标归属', style: Theme.of(context).textTheme.titleMedium),
         Text(
           model.goalId == null
               ? '未关联目标'
@@ -296,6 +538,7 @@ class _RecordingFormState extends State<RecordingForm> {
             spacing: 12,
             children: [
               OutlinedButton(
+                focusNode: goalFocus,
                 onPressed: model.editable && model.activeGoals.isNotEmpty
                     ? _chooseGoal
                     : null,
@@ -325,12 +568,351 @@ class _RecordingFormState extends State<RecordingForm> {
               '${formatRecordingTime(model.time.startedAt)} → '
               '${model.time.endPrecision == TimePrecision.approximate ? '约 ' : ''}'
               '${formatRecordingTime(model.time.endedAt)}\n'
-              '可在下方修改时间，大约时间也可以保存。',
+              '可在上方修改时间，大约时间也可以保存。',
             ),
           ),
       ],
     );
   }
+
+  Widget _status(BuildContext context) => Container(
+    key: statusKey,
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surface,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (model.restored) const Text('已恢复上次输入'),
+        if (model.committed == null && model.submitting)
+          Text(
+            model.submitting
+                ? '正在保存到账本…'
+                : model.saving
+                ? '正在保留草稿…'
+                : widget.context.entry == RecordingDraftEntry.edit
+                ? '更正草稿已保留，原记录尚未改变。'
+                : '输入作为草稿保留，尚未计入账本。',
+          ),
+        if (model.submitError != null)
+          Text(
+            model.submitError!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        for (final conflict in model.conflicts) ...[
+          Text(
+            '冲突记录：${conflict.reference.type == LedgerFactType.timeBlock ? '活动' : '睡眠'} '
+            '${formatRecordingTime(conflict.startedAt)} → ${formatRecordingTime(conflict.endedAt)}',
+          ),
+          Text(
+            '标识：${conflict.reference.id}',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          TextButton(
+            onPressed: model.editable
+                ? () async {
+                    setState(() => timeExpanded = true);
+                    await WidgetsBinding.instance.endOfFrame;
+                    if (mounted && timeKey.currentContext != null) {
+                      await Scrollable.ensureVisible(
+                        timeKey.currentContext!,
+                        alignment: .1,
+                      );
+                    }
+                  }
+                : null,
+            child: const Text('修改冲突时间'),
+          ),
+        ],
+        if (model.committed case final committed?) ...[
+          Text(
+            widget.context.entry == RecordingDraftEntry.edit
+                ? '更正已保存到账本，请不要再次提交。'
+                : '已正式保存到账本，请不要再次提交。',
+          ),
+          if (!committed.draftCleared)
+            Text(
+              '草稿清理失败，旧草稿仍可能显示；请重试清理。',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          if (committed.refreshed == null)
+            Text(
+              '账本刷新失败，记录已保存；请重试刷新。',
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          if (!committed.complete)
+            FilledButton(
+              onPressed: model.submitting ? null : _finish,
+              child: const Text('继续清理并刷新'),
+            ),
+        ],
+        if (model.storageError != null && model.committed == null) ...[
+          Text(
+            model.storageError!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          TextButton(
+            onPressed: model.editable ? model.retrySave : null,
+            child: const Text('重试保存草稿'),
+          ),
+        ],
+      ],
+    ),
+  );
+
+  String get _interval =>
+      '${model.time.startPrecision == TimePrecision.approximate ? '约' : ''}${formatRecordingTime(model.time.startedAt)} → '
+      '${model.time.endPrecision == TimePrecision.approximate ? '约' : ''}${model.time.startedAt != null && model.time.endedAt != null && formatRecordingTime(model.time.startedAt).split(' ').first == formatRecordingTime(model.time.endedAt).split(' ').first ? formatRecordingTime(model.time.endedAt).split(' ').last : formatRecordingTime(model.time.endedAt)}';
+
+  Widget _timeSection(BuildContext context) {
+    final error = (showErrors || timeVisited) ? model.timeError : null;
+    final expanded = timeExpanded || model.timeError != null;
+    return Column(
+      key: timeKey,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(_interval, key: const ValueKey('recording-time-summary')),
+        if (model.time.startedAt != null && model.time.endedAt != null)
+          TextButton.icon(
+            key: const ValueKey('edit-recording-time'),
+            onPressed: model.editable
+                ? () async {
+                    FocusManager.instance.primaryFocus?.unfocus();
+                    final result = await Navigator.of(context)
+                        .push<EditorTimes>(
+                          MaterialPageRoute(
+                            builder: (_) => EditorTimePage(
+                              date: widget.context.date,
+                              initial: (
+                                start: formatSleepTime(model.time.startedAt),
+                                end: formatSleepTime(model.time.endedAt),
+                                startPrecision: model.time.startPrecision,
+                                endPrecision: model.time.endPrecision,
+                              ),
+                            ),
+                          ),
+                        );
+                    if (!mounted || result == null) return;
+                    model.setTime(
+                      start: parseSleepTime(result.start),
+                      end: parseSleepTime(result.end),
+                    );
+                    model.setPrecision(
+                      start: result.startPrecision,
+                      end: result.endPrecision,
+                    );
+                  }
+                : null,
+            icon: Icon(expanded ? Icons.expand_less : Icons.edit_outlined),
+            label: Text(expanded ? '收起时间编辑' : '修改时间'),
+          ),
+        if (expanded)
+          for (final start in [true, false])
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              focusNode: start ? startTimeFocus : endTimeFocus,
+              title: Text(start ? '开始时间' : '结束时间'),
+              subtitle: Text(
+                formatRecordingTime(
+                  start ? model.time.startedAt : model.time.endedAt,
+                ),
+              ),
+              onTap: model.editable ? () => _time(start) : null,
+              trailing: IconButton(
+                tooltip: start ? '清空开始时间' : '清空结束时间',
+                icon: const Icon(Icons.clear),
+                onPressed: model.editable
+                    ? () {
+                        setState(() => timeVisited = true);
+                        model.setTime(
+                          start: start ? null : model.time.startedAt,
+                          end: start ? model.time.endedAt : null,
+                        );
+                      }
+                    : null,
+              ),
+            ),
+        if (error != null)
+          Text(
+            error,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          )
+        else if (model.timeError != null)
+          const Text('请确认完整的开始与结束时间。'),
+        const SizedBox(height: 8),
+        if (expanded)
+          for (final start in [true, false])
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final precision in TimePrecision.values)
+                  ChoiceChip(
+                    label: Text(
+                      '${start ? '开始' : '结束'}${precision == TimePrecision.exact ? '准确' : '大约'}',
+                    ),
+                    selected:
+                        (start
+                            ? model.time.startPrecision
+                            : model.time.endPrecision) ==
+                        precision,
+                    onSelected: model.editable
+                        ? (_) => model.setPrecision(
+                            start: start ? precision : null,
+                            end: start ? null : precision,
+                          )
+                        : null,
+                  ),
+              ],
+            ),
+      ],
+    );
+  }
+
+  Widget _content(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      if (model.submitError != null ||
+          model.storageError != null ||
+          model.committed != null ||
+          model.conflicts.isNotEmpty)
+        _status(context),
+      const SizedBox(height: 12),
+      Container(
+        key: titleKey,
+        child: TextField(
+          key: const ValueKey('activity'),
+          controller: title,
+          focusNode: titleFocus,
+          readOnly: !model.editable,
+          onChanged: model.setTitle,
+          minLines: 2,
+          maxLines: null,
+          style: const TextStyle(fontSize: 20, height: 1.6),
+          textInputAction: TextInputAction.newline,
+          decoration: InputDecoration(
+            labelText: '刚才这段时间在做什么？',
+            errorText: showErrors || titleVisited ? model.titleError : null,
+          ),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        children: [
+          for (final known in BlockKnowledgeState.values)
+            ChoiceChip(
+              label: Text(
+                known == BlockKnowledgeState.known ? '记得做了什么' : '想不起来',
+              ),
+              selected: model.knowledgeState == known,
+              onSelected: model.editable
+                  ? (_) => model.setKnowledge(known)
+                  : null,
+            ),
+        ],
+      ),
+      if (model.knowledgeState == null) const Text('请选择是否记得这段时间的内容。'),
+      const SizedBox(height: 24),
+      if (model.candidates.isNotEmpty) ...[
+        const Text('选择要补记的时间，也可以手动填写：'),
+        for (final candidate in model.candidates)
+          OutlinedButton(
+            onPressed: model.editable
+                ? () {
+                    setState(() => timeExpanded = false);
+                    model.chooseCandidate(candidate);
+                  }
+                : null,
+            child: Text(
+              '${formatRecordingTime(candidate.startedAt)} → ${formatRecordingTime(candidate.endedAt)}',
+            ),
+          ),
+        const SizedBox(height: 8),
+      ],
+      _timeSection(context),
+      if (widget.goals != null) ...[
+        const SizedBox(height: 24),
+        RecordingOptionalSection(
+          id: 'recording-goal',
+          title: model.selectedGoal?.name ?? '＋ 目标',
+          summary: '',
+          hasContent: false,
+          hasError: model.goalsError != null,
+          enabled: model.editable,
+          child: _goalSection(context),
+        ),
+      ],
+      const SizedBox(height: 16),
+      RecordingOptionalSection(
+        id: 'recording-rhythm',
+        title: model.rhythmState == null
+            ? '＋ 节奏'
+            : rhythmInputLabel(model.rhythmState),
+        summary: '',
+        hasContent: false,
+        hasError: showErrors,
+        enabled: model.editable,
+        child: RecordingRhythmInput(
+          model: model,
+          hint: continuationHint,
+          reason: stuckReasonText,
+          showErrors: showErrors,
+        ),
+      ),
+      const SizedBox(height: 16),
+      RecordingOptionalSection(
+        id: 'recording-note',
+        title: '补充内容',
+        summary: recordingDetailPreview(model.note),
+        hasContent: model.note.isNotEmpty,
+        hasError: (showErrors || noteVisited) && model.noteError != null,
+        enabled: model.editable,
+        child: Container(
+          key: noteKey,
+          child: TextField(
+            key: const ValueKey('note'),
+            controller: note,
+            focusNode: noteFocus,
+            readOnly: !model.editable,
+            onChanged: model.setNote,
+            minLines: 1,
+            maxLines: 5,
+            textInputAction: TextInputAction.newline,
+            decoration: InputDecoration(
+              labelText: '备注内容',
+              errorText: showErrors || noteVisited ? model.noteError : null,
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: 24),
+    ],
+  );
+
+  Widget _saveAction() => model.committed == null
+      ? FilledButton(
+          key: const ValueKey('recording-submit'),
+          style: FilledButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          onPressed:
+              (widget.context.entry == RecordingDraftEntry.edit
+                  ? model.entryEditor == null
+                  : model.entrySaver == null)
+              ? null
+              : model.editable && !exiting
+              ? _submit
+              : null,
+          child: Text(
+            widget.context.entry == RecordingDraftEntry.edit ? '保存更正' : '保存到账本',
+          ),
+        )
+      : TextButton(onPressed: () => _leave(), child: const Text('返回账本'));
 
   @override
   Widget build(BuildContext context) => PopScope(
@@ -338,231 +920,103 @@ class _RecordingFormState extends State<RecordingForm> {
     onPopInvokedWithResult: (didPop, _) {
       if (!didPop) _leave();
     },
-    child: Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.context.entry == RecordingDraftEntry.edit ? '更正记录' : '补一笔',
+    child: CallbackShortcuts(
+      bindings: {const SingleActivator(LogicalKeyboardKey.escape): _leave},
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            widget.context.entry == RecordingDraftEntry.edit
+                ? '更正记录'
+                : widget.context.entry == RecordingDraftEntry.gap
+                ? '补记活动'
+                : '记录活动',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          leading: BackButton(onPressed: _leave),
+          actions: [
+            PopupMenuButton<bool>(
+              tooltip: '更多',
+              onSelected: (discard) => _leave(discard: discard),
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: false,
+                  enabled: !exiting && !model.submitting,
+                  child: const Text('保留草稿并返回'),
+                ),
+                if (model.committed == null)
+                  PopupMenuItem(
+                    value: true,
+                    enabled: model.editable,
+                    child: const Text('放弃草稿'),
+                  ),
+              ],
+            ),
+          ],
         ),
-        leading: BackButton(onPressed: _leave),
-      ),
-      body: model.loading
-          ? const Center(child: CircularProgressIndicator())
-          : model.loadError != null
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(model.loadError!),
-                  TextButton(onPressed: _initialize, child: const Text('重试读取')),
-                  if (model.missingOriginal) ...[
-                    TextButton(
-                      onPressed: () => _leave(discard: true),
-                      child: const Text('清除编辑草稿并返回'),
-                    ),
-                    TextButton(
-                      onPressed: () => _leave(),
-                      child: const Text('返回账本'),
-                    ),
-                  ],
-                  if (model.storageError != null) Text(model.storageError!),
-                ],
-              ),
-            )
-          : AbsorbPointer(
-              absorbing: exiting || model.discarding || model.submitting,
-              child: ListView(
-                padding: const EdgeInsets.all(20),
-                children: [
-                  TextField(
-                    key: const ValueKey('activity'),
-                    controller: title,
-                    readOnly: !model.editable,
-                    onChanged: model.setTitle,
-                    minLines: 1,
-                    maxLines: 3,
-                    decoration: InputDecoration(
-                      labelText: '刚才这段时间在做什么？',
-                      errorText: model.titleError,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    key: const ValueKey('note'),
-                    controller: note,
-                    readOnly: !model.editable,
-                    onChanged: model.setNote,
-                    minLines: 1,
-                    maxLines: 5,
-                    decoration: InputDecoration(
-                      labelText: '备注（可选）',
-                      errorText: model.noteError,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 12,
+        body: model.loading
+            ? const Center(child: CircularProgressIndicator())
+            : model.loadError != null
+            ? Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      ChoiceChip(
-                        label: const Text('记得做了什么'),
-                        selected:
-                            model.knowledgeState == BlockKnowledgeState.known,
-                        onSelected: model.editable
-                            ? (_) =>
-                                  model.setKnowledge(BlockKnowledgeState.known)
-                            : null,
+                      Text(
+                        model.loadError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                       ),
-                      ChoiceChip(
-                        label: const Text('想不起来'),
-                        selected:
-                            model.knowledgeState == BlockKnowledgeState.unknown,
-                        onSelected: model.editable
-                            ? (_) => model.setKnowledge(
-                                BlockKnowledgeState.unknown,
-                              )
-                            : null,
+                      TextButton(
+                        onPressed: _initialize,
+                        child: const Text('重试读取'),
                       ),
+                      if (model.missingOriginal) ...[
+                        TextButton(
+                          onPressed: () => _leave(discard: true),
+                          child: const Text('清除编辑草稿并返回'),
+                        ),
+                        TextButton(
+                          onPressed: () => _leave(),
+                          child: const Text('返回账本'),
+                        ),
+                      ],
+                      if (model.storageError != null)
+                        Text(
+                          model.storageError!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
                     ],
                   ),
-                  if (model.knowledgeState == null)
-                    const Text('请选择是否记得这段时间的内容。'),
-                  if (model.restored) const Text('已恢复上次输入'),
-                  if (widget.goals != null) ...[
-                    const SizedBox(height: 12),
-                    _goalSection(context),
-                  ],
-                  if (model.candidates.isNotEmpty) ...[
-                    const Text('选择要补记的时间，也可以手动填写：'),
-                    for (final candidate in model.candidates)
-                      OutlinedButton(
-                        onPressed: model.editable
-                            ? () => model.chooseCandidate(candidate)
-                            : null,
-                        child: Text(
-                          '${formatRecordingTime(candidate.startedAt)} → ${formatRecordingTime(candidate.endedAt)}',
-                        ),
-                      ),
-                  ],
-                  for (final start in [true, false]) ...[
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(start ? '开始时间' : '结束时间'),
-                      subtitle: Text(
-                        formatRecordingTime(
-                          start ? model.time.startedAt : model.time.endedAt,
-                        ),
-                      ),
-                      onTap: model.editable ? () => _time(start) : null,
-                      trailing: IconButton(
-                        tooltip: start ? '清空开始时间' : '清空结束时间',
-                        icon: const Icon(Icons.clear),
-                        onPressed: model.editable
-                            ? () => model.setTime(
-                                start: start ? null : model.time.startedAt,
-                                end: start ? model.time.endedAt : null,
-                              )
-                            : null,
+                ),
+              )
+            : AbsorbPointer(
+                absorbing: exiting || model.discarding || model.submitting,
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 560),
+                    child: SafeArea(
+                      top: false,
+                      child: EditorBody(
+                        action: _saveAction(),
+                        status: model.storageError != null
+                            ? '草稿未保留'
+                            : model.saving
+                            ? '正在保留…'
+                            : model.committed != null
+                            ? '已保存'
+                            : '尚未正式保存',
+                        children: [_content(context)],
                       ),
                     ),
-                    Wrap(
-                      spacing: 12,
-                      children: [
-                        for (final precision in TimePrecision.values)
-                          ChoiceChip(
-                            label: Text(
-                              '${start ? '开始' : '结束'}${precision == TimePrecision.exact ? '准确' : '大约'}',
-                            ),
-                            selected:
-                                (start
-                                    ? model.time.startPrecision
-                                    : model.time.endPrecision) ==
-                                precision,
-                            onSelected: model.editable
-                                ? (_) => model.setPrecision(
-                                    start: start ? precision : null,
-                                    end: start ? null : precision,
-                                  )
-                                : null,
-                          ),
-                      ],
-                    ),
-                  ],
-                  if (model.timeError != null) Text(model.timeError!),
-                  const SizedBox(height: 12),
-                  RecordingRhythmInput(
-                    model: model,
-                    hint: continuationHint,
-                    reason: stuckReasonText,
                   ),
-                  const SizedBox(height: 16),
-                  if (model.committed == null)
-                    Text(
-                      model.saving
-                          ? '正在保留草稿…'
-                          : widget.context.entry == RecordingDraftEntry.edit
-                          ? '更正草稿已保留，原记录尚未改变。'
-                          : '输入作为草稿保留，尚未计入账本。',
-                    ),
-                  if (model.submitError != null) Text(model.submitError!),
-                  for (final conflict in model.conflicts)
-                    Text(
-                      '冲突记录：${conflict.reference.type == LedgerFactType.timeBlock ? '活动' : '睡眠'} '
-                      '${conflict.reference.id} '
-                      '${formatRecordingTime(conflict.startedAt)} → ${formatRecordingTime(conflict.endedAt)}',
-                    ),
-                  if (model.committed case final committed?) ...[
-                    Text(
-                      widget.context.entry == RecordingDraftEntry.edit
-                          ? '更正已保存到账本，请不要再次提交。'
-                          : '已正式保存到账本，请不要再次提交。',
-                    ),
-                    if (!committed.draftCleared)
-                      const Text('草稿清理失败，旧草稿仍可能显示；请重试清理。'),
-                    if (committed.refreshed == null)
-                      const Text('账本刷新失败，记录已保存；请重试刷新。'),
-                    if (!committed.complete)
-                      FilledButton(
-                        onPressed: model.submitting ? null : _finish,
-                        child: const Text('继续清理并刷新'),
-                      ),
-                  ],
-                  if (model.storageError != null &&
-                      model.committed == null) ...[
-                    Text(model.storageError!),
-                    TextButton(
-                      onPressed: model.retrySave,
-                      child: const Text('重试保存草稿'),
-                    ),
-                  ],
-                  if (model.committed == null) ...[
-                    FilledButton(
-                      onPressed:
-                          (widget.context.entry == RecordingDraftEntry.edit
-                              ? model.entryEditor == null
-                              : model.entrySaver == null)
-                          ? null
-                          : _submit,
-                      child: Text(
-                        widget.context.entry == RecordingDraftEntry.edit
-                            ? '保存更正'
-                            : '确认并保存到账本',
-                      ),
-                    ),
-                    OutlinedButton(
-                      onPressed: () => _leave(),
-                      child: const Text('保留草稿并返回'),
-                    ),
-                    TextButton(
-                      onPressed: () => _leave(discard: true),
-                      child: const Text('放弃草稿'),
-                    ),
-                  ] else
-                    TextButton(
-                      onPressed: () => _leave(),
-                      child: const Text('返回账本'),
-                    ),
-                ],
+                ),
               ),
-            ),
+      ),
     ),
   );
 }

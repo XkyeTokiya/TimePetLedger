@@ -1,3 +1,5 @@
+import '../support/ledger_date_selection.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
@@ -17,10 +19,16 @@ import 'review_form_entry_test.dart' show settleNative, tapText;
 import 'support/checked_sleep_opening.dart';
 
 Future<void> enter(WidgetTester t, String key, String value) async {
+  if (key == 'review-date') await tapText(t, '修改日期');
+  if (['review-summary', 'review-reflection'].contains(key) &&
+      find.byKey(ValueKey(key)).evaluate().isEmpty) {
+    await tapText(t, '再写几句 ＋');
+  }
   final finder = find.byKey(ValueKey(key));
   await t.ensureVisible(finder);
   await t.enterText(finder, value);
   await settleNative(t);
+  if (key == 'review-date') await tapText(t, '应用日期');
 }
 
 Future<void> host(WidgetTester t, ReviewHarness h) async {
@@ -100,7 +108,8 @@ void main() {
       await tapText(t, '填写复盘');
       await enter(t, 'review-date', '2025-12-31');
       await enter(t, 'review-step', '  用户第一步\n\n  保留内部格式😀  ');
-      expect(find.text('尚未记录：1440 分钟'), findsOneWidget);
+      await tapText(t, '查看当日事实');
+      expect(find.text('尚未记录：24 小时'), findsOneWidget);
       final save = t
           .widget<FilledButton>(find.widgetWithText(FilledButton, '保存复盘'))
           .onPressed!;
@@ -157,12 +166,18 @@ void main() {
         t.widget<TextField>(find.byKey(const ValueKey('review-step'))).enabled,
         false,
       );
+      await t.tap(find.byTooltip('更多'));
+      await settleNative(t);
       expect(
         t
-            .widget<TextButton>(find.widgetWithText(TextButton, '放弃此复盘草稿'))
-            .onPressed,
-        isNull,
+            .widget<PopupMenuItem<String>>(
+              find.widgetWithText(PopupMenuItem<String>, '放弃此复盘草稿'),
+            )
+            .enabled,
+        isFalse,
       );
+      await t.binding.handlePopRoute();
+      await settleNative(t);
       final saved = (await t.runAsync(() => h.reviews.findByDate(reviewDate)))!;
       expect(await t.runAsync(() => h.drafts.read(draftContext)), isNotNull);
       expect(h.reviews.creates, 1);
@@ -197,7 +212,7 @@ void main() {
       expect(find.textContaining('草稿清理失败'), findsOneWidget);
       await tapText(t, '返回复盘读取');
       expect(find.text('已存复盘日期：2024-02-29'), findsOneWidget);
-      await t.enterText(find.byType(TextField), '2025-12-31');
+      await selectLedgerDate(t, '2025-12-31');
       await settleNative(t);
       await tapText(t, '填写复盘');
       expect(find.textContaining('草稿清理失败'), findsOneWidget);
