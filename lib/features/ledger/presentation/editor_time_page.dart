@@ -59,6 +59,38 @@ class _EditorTimePageState extends State<EditorTimePage> {
     }
   }
 
+  Future<void> chooseClock(bool first) async {
+    final input = first ? start : end;
+    final parsed = parseSleepTime(input.text);
+    if (parsed == null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('请先填写有效的日期与时间。')));
+      return;
+    }
+    final date = DateTime.fromMillisecondsSinceEpoch(parsed);
+    FocusManager.instance.primaryFocus?.unfocus();
+    final selected = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(date),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (!mounted || selected == null) return;
+    setState(() {
+      input.text = formatSleepTime(
+        DateTime(
+          date.year,
+          date.month,
+          date.day,
+          selected.hour,
+          selected.minute,
+        ).millisecondsSinceEpoch,
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     resizeToAvoidBottomInset: !widget.inSheet,
@@ -100,9 +132,9 @@ class _EditorTimePageState extends State<EditorTimePage> {
                         labelText: first ? '开始日期与时间' : '结束日期与时间',
                         hintText: 'YYYY-MM-DD HH:mm',
                         suffixIcon: IconButton(
-                          tooltip: first ? '选择开始日期与时间' : '选择结束日期与时间',
-                          onPressed: () => choose(first),
-                          icon: const Icon(Icons.calendar_month_outlined),
+                          tooltip: first ? '选择开始时间' : '选择结束时间',
+                          onPressed: () => chooseClock(first),
+                          icon: const Icon(Icons.schedule),
                         ),
                       ),
                     ),
