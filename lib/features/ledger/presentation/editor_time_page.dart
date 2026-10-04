@@ -79,23 +79,40 @@ class _EditorTimePageState extends State<EditorTimePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  TextButton(
-                    onPressed: () => choose(first),
-                    child: Text(
-                      widget.sleep
-                          ? (first ? '入睡' : '醒来')
-                          : (first ? '开始时间' : '结束时间'),
+                  if (widget.sleep)
+                    TextButton(
+                      onPressed: () => choose(first),
+                      child: Text(
+                        widget.sleep
+                            ? (first ? '入睡' : '醒来')
+                            : (first ? '开始时间' : '结束时间'),
+                      ),
                     ),
-                  ),
-                  TextButton(
-                    onPressed: () => choose(first),
-                    child: Text(
-                      (first ? start : end).text.isEmpty
-                          ? '选择日期与时间'
-                          : (first ? start : end).text,
-                      style: const TextStyle(fontSize: 20),
+                  if (!widget.sleep)
+                    TextField(
+                      key: ValueKey(first ? 'time-start' : 'time-end'),
+                      controller: first ? start : end,
+                      keyboardType: TextInputType.datetime,
+                      decoration: InputDecoration(
+                        labelText: first ? '开始日期与时间' : '结束日期与时间',
+                        hintText: 'YYYY-MM-DD HH:mm',
+                        suffixIcon: IconButton(
+                          tooltip: first ? '选择开始日期与时间' : '选择结束日期与时间',
+                          onPressed: () => choose(first),
+                          icon: const Icon(Icons.calendar_month_outlined),
+                        ),
+                      ),
                     ),
-                  ),
+                  if (widget.sleep)
+                    TextButton(
+                      onPressed: () => choose(first),
+                      child: Text(
+                        (first ? start : end).text.isEmpty
+                            ? '选择日期与时间'
+                            : (first ? start : end).text,
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                    ),
                   Wrap(
                     spacing: 8,
                     children: [
@@ -123,11 +140,12 @@ class _EditorTimePageState extends State<EditorTimePage> {
           ),
           const SizedBox(height: 16),
         ],
-        TextButton(
-          onPressed: () => setState(() => manual = !manual),
-          child: const Text('手动输入日期与时间'),
-        ),
-        if (manual) ...[
+        if (widget.sleep)
+          TextButton(
+            onPressed: () => setState(() => manual = !manual),
+            child: const Text('手动输入日期与时间'),
+          ),
+        if (widget.sleep && manual) ...[
           TextField(
             key: ValueKey(widget.sleep ? 'sleep-start' : 'time-start'),
             controller: start,

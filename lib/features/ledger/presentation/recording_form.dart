@@ -957,10 +957,11 @@ class _RecordingFormState extends State<RecordingForm> {
         ),
       const SizedBox(height: 16),
       Container(
-        decoration: BoxDecoration(
+        foregroundDecoration: BoxDecoration(
           border: Border.all(color: Theme.of(context).colorScheme.outline),
           borderRadius: BorderRadius.circular(12),
         ),
+        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
         clipBehavior: Clip.antiAlias,
         child: Row(
           children: [
@@ -995,7 +996,6 @@ class _RecordingFormState extends State<RecordingForm> {
           ],
         ),
       ),
-      if (model.knowledgeState == null) const Text('请选择是否记得这段时间的内容。'),
       const SizedBox(height: 16),
       if (model.candidates.isNotEmpty) ...[
         const Text('选择要补记的时间，也可以手动填写：'),

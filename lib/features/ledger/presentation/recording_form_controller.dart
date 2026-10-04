@@ -184,6 +184,7 @@ class RecordingFormController extends ChangeNotifier {
           endPrecision: block.endPrecision,
         );
       } else {
+        knowledgeState = BlockKnowledgeState.known;
         final suggestion = await loadSuggestion();
         if (_disposed) return;
         switch (suggestion) {

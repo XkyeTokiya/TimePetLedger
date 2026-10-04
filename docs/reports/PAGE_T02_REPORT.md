@@ -1,5 +1,11 @@
 # PAGE-T02 · 活动编辑返工
 
+## 默认记得与直接时间输入
+
+按用户本轮决定，新建且无草稿的活动默认选中“记得”；已有草稿及记录仍恢复原状态。删除“请选择是否记得…”提示。选择组边框改为前景绘制，避免子控件背景覆盖圆角边线。活动时间页进入即显示开始/结束日期时间输入，日历按钮是可选辅助，不再要求先开单端对话框；取消/应用及独立精度保留。睡眠页维持原入口。
+
+验证：`flutter test test/features/ledger/presentation/recording_form_test.dart`通过，新增默认选中断言并迁移直接输入路径；`flutter analyze`通过。`flutter run -d 10AE9F37AJ000F0 --debug --no-resident`本轮成功，手机运行新版；完整时间操作及其他旧导航测试尚未完成回归，不标全任务完成。
+
 ## 手机现场检查（最新）
 
 用户更换手机后识别V2417A，ADB序列10AE9F37AJ000F0。APK安装成功，Flutter等待debug连接失败，但ADB确认MainActivity处于RESUMED且实际显示新版。设备物理1260×2800、density560（3.5），逻辑360×800。通过实际点击Gap进入补记，再点击输入框唤起微信输入法；[未弹键盘截图](assets/page-t02/phone-editor.png)、[真实IME截图](assets/page-t02/phone-ime.png)。

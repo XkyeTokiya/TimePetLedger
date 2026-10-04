@@ -78,7 +78,6 @@ Future<void> enterTime(WidgetTester tester, String label, String value) async {
     await tester.pumpAndSettle();
   }
   if (find.text('调整记录时间').evaluate().isNotEmpty) {
-    await tap(tester, '手动输入日期与时间');
     final field = find.byKey(
       ValueKey(label == '开始时间' ? 'time-start' : 'time-end'),
     );
@@ -112,7 +111,13 @@ void main() {
         tester.getTopLeft(find.byKey(const ValueKey('activity'))).dy,
         lessThan(tester.getTopLeft(find.text('开始时间')).dy),
       );
-      expect(find.text('请选择是否记得这段时间的内容。'), findsOneWidget);
+      expect(find.text('请选择是否记得这段时间的内容。'), findsNothing);
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '记得'))
+            .selected,
+        isTrue,
+      );
       expect(find.byKey(const ValueKey('note')), findsNothing);
       await revealRecordingField(tester, 'note');
       await tester.enterText(find.byKey(const ValueKey('note')), '🐾' * 2001);
