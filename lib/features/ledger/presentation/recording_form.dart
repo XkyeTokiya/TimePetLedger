@@ -8,6 +8,8 @@ import 'package:flutter/services.dart';
 
 import '../../../core/time/civil_date.dart';
 import '../../goals/domain/goal_repository.dart';
+import '../../goals/presentation/goals_page.dart';
+import '../../../core/identity/entity_id.dart';
 import '../../goals/domain/goal_status.dart';
 import '../application/recording_entry_saver.dart';
 import '../application/recording_entry_editor.dart';
@@ -566,7 +568,7 @@ class _RecordingFormState extends State<RecordingForm> {
               child: const Text('重试读取目标'),
             ),
           ] else ...[
-            if (model.activeGoals.isEmpty) const Text('暂无可选目标，可直接记录。'),
+            if (model.activeGoals.isEmpty) const Text('尚无目标，可以在这里创建并关联。'),
             Wrap(
               spacing: 12,
               children: [
@@ -576,6 +578,10 @@ class _RecordingFormState extends State<RecordingForm> {
                       ? _chooseGoal
                       : null,
                   child: const Text('选择目标'),
+                ),
+                TextButton(
+                  onPressed: model.editable ? _createGoal : null,
+                  child: const Text('创建目标'),
                 ),
                 TextButton(
                   onPressed: model.editable ? model.loadGoals : null,
@@ -607,6 +613,27 @@ class _RecordingFormState extends State<RecordingForm> {
         ],
       ),
     );
+  }
+
+  Future<void> _createGoal() async {
+    final saver = widget.entrySaver ?? widget.entryEditor?.saver;
+    final repository = widget.goals;
+    if (saver == null || repository == null) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    final id = await Navigator.of(context).push<EntityId>(
+      MaterialPageRoute(
+        builder: (_) => GoalsPage(
+          repository: repository,
+          newId: saver.newId,
+          now: saver.now,
+          returnCreated: true,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    await model.loadGoals();
+    if (!mounted || id == null) return;
+    model.selectGoal(id);
   }
 
   Widget _status(BuildContext context) => Container(

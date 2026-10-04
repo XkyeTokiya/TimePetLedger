@@ -16,12 +16,14 @@ class GoalsPage extends StatefulWidget {
     required this.newId,
     required this.now,
     this.archived = false,
+    this.returnCreated = false,
   });
 
   final GoalRepository repository;
   final EntityId Function() newId;
   final InstantMilliseconds Function() now;
   final bool archived;
+  final bool returnCreated;
 
   @override
   State<GoalsPage> createState() => _GoalsPageState();
@@ -72,9 +74,10 @@ class _GoalsPageState extends State<GoalsPage> {
       _saveError = null;
       _actionNotice = null;
     });
+    final id = widget.newId();
     try {
       await widget.repository.create(
-        id: widget.newId(),
+        id: id,
         name: _name.text,
         now: widget.now(),
       );
@@ -99,6 +102,10 @@ class _GoalsPageState extends State<GoalsPage> {
     }
     if (!mounted) return;
     // create has committed. A failed reread must only retry reading.
+    if (widget.returnCreated) {
+      Navigator.pop(context, id);
+      return;
+    }
     setState(() {
       _name.clear();
       _saved = true;

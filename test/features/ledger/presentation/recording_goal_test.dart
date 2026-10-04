@@ -340,7 +340,7 @@ void main() {
           h.app(RecordingDraftContext.newEntry(date: date)),
         );
         await textTap(tester, '打开');
-        expect(find.text('暂无可选目标，可直接记录。'), findsOneWidget);
+        expect(find.text('尚无目标，可以在这里创建并关联。'), findsOneWidget);
         await textTap(
           tester,
           knowledge == BlockKnowledgeState.known ? '记得' : '想不起来',
