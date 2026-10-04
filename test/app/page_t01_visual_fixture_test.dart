@@ -136,7 +136,7 @@ void main() {
         ),
       ),
     );
-    await tap(t, '记得做了什么');
+    await tap(t, '记得');
     await t.enterText(find.byKey(const ValueKey('activity')), '整理桌面');
     t.view.viewInsets = const FakeViewPadding(bottom: 232);
     await settle(t);

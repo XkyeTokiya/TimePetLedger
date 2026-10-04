@@ -144,7 +144,7 @@ void main() {
             .hasFocus,
         isFalse,
       );
-      await support.textTap(t, '记得做了什么');
+      await support.textTap(t, '记得');
       await support.enter(t, 'activity', '  活动🐾\n第二行  ');
       await support.enter(t, 'note', '  备注🐾\n保持原文  ');
       await support.tap(t, find.byKey(const ValueKey('recording-note-toggle')));
@@ -196,7 +196,7 @@ void main() {
     (t) async {
       final f = await support.openWidget(t);
       await mount(t, f);
-      await support.textTap(t, '记得做了什么');
+      await support.textTap(t, '记得');
       expect(find.text('请填写活动内容。'), findsNothing);
       await support.textTap(t, '保存到账本');
       expect(find.text('请填写活动内容。'), findsOneWidget);
@@ -451,9 +451,6 @@ void main() {
         await support.textTap(t, '保存到账本');
         expect(find.textContaining('冲突记录：睡眠'), findsOneWidget);
         expect(find.text('标识：${support.id(20)}'), findsNothing);
-        await support.textTap(t, '查看冲突记录编号');
-        expect(find.text('标识：${support.id(20)}'), findsOneWidget);
-        await support.textTap(t, '关闭');
         await capture(t, 'failure-conflict');
         await support.textTap(t, '调整当前记录时间');
         expect(find.text('开始时间'), findsOneWidget);

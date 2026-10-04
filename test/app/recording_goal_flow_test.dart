@@ -103,7 +103,7 @@ void main() {
         find.byKey(const ValueKey('activity')),
         '  原始输入 🐾  ',
       );
-      await textTap(tester, '记得做了什么');
+      await textTap(tester, '记得');
       await time(tester, '开始时间', '2026-10-01 10:00');
       await time(tester, '结束时间', '2026-10-01 11:00');
       await choose(tester, 2);
@@ -207,7 +207,7 @@ void main() {
         findsOneWidget,
       );
       await tester.enterText(find.byKey(const ValueKey('activity')), 'Gap活动');
-      await textTap(tester, '记得做了什么');
+      await textTap(tester, '记得');
       await choose(tester, 1);
       await textTap(tester, '保存到账本');
       final block = (await tester.runAsync(

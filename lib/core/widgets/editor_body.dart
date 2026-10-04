@@ -9,11 +9,13 @@ class EditorBody extends StatelessWidget {
     required this.action,
     this.status = '',
     this.accessory,
+    this.prototypeSpacing = false,
   });
   final List<Widget> children;
   final Widget action;
   final String status;
   final Widget? accessory;
+  final bool prototypeSpacing;
 
   @override
   Widget build(BuildContext context) => SafeArea(
@@ -21,7 +23,12 @@ class EditorBody extends StatelessWidget {
     child: LayoutBuilder(
       builder: (context, constraints) {
         final footer = Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            prototypeSpacing ? 12 : 8,
+            16,
+            prototypeSpacing ? 12 : 8,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -48,7 +55,12 @@ class EditorBody extends StatelessWidget {
           children: [
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.fromLTRB(
+                  16,
+                  prototypeSpacing ? 12 : 16,
+                  16,
+                  16,
+                ),
                 children: [...children, if (compact) footer],
               ),
             ),

@@ -239,7 +239,7 @@ void main() {
         final store = FormDraftStore();
         try {
           await mountForm(tester, store);
-          await tapVisible(tester, find.text('记得做了什么'));
+          await tapVisible(tester, find.text('记得'));
           final activity = find.byKey(const ValueKey('activity'));
           await Scrollable.ensureVisible(
             tester.element(activity),

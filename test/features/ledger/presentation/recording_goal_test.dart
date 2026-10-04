@@ -343,7 +343,7 @@ void main() {
         expect(find.text('暂无可选目标，可直接记录。'), findsOneWidget);
         await textTap(
           tester,
-          knowledge == BlockKnowledgeState.known ? '记得做了什么' : '想不起来',
+          knowledge == BlockKnowledgeState.known ? '记得' : '想不起来',
         );
         if (knowledge == BlockKnowledgeState.known) {
           await tester.enterText(
@@ -379,7 +379,7 @@ void main() {
         find.byKey(const ValueKey('activity')),
         '  保留活动  ',
       );
-      await textTap(tester, '记得做了什么');
+      await textTap(tester, '记得');
       await textTap(tester, '选择目标');
       expect(find.text('同名'), findsNWidgets(2));
       expect(find.byKey(ValueKey('goal-option-${id(3)}')), findsNothing);
@@ -442,7 +442,7 @@ void main() {
             find.byKey(const ValueKey('activity')),
             '修改但未提交',
           );
-          await textTap(tester, '记得做了什么');
+          await textTap(tester, '记得');
           await choose(tester, 1);
           await tester.runAsync(() async {
             if (mutation == 'archive') {

@@ -144,7 +144,7 @@ Future<void> goalAction(WidgetTester t, String id, String action) async {
 
 Future<void> fill(WidgetTester t, {String? goal}) async {
   await enter(t, 'activity', '  写作 🐾  ');
-  await textTap(t, '记得做了什么');
+  await textTap(t, '记得');
   await time(t, '开始时间', '2026-10-02 10:00');
   await time(t, '结束时间', '2026-10-02 11:00');
   if (goal != null) await chooseGoal(t, goal);

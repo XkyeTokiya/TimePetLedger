@@ -269,7 +269,7 @@ void main() {
       );
       await mount(tester, db, drafts);
       await openGap(tester);
-      await tap(tester, '记得做了什么');
+      await tap(tester, '记得');
       await tester.enterText(find.byKey(const ValueKey('activity')), '读书');
       await enterTime(tester, '结束时间', '2026-10-01 10:00');
       await tap(tester, '开始准确');
@@ -371,7 +371,7 @@ void main() {
       await mainSleep(tester, db);
       await mount(tester, db, drafts);
       await openGap(tester);
-      await tap(tester, '记得做了什么');
+      await tap(tester, '记得');
       await tester.enterText(find.byKey(const ValueKey('activity')), '写作');
       final competitor = (await tester.runAsync(
         () => DriftLedgerRepository(db).createSleepSession(

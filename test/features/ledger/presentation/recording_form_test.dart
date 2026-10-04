@@ -123,7 +123,7 @@ void main() {
       await tester.enterText(find.byKey(const ValueKey('note')), '🐾' * 2000);
       await tester.pumpAndSettle();
       expect(find.text('备注最多 2000 个字符。'), findsNothing);
-      await tap(tester, '记得做了什么');
+      await tap(tester, '记得');
       await tester.tap(find.byKey(const ValueKey('activity')));
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
@@ -342,18 +342,13 @@ void main() {
       ),
     );
     await tap(tester, '打开');
-    await tap(tester, '记得做了什么');
+    await tap(tester, '记得');
     await tester.enterText(find.byKey(const ValueKey('activity')), '写作');
     await enterTime(tester, '开始时间', '2026-09-28 10:00');
     await enterTime(tester, '结束时间', '2026-09-28 11:00');
     await tap(tester, '保存到账本');
     expect(find.textContaining('重叠区间为'), findsOneWidget);
     expect(find.textContaining(sleepId), findsNothing);
-    await tester.tap(find.text('查看冲突记录编号'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining(sleepId), findsOneWidget);
-    await tester.tap(find.text('关闭'));
-    await tester.pumpAndSettle();
     expect(store.value!.title, '写作');
     expect(find.text('已正式保存到账本，请不要再次提交。'), findsNothing);
   });
@@ -516,7 +511,7 @@ void main() {
       expect(changed.note, '更正\n备注');
       expect(store.value, isNull);
       await tap(tester, '打开');
-      await tap(tester, '记得做了什么');
+      await tap(tester, '记得');
       await tester.enterText(find.byKey(const ValueKey('activity')), '修改后的写作');
       await revealRecordingField(tester, 'note');
       await tester.enterText(find.byKey(const ValueKey('note')), ' \n ');

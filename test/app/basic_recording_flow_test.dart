@@ -129,7 +129,7 @@ void main() {
       );
       await enterTime(tester, '结束时间', '2026-09-29 10:00');
       await tapVisible(tester, '结束准确');
-      await tapVisible(tester, '记得做了什么');
+      await tapVisible(tester, '记得');
       await tester.enterText(find.byKey(const ValueKey('activity')), '读书');
       await tester.pumpAndSettle();
       final draft = (await tester.runAsync(
@@ -260,7 +260,7 @@ void main() {
         recordingTimeSummaryContaining('2026-09-28 11:00'),
         findsOneWidget,
       );
-      await tapVisible(tester, '记得做了什么');
+      await tapVisible(tester, '记得');
       await tapVisible(tester, '保存到账本');
       await tester.scrollUntilVisible(
         find.byKey(const ValueKey('activity')),

@@ -254,7 +254,7 @@ void main() {
       expect(unknown.annotation!.id, id(3));
       expect(controller(t).view!.unknownDuration.milliseconds, 30 * 60000);
       await editFact(t, LedgerFactType.timeBlock, id(1));
-      await tap(t, '记得做了什么');
+      await tap(t, '记得');
       await enterTime(t, '开始时间', '2026-09-30 10:00');
       await enterTime(t, '结束时间', '2026-09-30 11:00');
       await tap(t, '保存更正');

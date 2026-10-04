@@ -148,7 +148,7 @@ void main() {
               ),
             ),
           );
-          await t.tap(find.text('记得做了什么'));
+          await t.tap(find.text('记得'));
           await t.pumpAndSettle();
           await t.enterText(find.byKey(const ValueKey('activity')), '整理桌面');
           await t.pumpAndSettle();

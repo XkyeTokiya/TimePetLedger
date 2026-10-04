@@ -140,7 +140,7 @@ Future<String> ordinary(
   final before = (await t.runAsync(app.snapshot))!['time_blocks']!;
   await textTap(t, '记录活动');
   if (!unknown) await enter(t, 'activity', '活动');
-  await textTap(t, unknown ? '想不起来' : '记得做了什么');
+  await textTap(t, unknown ? '想不起来' : '记得');
   await time(t, '开始时间', from);
   await time(t, '结束时间', to);
   await textTap(t, '开始准确');
@@ -648,7 +648,7 @@ void main() {
       app.reads.arm = true;
       await textTap(t, '记录活动');
       await enter(t, 'activity', '刚才');
-      await textTap(t, '记得做了什么');
+      await textTap(t, '记得');
       await time(t, '开始时间', '2026-10-02 10:00');
       await time(t, '结束时间', '2026-10-02 11:00');
       await textTap(t, '开始准确');

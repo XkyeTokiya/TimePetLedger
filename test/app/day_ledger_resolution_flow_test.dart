@@ -268,7 +268,7 @@ void main() {
 
       await gapAt(tester, at(29, 7, 40), at(29, 12));
       await tester.enterText(find.byKey(const ValueKey('activity')), '写作');
-      await tap(tester, '记得做了什么');
+      await tap(tester, '记得');
       await enterTime(tester, '结束时间', '2026-09-29 09:00');
       await tap(tester, '保存到账本');
       view = expectLedger(
@@ -435,7 +435,7 @@ void main() {
       );
       await gapAt(tester, at(8), at(12));
       await tester.enterText(find.byKey(const ValueKey('activity')), '阅读');
-      await tap(tester, '记得做了什么');
+      await tap(tester, '记得');
       await enterTime(tester, '结束时间', '2026-09-29 10:00');
       await tester.runAsync(
         () => app.repo.createSleepSession(
@@ -558,7 +558,7 @@ void main() {
           next.millisecondsSinceEpoch,
         );
         await tester.enterText(find.byKey(const ValueKey('activity')), '跨偏移活动');
-        await tap(tester, '记得做了什么');
+        await tap(tester, '记得');
         await enterTime(tester, '结束时间', '${dateText(start)} 04:00');
         await tap(tester, '保存到账本');
         var view = expectLedger(

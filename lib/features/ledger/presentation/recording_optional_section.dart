@@ -19,6 +19,7 @@ class RecordingOptionalSection extends StatefulWidget {
     required this.enabled,
     required this.child,
     this.expandOnEntry = false,
+    this.disclosure = false,
   });
   final String id;
   final String title;
@@ -27,6 +28,7 @@ class RecordingOptionalSection extends StatefulWidget {
   final bool hasError;
   final bool enabled;
   final bool expandOnEntry;
+  final bool disclosure;
   final Widget child;
 
   @override
@@ -54,6 +56,16 @@ class _RecordingOptionalSectionState extends State<RecordingOptionalSection> {
         Semantics(
           expanded: open,
           child: OutlinedButton(
+            style: widget.disclosure
+                ? OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(context)
+                        .colorScheme
+                        .onSurfaceVariant,
+                    side: BorderSide.none,
+                    shape: const RoundedRectangleBorder(),
+                    padding: EdgeInsets.zero,
+                  )
+                : null,
             key: ValueKey('${widget.id}-toggle'),
             onPressed: widget.enabled
                 ? () {
@@ -64,7 +76,11 @@ class _RecordingOptionalSectionState extends State<RecordingOptionalSection> {
             child: Row(
               children: [
                 Expanded(child: Text(widget.title)),
-                Icon(open ? Icons.expand_less : Icons.expand_more),
+                Icon(
+                  widget.disclosure
+                      ? (open ? Icons.remove : Icons.add)
+                      : (open ? Icons.expand_less : Icons.expand_more),
+                ),
               ],
             ),
           ),
