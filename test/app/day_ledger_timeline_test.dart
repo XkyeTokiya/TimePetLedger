@@ -1,3 +1,5 @@
+import '../support/ledger_date_selection.dart';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -6,6 +8,7 @@ import 'package:time_pet_ledger/app/time/device_recording_date.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_ledger_repository.dart';
 import 'package:time_pet_ledger/features/ledger/domain/block_knowledge_state.dart';
+import 'package:time_pet_ledger/features/ledger/domain/ledger_conflicts.dart';
 import 'package:time_pet_ledger/features/ledger/domain/projection/ledger_segment.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
@@ -98,20 +101,47 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      expect(find.text('已知'), findsNWidgets(2));
-      expect(find.text('未知 · 想不起来'), findsOneWidget);
+      expect(find.text('已知'), findsNothing);
+      expect(find.text('已交代'), findsWidgets);
       expect(find.text('有标题的未知'), findsOneWidget);
-      expect(find.text('想不起来'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(DayLedgerTimeline),
+          matching: find.text('想不起来'),
+        ),
+        findsNWidgets(2),
+      );
       expect(find.text('主睡眠'), findsOneWidget);
       expect(find.text('小睡'), findsOneWidget);
-      expect(find.text('尚未记录'), findsNWidgets(2));
-      expect(find.byType(LedgerFactTimelineTile), findsNWidgets(5));
-      expect(find.byType(ListTile), findsNWidgets(7));
       expect(
-        find.text(
-          '${formatRecordingTime(start + 12 * hour)} → ${formatRecordingTime(start + 13 * hour)}\n60 分钟',
+        find.descendant(
+          of: find.byType(DayLedgerTimeline),
+          matching: find.text('尚未记录'),
+        ),
+        findsNWidgets(2),
+      );
+      expect(find.byType(LedgerFactTimelineTile), findsNWidgets(5));
+      expect(
+        find.byTooltip(
+          '${formatRecordingTime(start + 12 * hour)} → ${formatRecordingTime(start + 13 * hour)}',
         ),
         findsOneWidget,
+      );
+      final workRow = find.byKey(
+        ValueKey((type: LedgerFactType.timeBlock, id: id(3))),
+      );
+      expect(
+        find.descendant(of: workRow, matching: find.text('1小时')),
+        findsOneWidget,
+      );
+      expect(find.text('完整约8小时'), findsOneWidget);
+      expect(
+        find.text('入睡 约${formatRecordingTime(start - hour)}'),
+        findsNothing,
+      );
+      expect(
+        find.text('醒来 ${formatRecordingTime(start + 7 * hour)}'),
+        findsNothing,
       );
       final initialSleep = tester
           .widgetList<LedgerFactTimelineTile>(
@@ -125,7 +155,7 @@ void main() {
           )
           .last
           .segment;
-      await tester.enterText(find.byType(TextField), '2026-09-29');
+      await selectLedgerDate(tester, '2026-09-29');
       await tester.pumpAndSettle();
       expect(find.byType(LedgerFactTimelineTile), findsOneWidget);
       expect(find.text('主睡眠'), findsOneWidget);
@@ -139,13 +169,13 @@ void main() {
       );
       expect(previousSlice.source.endedAt, start + 7 * hour);
       expect(previousSlice.endedAt, start);
-      await tester.enterText(find.byType(TextField), '2026-10-01');
+      await selectLedgerDate(tester, '2026-10-01');
       await tester.pumpAndSettle();
       // Tomorrow W is empty even when a cross-day source already occupies it.
       expect(find.byType(LedgerFactTimelineTile), findsNothing);
       expect(find.byType(LedgerGapTimelineTile), findsNothing);
       expect(find.textContaining('补记'), findsNothing);
-      await tester.enterText(find.byType(TextField), '2026-09-30');
+      await selectLedgerDate(tester, '2026-09-30');
       await tester.pumpAndSettle();
       final currentWork = tester
           .widgetList<LedgerFactTimelineTile>(

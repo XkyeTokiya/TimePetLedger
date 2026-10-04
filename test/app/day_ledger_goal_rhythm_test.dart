@@ -1,3 +1,8 @@
+import '../support/recording_fields.dart';
+import '../support/root_navigation.dart';
+
+import '../support/ledger_date_selection.dart';
+
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +31,7 @@ import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_timeline
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart';
 import 'package:time_pet_ledger/features/review/data/drift_review_repository.dart';
 
-import '../features/ledger/presentation/recording_rhythm_test.dart' show show;
+import '../support/app_recording_navigation.dart' show show;
 import 'recording_goal_flow_test.dart' show disposeApp;
 import 'support/checked_sleep_opening.dart';
 
@@ -45,17 +50,20 @@ Future<void> tap(WidgetTester t, Finder finder) async {
   await t.pumpAndSettle();
 }
 
-Future<void> textTap(WidgetTester t, String text) => tap(t, find.text(text));
+Future<void> textTap(WidgetTester t, String text) async {
+  if (await tapRootAction(t, text)) return;
+  await tap(t, find.text(text));
+}
+
 Future<void> select(WidgetTester t, int n) async {
-  final input = find.widgetWithText(TextField, '账本日期');
-  await show(t, input);
-  await t.enterText(input, '2026-09-$n');
+  await selectLedgerDate(t, '2026-09-$n');
   await t.pumpAndSettle();
 }
 
 Future<void> stateTap(WidgetTester t, String state) =>
     tap(t, find.byKey(ValueKey('rhythm-$state')));
 Future<void> hint(WidgetTester t, String value) async {
+  await revealRecordingField(t, 'continuation-hint');
   final input = find.byKey(const ValueKey('continuation-hint'));
   await show(t, input);
   await t.enterText(input, value);
@@ -281,6 +289,7 @@ void main() {
       final form = t.widget<RecordingForm>(find.byType(RecordingForm));
       expect(form.context.timeBlockId, id(1));
       expect(form.context.date, day(29));
+      await revealRecordingField(t, '结束时间');
       await show(t, find.text('结束时间'));
       expect(find.text('2026-09-29 23:30'), findsOneWidget);
       expect(find.text('2026-09-30 00:30'), findsOneWidget);
@@ -390,6 +399,11 @@ void main() {
         ),
       );
       await t.pumpAndSettle();
+      await t.scrollUntilVisible(
+        tile(1),
+        250,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(textIn(1, '目标：$name'), findsOneWidget);
       expect(textIn(1, '接续点：$continuation'), findsOneWidget);
       expect(textIn(1, '节奏：推进'), findsOneWidget);

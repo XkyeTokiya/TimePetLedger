@@ -1,3 +1,5 @@
+import '../support/ledger_date_selection.dart';
+
 import 'dart:io';
 
 import 'package:drift/drift.dart'
@@ -134,10 +136,7 @@ class LedgerApp {
 }
 
 Future<void> chooseDate(WidgetTester tester, DateTime date) async {
-  final target = find.widgetWithText(TextField, '账本日期');
-  await Scrollable.ensureVisible(tester.element(target), alignment: .5);
-  await tester.pumpAndSettle();
-  await tester.enterText(target, dateText(date));
+  await selectLedgerDate(tester, dateText(date));
   await tester.pumpAndSettle();
 }
 
@@ -150,7 +149,7 @@ Future<void> gapAt(WidgetTester tester, int from, int to) async {
   );
   await Scrollable.ensureVisible(tester.element(target), alignment: .5);
   await tester.pumpAndSettle();
-  await tester.tap(find.descendant(of: target, matching: find.text('补一笔')));
+  await tester.tap(find.descendant(of: target, matching: find.text('补记')));
   await tester.pumpAndSettle();
 }
 
@@ -187,7 +186,13 @@ DayLedgerView expectLedger(
     find.byType(LedgerFactTimelineTile),
     findsNWidgets(view.segments.length),
   );
-  expect(find.text('尚未记录'), findsNWidgets(gaps.length));
+  expect(
+    find.descendant(
+      of: find.byType(DayLedgerTimeline),
+      matching: find.text('尚未记录'),
+    ),
+    findsNWidgets(gaps.length),
+  );
   return view;
 }
 
@@ -265,7 +270,7 @@ void main() {
       await tester.enterText(find.byKey(const ValueKey('activity')), '写作');
       await tap(tester, '记得做了什么');
       await enterTime(tester, '结束时间', '2026-09-29 09:00');
-      await tap(tester, '确认并保存到账本');
+      await tap(tester, '保存到账本');
       view = expectLedger(
         tester,
         start: at(29, 0),
@@ -280,7 +285,7 @@ void main() {
         (TimePrecision.approximate, TimePrecision.approximate),
       );
       expect(view.accountedDuration.hasApproximation, isTrue);
-      expect(find.text('已知'), findsOneWidget);
+      expect(find.text('已知'), findsNothing);
       expect(find.text('写作'), findsOneWidget);
 
       await gapAt(tester, at(29, 9), at(29, 12));
@@ -299,7 +304,7 @@ void main() {
       );
       await gapAt(tester, at(29, 9), at(29, 12));
       expect(find.text('已恢复上次输入'), findsOneWidget);
-      await tap(tester, '确认并保存到账本');
+      await tap(tester, '保存到账本');
       view = expectLedger(
         tester,
         start: at(29, 0),
@@ -315,7 +320,7 @@ void main() {
           )
           .source;
       expect(unknown.title, isNull);
-      expect(find.text('未知 · 想不起来'), findsOneWidget);
+      expect(find.text('想不起来'), findsOneWidget);
       expect(view.unknownDuration.hasApproximation, isTrue);
       expect(view.segments.map((s) => (s.startedAt, s.endedAt)).toList(), [
         (at(29, 0), at(29, 7, 40)),
@@ -444,7 +449,7 @@ void main() {
         ),
       );
       final before = (await tester.runAsync(app.facts))!;
-      await tap(tester, '确认并保存到账本');
+      await tap(tester, '保存到账本');
       expect(find.textContaining('冲突记录：睡眠'), findsOneWidget);
       expect((await tester.runAsync(app.facts))!, before);
       expect(app.trace.blockInserts, 0);
@@ -457,9 +462,9 @@ void main() {
       );
       await enterTime(tester, '结束时间', '2026-09-29 09:00');
       app.trace.arm = true;
-      await tap(tester, '确认并保存到账本');
+      await tap(tester, '保存到账本');
       expect(find.text('已正式保存到账本，请不要再次提交。'), findsOneWidget);
-      expect(find.text('确认并保存到账本'), findsNothing);
+      expect(find.text('保存到账本'), findsNothing);
       await tap(tester, '继续清理并刷新');
       expect(app.trace.blockInserts, 1);
       app.trace.arm = false;
@@ -483,6 +488,8 @@ void main() {
         isNull,
       );
       app.clock = DateTime(2026, 9, 29, 13);
+      await tester.tap(find.byTooltip('更多'));
+      await tester.pumpAndSettle();
       await tap(tester, '刷新账本');
       expectLedger(
         tester,
@@ -501,7 +508,7 @@ void main() {
         unknown: 0,
         gaps: [],
       );
-      expect(find.text('补一笔'), findsNothing);
+      expect(find.text('补记'), findsNothing);
       await chooseDate(tester, DateTime(2026, 9, 28));
       view = expectLedger(
         tester,
@@ -553,7 +560,7 @@ void main() {
         await tester.enterText(find.byKey(const ValueKey('activity')), '跨偏移活动');
         await tap(tester, '记得做了什么');
         await enterTime(tester, '结束时间', '${dateText(start)} 04:00');
-        await tap(tester, '确认并保存到账本');
+        await tap(tester, '保存到账本');
         var view = expectLedger(
           tester,
           start: start.millisecondsSinceEpoch,
@@ -569,7 +576,7 @@ void main() {
         await gapAt(tester, at(4), next.millisecondsSinceEpoch);
         await tap(tester, '想不起来');
         await enterTime(tester, '结束时间', '${dateText(start)} 05:00');
-        await tap(tester, '确认并保存到账本');
+        await tap(tester, '保存到账本');
         view = expectLedger(
           tester,
           start: start.millisecondsSinceEpoch,

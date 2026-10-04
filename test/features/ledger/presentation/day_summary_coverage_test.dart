@@ -125,7 +125,7 @@ void main() {
           accounted: 0,
           unknown: 0,
           gap: hours * 60 * minute,
-          labels: ['已交代：0 分钟', '其中未知：0 分钟', '尚未记录：${hours * 60} 分钟'],
+          labels: ['已交代：0 分钟', '其中未知：0 分钟', '尚未记录：$hours 小时'],
         );
       }
       await verify(
@@ -136,7 +136,7 @@ void main() {
         accounted: 0,
         unknown: 0,
         gap: 15 * 60 * minute,
-        labels: ['尚未记录：900 分钟'],
+        labels: ['尚未记录：15 小时'],
       );
       for (final relation in [
         LedgerDateRelation.future,
@@ -181,7 +181,7 @@ void main() {
           block(2, 120 * minute, 150 * minute, unknown: true),
           block(3, 180 * minute, 240 * minute),
         ],
-        labels: ['已交代：210 分钟', '其中未知：30 分钟', '尚未记录：30 分钟'],
+        labels: ['已交代：3 小时 30 分钟', '其中未知：30 分钟', '尚未记录：30 分钟'],
       );
     },
   );
@@ -205,7 +205,7 @@ void main() {
           startPrecision: TimePrecision.approximate,
         ),
       ],
-      labels: ['已交代：约100 分钟', '其中未知：约50 分钟', '尚未记录：0 分钟', '此账本窗口没有未记录缺口。'],
+      labels: ['已交代：约1 小时 40 分钟', '其中未知：约50 分钟', '尚未记录：0 分钟', '此账本窗口没有未记录缺口。'],
     );
   });
 
@@ -239,7 +239,7 @@ void main() {
           ),
           block(2, 60 * minute, 80 * minute, unknown: true),
         ],
-        labels: ['已交代：约40 分钟', '其中未知：20 分钟', '尚未记录：约60 分钟'],
+        labels: ['已交代：约40 分钟', '其中未知：20 分钟', '尚未记录：约1 小时'],
       );
     },
   );

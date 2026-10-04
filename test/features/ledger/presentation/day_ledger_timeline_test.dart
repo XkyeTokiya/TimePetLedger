@@ -89,9 +89,26 @@ Future<void> show(WidgetTester tester, DayLedgerView view) async {
   await tester.pump();
 }
 
-String subtitle(WidgetTester tester, Finder row) => tester
-    .widget<Text>(find.descendant(of: row, matching: find.byType(Text)).last)
-    .data!;
+String subtitle(WidgetTester tester, Finder row) {
+  final range = tester
+      .widget<Tooltip>(
+        find.descendant(
+          of: row,
+          matching: find.byKey(const ValueKey('slice-range')),
+        ),
+      )
+      .message;
+  final duration = tester
+      .widget<Text>(
+        find.descendant(
+          of: row,
+          matching: find.byKey(const ValueKey('slice-duration')),
+        ),
+      )
+      .data;
+  return '$range\n$duration';
+}
+
 Finder fact(DayLedgerView view, int index) =>
     find.byKey(ValueKey(view.segments[index].reference));
 
@@ -126,9 +143,9 @@ void main() {
         sleeps: [nap, mainSleep],
       );
       await show(tester, view);
-      expect(find.text('已知'), findsNWidgets(2));
-      expect(find.text('想不起来'), findsOneWidget);
-      expect(find.text('未知 · 想不起来'), findsOneWidget);
+      expect(find.text('已知'), findsNothing);
+      expect(find.text('想不起来'), findsNWidgets(2));
+      expect(find.text('已交代'), findsOneWidget);
       expect(find.text('外出办事'), findsOneWidget);
       expect(find.text('主睡眠'), findsOneWidget);
       expect(find.text('小睡'), findsOneWidget);
@@ -178,10 +195,9 @@ void main() {
       ));
       expect((facts[1] as TimeBlockSegment).source, same(known));
       expect((facts[2] as TimeBlockSegment).source, same(unknown));
-      expect(find.byType(ListTile), findsNWidgets(9));
       expect(
         subtitle(tester, find.byType(LedgerGapTimelineTile).at(2)),
-        '约${formatRecordingTime(start + 10 * hour)} → ${formatRecordingTime(start + 11 * hour)}\n约60 分钟',
+        '约${formatRecordingTime(start + 10 * hour)} → ${formatRecordingTime(start + 11 * hour)}\n约1小时',
       );
       expect(unknown.endedAt, start + 10 * hour);
       expect(unknown.endPrecision, TimePrecision.approximate);
@@ -212,13 +228,26 @@ void main() {
       expect(find.byType(LedgerGapTimelineTile), findsNothing);
       expect(
         subtitle(tester, fact(view, 0)),
-        '${formatRecordingTime(start)} → ${formatRecordingTime(start + 7 * hour)}\n420 分钟',
+        '${formatRecordingTime(start)} → ${formatRecordingTime(start + 7 * hour)}\n7小时',
       );
       expect(
         subtitle(tester, fact(view, 1)),
-        '${formatRecordingTime(start + 7 * hour)} → ${formatRecordingTime(start + 12 * hour)}\n300 分钟',
+        '${formatRecordingTime(start + 7 * hour)} → ${formatRecordingTime(start + 12 * hour)}\n5小时',
       );
-      expect(find.textContaining('约'), findsNothing);
+      // Slice boundaries and duration stay exact even though the complete
+      // source starts approximately on the previous day.
+      expect(subtitle(tester, fact(view, 0)), isNot(contains('约')));
+      expect(subtitle(tester, fact(view, 1)), isNot(contains('约')));
+      expect(find.text('当日时长 · 跨日睡眠'), findsOneWidget);
+      expect(
+        find.text('入睡 约${formatRecordingTime(start - hour)}'),
+        findsNothing,
+      );
+      expect(
+        find.text('醒来 ${formatRecordingTime(start + 7 * hour)}'),
+        findsNothing,
+      );
+      expect(find.text('完整约8小时'), findsOneWidget);
       expect(main.startedAt, start - hour);
       expect(main.startPrecision, TimePrecision.approximate);
       expect(activity.endedAt, next + hour);
@@ -237,7 +266,7 @@ void main() {
       await show(tester, historical);
       expect(
         subtitle(tester, fact(historical, 1)),
-        '${formatRecordingTime(start + 7 * hour)} → ${formatRecordingTime(next)}\n1020 分钟',
+        '${formatRecordingTime(start + 7 * hour)} → ${formatRecordingTime(next)}\n17小时',
       );
       expect(historical.segments[1].endPrecision, TimePrecision.exact);
     },
@@ -256,11 +285,11 @@ void main() {
       await show(tester, view);
       expect(
         subtitle(tester, fact(view, 0)),
-        '约${formatRecordingTime(start)} → ${formatRecordingTime(start + hour)}\n约60 分钟',
+        '约${formatRecordingTime(start)} → ${formatRecordingTime(start + hour)}\n约1小时',
       );
       expect(
         subtitle(tester, find.byType(LedgerGapTimelineTile)),
-        '${formatRecordingTime(start + hour)} → ${formatRecordingTime(start + 2 * hour)}\n60 分钟',
+        '${formatRecordingTime(start + hour)} → ${formatRecordingTime(start + 2 * hour)}\n1小时',
       );
       final equalEnd = project(
         blocks: [
@@ -276,7 +305,7 @@ void main() {
       await show(tester, equalEnd);
       expect(
         subtitle(tester, fact(equalEnd, 0)),
-        '${formatRecordingTime(start)} → 约${formatRecordingTime(start + 2 * hour)}\n约120 分钟',
+        '${formatRecordingTime(start)} → 约${formatRecordingTime(start + 2 * hour)}\n约2小时',
       );
       expect(find.byType(LedgerGapTimelineTile), findsNothing);
     },
@@ -298,12 +327,12 @@ void main() {
           find.text('尚未记录'),
           sample.$3 == 0 ? findsNothing : findsOneWidget,
         );
-        expect(find.text('未知 · 想不起来'), findsNothing);
+        expect(find.text('想不起来 · 已交代'), findsNothing);
         expect(find.textContaining('补'), findsNothing);
         if (sample.$3 > 0) {
           expect(
             subtitle(tester, find.byType(LedgerGapTimelineTile)),
-            endsWith('\n${sample.$3} 分钟'),
+            endsWith('\n${sample.$3 ~/ 60}小时'),
           );
         }
       }
@@ -327,11 +356,11 @@ void main() {
         now: start + 20000,
       );
       await show(tester, view);
-      expect(find.text('未知 · 想不起来'), findsOneWidget);
-      expect(subtitle(tester, fact(view, 0)), endsWith('\n约少于 1 分钟'));
+      expect(find.text('已交代'), findsOneWidget);
+      expect(subtitle(tester, fact(view, 0)), endsWith('\n约少于1分钟'));
       expect(
         subtitle(tester, find.byType(LedgerGapTimelineTile)),
-        endsWith('\n约少于 1 分钟'),
+        endsWith('\n约少于1分钟'),
       );
       expect(find.textContaining('0 分钟'), findsNothing);
       final exact = project(
@@ -339,10 +368,10 @@ void main() {
         now: start + 20000,
       );
       await show(tester, exact);
-      expect(subtitle(tester, fact(exact, 0)), endsWith('\n少于 1 分钟'));
+      expect(subtitle(tester, fact(exact, 0)), endsWith('\n少于1分钟'));
       expect(
         subtitle(tester, find.byType(LedgerGapTimelineTile)),
-        endsWith('\n少于 1 分钟'),
+        endsWith('\n少于1分钟'),
       );
     },
   );
@@ -359,7 +388,7 @@ void main() {
       await show(tester, previous);
       expect(
         subtitle(tester, fact(previous, 0)),
-        '${formatRecordingTime(next - 10 * 60000)} → ${formatRecordingTime(next)}\n10 分钟',
+        '${formatRecordingTime(next - 10 * 60000)} → ${formatRecordingTime(next)}\n10分钟',
       );
       final following = project(
         sleeps: [source],
@@ -371,7 +400,7 @@ void main() {
       await show(tester, following);
       expect(
         subtitle(tester, fact(following, 0)),
-        '${formatRecordingTime(next)} → ${formatRecordingTime(source.endedAt)}\n460 分钟',
+        '${formatRecordingTime(next)} → ${formatRecordingTime(source.endedAt)}\n7小时40分',
       );
       expect(
         previous.segments.single.reference,
@@ -412,7 +441,7 @@ void main() {
             : 24;
         expect(
           subtitle(tester, find.byType(LedgerGapTimelineTile)),
-          '${formatRecordingTime(from)} → ${formatRecordingTime(to)}\n${hours * 60} 分钟',
+          '${formatRecordingTime(from)} → ${formatRecordingTime(to)}\n$hours小时',
         );
       }
     },

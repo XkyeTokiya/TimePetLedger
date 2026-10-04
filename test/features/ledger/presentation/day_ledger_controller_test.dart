@@ -39,9 +39,11 @@ void main() {
     final old = controller.select(CivilDate(year: 2026, month: 9, day: 28));
     final latest = controller.select(CivilDate(year: 2026, month: 9, day: 29));
     expect(controller.status, DayLedgerStatus.loading);
+    expect(controller.dateContext, isNull);
     requests[1].complete(emptyFacts());
     await latest;
     expect(controller.view!.date.day, 29);
+    expect(controller.dateContext!.window.date.day, 29);
     requests[0].completeError(StateError('stale'));
     await old;
     expect(controller.status, DayLedgerStatus.empty);
@@ -54,6 +56,8 @@ void main() {
     requests[2].complete(emptyFacts());
     await staleSuccess;
     expect(controller.view!.date.month, 10);
+    expect(controller.dateContext!.relation, LedgerDateRelation.future);
+    expect(controller.dateContext!.window.date, controller.view!.date);
     expect(controller.view!.unresolvedSpans, isEmpty);
     final invalidated = controller.refresh();
     controller.invalidate();
@@ -61,6 +65,7 @@ void main() {
     await invalidated;
     expect(controller.status, DayLedgerStatus.idle);
     expect(controller.view, isNull);
+    expect(controller.dateContext, isNull);
     final disposed = controller.refresh();
     controller.dispose();
     requests[5].completeError(StateError('late failure'));
@@ -119,6 +124,7 @@ void main() {
     await controller.refresh();
     expect(controller.status, DayLedgerStatus.failed);
     expect(controller.view, isNull);
+    expect(controller.dateContext, isNull);
     fail = false;
     await controller.refresh();
     expect(controller.status, DayLedgerStatus.empty);
@@ -138,6 +144,8 @@ void main() {
     offset = 8;
     await controller.refresh();
     expect(controller.date!.day, 29);
+    expect(controller.dateContext, same(contexts.last));
+    expect(contexts, hasLength(6)); // 每次请求仅解析一次，时区不在 I/O 后重算。
     expect(
       contexts.last.dayStartedAt,
       DateTime.utc(2026, 9, 28, 16).millisecondsSinceEpoch,

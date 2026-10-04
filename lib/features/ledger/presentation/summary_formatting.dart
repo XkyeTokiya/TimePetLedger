@@ -32,13 +32,20 @@ String formatSummaryDuration(
 /// 覆盖、Unknown、Gap 或已有记录的时长展示，不从数值推断活动缺失。
 ///
 /// 零值显示 0 分钟（Gap 为无缺口）；只有实际正时长舍入为零时使用
-/// “少于 1 分钟”。普通时长统一显示分钟；仅复用最终舍入结果，
+/// “少于 1 分钟”。普通时长将最终舍入分钟转为小时分钟；
 /// 不查询、切片或汇总事实，不从其他摘要借用近似标志。
 String formatDerivedDuration(DerivedDuration duration) {
   final minutes = duration.roundedMinutes;
-  final text = duration.milliseconds > 0 && minutes == 0
-      ? '少于 1 分钟'
-      : '$minutes 分钟';
+  final String text;
+  if (duration.milliseconds > 0 && minutes == 0) {
+    text = '少于 1 分钟';
+  } else if (minutes < 60) {
+    text = '$minutes 分钟';
+  } else {
+    final hours = minutes ~/ 60;
+    final remainder = minutes % 60;
+    text = remainder == 0 ? '$hours 小时' : '$hours 小时 $remainder 分钟';
+  }
   return duration.hasApproximation ? '约$text' : text;
 }
 

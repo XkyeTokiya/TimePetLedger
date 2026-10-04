@@ -7,12 +7,14 @@ import '../domain/projection/ledger_segment.dart';
 import '../application/recording_ledger_loader.dart';
 import '../domain/projection/ledger_coverage.dart';
 import '../domain/recording_draft_store.dart';
+import '../domain/projection/sleep_summary.dart';
 import 'day_ledger_controller.dart';
+import 'day_ledger_date_dialog.dart';
+import 'day_ledger_overview.dart';
 import 'day_ledger_timeline.dart';
-import 'recording_form.dart';
-
-String _dateText(CivilDate date) =>
-    '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+import 'day_date_selection.dart';
+import 'day_read_scroll.dart';
+import 'ledger_date_header.dart';
 
 class DayLedgerPage extends StatefulWidget {
   const DayLedgerPage({
@@ -22,11 +24,22 @@ class DayLedgerPage extends StatefulWidget {
     required this.dateOfInstant,
     required this.routeObserver,
     this.initialDate,
+    this.selection,
+    this.embedded = false,
+    this.active = true,
+    this.scrollSession,
+    this.onInteraction,
     this.reviewEntry,
     this.gapEntry,
     this.factEntry,
     this.recordingEditor,
+    this.completeSleep,
   });
+  final DayDateSelection? selection;
+  final bool embedded;
+  final bool active;
+  final DayReadScrollSession? scrollSession;
+  final ValueChanged<bool>? onInteraction;
   final DayLedgerLoader loader;
   final int Function() now;
   final CivilDate Function(int) dateOfInstant;
@@ -36,41 +49,105 @@ class DayLedgerPage extends StatefulWidget {
   final Widget Function(RecordingDraftContext, UnresolvedSpan)? gapEntry;
   final Widget Function(CivilDate, LedgerSegment)? factEntry;
   final RecordingEntryEditor? recordingEditor;
+  final Widget Function(CivilDate, SleepSummary)? completeSleep;
 
   @override
-  State<DayLedgerPage> createState() => _DayLedgerPageState();
+  State<DayLedgerPage> createState() => DayLedgerPageState();
 }
 
-class _DayLedgerPageState extends State<DayLedgerPage>
+class DayLedgerPageState extends State<DayLedgerPage>
     with WidgetsBindingObserver, RouteAware {
   late final controller = DayLedgerController(
     loader: widget.loader,
     now: widget.now,
     dateOfInstant: widget.dateOfInstant,
-    selectedDate: widget.initialDate,
+    selectedDate: widget.selection?.date ?? widget.initialDate,
   );
-  final dateText = TextEditingController();
-  bool invalidDate = false;
+  bool selectingDate = false;
   bool openingEntry = false;
   ModalRoute<void>? route;
   bool deleting = false;
   String? deleteError;
   ({RecordingDraftContext context, RecordingDeleteCommitted result})?
   pendingDelete;
-  bool get busy => openingEntry || deleting || pendingDelete != null;
+  bool get busy =>
+      openingEntry || deleting || pendingDelete != null || selectingDate;
+
+  void refreshFromMenu() {
+    if (!busy) _refresh();
+  }
+
+  void showDistribution() {
+    if (busy || controller.view == null || controller.dateContext == null) {
+      return;
+    }
+    DayLedgerOverview.showExplanation(
+      context,
+      view: controller.view!,
+      dateContext: controller.dateContext!,
+    );
+  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.selection?.addListener(_selectionChanged);
     _refresh();
   }
 
+  void _selectionChanged() {
+    if (widget.active) _refresh();
+  }
+
+  @override
+  void didUpdateWidget(DayLedgerPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.active && widget.active) _refresh();
+  }
+
+  void _select(CivilDate? date) {
+    if (widget.selection case final selection?) {
+      selection.select(date);
+    } else {
+      controller.select(date);
+    }
+  }
+
   void _refresh() {
-    if (invalidDate) return;
+    if (!widget.active) return;
+    if (widget.selection case final selection?) {
+      controller.selectedDate = selection.date;
+    }
     controller.refresh();
+  }
+
+  Future<void> _chooseDate({bool manual = false}) async {
     final date = controller.date;
-    if (date != null) dateText.text = _dateText(date);
+    if (date == null || busy) return;
+    widget.onInteraction?.call(true);
+    setState(() => selectingDate = true);
+    var followToday = false;
+    final selected = await showDayLedgerDateDialog(
+      context,
+      date,
+      manual: manual,
+      onToday: () {
+        followToday = true;
+      },
+      modeDescription: controller.selectedDate == null ? '跟随今天' : '固定日期',
+    );
+    if (!mounted) return;
+    setState(() => selectingDate = false);
+    widget.onInteraction?.call(false);
+    if (followToday) {
+      _select(null);
+    } else if (selected != null) {
+      _select(selected);
+    } else {
+      // 取消不改变选择模式，但回到读取页仍重读；跟随今天可以跨午夜。
+      _refresh();
+    }
   }
 
   @override
@@ -86,13 +163,14 @@ class _DayLedgerPageState extends State<DayLedgerPage>
 
   @override
   void didPopNext() {
-    if (!openingEntry && !deleting) _refresh();
+    if (!openingEntry && !deleting && !selectingDate) _refresh();
   }
 
   Future<void> _openReview() async {
     final date = controller.date;
     final entry = widget.reviewEntry;
-    if (busy || invalidDate || date == null || entry == null) return;
+    if (busy || date == null || entry == null) return;
+    widget.onInteraction?.call(true);
     setState(() => openingEntry = true);
     try {
       await Navigator.of(context)
@@ -100,6 +178,7 @@ class _DayLedgerPageState extends State<DayLedgerPage>
     } finally {
       if (mounted) {
         setState(() => openingEntry = false);
+        widget.onInteraction?.call(false);
         _refresh();
       }
     }
@@ -119,6 +198,7 @@ class _DayLedgerPageState extends State<DayLedgerPage>
       startedAt: gap.startedAt,
       endedAt: gap.endedAt,
     );
+    widget.onInteraction?.call(true);
     setState(() {
       openingEntry = true;
       deleteError = null;
@@ -136,6 +216,7 @@ class _DayLedgerPageState extends State<DayLedgerPage>
     } finally {
       if (mounted) {
         setState(() => openingEntry = false);
+        widget.onInteraction?.call(false);
         // 取消也重读；只接收提交状态，不把局部 RecordingLedger 冒充整日投影。
         _refresh();
       }
@@ -151,6 +232,7 @@ class _DayLedgerPageState extends State<DayLedgerPage>
         !view.segments.contains(segment)) {
       return;
     }
+    widget.onInteraction?.call(true);
     setState(() {
       openingEntry = true;
       deleteError = null;
@@ -166,6 +248,7 @@ class _DayLedgerPageState extends State<DayLedgerPage>
     } finally {
       if (mounted) {
         setState(() => openingEntry = false);
+        widget.onInteraction?.call(false);
         _refresh();
       }
     }
@@ -184,6 +267,7 @@ class _DayLedgerPageState extends State<DayLedgerPage>
       date: view.date,
       timeBlockId: segment.reference.id,
     );
+    widget.onInteraction?.call(true);
     setState(() {
       deleting = true;
       deleteError = null;
@@ -218,6 +302,7 @@ class _DayLedgerPageState extends State<DayLedgerPage>
     } finally {
       if (mounted) {
         setState(() => deleting = false);
+        widget.onInteraction?.call(busy);
         _refresh();
       }
     }
@@ -241,6 +326,7 @@ class _DayLedgerPageState extends State<DayLedgerPage>
     final pending = pendingDelete;
     final editor = widget.recordingEditor;
     if (pending == null || editor == null || deleting) return;
+    widget.onInteraction?.call(true);
     setState(() => deleting = true);
     try {
       final result = await editor.finishDelete(
@@ -251,6 +337,7 @@ class _DayLedgerPageState extends State<DayLedgerPage>
     } finally {
       if (mounted) {
         setState(() => deleting = false);
+        widget.onInteraction?.call(busy);
         _refresh();
       }
     }
@@ -267,61 +354,64 @@ class _DayLedgerPageState extends State<DayLedgerPage>
   void dispose() {
     widget.routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
+    widget.selection?.removeListener(_selectionChanged);
     controller.dispose();
-    dateText.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('日账本')),
+    appBar: widget.embedded
+        ? null
+        : AppBar(
+            actions: [
+              PopupMenuButton<String>(
+                tooltip: '更多',
+                onOpened: () => setState(() => selectingDate = true),
+                onCanceled: () => setState(() => selectingDate = false),
+                onSelected: (value) {
+                  setState(() => selectingDate = false);
+                  if (value == '刷新账本') {
+                    refreshFromMenu();
+                  } else if (value == '时间分布说明') {
+                    showDistribution();
+                  } else {
+                    _openReview();
+                  }
+                },
+                itemBuilder: (_) => [
+                  for (final text in [
+                    '刷新账本',
+                    '时间分布说明',
+                    if (widget.reviewEntry != null) '打开此日复盘',
+                  ])
+                    PopupMenuItem(value: text, child: Text(text)),
+                ],
+              ),
+            ],
+            title: Text(
+              '日账本',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+          ),
     body: ListenableBuilder(
       listenable: controller,
-      builder: (context, _) => ListView(
-        padding: const EdgeInsets.all(24),
+      builder: (context, _) => DayReadScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        date: controller.date,
+        destination: 'ledger',
+        session: widget.scrollSession,
+        active: widget.active,
+        ready: controller.view != null,
         children: [
-          TextField(
-            controller: dateText,
-            decoration: InputDecoration(
-              labelText: '账本日期',
-              hintText: 'YYYY-MM-DD',
-              errorText: invalidDate ? '请输入有效日期 YYYY-MM-DD。' : null,
+          if (controller.date != null) _dateHeader(context, controller.date!),
+          if (controller.view != null && controller.dateContext != null) ...[
+            DayLedgerOverview(
+              compact: true,
+              view: controller.view!,
+              dateContext: controller.dateContext!,
             ),
-            onChanged: (text) {
-              final date = parseRecordingDate(text);
-              setState(() => invalidDate = date == null);
-              if (date == null) {
-                controller.invalidate();
-              } else {
-                controller.select(date);
-              }
-            },
-          ),
-          Wrap(
-            spacing: 12,
-            children: [
-              TextButton(
-                onPressed: () {
-                  setState(() => invalidDate = false);
-                  controller.select(null);
-                  final date = controller.date;
-                  if (date != null) dateText.text = _dateText(date);
-                },
-                child: const Text('今天'),
-              ),
-              OutlinedButton(
-                onPressed: invalidDate ? null : _refresh,
-                child: const Text('刷新账本'),
-              ),
-              if (widget.reviewEntry != null)
-                FilledButton(
-                  onPressed: invalidDate || busy || controller.date == null
-                      ? null
-                      : _openReview,
-                  child: const Text('打开此日复盘'),
-                ),
-            ],
-          ),
+          ],
           if (deleteError != null) Text(deleteError!),
           if (pendingDelete != null)
             TextButton(
@@ -337,10 +427,11 @@ class _DayLedgerPageState extends State<DayLedgerPage>
           if (controller.status == DayLedgerStatus.empty)
             const Text('此账本窗口尚无正式记录。'),
           if (controller.view != null) ...[
-            Text('日期：${_dateText(controller.view!.date)}'),
-            if (controller.status == DayLedgerStatus.ready)
-              const Text('日账本已读取。'),
             DayLedgerTimeline(
+              onDetailsVisibilityChanged: (visible) {
+                setState(() => openingEntry = visible);
+                widget.onInteraction?.call(visible);
+              },
               view: controller.view!,
               onEditFact: widget.factEntry == null || busy ? null : _openFact,
               onDeleteTimeBlock: widget.recordingEditor == null || busy
@@ -348,9 +439,31 @@ class _DayLedgerPageState extends State<DayLedgerPage>
                   : _deleteTimeBlock,
               onFillGap: widget.gapEntry == null || busy ? null : _openGap,
             ),
+            if (widget.completeSleep != null) ...[
+              ExpansionTile(
+                title: const Text('完整睡眠 · 按醒来日期'),
+                tilePadding: EdgeInsets.zero,
+                children: [
+                  widget.completeSleep!(
+                    controller.view!.date,
+                    controller.view!.sleepSummary,
+                  ),
+                ],
+              ),
+            ],
           ],
         ],
       ),
     ),
+  );
+
+  Widget _dateHeader(BuildContext context, CivilDate date) => LedgerDateHeader(
+    compact: true,
+    date: date,
+    today: widget.dateOfInstant(controller.dateContext?.now ?? widget.now()),
+    followToday: controller.selectedDate == null,
+    busy: busy,
+    onChoose: () => _chooseDate(),
+    onSelect: _select,
   );
 }

@@ -101,15 +101,15 @@ void main() {
       expect(view.nap.records.single.id, id(3));
       expect(view.mainSleep.totalDuration.milliseconds, 530 * 60000);
       expect(view.nap.totalDuration.milliseconds, 20 * 60000);
-      expect(find.text('约530 分钟'), findsOneWidget);
+      expect(find.text('约8 小时 50 分钟'), findsOneWidget);
       expect(find.text('20 分钟'), findsOneWidget);
-      expect(find.text('已交代：540 分钟'), findsOneWidget);
+      expect(find.text('已交代：9 小时'), findsOneWidget);
       expect(
-        find.text('约2026-10-01 23:50 → 2026-10-02 07:40 · 完整时长 约470 分钟'),
+        find.text('约2026-10-01 23:50 → 2026-10-02 07:40 · 完整时长 约7 小时 50 分钟'),
         findsOneWidget,
       );
       expect(
-        find.text('2026-10-02 09:00 → 2026-10-02 10:00 · 完整时长 60 分钟'),
+        find.text('2026-10-02 09:00 → 2026-10-02 10:00 · 完整时长 1 小时'),
         findsOneWidget,
       );
       expect(
@@ -187,12 +187,12 @@ void main() {
       );
       await save(tester, db, 2, instant(2, 23), instant(3, 7));
       await open(tester, db, 2, instant(2));
-      expect(find.text('约60 分钟'), findsOneWidget);
+      expect(find.text('约1 小时'), findsOneWidget);
       expect(find.text('已交代：0 分钟'), findsOneWidget);
       expect(find.text('尚未记录主睡眠'), findsNothing);
       expect(summary(tester).summary.mainSleep.records.single.id, id(1));
       await open(tester, db, 3, instant(2, 12));
-      expect(find.text('480 分钟'), findsOneWidget);
+      expect(find.text('8 小时'), findsOneWidget);
       expect(find.text('已交代：0 分钟'), findsOneWidget);
       expect(find.text('尚未记录：0 分钟'), findsOneWidget);
       expect(find.text('当前账本窗口为空，不产生未记录缺口。'), findsOneWidget);
@@ -215,7 +215,7 @@ void main() {
       );
       await open(tester, db, 2, instant(4, 12));
       final old = summary(tester).summary;
-      expect(find.text('约480 分钟'), findsOneWidget);
+      expect(find.text('约8 小时'), findsOneWidget);
       final corrected = (await tester.runAsync(
         () => DriftLedgerRepository(db).updateSleepSession(
           id: record.id,
@@ -227,12 +227,12 @@ void main() {
       await tester.tap(find.text('刷新摘要'));
       await tester.pumpAndSettle();
       expect(find.text('尚未记录主睡眠'), findsOneWidget);
-      expect(find.text('约480 分钟'), findsNothing);
-      expect(find.text('已交代：约60 分钟'), findsOneWidget); // 仍有新记录入睡日切片。
+      expect(find.text('约8 小时'), findsNothing);
+      expect(find.text('已交代：约1 小时'), findsOneWidget); // 仍有新记录入睡日切片。
       await tester.enterText(find.byType(TextField), '2026-10-03');
       await tester.pumpAndSettle();
-      expect(find.text('约480 分钟'), findsOneWidget);
-      expect(find.text('已交代：420 分钟'), findsOneWidget);
+      expect(find.text('约8 小时'), findsOneWidget);
+      expect(find.text('已交代：7 小时'), findsOneWidget);
       expect(summary(tester).summary.mainSleep.records.single.id, record.id);
       expect(corrected.createdAt, record.createdAt);
       expect(corrected.updatedAt, 2);

@@ -1,3 +1,6 @@
+import '../support/recording_fields.dart';
+import '../support/ledger_date_selection.dart';
+
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:time_pet_ledger/features/review/data/drift_review_repository.dart';
@@ -57,10 +60,7 @@ DayLedgerController controller(WidgetTester t) =>
         as DayLedgerController;
 
 Future<void> select(WidgetTester t, int date) async {
-  final input = find.widgetWithText(TextField, '账本日期');
-  await Scrollable.ensureVisible(t.element(input), alignment: .5);
-  await t.pumpAndSettle();
-  await t.enterText(input, '2026-09-${date.toString().padLeft(2, '0')}');
+  await selectLedgerDate(t, '2026-09-${date.toString().padLeft(2, '0')}');
   await t.pumpAndSettle();
 }
 
@@ -72,7 +72,9 @@ Future<void> editFact(
   final tile = find.byKey(ValueKey((type: type, id: factId)));
   await Scrollable.ensureVisible(t.element(tile), alignment: .5);
   await t.pumpAndSettle();
-  await t.tap(find.descendant(of: tile, matching: find.byTooltip('更正完整记录')));
+  await t.tap(tile);
+  await t.pumpAndSettle();
+  await t.tap(find.text('编辑完整记录'));
   await t.pumpAndSettle();
 }
 
@@ -86,7 +88,9 @@ Future<void> deleteBlock(
   );
   await Scrollable.ensureVisible(t.element(tile), alignment: .5);
   await t.pumpAndSettle();
-  await t.tap(find.descendant(of: tile, matching: find.byTooltip('删除记录')));
+  await t.tap(tile);
+  await t.pumpAndSettle();
+  await t.tap(find.text('删除记录'));
   await t.pumpAndSettle();
   await t.tap(find.text(cancel ? '取消' : '删除记录'));
   await t.pumpAndSettle();
@@ -204,6 +208,7 @@ void main() {
       await f.mount(t);
       await select(t, 28);
       await editFact(t, LedgerFactType.timeBlock, id(1));
+      await revealRecordingField(t, '结束时间');
       await t.scrollUntilVisible(
         find.text('结束时间'),
         250,
@@ -229,7 +234,10 @@ void main() {
         t.widget<RecordingForm>(find.byType(RecordingForm)).context.date,
         day(29),
       );
-      expect(find.text('2026-09-28 23:30'), findsOneWidget);
+      expect(
+        recordingTimeSummaryContaining('2026-09-28 23:30'),
+        findsOneWidget,
+      );
       await tap(t, '想不起来');
       await tap(t, '保存更正');
       final unknown = (await t.runAsync(() => f.repo.readTimeBlock(id(1))))!;
@@ -545,6 +553,8 @@ void main() {
       );
       // A stale tile whose source was removed still performs idempotent deletion.
       await f.block(t, start: at(29, 8), end: at(29, 9));
+      await t.tap(find.byTooltip('更多'));
+      await t.pumpAndSettle();
       await tap(t, '刷新账本');
       await t.runAsync(() => f.repo.deleteTimeBlock(id(1)));
       await deleteBlock(t, id(1));

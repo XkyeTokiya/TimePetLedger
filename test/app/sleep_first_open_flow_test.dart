@@ -15,7 +15,15 @@ import 'package:time_pet_ledger/features/ledger/domain/sleep_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 
-import '../features/ledger/presentation/sleep_form_test.dart' show tapText;
+import '../features/ledger/presentation/sleep_form_test.dart'
+    as sleep_test
+    show tapText;
+import '../support/root_navigation.dart';
+
+Future<void> tapText(WidgetTester tester, String text) async {
+  if (await tapRootAction(tester, text)) return;
+  await sleep_test.tapText(tester, text);
+}
 
 final day = CivilDate(year: 2026, month: 9, day: 30);
 const id = '00000000-0000-4000-8000-000000000001';
@@ -88,9 +96,13 @@ void main() {
       await tester.pumpWidget(app.build());
       await tester.pumpAndSettle();
       expect(find.text('确认主睡眠'), findsOneWidget);
-      expect(find.text('尚未记录主睡眠'), findsOneWidget);
       await tapText(tester, '继续账本');
-      await tapText(tester, '补一笔');
+      await tester.ensureVisible(find.text('完整睡眠 · 按醒来日期'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('完整睡眠 · 按醒来日期'));
+      await tester.pumpAndSettle();
+      expect(find.text('尚未记录主睡眠'), findsOneWidget);
+      await tapText(tester, '记录活动');
       expect(find.byKey(const ValueKey('activity')), findsOneWidget);
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
@@ -228,6 +240,10 @@ void main() {
         () => DriftLedgerRepository(app.databases.last).deleteSleepSession(id),
       );
       await resume(tester);
+      await tester.ensureVisible(find.text('完整睡眠 · 按醒来日期'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('完整睡眠 · 按醒来日期'));
+      await tester.pumpAndSettle();
       expect(find.text('尚未记录主睡眠'), findsOneWidget);
       expect(find.text('确认主睡眠'), findsNothing);
       await stop(tester);
@@ -276,7 +292,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('主睡眠确认检查失败；可继续记账，或重试检查。'), findsOneWidget);
       expect(find.textContaining('private marker'), findsNothing);
-      await tapText(tester, '补一笔');
+      await tapText(tester, '记录活动');
       expect(find.byKey(const ValueKey('activity')), findsOneWidget);
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
@@ -297,7 +313,7 @@ void main() {
       await tester.pumpWidget(app.build());
       await tester.pumpAndSettle();
       await tapText(tester, '继续账本');
-      await tapText(tester, '补一笔');
+      await tapText(tester, '记录活动');
       app.now = DateTime(2026, 10, 1, 0, 1);
       await resume(tester);
       expect(find.text('确认主睡眠'), findsNothing);
@@ -308,13 +324,7 @@ void main() {
       expect(find.byKey(const ValueKey('sleep-start')), findsOneWidget);
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
-      expect(
-        tester
-            .widget<TextField>(find.widgetWithText(TextField, '查看日期'))
-            .controller!
-            .text,
-        '2026-10-01',
-      );
+      expect(find.text('10月1日 今天'), findsOneWidget);
       await resume(tester);
       expect(find.text('确认主睡眠'), findsNothing);
       await stop(tester);

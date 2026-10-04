@@ -149,10 +149,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('账本窗口：1380 分钟'), findsOneWidget);
+    expect(find.text('账本窗口：23 小时'), findsOneWidget);
     hours = 25;
     await tester.tap(find.text('刷新摘要'));
     await tester.pumpAndSettle();
-    expect(find.text('账本窗口：1500 分钟'), findsOneWidget);
+    expect(find.text('账本窗口：25 小时'), findsOneWidget);
   });
 }

@@ -1,7 +1,13 @@
+import '../support/recording_fields.dart';
+import '../support/root_navigation.dart';
+
 import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+
+import '../support/ledger_date_selection.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/app/bootstrap/day_ledger.dart';
@@ -31,6 +37,12 @@ RecordingDraftContext gapContext(int from, int to) =>
     RecordingDraftContext.gap(date: date, startedAt: at(from), endedAt: at(to));
 
 Future<void> tap(WidgetTester tester, String text) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  tester.testTextInput.hide();
+  await tester.pumpAndSettle();
+  if (await tapRootAction(tester, text)) {
+    return;
+  }
   final target = find.text(text);
   if (target.evaluate().isEmpty) {
     await tester.scrollUntilVisible(
@@ -46,6 +58,7 @@ Future<void> tap(WidgetTester tester, String text) async {
 }
 
 Future<void> enterTime(WidgetTester tester, String label, String value) async {
+  await revealRecordingField(tester, label);
   await tap(tester, label);
   await tester.enterText(
     find.byKey(const ValueKey('time-dialog-input')),
@@ -92,7 +105,7 @@ Future<void> mainSleep(WidgetTester tester, AppDatabase db) =>
     });
 Future<void> openGap(WidgetTester tester) async {
   await tap(tester, '打开日账本');
-  await tap(tester, '补一笔');
+  await tap(tester, '补记');
 }
 
 void main() {
@@ -106,12 +119,18 @@ void main() {
         () => DriftRecordingDraftStore.open(NativeDatabase.memory()),
       ))!;
       await mount(tester, db, drafts);
-      await tap(tester, '补一笔');
-      expect(find.text('未填写'), findsNWidgets(2));
+      await tap(tester, '记录活动');
+      expect(find.widgetWithText(ListTile, '未填写'), findsNWidgets(2));
       await tap(tester, '保留草稿并返回');
       await openGap(tester);
-      expect(find.text('2026-10-01 00:00'), findsOneWidget);
-      expect(find.text('2026-10-01 12:00'), findsOneWidget);
+      expect(
+        recordingTimeSummaryContaining('2026-10-01 00:00'),
+        findsOneWidget,
+      );
+      expect(
+        recordingTimeSummaryContaining('2026-10-01 12:00'),
+        findsOneWidget,
+      );
       expect(
         tester
             .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '开始大约'))
@@ -137,8 +156,8 @@ void main() {
         isEmpty,
       );
       await tap(tester, '想不起来');
-      await tap(tester, '确认并保存到账本');
-      expect(find.text('未知 · 想不起来'), findsOneWidget);
+      await tap(tester, '保存到账本');
+      expect(find.text('想不起来'), findsOneWidget);
       expect(find.byType(LedgerGapTimelineTile), findsNothing);
       final view = tester
           .widget<DayLedgerTimeline>(find.byType(DayLedgerTimeline))
@@ -179,10 +198,16 @@ void main() {
         () => DriftRecordingDraftStore.open(NativeDatabase.memory()),
       ))!;
       await mount(tester, db, drafts);
-      await tester.enterText(find.byType(TextField), '2026-09-30');
+      await selectLedgerDate(tester, '2026-09-30');
       await openGap(tester);
-      expect(find.text('2026-09-30 00:00'), findsOneWidget);
-      expect(find.text('2026-10-01 00:00'), findsOneWidget);
+      expect(
+        recordingTimeSummaryContaining('2026-09-30 00:00'),
+        findsOneWidget,
+      );
+      expect(
+        recordingTimeSummaryContaining('2026-10-01 00:00'),
+        findsOneWidget,
+      );
       expect(
         tester
             .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '开始大约'))
@@ -202,10 +227,10 @@ void main() {
         isEmpty,
       );
       await tap(tester, '保留草稿并返回');
-      await tester.enterText(find.byType(TextField), '2026-10-02');
+      await selectLedgerDate(tester, '2026-10-02');
       await tester.pumpAndSettle();
       expect(find.byType(LedgerGapTimelineTile), findsNothing);
-      expect(find.text('补一笔'), findsNothing);
+      expect(find.text('补记'), findsNothing);
       await disposeApp(tester);
     },
   );
@@ -288,7 +313,10 @@ void main() {
             .text,
         '读书',
       );
-      expect(find.text('2026-10-01 10:00'), findsOneWidget);
+      expect(
+        recordingTimeSummaryContaining('2026-10-01 10:00'),
+        findsOneWidget,
+      );
       expect(
         tester
             .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '开始准确'))
@@ -301,7 +329,7 @@ void main() {
             .selected,
         isTrue,
       );
-      await tap(tester, '确认并保存到账本');
+      await tap(tester, '保存到账本');
       expect(find.text('读书'), findsOneWidget);
       expect(find.byType(LedgerGapTimelineTile), findsOneWidget);
       final remaining = tester
@@ -357,7 +385,7 @@ void main() {
           now: 2,
         ),
       ))!;
-      await tap(tester, '确认并保存到账本');
+      await tap(tester, '保存到账本');
       expect(find.text('时间与已有记录冲突，请手动调整后再保存。'), findsOneWidget);
       expect(find.textContaining('冲突记录：睡眠'), findsOneWidget);
       expect(find.byType(RecordingForm), findsOneWidget);
@@ -379,7 +407,7 @@ void main() {
         (at(8), at(9), '后来提交的事实'),
       );
       await enterTime(tester, '开始时间', '2026-10-01 09:00');
-      await tap(tester, '确认并保存到账本');
+      await tap(tester, '保存到账本');
       expect(find.text('写作'), findsOneWidget);
       expect(find.byType(LedgerGapTimelineTile), findsNothing);
       final facts = (await tester.runAsync(
@@ -461,11 +489,11 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tap(tester, '补一笔');
+      await tap(tester, '补记');
       await tap(tester, '想不起来');
-      await tap(tester, '确认并保存到账本');
+      await tap(tester, '保存到账本');
       expect(find.text('已正式保存到账本，请不要再次提交。'), findsOneWidget);
-      expect(find.text('确认并保存到账本'), findsNothing);
+      expect(find.text('保存到账本'), findsNothing);
       expect(find.text('草稿清理失败，旧草稿仍可能显示；请重试清理。'), findsOneWidget);
       expect(find.text('账本刷新失败，记录已保存；请重试刷新。'), findsOneWidget);
       expect(creations, 1);
@@ -495,7 +523,7 @@ void main() {
       );
       failDayRead = false;
       await tap(tester, '重试读取');
-      expect(find.text('未知 · 想不起来'), findsOneWidget);
+      expect(find.text('想不起来'), findsOneWidget);
       expect(find.byType(LedgerGapTimelineTile), findsNothing);
       expect(creations, 1);
       expect(
