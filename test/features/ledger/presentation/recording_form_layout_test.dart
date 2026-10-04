@@ -450,7 +450,10 @@ void main() {
         await support.textTap(t, '想不起来');
         await support.textTap(t, '保存到账本');
         expect(find.textContaining('冲突记录：睡眠'), findsOneWidget);
+        expect(find.text('标识：${support.id(20)}'), findsNothing);
+        await support.textTap(t, '记录标识');
         expect(find.text('标识：${support.id(20)}'), findsOneWidget);
+        await support.textTap(t, '关闭');
         await capture(t, 'failure-conflict');
         await support.textTap(t, '修改冲突时间');
         expect(find.text('开始时间'), findsOneWidget);

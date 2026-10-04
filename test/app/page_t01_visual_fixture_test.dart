@@ -146,6 +146,14 @@ void main() {
     expect(draft.startPrecision, TimePrecision.approximate);
     expect(draft.endPrecision, TimePrecision.approximate);
     expect(draft.endedAt! - draft.startedAt!, 30 * 60000);
+    final goalRect = t.getRect(
+      find.byKey(const ValueKey('recording-goal-toggle')),
+    );
+    final rhythmRect = t.getRect(
+      find.byKey(const ValueKey('recording-rhythm-toggle')),
+    );
+    expect(goalRect.top, rhythmRect.top);
+    expect(goalRect.right, lessThan(rhythmRect.left));
     expect(
       t
           .widget<FilledButton>(find.widgetWithText(FilledButton, '保存到账本'))
@@ -179,6 +187,8 @@ void main() {
     expect(rows.single.data['id'], PageT01Fixture.walkId);
     expect(rows.single.data['ended_at'], PageT01Fixture.instant(2, 11, 30));
     expect(find.textContaining('冲突记录：'), findsOneWidget);
+    expect(find.textContaining('散步 ·'), findsOneWidget);
+    expect(find.textContaining(PageT01Fixture.walkId), findsNothing);
     FocusManager.instance.primaryFocus?.unfocus();
     t.testTextInput.hide();
     await settle(t);

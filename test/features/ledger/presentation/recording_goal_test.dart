@@ -405,11 +405,9 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.byKey(const ValueKey('activity')), findsNothing);
       expect(
-        tester
-            .widget<TextField>(find.byKey(const ValueKey('activity')))
-            .controller!
-            .text,
+        (await tester.runAsync(() => h.drafts.read(context)))!.title,
         '  保留活动  ',
       );
       await textTap(tester, '保存到账本');

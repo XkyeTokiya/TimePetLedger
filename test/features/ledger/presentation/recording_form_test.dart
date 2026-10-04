@@ -348,7 +348,12 @@ void main() {
     await enterTime(tester, '结束时间', '2026-09-28 11:00');
     await tap(tester, '保存到账本');
     expect(find.text('时间与已有记录冲突，请手动调整后再保存。'), findsOneWidget);
+    expect(find.textContaining(sleepId), findsNothing);
+    await tester.tap(find.text('记录标识'));
+    await tester.pumpAndSettle();
     expect(find.textContaining(sleepId), findsOneWidget);
+    await tester.tap(find.text('关闭'));
+    await tester.pumpAndSettle();
     expect(store.value!.title, '写作');
     expect(find.text('已正式保存到账本，请不要再次提交。'), findsNothing);
   });
@@ -490,7 +495,7 @@ void main() {
       );
       await tap(tester, '打开');
       expect(store.value, isNotNull);
-      expect(find.text('写作'), findsOneWidget);
+      expect(find.byKey(const ValueKey('activity')), findsNothing);
       await revealRecordingField(tester, 'note');
       expect(
         tester
