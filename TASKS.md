@@ -2,6 +2,8 @@
 
 ## 使用方式与当前状态
 
+**UI新路线（2026-10-04）：** 当前执行入口为[界面层重建计划](docs/planning/UI_REBUILD_PLAN.md)。本轮仅授权RB-00前期文档；RB-01起待明确授权。下面PAGE旧计划保留历史索引，不再自动按逐页补丁路线推进。
+
 当前页面改造专项见 [页面实现设计](docs/planning/UI_IMPLEMENTATION_DESIGN.md) 与 [整体任务清单 PAGE-T01–T09](docs/planning/UI_IMPLEMENTATION_TASKS.md)。三编辑页上一版视觉验收未通过，进入返工规划；专项任务状态不覆盖下述领域/工程任务及旧UI-T交付状态。
 
 本文件与 [已完成任务归档](docs/planning/COMPLETED_TASKS.md) 将 [IMPLEMENTATION_PLAN](docs/planning/IMPLEMENTATION_PLAN.md) 的前 10 个 Epic（Epic 0–9）细化为可单独交付的任务。Epic 10 只列工作包，不是可直接交给 coding agent 执行的大任务。范围以 [MVP_SCOPE](docs/planning/MVP_SCOPE.md) 为准，执行方式遵守 [AGENTS](AGENTS.md)。
