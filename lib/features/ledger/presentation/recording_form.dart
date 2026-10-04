@@ -536,67 +536,76 @@ class _RecordingFormState extends State<RecordingForm> {
     final goal = model.selectedGoal;
     final archived = goal?.status == GoalStatus.archived;
     final retained = model.goalId == model.original?.goalId;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('目标归属', style: Theme.of(context).textTheme.titleMedium),
-        Text(
-          model.goalId == null
-              ? '未关联目标'
-              : goal == null
-              ? '当前目标：${model.goalId}（未能读取或已不存在）'
-              : '${goal.name}${archived ? '（已归档）' : ''}',
-          key: const ValueKey('selected-goal'),
-        ),
-        if (archived && !retained) const Text('此目标已归档，请重新选择或移除后保存。'),
-        if (model.goalsLoading)
-          const Text('正在读取目标…')
-        else if (model.goalsError != null) ...[
-          Text(model.goalsError!),
-          TextButton(
-            onPressed: model.editable ? model.loadGoals : null,
-            child: const Text('重试读取目标'),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('目标归属（选填）', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Text(
+            model.goalId == null
+                ? '未关联目标'
+                : goal == null
+                ? '当前目标：${model.goalId}（未能读取或已不存在）'
+                : '${goal.name}${archived ? '（已归档）' : ''}',
+            key: const ValueKey('selected-goal'),
           ),
-        ] else ...[
-          if (model.activeGoals.isEmpty) const Text('暂无可选目标，可直接记录。'),
-          Wrap(
-            spacing: 12,
-            children: [
-              OutlinedButton(
-                focusNode: goalFocus,
-                onPressed: model.editable && model.activeGoals.isNotEmpty
-                    ? _chooseGoal
-                    : null,
-                child: const Text('选择目标'),
-              ),
-              TextButton(
-                onPressed: model.editable ? model.loadGoals : null,
-                child: const Text('刷新目标'),
-              ),
-            ],
-          ),
-        ],
-        if (model.goalId != null)
-          TextButton(
-            onPressed: model.editable ? model.clearGoal : null,
-            child: const Text('移除目标归属'),
-          ),
-        if (model.goalId != null)
-          Container(
-            key: const ValueKey('goal-time-confirmation'),
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            color: Theme.of(context).colorScheme.secondaryContainer,
-            child: Text(
-              '请确认这段目标相关时间大致正确：\n'
-              '${model.time.startPrecision == TimePrecision.approximate ? '约 ' : ''}'
-              '${formatRecordingTime(model.time.startedAt)} → '
-              '${model.time.endPrecision == TimePrecision.approximate ? '约 ' : ''}'
-              '${formatRecordingTime(model.time.endedAt)}\n'
-              '可在上方修改时间，大约时间也可以保存。',
+          if (archived && !retained) const Text('此目标已归档，请重新选择或移除后保存。'),
+          if (model.goalsLoading)
+            const Text('正在读取目标…')
+          else if (model.goalsError != null) ...[
+            Text(model.goalsError!),
+            TextButton(
+              onPressed: model.editable ? model.loadGoals : null,
+              child: const Text('重试读取目标'),
             ),
-          ),
-      ],
+          ] else ...[
+            if (model.activeGoals.isEmpty) const Text('暂无可选目标，可直接记录。'),
+            Wrap(
+              spacing: 12,
+              children: [
+                OutlinedButton(
+                  focusNode: goalFocus,
+                  onPressed: model.editable && model.activeGoals.isNotEmpty
+                      ? _chooseGoal
+                      : null,
+                  child: const Text('选择目标'),
+                ),
+                TextButton(
+                  onPressed: model.editable ? model.loadGoals : null,
+                  child: const Text('刷新目标'),
+                ),
+              ],
+            ),
+          ],
+          if (model.goalId != null)
+            TextButton(
+              onPressed: model.editable ? model.clearGoal : null,
+              child: const Text('移除目标归属'),
+            ),
+          if (model.goalId != null)
+            Container(
+              key: const ValueKey('goal-time-confirmation'),
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              child: Text(
+                '请确认这段目标相关时间大致正确：\n'
+                '${model.time.startPrecision == TimePrecision.approximate ? '约 ' : ''}'
+                '${formatRecordingTime(model.time.startedAt)} → '
+                '${model.time.endPrecision == TimePrecision.approximate ? '约 ' : ''}'
+                '${formatRecordingTime(model.time.endedAt)}\n'
+                '可在上方修改时间，大约时间也可以保存。',
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -743,6 +752,7 @@ class _RecordingFormState extends State<RecordingForm> {
         child: SizedBox(
           height: MediaQuery.sizeOf(context).height * .65,
           child: EditorTimePage(
+            inSheet: true,
             date: widget.context.date,
             initial: (
               start: formatSleepTime(model.time.startedAt),
@@ -1009,7 +1019,12 @@ class _RecordingFormState extends State<RecordingForm> {
           ) => OutlinedButton(
             key: ValueKey('$id-toggle'),
             style: OutlinedButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+              backgroundColor: open
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
+              foregroundColor: open
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.onSurface,
               side: BorderSide(
                 color: Theme.of(context).colorScheme.outlineVariant,
               ),
@@ -1032,7 +1047,10 @@ class _RecordingFormState extends State<RecordingForm> {
                 'recording-goal',
                 model.selectedGoal?.name ?? '＋ 目标',
                 goalExpanded,
-                () => setState(() => goalExpanded = !goalExpanded),
+                () => setState(() {
+                  goalExpanded = !goalExpanded;
+                  rhythmExpanded = false;
+                }),
               ),
             entry(
               'recording-rhythm',
@@ -1040,7 +1058,10 @@ class _RecordingFormState extends State<RecordingForm> {
                   ? '＋ 节奏'
                   : rhythmInputLabel(model.rhythmState),
               rhythmExpanded,
-              () => setState(() => rhythmExpanded = !rhythmExpanded),
+              () => setState(() {
+                rhythmExpanded = !rhythmExpanded;
+                goalExpanded = false;
+              }),
             ),
           ];
           return stacked

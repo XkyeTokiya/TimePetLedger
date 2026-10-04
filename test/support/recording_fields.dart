@@ -6,7 +6,7 @@ import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart
 Future<void> revealRecordingField(WidgetTester tester, String field) async {
   if (find.byType(RecordingForm).evaluate().isEmpty) return;
   if (['continuation-hint', 'stuck-reason-text'].contains(field) &&
-      find.byKey(const ValueKey('rhythm-none')).evaluate().isEmpty) {
+      find.byKey(const ValueKey('rhythm-progress')).evaluate().isEmpty) {
     final parent = find.byKey(const ValueKey('recording-rhythm-toggle'));
     await tester.ensureVisible(parent);
     await tester.pumpAndSettle();

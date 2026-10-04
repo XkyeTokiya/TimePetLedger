@@ -20,10 +20,12 @@ class EditorTimePage extends StatefulWidget {
     required this.initial,
     required this.date,
     this.sleep = false,
+    this.inSheet = false,
   });
   final CivilDate date;
   final EditorTimes initial;
   final bool sleep;
+  final bool inSheet;
   @override
   State<EditorTimePage> createState() => _EditorTimePageState();
 }
@@ -59,6 +61,7 @@ class _EditorTimePageState extends State<EditorTimePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+    resizeToAvoidBottomInset: !widget.inSheet,
     appBar: AppBar(title: Text(widget.sleep ? '调整睡眠时间' : '调整记录时间')),
     body: EditorBody(
       status: '尚未应用',

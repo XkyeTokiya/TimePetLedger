@@ -101,13 +101,15 @@ class _RecordingRhythmInputState extends State<RecordingRhythmInput> {
         Wrap(
           spacing: 12,
           children: [
-            for (final state in [null, ...RhythmState.values])
+            for (final state in RhythmState.values)
               ChoiceChip(
-                key: ValueKey('rhythm-${state?.name ?? 'none'}'),
+                key: ValueKey('rhythm-${state.name}'),
                 label: Text(rhythmInputLabel(state)),
                 selected: model.rhythmState == state,
                 onSelected: model.editable
-                    ? (_) => model.setRhythmState(state)
+                    ? (_) => model.setRhythmState(
+                        model.rhythmState == state ? null : state,
+                      )
                     : null,
               ),
           ],
@@ -146,16 +148,6 @@ class _RecordingRhythmInputState extends State<RecordingRhythmInput> {
                         errorText: reasonError,
                       ),
                     ),
-                  ),
-                  TextButton(
-                    key: const ValueKey('clear-stuck-reason-text'),
-                    onPressed: model.editable
-                        ? () {
-                            reason.clear();
-                            model.setStuckReasonText('');
-                          }
-                        : null,
-                    child: const Text('清空原因说明'),
                   ),
                 ],
               ),
@@ -234,12 +226,14 @@ class _RecordingRhythmInputState extends State<RecordingRhythmInput> {
   ) => Wrap(
     spacing: 8,
     children: [
-      for (final value in <T?>[null, ...values])
+      for (final value in values)
         ChoiceChip(
-          key: ValueKey('$key-${value?.name ?? 'none'}'),
-          label: Text(value == null ? '不填写' : label(value)),
+          key: ValueKey('$key-${value.name}'),
+          label: Text(label(value)),
           selected: selected == value,
-          onSelected: model.editable ? (_) => change(value) : null,
+          onSelected: model.editable
+              ? (_) => change(selected == value ? null : value)
+              : null,
         ),
     ],
   );

@@ -248,13 +248,21 @@ Future<void> textTap(WidgetTester t, String text) async {
 }
 
 Future<void> stateTap(WidgetTester t, RhythmState? state) async {
-  if (find
-      .byKey(ValueKey('rhythm-${state?.name ?? 'none'}'))
-      .evaluate()
-      .isEmpty) {
+  if (find.byKey(const ValueKey('rhythm-progress')).evaluate().isEmpty) {
     await tap(t, find.byKey(const ValueKey('recording-rhythm-toggle')));
   }
-  await tap(t, find.byKey(ValueKey('rhythm-${state?.name ?? 'none'}')));
+  final target = state == null
+      ? find.byWidgetPredicate(
+          (w) =>
+              w is ChoiceChip &&
+              w.selected &&
+              w.key is ValueKey<String> &&
+              (w.key! as ValueKey<String>).value.startsWith('rhythm-'),
+        )
+      : find.byKey(ValueKey('rhythm-${state.name}'));
+  if (target.evaluate().isEmpty) return;
+  if (state != null && t.widget<ChoiceChip>(target).selected) return;
+  await tap(t, target);
 }
 
 Future<void> enter(WidgetTester t, String key, String value) async {

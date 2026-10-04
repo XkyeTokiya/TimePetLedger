@@ -8,8 +8,18 @@ import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
 
 import 'recording_rhythm_test.dart' as support;
 
-Future<void> choice(WidgetTester t, String prefix, Enum? value) =>
-    support.tap(t, find.byKey(ValueKey('$prefix-${value?.name ?? 'none'}')));
+Future<void> choice(WidgetTester t, String prefix, Enum? value) => support.tap(
+  t,
+  value != null
+      ? find.byKey(ValueKey('$prefix-${value.name}'))
+      : find.byWidgetPredicate(
+          (w) =>
+              w is ChoiceChip &&
+              w.selected &&
+              w.key is ValueKey<String> &&
+              (w.key! as ValueKey<String>).value.startsWith('$prefix-'),
+        ),
+);
 Future<void> mount(
   WidgetTester t,
   support.Fixture f,
@@ -137,10 +147,7 @@ void main() {
       ))!;
       await mount(t, f, support.editContext);
       await choice(t, 'stuck-reason', null);
-      await support.tap(
-        t,
-        find.byKey(const ValueKey('clear-stuck-reason-text')),
-      );
+      await support.enter(t, 'stuck-reason-text', '');
       await support.stateTap(t, RhythmState.recovery);
       await choice(t, 'recovery-method', null);
       await choice(t, 'recovery-quality', null);
