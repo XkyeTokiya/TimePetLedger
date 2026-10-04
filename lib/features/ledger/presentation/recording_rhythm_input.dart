@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../domain/rhythm_details.dart';
 import '../domain/rhythm_state.dart';
 import 'recording_form_controller.dart';
-import 'recording_optional_section.dart';
 
 String rhythmInputLabel(RhythmState? state) => switch (state) {
   null => '不标记',
@@ -115,50 +114,14 @@ class _RecordingRhythmInputState extends State<RecordingRhythmInput> {
         ),
         if (model.rhythmState != null) ...[
           const SizedBox(height: 8),
-          RecordingOptionalSection(
-            id: 'recording-hint',
-            title: '接续点',
-            summary: recordingDetailPreview(model.continuationHint),
-            hasContent: model.continuationHint.isNotEmpty,
-            hasError: hintError != null,
-            enabled: model.editable,
-            child: Container(
-              key: hintKey,
-              child: TextField(
-                key: const ValueKey('continuation-hint'),
-                controller: hint,
-                focusNode: hintFocus,
-                readOnly: !model.editable,
-                minLines: 1,
-                maxLines: 5,
-                textInputAction: TextInputAction.newline,
-                onChanged: model.setContinuationHint,
-                decoration: InputDecoration(
-                  labelText: '接续点内容',
-                  helperText: '下次回到这件事，从哪里接上？',
-                  errorText: hintError,
-                ),
-              ),
-            ),
-          ),
           if (model.rhythmState == RhythmState.stuck) ...[
             const SizedBox(height: 16),
-            RecordingOptionalSection(
+            Container(
               key: const ValueKey('stuck-details'),
-              id: 'recording-stuck',
-              title: '卡住细节',
-              summary:
-                  '${model.stuckReasonCode == null ? '未选原因' : _reason(model.stuckReasonCode!)} · ${recordingDetailPreview(model.stuckReasonText)}',
-              hasContent:
-                  model.stuckReasonCode != null ||
-                  model.stuckReasonText.isNotEmpty,
-              hasError: reasonError != null,
-              enabled: model.editable,
-              expandOnEntry: true,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('卡住原因'),
+                  const Text('卡住原因（选填）'),
                   _choices<StuckReasonCode>(
                     'stuck-reason',
                     StuckReasonCode.values,
@@ -179,8 +142,7 @@ class _RecordingRhythmInputState extends State<RecordingRhythmInput> {
                       textInputAction: TextInputAction.newline,
                       onChanged: model.setStuckReasonText,
                       decoration: InputDecoration(
-                        labelText: '原因说明',
-                        helperText: '可以只写文字；选择“其他”也可以不补充。',
+                        labelText: '卡住细节（选填）',
                         errorText: reasonError,
                       ),
                     ),
@@ -201,17 +163,8 @@ class _RecordingRhythmInputState extends State<RecordingRhythmInput> {
           ],
           if (model.rhythmState == RhythmState.recovery) ...[
             const SizedBox(height: 16),
-            RecordingOptionalSection(
+            Container(
               key: const ValueKey('recovery-details'),
-              id: 'recording-recovery',
-              title: '恢复细节',
-              summary:
-                  '${model.recoveryMethod == null ? '未选方式' : _method(model.recoveryMethod!)} · ${model.recoveryQuality == null ? '未选效果' : _quality(model.recoveryQuality!)}',
-              hasContent:
-                  model.recoveryMethod != null || model.recoveryQuality != null,
-              hasError: false,
-              enabled: model.editable,
-              expandOnEntry: true,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -236,6 +189,24 @@ class _RecordingRhythmInputState extends State<RecordingRhythmInput> {
               ),
             ),
           ],
+          const SizedBox(height: 16),
+          Container(
+            key: hintKey,
+            child: TextField(
+              key: const ValueKey('continuation-hint'),
+              controller: hint,
+              focusNode: hintFocus,
+              readOnly: !model.editable,
+              minLines: 1,
+              maxLines: 5,
+              onChanged: model.setContinuationHint,
+              decoration: InputDecoration(
+                labelText: '接续点（选填）',
+                hintText: '下次从哪里接着做？',
+                errorText: hintError,
+              ),
+            ),
+          ),
           if (model.rhythmState != RhythmState.stuck &&
               reasonError != null) ...[
             Text(

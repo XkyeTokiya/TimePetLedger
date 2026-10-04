@@ -731,15 +731,25 @@ class _RecordingFormState extends State<RecordingForm> {
 
   Future<void> _editCurrentTime() async {
     FocusManager.instance.primaryFocus?.unfocus();
-    final result = await Navigator.of(context).push<EditorTimes>(
-      MaterialPageRoute(
-        builder: (_) => EditorTimePage(
-          date: widget.context.date,
-          initial: (
-            start: formatSleepTime(model.time.startedAt),
-            end: formatSleepTime(model.time.endedAt),
-            startPrecision: model.time.startPrecision,
-            endPrecision: model.time.endPrecision,
+    final result = await showModalBottomSheet<EditorTimes>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * .65,
+          child: EditorTimePage(
+            date: widget.context.date,
+            initial: (
+              start: formatSleepTime(model.time.startedAt),
+              end: formatSleepTime(model.time.endedAt),
+              startPrecision: model.time.startPrecision,
+              endPrecision: model.time.endPrecision,
+            ),
           ),
         ),
       ),
@@ -792,36 +802,7 @@ class _RecordingFormState extends State<RecordingForm> {
                   model.time.endedAt != null)
                 TextButton.icon(
                   key: const ValueKey('edit-recording-time'),
-                  onPressed: model.editable
-                      ? () async {
-                          FocusManager.instance.primaryFocus?.unfocus();
-                          final result = await Navigator.of(context)
-                              .push<EditorTimes>(
-                                MaterialPageRoute(
-                                  builder: (_) => EditorTimePage(
-                                    date: widget.context.date,
-                                    initial: (
-                                      start: formatSleepTime(
-                                        model.time.startedAt,
-                                      ),
-                                      end: formatSleepTime(model.time.endedAt),
-                                      startPrecision: model.time.startPrecision,
-                                      endPrecision: model.time.endPrecision,
-                                    ),
-                                  ),
-                                ),
-                              );
-                          if (!mounted || result == null) return;
-                          model.setTime(
-                            start: parseSleepTime(result.start),
-                            end: parseSleepTime(result.end),
-                          );
-                          model.setPrecision(
-                            start: result.startPrecision,
-                            end: result.endPrecision,
-                          );
-                        }
-                      : null,
+                  onPressed: model.editable ? _editCurrentTime : null,
                   icon: const SizedBox.shrink(),
                   label: Text(expanded ? '收起时间编辑' : '修改时间'),
                 ),
