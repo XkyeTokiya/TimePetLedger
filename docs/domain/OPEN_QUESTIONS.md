@@ -6,6 +6,10 @@
 
 已经确定的事项不重新提问：Unknown 是合法持久化事实；Gap 不持久化；节奏解释可选；卡住原因与恢复细节可选；Goal 仅为时间归属；自然日是投影边界；主时间轴暂不支持并行主要事实。
 
+> 展示决定追溯补充（2026-10-04）：本文件Q-014/Q-017/Q-018等历史决定中“约”前缀示例，仅其数值呈现部分已被用户“首版全应用不显示约”决定取代。Q-018中的“约少于1分钟”现为“少于1分钟”。记录存在性、舍入、精度字段及传播均不变，权威现行规则见DOMAIN_RULES LEDGER-007及摘要显示规则。历史Decision文本留作追溯，不作为旧前缀验收依据。
+
+当前补充：Q-024为UNDECIDED，阻塞RB-01时间合同冻结；Q-001–Q-023均已决定。
+
 ## Q-001
 
 **Question:** TomorrowFirstStep 的 intendedDate 如何确定与保存？
@@ -437,3 +441,21 @@
 **Current status:** DECIDED
 
 **Blocks implementation:** 否：普通入口、Gap 入口、缺少前序记录、多候选及初始精度合同已确定；复用该算法的其他入口同样遵循此合同。
+
+## Q-024
+
+**Question:** 无效时间原文能否应用，取消、重开和重启如何恢复？
+
+**Source sections:** §27–28；UI_IMPLEMENTATION_DESIGN未完成原文要求；2026-10-05基线审查第4项。
+
+**Why it matters:** 活动草稿保存解析后的时间，无效文本返回后变为null。睡眠原文合同不能自动扩展为活动草稿存储政策。
+
+**Related domain objects:** RecordingDraft、SleepDraft、临时时间输入。
+
+**Possible options:** A（建议）：无效原文留在弹层，应用时报错且不关闭；修正后应用，取消丢弃本次临时改动，重开显示上次已应用值。B：允许应用无效原文，父草稿保存原文并支持重开/重启，需要授权活动草稿结构及兼容迁移。正式写入校验均不变。
+
+**Decision:** 未决定。A须明确覆盖旧允许未完成原文应用要求；不由agent自行选择。
+
+**Current status:** UNDECIDED
+
+**Blocks implementation:** 阻塞RB-01时间交互冻结和RB-02草稿接口；不阻塞独立文档同步。
