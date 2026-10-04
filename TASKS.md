@@ -2,6 +2,8 @@
 
 ## 使用方式与当前状态
 
+当前页面改造专项见 [页面实现设计](docs/planning/UI_IMPLEMENTATION_DESIGN.md) 与 [整体任务清单 PAGE-T01–T09](docs/planning/UI_IMPLEMENTATION_TASKS.md)。三编辑页上一版视觉验收未通过，进入返工规划；专项任务状态不覆盖下述领域/工程任务及旧UI-T交付状态。
+
 本文件与 [已完成任务归档](docs/planning/COMPLETED_TASKS.md) 将 [IMPLEMENTATION_PLAN](docs/planning/IMPLEMENTATION_PLAN.md) 的前 10 个 Epic（Epic 0–9）细化为可单独交付的任务。Epic 10 只列工作包，不是可直接交给 coding agent 执行的大任务。范围以 [MVP_SCOPE](docs/planning/MVP_SCOPE.md) 为准，执行方式遵守 [AGENTS](AGENTS.md)。
 
 **任务定义不等于执行状态。** 已完成的 77 个任务（Epic 0–4、E5-T01–E5-T09、E6-T01–E6-T06、E7-T01–E7-T08、E8-T01–E8-T06、E9-T01–E9-T09）保留下方简短索引，完整定义见 [COMPLETED_TASKS](docs/planning/COMPLETED_TASKS.md)，完成依据见各行报告或负责人确认记录。E6-T01–E6-T06 已完成；Epic 6 的前置与核心验收已有逐项证据，不等于全 MVP 完成。E7-T01–E7-T08 已完成，Epic 7 核心及独立 Should Have 均有两平台验收；E8-T01–E8-T06 已完成，Epic 8 核心验收及两平台生命周期证据齐备；E9-T01–E9-T09 已完成；Epic 9 核心验收及两平台生命周期证据齐备；Epic 10 仍待细化。执行任务时核对对应报告与实际实现；任务可执行条件仍为用户明确指定、Depends on 中前置任务已完成、涉及的未决问题已有可追溯答案且相应规范已更新。问题答案不由 coding agent 自行产生；缺少答案时报告 BLOCKED，不用默认值或临时模型绕过。

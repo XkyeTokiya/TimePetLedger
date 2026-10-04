@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Time Pet Ledger 方案三主页视觉校准 · 待确认</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#07131d;color:#f3f6fa;font-family:Arial,"Noto Sans CJK SC",sans-serif;font-size:15px;line-height:1.65}main{max-width:1220px;margin:auto;padding:24px}h1{font-size:26px;margin:0}h2{margin-top:32px;font-size:22px}h3{font-size:17px}p{margin:10px 0}a{color:#42e4dc}code{overflow-wrap:anywhere}table{border-collapse:collapse;width:100%;margin:16px 0}td,th{text-align:left;vertical-align:top;border-bottom:1px solid #2a3c4c;padding:10px}th{color:#b5c6d9}.muted{color:#b5c6d9}.board{display:flex;gap:32px;align-items:flex-start;padding:16px 0}.panel{width:360px;flex:none}.caption{height:64px;font-size:14px;color:#b5c6d9}.caption strong{display:block;color:#f3f6fa;font-size:17px}.phone{width:360px;height:800px;background:#0e1c27;position:relative;overflow:hidden;outline:1px solid #2a3c4c;line-height:1.4}.status{height:24px;padding:3px 16px;font:12px/18px Arial;display:flex;justify-content:space-between}.appbar{height:48px;display:flex;align-items:center;justify-content:space-between;padding-left:16px;font-size:20px;font-weight:600}.touch{width:48px;height:48px;display:flex;align-items:center;justify-content:center;color:#b5c6d9;font-size:24px}.scroll{height:632px;overflow:auto;scrollbar-width:none}.date{height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 8px}.date .center{text-align:center;font-size:19px;font-weight:600}.year{font-size:12px;font-weight:400;color:#b5c6d9}.overview{height:144px;padding:8px 16px 0}.stats{display:grid;grid-template-columns:1fr 1fr;gap:24px;height:60px}.stats>div+div{border-left:1px solid #2a3c4c;padding-left:20px}.label{font-size:13px;color:#b5c6d9}.number{font-size:28px;line-height:36px;font-weight:600}.unit{font-size:14px;font-weight:400;margin-left:4px}.substat{height:34px;display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#b5c6d9}.info{color:#b5c6d9;font-size:17px}.bar{display:flex;width:328px;height:12px;border-radius:4px;overflow:hidden}.bar span{height:12px;border-right:1px solid #0e1c27}.sleepbar{background:#83a7ff}.knownbar{background:#42e4dc}.unknownbar{background:#b1bfd1}.gapbar{border:1px dashed #b5c6d9!important;background:transparent}.ticks{display:flex;justify-content:space-between;color:#b5c6d9;font:11px/26px Arial}.timeline{padding:0 16px}.entry{position:relative;display:grid;grid-template-columns:54px 24px 1fr;min-height:64px}.times{padding-top:14px;font:13px/21px Arial;color:#b5c6d9}.track{position:relative}.track:before{content:"";position:absolute;top:0;bottom:0;left:6px;width:1.5px;background:#42e4dc}.track:after{content:"";position:absolute;top:20px;left:1px;width:12px;height:12px;border-radius:50%;background:#42e4dc}.sleep .track:before,.sleep .track:after{background:#83a7ff}.unknown .track:before,.unknown .track:after{background:#b1bfd1}.gap .track:before{background:transparent;border-left:1.5px dashed #b5c6d9}.gap .track:after{background:#0e1c27;border:1.5px dashed #b5c6d9}.content{padding:12px 0;border-bottom:1px solid #2a3c4c;min-width:0}.headline{display:flex;align-items:baseline;gap:8px}.title{flex:1;min-width:0;font-size:17px;line-height:24px;font-weight:600}.duration{flex:none;font-size:14px;line-height:24px;font-weight:500}.secondary{font-size:13px;line-height:22px;color:#b5c6d9;margin-top:3px}.tags{display:flex;gap:6px;align-items:center;margin-top:7px;font-size:12px}.tag{padding:2px 7px;background:#172a3a;border-radius:5px;color:#b5c6d9}.rhythm{background:#103a40;color:#42e4dc}.sleep{height:112px}.breakfast{height:64px}.design{height:88px}.unknown{height:80px}.gap{height:88px}.walk{height:88px}.gap .content{padding-top:8px}.gapline{display:flex;align-items:center;justify-content:space-between;height:48px}.fill{height:48px;min-width:64px;border:1px solid #42e4dc;border-radius:15px;color:#42e4dc;font-size:14px;display:flex;align-items:center;justify-content:center}.sleep-summary{margin:12px 16px 0;height:48px;border:1px solid #2a3c4c;border-radius:8px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;font-size:13px;color:#b5c6d9}.spacer{height:24px}.bottom{height:72px;background:#172a3a;display:flex;align-items:center;justify-content:space-between;padding:0 16px;border-top:1px solid #2a3c4c}.nav{width:64px;height:56px;text-align:center;font-size:12px;color:#b5c6d9;display:flex;flex-direction:column;justify-content:center}.nav b{font-size:22px;line-height:24px}.active{color:#42e4dc}.active:after{content:"";display:block;background:#42e4dc;width:20px;height:3px;border-radius:2px;margin:3px auto 0}.create{height:48px;width:168px;border-radius:24px;background:#42e4dc;color:#073036;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:600}.safe{height:24px;background:#172a3a;display:flex;align-items:center;justify-content:center}.safe:after{content:"";height:4px;width:100px;border-radius:3px;background:#b5c6d9}.full{height:1044px}.full .scroll{height:876px;overflow:visible}.overlay{position:absolute;inset:24px 0 0;background:#0008}.sheet{position:absolute;top:300px;bottom:0;width:360px;padding:0 16px;background:#172a3a;border-top:1px solid #7890a8;border-radius:20px 20px 0 0}.sheethead{height:64px;display:flex;justify-content:space-between;align-items:center;font-size:20px;font-weight:600}.sheet dl{font-size:13px;display:grid;grid-template-columns:80px 1fr;gap:10px;margin:12px 0}.sheet dt{color:#b5c6d9}.sheet dd{margin:0}.sheet hr{border:0;border-top:1px solid #2a3c4c;margin:20px 0}.sheet .edit{height:48px;border-radius:24px;background:#42e4dc;color:#073036;display:flex;align-items:center;justify-content:center;margin-top:24px;font-weight:600}.delete{height:48px;display:flex;align-items:center;justify-content:center;color:#ffb4ab;font-size:14px;margin-top:8px}.note{border-left:3px solid #42e4dc;padding:8px 16px;background:#10222e}.spec{max-width:1120px}.badge{font-size:13px;color:#42e4dc} @media(max-width:900px){.board{overflow:auto}.spec{width:100%}} @media print{body{background:#07131d}.board{break-inside:avoid}}
+</style>
+<main>
+<h1>Time Pet Ledger · 方案三主页视觉校准</h1>
+<p class="badge">HOME-VC-01 · 第一阶段设计提案 · 2026-10-04 · 等待用户确认，不代表已实施或视觉验收</p>
+<p class="muted">同一组事实、同一字号、360 逻辑像素宽。左侧是真实 800 高视口；中间仅延长画布，完整展示滚动内容；右侧为详情层。</p>
+<div class="board">
+<section class="panel"><div class="caption"><strong>① 初始视口 · 360 × 800</strong>首条记录 y=264；底栏固定；可滚动 252 px</div><div id="initial" class="phone"></div></section>
+<section class="panel"><div class="caption"><strong>② 全部内容 · 360 × 1052</strong>展开画布，字号与左图完全相同；不是手机视口</div><div id="complete" class="phone full" style="height:1052px"></div></section>
+<section class="panel"><div class="caption"><strong>③ 点击记录 · 360 × 800</strong>详情面板可滚动；编辑与删除移到第二层</div><div id="detail" class="phone"></div></section>
+</div>
+<template id="page">
+<div class="status"><span>09:41</span><span>▰ ▰ ▱</span></div>
+<div class="appbar">日账本<span class="touch">···</span></div>
+<div class="scroll">
+<div class="date"><span class="touch">‹</span><div class="center">10月2日 周五<div class="year">2026年</div></div><span class="touch">›</span></div>
+<div class="overview"><div class="stats"><div><div class="label">已交代</div><div class="number">11<span class="unit">小时</span></div></div><div><div class="label">尚未记录</div><div class="number">13<span class="unit">小时</span></div></div></div><div class="substat">其中想不起来 30分钟 · 已计入已交代<span class="info">ⓘ</span></div><div class="bar"><span class="sleepbar" style="width:30.555556%"></span><span class="knownbar" style="width:2.777778%"></span><span class="knownbar" style="width:8.333333%"></span><span class="unknownbar" style="width:2.083333%"></span><span class="gapbar" style="width:2.083333%"></span><span class="knownbar" style="width:2.083333%"></span><span class="gapbar" style="width:52.083333%"></span></div><div class="ticks"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div></div>
+<div class="timeline">
+<div class="entry sleep"><div class="times">00:00<br>07:20</div><div class="track"></div><div class="content"><div class="headline"><span class="title">主睡眠</span><span class="duration">7小时20分</span></div><div class="secondary">当日时长 · 跨日睡眠<br>完整约7小时40分</div></div></div>
+<div class="entry breakfast"><div class="times">07:20<br>08:00</div><div class="track"></div><div class="content"><div class="headline"><span class="title">早餐</span><span class="duration">40分钟</span></div></div></div>
+<div class="entry design"><div class="times">08:00<br>10:00</div><div class="track"></div><div class="content"><div class="headline"><span class="title">设计首页</span><span class="duration">2小时</span></div><div class="tags"><span class="tag">毕业设计</span><span class="tag rhythm">推进</span></div></div></div>
+<div class="entry unknown"><div class="times">10:00<br>10:30</div><div class="track"></div><div class="content"><div class="headline"><span class="title">想不起来</span><span class="duration">30分钟</span></div><div class="secondary">已交代</div></div></div>
+<div class="entry gap"><div class="times">10:30<br>11:00</div><div class="track"></div><div class="content"><div class="headline"><span class="title">尚未记录</span></div><div class="gapline"><span class="duration">30分钟</span><span class="fill">补记</span></div></div></div>
+<div class="entry walk"><div class="times">11:00<br>11:30</div><div class="track"></div><div class="content"><div class="headline"><span class="title">散步</span><span class="duration">30分钟</span></div><div class="tags"><span class="tag rhythm">恢复</span></div></div></div>
+<div class="entry gap"><div class="times">11:30<br>24:00</div><div class="track"></div><div class="content"><div class="headline"><span class="title">尚未记录</span></div><div class="gapline"><span class="duration">12小时30分</span><span class="fill">补记</span></div></div></div>
+</div><div class="sleep-summary"><span>完整睡眠 · 按醒来日期</span><span>›</span></div><div class="spacer"></div>
+</div><div class="bottom"><div class="nav active"><b>▦</b>回看</div><div class="create">＋ 记录一笔</div><div class="nav"><b>▤</b>复盘</div></div><div class="safe"></div>
+</template>
+<script>
+const page=document.querySelector('#page');for(const id of ['initial','complete','detail'])document.getElementById(id).append(page.content.cloneNode(true));
+document.querySelector('#complete .scroll').style.height='884px';
+document.querySelector('#detail').insertAdjacentHTML('beforeend',`<div class="overlay"></div><div class="sheet"><div class="sheethead">主睡眠<span class="touch">×</span></div><dl><dt>当日片段</dt><dd>10月2日 00:00–07:20</dd><dt>当日时长</dt><dd>7小时20分</dd></dl><hr><strong>完整睡眠</strong><dl><dt>入睡</dt><dd>约10月1日 23:40</dd><dt>醒来</dt><dd>10月2日 07:20</dd><dt>完整时长</dt><dd>约7小时40分</dd></dl><div class="edit">编辑完整记录</div><div class="delete">删除记录</div></div>`);
+</script>
+<article class="spec">
+<h2>1. 依据与视觉诊断</h2>
+<p>已实际打开用户提供的 concept-3-refined-v2.png、mixed-360-scale-1.0.png、android-finished.png，并阅读 direction-3-design.md。参考图的价值是紧凑日期、连贯轨道和阅读节奏；不能把其高分辨率画布直接当成 360 手机的排版比例。</p>
+<p>当前页面将日期模式、完整窗口、覆盖统计、图例、维护按钮、成功状态纵向累加（day_ledger_page.dart:359–410；day_ledger_overview.dart:30–94）。时间轴又叠加左右 padding、图标、等分标题与时长（day_ledger_timeline.dart:372–400），在 360 宽下标题文字可能仅约 75 px；详情和常驻操作行进一步放大行高（405–428）。问题在信息架构与宽度分配，而非颜色不够接近。</p>
+<p>领域依据：<a href="../../time-ledger-domain-model-v4-proposal.md">Source of Truth</a> §4–8、23–30；<a href="../domain/DERIVED_MODELS.md">DERIVED_MODELS</a> 的窗口、睡眠与近似传播；<a href="../domain/OPEN_QUESTIONS.md">OPEN_QUESTIONS</a> Q-003/004/008–014/021。当前问题表均已决定，本提案不作新增产品决定。原计划限制不重排时间轴的条款，由本次用户明确授权在本任务设计范围内重新评估；旧任务状态不作修改。</p>
+<h2>2. 固定样例与算术</h2>
+<p>设备时区 Asia/Shanghai；注入当前时间 2026-10-04 09:41；选定日期 2026-10-02（历史日），不显示“昨天”。自然日长 1440 分钟。除睡眠入睡端 approximate 外，以下端点均 exact。记录均为正式事实，草稿不参与。</p>
+<table><tr><th>源事实 / 派生区间</th><th>时间与内容</th><th>显示</th></tr>
+<tr><td>SleepSession / mainSleep</td><td>约10月1日23:40 → 10月2日07:20</td><td>当日 440 分钟；完整约460分钟。被裁掉的近似起点不传播到当日切片。</td></tr>
+<tr><td>Known</td><td>07:20–08:00 早餐，无目标、无解释</td><td>40分钟；不制造生活分类或恢复解释</td></tr>
+<tr><td>Known + Goal + annotation</td><td>08:00–10:00 设计首页；目标毕业设计；推进；接续点“先画补记弹层”</td><td>2小时；目标、推进在首层；接续点在详情</td></tr>
+<tr><td>Unknown</td><td>10:00–10:30，title 无值</td><td>想不起来 / 已交代 / 30分钟</td></tr>
+<tr><td>Gap</td><td>10:30–11:00</td><td>尚未记录 / 30分钟 / 补记</td></tr>
+<tr><td>Known + recovery</td><td>11:00–11:30 散步；用户标记恢复；无目标</td><td>30分钟；不按活动名称推断恢复</td></tr>
+<tr><td>Gap</td><td>11:30–次日00:00</td><td>12小时30分；左栏24:00仅为日末显示，完整日期在详情与辅助语义中提供</td></tr></table>
+<p>已交代 = 440 + 40 + 120 + 30 + 30 = 660 分钟 = 11小时；其中 Unknown 30分钟。Gap = 30 + 750 = 780 分钟 = 13小时。全天条各段依次占 440/40/120/30/30/30/750 ÷ 1440；不按阅读行高绘制时间比例。主样例覆盖统计无“约”，完整睡眠有“约”。</p>
+<h2>3. 布局与尺寸合同</h2>
+<table><tr><th>区域</th><th>360 × 800，文字缩放1.0</th><th>规则</th></tr>
+<tr><td>系统与顶栏</td><td>状态栏24；AppBar48；底部安全区24</td><td>系统 inset 以设备实际值为准。AppBar与底栏固定，中间整体滚动；不是只给时间轴一个极小滚动区。</td></tr>
+<tr><td>日期</td><td>y72–120，48高；日期19，年份12</td><td>自然日期为主；今天/昨天仅在确实对应时辅助呈现。点日期打开既有日期选择，保留手动输入和回到今天；模式说明仅在选择层显示。</td></tr>
+<tr><td>概览</td><td>y120–264，144高；数值28；左右16</td><td>两项统计、Unknown子集说明、12高全天条；不常驻完整图例。概览说明入口用覆盖信息区域内48×48的命中区，不依赖微小ⓘ本身。点击展开完整窗口、时区、图例和完整数值。</td></tr>
+<tr><td>时间轴</td><td>x16时间列54，轨道区24，正文x94–344共250；首条y264</td><td>取消重复内边距与活动图标列。标题17/24，时长14/24，次文13/22；时长按内容测量占宽，标题拿余量，间距8。轨道1.5，节点12；事实实线实心，Gap虚线空心。</td></tr>
+<tr><td>标准样例行</td><td>睡眠112、早餐64、目标88、Unknown80、Gap88、恢复88、末Gap88</td><td>这些是此样例的排版目标，不是实现时的强制高度。未知标题、长目标、大字时自然增长，不裁切领域内容。</td></tr>
+<tr><td>底栏</td><td>y704–776高72，安全区776–800；中央168×48</td><td>回看与复盘各64×56；中央是创建动作，不是目的地。滚动区精确终止于底栏上方，末尾留24空白。</td></tr>
+<tr><td>滚动</td><td>中部视窗632；内容884；最大偏移252</td><td>顶部初始显示睡眠、早餐、目标、Unknown、首段Gap；恢复从y696开始，首屏仅自然露出行顶。全内容图高1052，仅延展画布，不缩小字体。</td></tr></table>
+<p>沿用现有色值：背景 #0E1C27；表面 #172A3A；主/次文字 #F3F6FA / #B5C6D9；青色 #42E4DC，青色上深字 #073036；睡眠 #83A7FF；Unknown #B1BFD1；分隔 #2A3C4C。无渐变、无新增字体包。示意底栏符号实施时使用已有 Material 图标。</p>
+<h2>4. 信息层级与操作路径</h2>
+<table><tr><th>对象</th><th>默认首层</th><th>详情 / 编辑 / 删除</th></tr>
+<tr><td>普通事实</td><td>起止、标题、时长；有值才出现目标与节奏；不显示“已知”</td><td>点击整行打开只读底部详情面板，含完整标题、源日期与独立精度、目标及归档状态、节奏、备注、接续点及当前状态适用的原因/恢复细节。面板显式“编辑完整记录”“删除记录”，不是长按隐藏菜单。标题不截断；详情可滚动。</td></tr>
+<tr><td>Unknown</td><td>固定“想不起来”+“已交代”，有原title时另显示其文本，不丢失可见说明</td><td>同一详情路径，保留原有目标/解释/备注；允许更正为known，绝不作为待补Gap催促。</td></tr>
+<tr><td>睡眠</td><td>主睡眠/小睡、当日时长；跨日标记及完整时长</td><td>原始入睡/醒来与各自“约”、完整日期在详情，不用“约区间”污染准确端点。编辑始终传源ID。详情删除入口沿用既有睡眠编辑删除流程；如需进入原编辑页执行删除，不另造删除服务或跳过既有确认。</td></tr>
+<tr><td>Gap</td><td>起止、尚未记录、时长、64×48补记</td><td>整行及补记均直接进入原Gap草稿，保持建议区间可修改；标记未知仍经原表单正式保存。Gap没有详情编辑/删除，也不作为实体。</td></tr>
+<tr><td>完整睡眠汇总</td><td>列表末尾48高折叠入口“完整睡眠 · 按醒来日期”</td><td>展开原按醒来日期汇总，保留主睡眠/小睡分组、每段、合计及更正/删除。即使该日没有相交切片仍能访问，不能从时间轴切片重新推算。</td></tr>
+<tr><td>日期与维护</td><td>前后日、点日期、顶栏更多</td><td>日期选择层：日历/手动输入/今天，说明跟随或固定模式；更多：刷新账本、当日摘要、目标管理、时间分布说明。概览ⓘ与更多内说明打开同一窗口/图例内容。刷新保留显式可达，不依赖手势。</td></tr>
+<tr><td>底栏与草稿</td><td>回看 / ＋记录一笔 / 复盘</td><td>创建打开原活动/睡眠选择。草稿沿用newEntry/gap/edit原上下文恢复；复盘共享选日；返回保留既有阅读锚点。无新增草稿中心，无虚构“复盘已保存”卡片。</td></tr></table>
+<p>详情面板有48×48关闭目标，支持系统返回；关闭回原行原位置。点击整行的无障碍名称含事实、时段、时长及“查看详情”，有焦点态；不可要求仅凭颜色或长按发现。对长内容、较矮窗口使用可滚动面板，操作区不会被系统安全区遮住。HTML是静态可滚动视觉规格，按钮不连接业务；交互路径以本表为合同。</p>
+<h2>5. 关键状态与窄屏规则</h2>
+<ul>
+<li>正常成功：不占一行显示“日账本已读取”。首次加载显示局部加载状态；刷新时若保留旧视图须明确“正在更新”，不能把旧投影标为新日期数据。</li>
+<li>读取失败：概览上方紧凑错误区+48高“重试读取”；无有效数据时不显示虚构0值。若现有controller保留旧视图，明确“未更新”，不改变controller语义。</li>
+<li>删除：沿用原确认及完整事实删除语义。删除未提交失败与已提交但草稿清理/重读失败分开；后者必须保留“继续清理并刷新”。错误不能藏在已关闭的详情面板内，主页保留可见恢复区域；沿用busy互斥。</li>
+<li>首次睡眠确认、已有草稿恢复、主睡眠检查失败及重试保留原触发条件；仅在有真实状态时出现。草稿不进入概览或时间轴。保存、取消、系统返回、路由返回刷新均沿用原合同。</li>
+<li>今天：概览显示“截至 HH:mm”，额外占一行时允许首条下移；当前时刻以外是尚未发生，不画成Gap。历史日完整窗口在说明层。未来日显示“未来日期，暂无对账窗口”，不催补记，不新增未来事实展示政策。</li>
+<li>空数据：窗口非空时显示“此账本窗口尚无正式记录”及一个完整Gap、可补记；窗口为空则无Gap。完整睡眠缺失表达为“尚未记录主睡眠/小睡”，不是睡眠为0。</li>
+<li>320/412宽与1.5/2.0文字缩放：左右16，时间列继续按“约00:00”测量，轨道连续。优先给标题整行：横排剩余标题宽不足4个当前字号汉字时，时长换至下一行左对齐，不继续挤压。长标题完整换行；目标标签可换行；Gap补记保持48目标并必要时独立成行。</li>
+<li>统计文字放不下时自然换行或上下排列，不能用FittedBox缩字；不固守首条y264。日期大字时允许两行与增高。底栏中央目标至少48高，按缩放增高或图标/文字换行；滚动区重新扣除实际底栏和inset。</li>
+<li>端点“约”仅按原端点/投影精度显示；切片、Gap、汇总分别继承近似，不整页统一加“约”。自然日按真实instant与设备时区，保留夏令时重复刻度offset语义，24:00辅助语义说明为次日00:00。</li>
+</ul>
+<h2>6. 确认后预计修改文件</h2>
+<p>仅计划，第一阶段不修改以下文件。现有用户与其他agent工作按当前工作区增量保留。</p>
+<ul>
+<li><code>lib/features/ledger/presentation/day_ledger_page.dart</code>：整页布局、按需状态、详情接线和完整睡眠折叠。</li>
+<li><code>lib/features/ledger/presentation/day_ledger_timeline.dart</code>：主次层级、标题占宽、整行详情与Gap直接补记。</li>
+<li><code>lib/features/ledger/presentation/ledger_date_header.dart</code>、<code>day_ledger_overview.dart</code>、<code>day_ledger_time_bar.dart</code>、<code>day_ledger_date_dialog.dart</code>（同一presentation目录）：日期层级、统计、图例移层及日期选择中的今天入口；不重写时间条算法。</li>
+<li>可能新增同目录 <code>day_ledger_fact_details.dart</code>：只读事实详情展示；必要时新增概览说明组件，不引入通用框架。</li>
+<li><code>lib/app/navigation/ledger_shell.dart</code>、<code>lib/app/main_app.dart</code>：顶栏更多操作接线、底栏尺寸；不改变共享日期、草稿及路由合同。</li>
+<li>确认后同步本规格的决定状态与必要计划范围；现有UI-T完成状态不作为视觉认可证据。</li>
+</ul>
+<h2>7. 验证与验收分开</h2>
+<p><strong>设计阶段实际检查：</strong>三张来源图可读取；当前工作区已检查；代码证据已核对；样例分钟数、条宽、视口与滚动范围已核算。以本文件直接浏览器排版的图为精确尺寸稿；生成式氛围图不承担像素或触控验证。第一阶段未改Dart/测试，Dart格式、静态分析及Flutter测试为N/A，不声称通过。</p>
+<p><strong>工程验收（确认后执行）：</strong>格式化实际变更Dart并用 <code>dart format --output=none --set-exit-if-changed &lt;变更文件&gt;</code> 核验；<code>flutter analyze</code>；针对 <code>test/features/ledger/presentation/day_ledger_{page,timeline,timeline_layout,overview_layout,time_bar}_test.dart</code>（按实际文件名展开）及 <code>test/app/ui_t04_navigation_test.dart</code>、<code>day_ledger_editing_flow_test.dart</code>、<code>gap_recording_flow_test.dart</code>、<code>sleep_editing_flow_test.dart</code>、<code>sleep_first_open_flow_test.dart</code> 运行相关测试；新增有意义的详情可达性、源ID、更正/删除失败、焦点与48目标验证。按接线受影响范围覆盖草稿恢复、摘要/目标入口及复盘共享日期。最终列出真实执行命令与结果。</p>
+<p><strong>视觉验收（确认后执行）：</strong>真实主页使用本固定样例、设备时区、注入时钟；以360×800逻辑视口、1.0缩放截图，目标稿与Android实现并排。比较首条y、标题宽、行间节奏、全天条比例、轨道、底栏与上下滚动位置，并逐项列出剩余差异。设备系统inset有差异时单独标注，不拉伸截图伪装一致。另行验证320/412、1.5/2.0大字、长标题、今天/历史/未来、空数据、读取失败、详情长内容。以真实平台交互核验安全区、返回和触控。</p>
+<p class="note"><strong>阶段闸门：</strong>当前只交付本专用规格及可查看视觉稿。用户确认整页设计后才实施主页样板；工程测试通过不等于视觉认可。样板验收前不推广到其他页面、不推进后续UI-T。</p>
+</article></main></html>
