@@ -193,7 +193,10 @@ void main() {
     t.testTextInput.hide();
     await settle(t);
     await capture(t, 'V06');
-    await tap(t, '修改时间');
+    expect(find.text('保存到账本'), findsNothing);
+    expect(find.text('修改时间'), findsNothing);
+    expect(find.textContaining('11:00–11:15'), findsOneWidget);
+    await tap(t, '调整当前记录时间');
     await tap(t, '手动输入日期与时间');
     await t.ensureVisible(find.byKey(const ValueKey('time-end')));
     await t.enterText(

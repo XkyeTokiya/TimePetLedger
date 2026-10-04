@@ -628,8 +628,9 @@ void main() {
       await textTap(t, '确认');
       await textTap(t, '应用时间');
       await textTap(t, '保存更正');
-      expect(find.text('时间与已有记录冲突，请手动调整后再保存。'), findsOneWidget);
+      expect(find.textContaining('重叠区间为'), findsOneWidget);
       expect(await t.runAsync(f.snapshot), before);
+      await textTap(t, '调整当前记录时间');
       await textTap(t, '结束时间');
       await enter(t, 'time-dialog-input', '2026-10-01 11:00');
       await textTap(t, '确认');

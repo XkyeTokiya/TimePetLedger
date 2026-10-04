@@ -451,11 +451,11 @@ void main() {
         await support.textTap(t, '保存到账本');
         expect(find.textContaining('冲突记录：睡眠'), findsOneWidget);
         expect(find.text('标识：${support.id(20)}'), findsNothing);
-        await support.textTap(t, '记录标识');
+        await support.textTap(t, '查看冲突记录编号');
         expect(find.text('标识：${support.id(20)}'), findsOneWidget);
         await support.textTap(t, '关闭');
         await capture(t, 'failure-conflict');
-        await support.textTap(t, '修改冲突时间');
+        await support.textTap(t, '调整当前记录时间');
         expect(find.text('开始时间'), findsOneWidget);
         expect(model(t).time.startPrecision, TimePrecision.approximate);
 

@@ -622,12 +622,16 @@ class _RecordingFormState extends State<RecordingForm> {
                 ? '更正草稿已保留，原记录尚未改变。'
                 : '输入作为草稿保留，尚未计入账本。',
           ),
-        if (model.submitError != null)
+        if (model.submitError != null && model.conflicts.isEmpty)
           Text(
             model.submitError!,
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         for (final conflict in model.conflicts) ...[
+          Text(
+            '按当前填写的${model.time.startPrecision == TimePrecision.approximate || model.time.endPrecision == TimePrecision.approximate ? '估算' : ''}时间，${_overlap(conflict)}',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
           FutureBuilder<String>(
             key: ValueKey(conflict),
             future: conflictLabels.putIfAbsent(
@@ -642,7 +646,7 @@ class _RecordingFormState extends State<RecordingForm> {
             onPressed: () => showDialog<void>(
               context: context,
               builder: (context) => AlertDialog(
-                title: const Text('记录标识'),
+                title: const Text('冲突记录的技术编号'),
                 content: SelectableText('标识：${conflict.reference.id}'),
                 actions: [
                   TextButton(
@@ -652,22 +656,10 @@ class _RecordingFormState extends State<RecordingForm> {
                 ],
               ),
             ),
-            child: const Text('记录标识'),
-          ),
-          TextButton(
-            onPressed: model.editable
-                ? () async {
-                    setState(() => timeExpanded = true);
-                    await WidgetsBinding.instance.endOfFrame;
-                    if (mounted && timeKey.currentContext != null) {
-                      await Scrollable.ensureVisible(
-                        timeKey.currentContext!,
-                        alignment: .1,
-                      );
-                    }
-                  }
-                : null,
-            child: const Text('修改冲突时间'),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            child: const Text('查看冲突记录编号'),
           ),
         ],
         if (model.committed case final committed?) ...[
@@ -733,6 +725,42 @@ class _RecordingFormState extends State<RecordingForm> {
     return '${approximate ? '约' : ''}${minutes >= 60 ? '${minutes ~/ 60}小时' : ''}${minutes % 60 != 0 || minutes == 0 ? '${minutes % 60}分钟' : ''}';
   }
 
+  String _overlap(LedgerFactInterval conflict) {
+    final start = model.time.startedAt! > conflict.startedAt
+        ? model.time.startedAt!
+        : conflict.startedAt;
+    final end = model.time.endedAt! < conflict.endedAt
+        ? model.time.endedAt!
+        : conflict.endedAt;
+    final approximate =
+        model.time.startPrecision == TimePrecision.approximate ||
+        model.time.endPrecision == TimePrecision.approximate;
+    return '重叠区间为${_shortTime(start)}–${_shortTime(end)}${approximate ? '（估算边界）' : ''}。';
+  }
+
+  Future<void> _editCurrentTime() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final result = await Navigator.of(context).push<EditorTimes>(
+      MaterialPageRoute(
+        builder: (_) => EditorTimePage(
+          date: widget.context.date,
+          initial: (
+            start: formatSleepTime(model.time.startedAt),
+            end: formatSleepTime(model.time.endedAt),
+            startPrecision: model.time.startPrecision,
+            endPrecision: model.time.endPrecision,
+          ),
+        ),
+      ),
+    );
+    if (!mounted || result == null) return;
+    model.setTime(
+      start: parseSleepTime(result.start),
+      end: parseSleepTime(result.end),
+    );
+    model.setPrecision(start: result.startPrecision, end: result.endPrecision);
+  }
+
   Widget _timeSection(BuildContext context) {
     final error = (showErrors || timeVisited) ? model.timeError : null;
     final expanded = timeExpanded || model.timeError != null;
@@ -758,7 +786,9 @@ class _RecordingFormState extends State<RecordingForm> {
                 ],
               ),
             ),
-            if (model.time.startedAt != null && model.time.endedAt != null)
+            if (model.conflicts.isEmpty &&
+                model.time.startedAt != null &&
+                model.time.endedAt != null)
               TextButton.icon(
                 key: const ValueKey('edit-recording-time'),
                 onPressed: model.editable
@@ -1068,7 +1098,12 @@ class _RecordingFormState extends State<RecordingForm> {
     ],
   );
 
-  Widget _saveAction() => model.committed == null
+  Widget _saveAction() => model.conflicts.isNotEmpty
+      ? FilledButton(
+          onPressed: model.editable ? _editCurrentTime : null,
+          child: const Text('调整当前记录时间'),
+        )
+      : model.committed == null
       ? FilledButton(
           key: const ValueKey('recording-submit'),
           style: FilledButton.styleFrom(

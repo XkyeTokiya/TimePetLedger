@@ -347,9 +347,9 @@ void main() {
     await enterTime(tester, '开始时间', '2026-09-28 10:00');
     await enterTime(tester, '结束时间', '2026-09-28 11:00');
     await tap(tester, '保存到账本');
-    expect(find.text('时间与已有记录冲突，请手动调整后再保存。'), findsOneWidget);
+    expect(find.textContaining('重叠区间为'), findsOneWidget);
     expect(find.textContaining(sleepId), findsNothing);
-    await tester.tap(find.text('记录标识'));
+    await tester.tap(find.text('查看冲突记录编号'));
     await tester.pumpAndSettle();
     expect(find.textContaining(sleepId), findsOneWidget);
     await tester.tap(find.text('关闭'));
