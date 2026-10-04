@@ -1,3 +1,5 @@
+import '../support/root_navigation.dart';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,14 +52,14 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('打开基础摘要'));
+      await tapRootAction(tester, '打开基础摘要');
       await tester.pumpAndSettle();
       expect(find.text('基础摘要'), findsOneWidget);
       expect(find.text('此账本窗口及醒来日期尚无正式记录。'), findsOneWidget);
       expect(find.text('日期：2026-09-30'), findsOneWidget);
       expect(find.text('已交代：0 分钟'), findsOneWidget);
       expect(find.text('其中未知：0 分钟'), findsOneWidget);
-      expect(find.text('尚未记录：720 分钟'), findsOneWidget);
+      expect(find.text('尚未记录：12 小时'), findsOneWidget);
       expect(find.text('只在草稿'), findsNothing);
       clock = DateTime(2026, 10, 1, 0, 1);
       await tester.tap(find.text('刷新摘要'));

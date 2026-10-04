@@ -1,3 +1,5 @@
+import '../support/ledger_date_selection.dart';
+
 import 'dart:io';
 
 import 'package:drift/drift.dart'
@@ -23,9 +25,8 @@ import 'package:time_pet_ledger/features/ledger/presentation/goal_rhythm_summary
 import 'package:time_pet_ledger/features/ledger/presentation/sleep_summary_view.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/summary_formatting.dart';
 
-import '../features/ledger/presentation/recording_rhythm_test.dart'
-    show enter, stateTap;
-import '../features/ledger/presentation/sleep_form_test.dart' as sleep;
+import '../support/app_recording_navigation.dart' show enter, stateTap;
+import '../support/app_sleep_navigation.dart' as sleep;
 import 'goal_rhythm_closure_test.dart'
     show ClosureApp, back, createGoal, chooseGoal, goalAction;
 import 'recording_goal_flow_test.dart' show time, textTap, tap, disposeApp;
@@ -122,9 +123,7 @@ class SummaryApp extends ClosureApp {
 }
 
 Future<void> homeDate(WidgetTester t, String date) async {
-  final input = find.widgetWithText(TextField, '查看日期');
-  await t.ensureVisible(input);
-  await t.enterText(input, date);
+  await selectLedgerDate(t, date);
   await t.pumpAndSettle();
 }
 
@@ -139,7 +138,7 @@ Future<String> ordinary(
   bool draft = false,
 }) async {
   final before = (await t.runAsync(app.snapshot))!['time_blocks']!;
-  await textTap(t, '补一笔');
+  await textTap(t, '记录活动');
   if (!unknown) await enter(t, 'activity', '活动');
   await textTap(t, unknown ? '想不起来' : '记得做了什么');
   await time(t, '开始时间', from);
@@ -148,7 +147,7 @@ Future<String> ordinary(
   await textTap(t, '结束准确');
   if (goal != null) await chooseGoal(t, goal);
   if (state != null) await stateTap(t, state);
-  await textTap(t, draft ? '保留草稿并返回' : '确认并保存到账本');
+  await textTap(t, draft ? '保留草稿并返回' : '保存到账本');
   if (draft) return '';
   final after = (await t.runAsync(app.snapshot))!['time_blocks']!;
   return after.singleWhere((r) => !before.any((b) => b['id'] == r['id']))['id']!
@@ -488,7 +487,7 @@ void main() {
         stuck: 30,
         recovery: 30,
       );
-      await textTap(t, '补一笔');
+      await textTap(t, '记录活动');
       await textTap(t, '放弃草稿');
       await textTap(t, '记录睡眠');
       await fill(t, '2026-10-01 04:00', '2026-10-01 05:00', nap: true);
@@ -647,16 +646,16 @@ void main() {
       final ledgerPage = t.widget<DayLedgerPage>(find.byType(DayLedgerPage));
       await back(t);
       app.reads.arm = true;
-      await textTap(t, '补一笔');
+      await textTap(t, '记录活动');
       await enter(t, 'activity', '刚才');
       await textTap(t, '记得做了什么');
       await time(t, '开始时间', '2026-10-02 10:00');
       await time(t, '结束时间', '2026-10-02 11:00');
       await textTap(t, '开始准确');
       await textTap(t, '结束准确');
-      await textTap(t, '确认并保存到账本');
+      await textTap(t, '保存到账本');
       expect(find.textContaining('已保存'), findsWidgets);
-      expect(find.text('确认并保存到账本'), findsNothing);
+      expect(find.text('保存到账本'), findsNothing);
       final committed = (await t.runAsync(app.snapshot))!;
       final writes = app.writes.count;
       await textTap(t, '继续清理并刷新');

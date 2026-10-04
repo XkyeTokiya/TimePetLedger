@@ -1,3 +1,6 @@
+import '../support/ledger_date_selection.dart';
+import '../support/root_navigation.dart';
+
 import 'dart:io';
 
 import 'package:drift/drift.dart'
@@ -291,7 +294,11 @@ Future<void> tap(WidgetTester t, Finder finder) async {
   await settleNative(t);
 }
 
-Future<void> text(WidgetTester t, String value) => tap(t, find.text(value));
+Future<void> text(WidgetTester t, String value) async {
+  if (await tapRootAction(t, value)) return;
+  await tap(t, find.text(value));
+}
+
 Future<void> enter(WidgetTester t, String key, String value) async {
   final finder = find.byKey(ValueKey(key));
   await show(t, finder);
@@ -300,14 +307,12 @@ Future<void> enter(WidgetTester t, String key, String value) async {
 }
 
 Future<void> homeDate(WidgetTester t, String value) async {
-  final finder = find.widgetWithText(TextField, '查看日期');
-  await show(t, finder);
-  await t.enterText(finder, value);
+  await selectLedgerDate(t, value);
   await settleNative(t);
 }
 
 Future<void> back(WidgetTester t) async {
-  await t.pageBack();
+  await backFromPage(t);
   await settleNative(t);
 }
 
@@ -348,7 +353,7 @@ void main() {
       await app.mount(t);
       await source(t);
       expect(find.text('其中未知：30 分钟'), findsOneWidget);
-      expect(find.text('尚未记录：930 分钟'), findsOneWidget);
+      expect(find.text('尚未记录：15 小时 30 分钟'), findsOneWidget);
       expect(input(t, 'review-step'), '');
       final rawSummary = '  概述\n\n内部   空格😀  ';
       final rawReflection = '  用户反思\n保留段落  ';

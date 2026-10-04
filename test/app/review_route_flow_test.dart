@@ -1,4 +1,8 @@
+import '../support/root_navigation.dart';
+
 import 'dart:io';
+
+import '../support/ledger_date_selection.dart';
 
 import 'package:drift/drift.dart'
     show ApplyInterceptor, QueryExecutor, QueryInterceptor;
@@ -172,11 +176,16 @@ class RouteApp {
 }
 
 Future<void> back(WidgetTester t) async {
-  await t.pageBack();
+  await backFromPage(t);
   await settleNative(t);
 }
 
 Future<void> date(WidgetTester t, String label, String value) async {
+  if (label == '账本日期' || label == '查看日期') {
+    await selectLedgerDate(t, value);
+    await settleNative(t);
+    return;
+  }
   final input = find.widgetWithText(TextField, label);
   await t.ensureVisible(input);
   await t.enterText(input, value);
@@ -210,7 +219,7 @@ void main() {
         reason: 'A continuation hint is not an automatic first step.',
       );
       expect(find.text('下一步目标：未关联（可选）'), findsOneWidget);
-      expect(find.text('尚未记录：1380 分钟'), findsOneWidget);
+      expect(find.text('尚未记录：23 小时'), findsOneWidget);
       await enter(t, 'review-step', '仅由用户填写的下一步');
       await tapText(t, '保存复盘');
       expect(find.byType(ReviewForm), findsNothing);
@@ -224,7 +233,7 @@ void main() {
       expect(saved['tomorrow_first_step_goal_id'], isNull);
       await back(t);
       expect(find.byType(DaySummaryPage), findsOneWidget);
-      expect(find.text('已交代：60 分钟'), findsOneWidget);
+      expect(find.text('已交代：1 小时'), findsOneWidget);
       await tapText(t, '打开此日复盘');
       expect(find.text('已有复盘'), findsOneWidget);
       expect(find.text('填写复盘'), findsNothing);
@@ -252,7 +261,8 @@ void main() {
         saved['id'],
       );
       await back(t);
-      expect(find.text('日期：2025-12-31'), findsOneWidget);
+      expect(find.text('日期：2026-01-01'), findsOneWidget);
+      await date(t, '账本日期', '2025-12-31');
       await tapText(t, '打开此日复盘');
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
       await back(t);
@@ -305,7 +315,7 @@ void main() {
       expect(find.text('第一步目标：原目标（已归档）'), findsOneWidget);
       expect(find.text('明天第一步'), findsOneWidget);
       expect(find.text('已存明天第一步'), findsOneWidget);
-      expect(find.text('已交代：60 分钟'), findsOneWidget);
+      expect(find.text('已交代：1 小时'), findsOneWidget);
       await tapText(t, '编辑复盘草稿');
       expect(input(t, 'review-step'), '已存明天第一步');
       await tapText(t, '保留草稿并返回');
@@ -331,8 +341,8 @@ void main() {
       );
       await back(t);
       expect(find.byType(ReviewContextPage), findsOneWidget);
-      expect(find.text('已交代：120 分钟'), findsOneWidget);
-      expect(find.text('尚未记录：1320 分钟'), findsOneWidget);
+      expect(find.text('已交代：2 小时'), findsOneWidget);
+      expect(find.text('尚未记录：22 小时'), findsOneWidget);
       expect(find.text('第一步目标：当前名称（已归档）'), findsOneWidget);
       expect(find.text('已存概述'), findsOneWidget);
       expect(find.text('已存反思\n保留段落'), findsOneWidget);
@@ -343,9 +353,9 @@ void main() {
       await back(t);
       await date(t, '查看日期', '2025-12-31');
       await tapText(t, '打开基础摘要');
-      expect(find.text('已交代：120 分钟'), findsOneWidget);
+      expect(find.text('已交代：2 小时'), findsOneWidget);
       await tapText(t, '打开此日复盘');
-      expect(find.text('已交代：120 分钟'), findsOneWidget);
+      expect(find.text('已交代：2 小时'), findsOneWidget);
       expect(find.text('已存反思\n保留段落'), findsOneWidget);
       expect(await t.runAsync(app.reviewRows), original);
       // A second real SQLite connection reads exactly the persisted review,
@@ -379,12 +389,21 @@ void main() {
         await tapText(t, summary ? '打开基础摘要' : '打开日账本');
         final label = summary ? '摘要日期 YYYY-MM-DD' : '账本日期';
         await date(t, label, '2025-02-30');
-        expect(
-          t
-              .widget<FilledButton>(find.widgetWithText(FilledButton, '打开此日复盘'))
-              .onPressed,
-          isNull,
-        );
+        if (summary) {
+          expect(
+            t
+                .widget<FilledButton>(
+                  find.widgetWithText(FilledButton, '打开此日复盘'),
+                )
+                .onPressed,
+            isNull,
+          );
+        } else {
+          expect(find.text('请输入有效日期 YYYY-MM-DD。'), findsOneWidget);
+          expect(find.byType(ReviewContextPage), findsNothing);
+          await tapText(t, '取消');
+          expect(find.text('日期：2026-10-02'), findsOneWidget);
+        }
         await tapText(t, '今天');
         app.reads.failFacts = true;
         await tapText(t, summary ? '刷新摘要' : '刷新账本');
@@ -394,16 +413,21 @@ void main() {
         );
         app.reads.failFacts = false;
         app.clock = DateTime(2026, 10, 3, 0, 5);
-        final open = t
-            .widget<FilledButton>(find.widgetWithText(FilledButton, '打开此日复盘'))
-            .onPressed!;
+        await date(t, label, '2026-10-01');
+        await date(t, label, '2026-10-02');
+        final open = summary
+            ? t
+                  .widget<FilledButton>(
+                    find.widgetWithText(FilledButton, '打开此日复盘'),
+                  )
+                  .onPressed!
+            : t
+                  .widget<TextButton>(find.byKey(const ValueKey('root-复盘')))
+                  .onPressed!;
         open();
         open();
         await settleNative(t);
-        expect(
-          find.byType(ReviewContextPage, skipOffstage: false),
-          findsOneWidget,
-        );
+        expect(find.byType(ReviewContextPage), findsOneWidget);
         expect(find.text('当天事实上下文：2026-10-02'), findsOneWidget);
         await tapText(t, '填写复盘');
         expect(input(t, 'review-date'), '2026-10-02');
@@ -418,7 +442,8 @@ void main() {
           '当前所选日的用户行动',
         );
         await back(t);
-        expect(find.text('日期：2026-10-03'), findsOneWidget);
+        expect(find.text('日期：2026-10-02'), findsOneWidget);
+        await tapText(t, '今天');
         await tapText(t, '打开此日复盘');
         expect(find.text('当天事实上下文：2026-10-03'), findsOneWidget);
         expect(find.text('这一天尚无复盘。'), findsOneWidget);

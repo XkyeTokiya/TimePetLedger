@@ -1,3 +1,6 @@
+import '../support/ledger_date_selection.dart';
+import '../support/root_navigation.dart';
+
 import 'dart:async';
 
 import 'package:drift/drift.dart' show ApplyInterceptor;
@@ -27,6 +30,9 @@ const goalId = '00000000-0000-4000-8000-000000000001';
 const blockId = '00000000-0000-4000-8000-000000000002';
 
 Future<void> tapText(WidgetTester t, String text) async {
+  if (await tapRootAction(t, text)) {
+    return;
+  }
   final finder = find.text(text);
   await t.ensureVisible(finder);
   await t.tap(finder);
@@ -87,7 +93,7 @@ void main() {
       trace.failTable = null;
       await tapText(t, '重试读取');
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
-      await t.enterText(find.byType(TextField), '2025-12-31');
+      await selectLedgerDate(t, '2025-12-31');
       await t.pumpAndSettle();
       expect(find.text('已有复盘'), findsOneWidget);
       expect(find.text('已存复盘日期：2025-12-31'), findsOneWidget);
@@ -111,7 +117,7 @@ void main() {
         );
       });
       await tapText(t, '刷新复盘上下文');
-      expect(find.text('已交代：60 分钟'), findsOneWidget);
+      expect(find.text('已交代：1 小时'), findsOneWidget);
       expect(find.text('第一步目标：历史新名字（已归档）'), findsOneWidget);
       expect(find.text('原概述'), findsOneWidget);
       expect(find.text('原反思\n保留段落'), findsOneWidget);
@@ -121,10 +127,14 @@ void main() {
         ))!.single.data,
         rawBefore,
       );
-      await t.enterText(find.byType(TextField), '2025-02-30');
+      await openManualLedgerDate(t);
+      await t.enterText(find.widgetWithText(TextField, '账本日期'), '2025-02-30');
+      await t.tap(find.text('确认日期'));
+      await t.pumpAndSettle();
       await t.pumpAndSettle();
       expect(find.text('请输入有效日期 YYYY-MM-DD。'), findsOneWidget);
-      expect(find.text('已有复盘'), findsNothing);
+      expect(find.text('已有复盘'), findsOneWidget);
+      await tapText(t, '取消');
       await tapText(t, '今天');
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
       await t.pumpWidget(const SizedBox.shrink());
@@ -156,7 +166,7 @@ void main() {
         ),
       );
       await t.pump();
-      await t.enterText(find.byType(TextField), '2025-12-31');
+      await selectLedgerDate(t, '2025-12-31');
       await t.pump();
       requests[1].response.complete(
         contextFor(requests[1].date, existing: true),
@@ -168,9 +178,9 @@ void main() {
       expect(find.text('下一自然日：2026-01-01'), findsOneWidget);
       expect(find.text('未填写概述'), findsOneWidget);
       expect(find.text('未填写反思'), findsOneWidget);
-      await t.enterText(find.byType(TextField), '2024-02-29');
+      await selectLedgerDate(t, '2024-02-29');
       await t.pump();
-      await t.enterText(find.byType(TextField), '2024-03-01');
+      await selectLedgerDate(t, '2024-03-01');
       await t.pump();
       requests[3].response.complete(contextFor(requests[3].date));
       await t.pumpAndSettle();
@@ -178,6 +188,7 @@ void main() {
       await t.pumpAndSettle();
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
       expect(find.text('复盘上下文读取失败，请重试。'), findsNothing);
+      await t.ensureVisible(find.text('刷新复盘上下文'));
       await t.tap(find.text('刷新复盘上下文'));
       await t.pump();
       requests[4].response.completeError(StateError('current failure'));
@@ -188,6 +199,11 @@ void main() {
       requests[5].response.complete(
         contextFor(requests[5].date, existing: true),
       );
+      await t.pumpAndSettle();
+      t
+          .state<ScrollableState>(find.byType(Scrollable).first)
+          .position
+          .jumpTo(0);
       await t.pumpAndSettle();
       expect(find.text('已存复盘日期：2024-03-01'), findsOneWidget);
       expect(find.text('下一自然日：2024-03-02'), findsOneWidget);

@@ -1,3 +1,5 @@
+import '../support/root_navigation.dart';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,8 +32,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(await tester.runAsync(DriftGoalRepository(db).listActive), isEmpty);
     expect(find.text('补一笔'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('root-create')));
+    await tester.pumpAndSettle();
     expect(find.text('记录睡眠'), findsOneWidget);
-    await tester.tap(find.text('打开目标'));
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+    await tapRootAction(tester, '打开目标');
     await tester.pumpAndSettle();
     expect(find.text('尚未创建目标。'), findsOneWidget);
     await tester.enterText(find.byKey(const ValueKey('goal-name')), '  本机目标  ');
@@ -41,9 +47,9 @@ void main() {
     expect(goals.single.name, '本机目标');
     expect(goals.single.createdAt, clock.millisecondsSinceEpoch);
     expect(find.byKey(ValueKey(goals.single.id)), findsOneWidget);
-    await tester.pageBack();
+    await backFromPage(tester);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('打开目标'));
+    await tapRootAction(tester, '打开目标');
     await tester.pumpAndSettle();
     expect(find.text('本机目标'), findsOneWidget);
     expect(find.text('目标已保存。'), findsNothing);
@@ -75,7 +81,7 @@ void main() {
     await tester.tap(find.text('恢复目标'));
     await tester.pumpAndSettle();
     expect(find.text('暂无已归档目标。'), findsOneWidget);
-    await tester.pageBack();
+    await backFromPage(tester);
     await tester.pumpAndSettle();
     expect(find.text('目标新名'), findsOneWidget);
     final restored = (await tester.runAsync(

@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_draft_store.dart';
 
-import '../features/ledger/presentation/sleep_form_test.dart'
-    show enter, tapText;
+import '../support/app_sleep_navigation.dart' show enter, tapText;
 import 'sleep_recording_flow_test.dart'
     show setup, stop, fill, editSleep, date, newContext;
 

@@ -4,6 +4,7 @@ import '../../../core/time/civil_date.dart';
 import '../application/day_ledger_loader.dart';
 import '../domain/projection/derived_duration.dart';
 import 'day_ledger_controller.dart';
+import 'day_date_selection.dart';
 import 'recording_form.dart';
 import 'summary_formatting.dart';
 import 'sleep_summary_view.dart';
@@ -18,9 +19,11 @@ class DaySummaryPage extends StatefulWidget {
     required this.dateOfInstant,
     required this.routeObserver,
     this.initialDate,
+    this.selection,
     this.reviewEntry,
   });
 
+  final DayDateSelection? selection;
   final DayLedgerLoader loader;
   final int Function() now;
   final CivilDate Function(int) dateOfInstant;
@@ -38,7 +41,7 @@ class _DaySummaryPageState extends State<DaySummaryPage>
     loader: widget.loader,
     now: widget.now,
     dateOfInstant: widget.dateOfInstant,
-    selectedDate: widget.initialDate,
+    selectedDate: widget.selection?.date ?? widget.initialDate,
   );
   final dateText = TextEditingController();
   bool invalidDate = false;
@@ -57,6 +60,9 @@ class _DaySummaryPageState extends State<DaySummaryPage>
 
   void _refresh() {
     if (invalidDate) return;
+    if (widget.selection case final selection?) {
+      controller.selectedDate = selection.date;
+    }
     controller.refresh();
     _syncDate();
   }
@@ -65,7 +71,16 @@ class _DaySummaryPageState extends State<DaySummaryPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.selection?.addListener(_refresh);
     _refresh();
+  }
+
+  void _select(CivilDate? date) {
+    if (widget.selection case final selection?) {
+      selection.select(date);
+    } else {
+      controller.select(date);
+    }
   }
 
   @override
@@ -111,6 +126,7 @@ class _DaySummaryPageState extends State<DaySummaryPage>
   void dispose() {
     widget.routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
+    widget.selection?.removeListener(_refresh);
     controller.dispose();
     dateText.dispose();
     super.dispose();
@@ -136,7 +152,7 @@ class _DaySummaryPageState extends State<DaySummaryPage>
               if (date == null) {
                 controller.invalidate();
               } else {
-                controller.select(date);
+                _select(date);
               }
             },
           ),
@@ -146,7 +162,7 @@ class _DaySummaryPageState extends State<DaySummaryPage>
               TextButton(
                 onPressed: () {
                   setState(() => invalidDate = false);
-                  controller.select(null);
+                  _select(null);
                   _syncDate();
                 },
                 child: const Text('今天'),

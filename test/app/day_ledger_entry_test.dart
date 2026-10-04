@@ -1,3 +1,5 @@
+import '../support/root_navigation.dart';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,7 +52,7 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('打开日账本'));
+      await tapRootAction(tester, '打开日账本');
       await tester.pumpAndSettle();
       expect(find.text('日账本'), findsOneWidget);
       expect(find.text('此账本窗口尚无正式记录。'), findsOneWidget);
