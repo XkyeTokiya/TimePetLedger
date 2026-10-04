@@ -229,8 +229,7 @@ String _kind(LedgerSegment segment) => switch (segment) {
         ? '想不起来，已交代'
         : '活动',
 };
-String _precisionTime(int instant, TimePrecision precision) =>
-    '${precision == TimePrecision.approximate ? '约' : ''}${_clock(instant)}';
+String _precisionTime(int instant, TimePrecision precision) => _clock(instant);
 
 class _Legend extends StatelessWidget {
   const _Legend(this.label, this.color, {this.gap = false});

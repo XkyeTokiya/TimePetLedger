@@ -13,8 +13,7 @@ class SleepSummaryView extends StatelessWidget {
   final SleepSummary summary;
   final ValueChanged<SleepSession>? onEdit;
 
-  String _boundary(int time, TimePrecision precision) =>
-      '${precision == TimePrecision.approximate ? '约' : ''}${formatSleepTime(time)}';
+  String _boundary(int time, TimePrecision precision) => formatSleepTime(time);
 
   @override
   Widget build(BuildContext context) => Column(

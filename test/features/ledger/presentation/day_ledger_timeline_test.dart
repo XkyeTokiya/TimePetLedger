@@ -197,7 +197,7 @@ void main() {
       expect((facts[2] as TimeBlockSegment).source, same(unknown));
       expect(
         subtitle(tester, find.byType(LedgerGapTimelineTile).at(2)),
-        '约${formatRecordingTime(start + 10 * hour)} → ${formatRecordingTime(start + 11 * hour)}\n约1小时',
+        '${formatRecordingTime(start + 10 * hour)} → ${formatRecordingTime(start + 11 * hour)}\n1小时',
       );
       expect(unknown.endedAt, start + 10 * hour);
       expect(unknown.endPrecision, TimePrecision.approximate);
@@ -247,7 +247,7 @@ void main() {
         find.text('醒来 ${formatRecordingTime(start + 7 * hour)}'),
         findsNothing,
       );
-      expect(find.text('完整约8小时'), findsOneWidget);
+      expect(find.text('完整8小时'), findsOneWidget);
       expect(main.startedAt, start - hour);
       expect(main.startPrecision, TimePrecision.approximate);
       expect(activity.endedAt, next + hour);
@@ -285,7 +285,7 @@ void main() {
       await show(tester, view);
       expect(
         subtitle(tester, fact(view, 0)),
-        '约${formatRecordingTime(start)} → ${formatRecordingTime(start + hour)}\n约1小时',
+        '${formatRecordingTime(start)} → ${formatRecordingTime(start + hour)}\n1小时',
       );
       expect(
         subtitle(tester, find.byType(LedgerGapTimelineTile)),
@@ -305,7 +305,7 @@ void main() {
       await show(tester, equalEnd);
       expect(
         subtitle(tester, fact(equalEnd, 0)),
-        '${formatRecordingTime(start)} → 约${formatRecordingTime(start + 2 * hour)}\n约2小时',
+        '${formatRecordingTime(start)} → ${formatRecordingTime(start + 2 * hour)}\n2小时',
       );
       expect(find.byType(LedgerGapTimelineTile), findsNothing);
     },
@@ -357,10 +357,10 @@ void main() {
       );
       await show(tester, view);
       expect(find.text('已交代'), findsOneWidget);
-      expect(subtitle(tester, fact(view, 0)), endsWith('\n约少于1分钟'));
+      expect(subtitle(tester, fact(view, 0)), endsWith('\n少于1分钟'));
       expect(
         subtitle(tester, find.byType(LedgerGapTimelineTile)),
-        endsWith('\n约少于1分钟'),
+        endsWith('\n少于1分钟'),
       );
       expect(find.textContaining('0 分钟'), findsNothing);
       final exact = project(

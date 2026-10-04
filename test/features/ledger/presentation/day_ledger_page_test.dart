@@ -178,7 +178,7 @@ void main() {
       await tester.pump();
       requests[1].complete(emptyFacts());
       await tester.pump();
-      expect(find.text('此账本窗口尚无正式记录。'), findsOneWidget);
+      expect(find.text('此账本窗口尚无正式记录。'), findsNothing);
       await selectLedgerDate(tester, '2026-09-28');
       await tester.pump();
       await selectLedgerDate(tester, '2026-10-01');

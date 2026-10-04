@@ -424,8 +424,6 @@ class DayLedgerPageState extends State<DayLedgerPage>
             const Text('账本读取失败，请重试。'),
             TextButton(onPressed: _refresh, child: const Text('重试读取')),
           ],
-          if (controller.status == DayLedgerStatus.empty)
-            const Text('此账本窗口尚无正式记录。'),
           if (controller.view != null) ...[
             DayLedgerTimeline(
               onDetailsVisibilityChanged: (visible) {
@@ -439,7 +437,9 @@ class DayLedgerPageState extends State<DayLedgerPage>
                   : _deleteTimeBlock,
               onFillGap: widget.gapEntry == null || busy ? null : _openGap,
             ),
-            if (widget.completeSleep != null) ...[
+            if (widget.completeSleep != null &&
+                (controller.view!.sleepSummary.mainSleep.records.isNotEmpty ||
+                    controller.view!.sleepSummary.nap.records.isNotEmpty)) ...[
               ExpansionTile(
                 title: const Text('完整睡眠 · 按醒来日期'),
                 tilePadding: EdgeInsets.zero,

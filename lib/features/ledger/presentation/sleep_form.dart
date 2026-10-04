@@ -258,11 +258,12 @@ class _SleepFormState extends State<SleepForm> {
                           '${isStart ? '入睡' : '醒来'}${parseSleepTime((isStart ? start : end).text) == null ? '' : ' · ${(isStart ? start : end).text.split(' ').first}'}',
                         ),
                         subtitle: Text(
-                          '${(isStart ? model.startPrecision : model.endPrecision) == TimePrecision.approximate ? '约 ' : ''}${(isStart ? start : end).text.isEmpty
+                          (isStart ? start : end).text.isEmpty
                               ? '选择${isStart ? '入睡' : '醒来'}时间'
-                              : parseSleepTime((isStart ? start : end).text) != null
+                              : parseSleepTime((isStart ? start : end).text) !=
+                                    null
                               ? (isStart ? start : end).text.split(' ').last
-                              : (isStart ? start : end).text}',
+                              : (isStart ? start : end).text,
                           style: Theme.of(context).textTheme.headlineMedium
                               ?.copyWith(
                                 fontSize: 32,

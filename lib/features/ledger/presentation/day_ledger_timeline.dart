@@ -17,7 +17,7 @@ import 'day_ledger_fact_details.dart';
 import 'recording_rhythm_input.dart' show rhythmInputLabel;
 
 String _boundary(int instant, TimePrecision precision) =>
-    '${precision == TimePrecision.approximate ? '约' : ''}${formatRecordingTime(instant)}';
+    formatRecordingTime(instant);
 
 String _compactDuration(DerivedDuration value) {
   final text = formatDerivedDuration(value).replaceAll(' ', '');
@@ -152,9 +152,7 @@ class LedgerFactTimelineTile extends StatelessWidget {
           segment: segment,
           goal: goal,
           canEdit: onEdit != null,
-          canDelete:
-              onDelete != null ||
-              (segment is SleepSessionSegment && onEdit != null),
+          canDelete: onDelete != null && segment is! SleepSessionSegment,
         );
         if (!context.mounted) return;
         onDetailsVisibilityChanged?.call(false);
@@ -176,14 +174,16 @@ class LedgerFactTimelineTile extends StatelessWidget {
           if (source.knowledgeState == BlockKnowledgeState.unknown &&
               source.title != null)
             Text(source.title!),
-        if (segment case SleepSessionSegment(:final source)) ...[
-          Text(
-            '当日时长${source.startedAt != segment.startedAt || source.endedAt != segment.endedAt ? ' · 跨日睡眠' : ''}',
-          ),
-          Text(
-            '完整${_compactDuration(DerivedDuration(milliseconds: source.endedAt - source.startedAt, hasApproximation: source.startPrecision == TimePrecision.approximate || source.endPrecision == TimePrecision.approximate))}',
-          ),
-        ],
+        if (segment case SleepSessionSegment(:final source))
+          if (source.startedAt != segment.startedAt ||
+              source.endedAt != segment.endedAt) ...[
+            Text(
+              '当日时长${source.startedAt != segment.startedAt || source.endedAt != segment.endedAt ? ' · 跨日睡眠' : ''}',
+            ),
+            Text(
+              '完整${_compactDuration(DerivedDuration(milliseconds: source.endedAt - source.startedAt, hasApproximation: source.startPrecision == TimePrecision.approximate || source.endPrecision == TimePrecision.approximate))}',
+            ),
+          ],
         if (status != null || goal != null || annotation != null)
           Wrap(
             spacing: 6,
@@ -307,7 +307,7 @@ class _TimelineRow extends StatelessWidget {
     // Measure with the inherited font and scaler so large text never clips.
     final measure = TextPainter(
       text: TextSpan(
-        text: '约00:00',
+        text: '00:00',
         style: DefaultTextStyle.of(context).style.merge(timeStyle),
       ),
       textScaler: scaler,
@@ -373,8 +373,9 @@ class _TimelineRow extends StatelessWidget {
                               (endedAt, endPrecision),
                             ])
                               Text(
-                                '${boundary.$2 == TimePrecision.approximate ? '约' : ''}'
-                                '${formatRecordingTime(boundary.$1).split(' ').last}',
+                                formatRecordingTime(boundary.$1)
+                                    .split(' ')
+                                    .last,
                                 style: timeStyle,
                               ),
                           ],

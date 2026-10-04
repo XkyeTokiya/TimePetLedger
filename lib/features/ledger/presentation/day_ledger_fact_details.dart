@@ -97,7 +97,7 @@ class _Details extends StatelessWidget {
   final GoalSummary? goal;
   String boundary(int value, TimePrecision precision) {
     final parts = formatRecordingTime(value).split(' ');
-    return '${parts.first}  ${precision == TimePrecision.approximate ? '约' : ''}${parts.last}';
+    return '${parts.first}  ${parts.last}';
   }
 
   @override
@@ -234,25 +234,27 @@ class _Details extends StatelessWidget {
           final year =
               DateTime.fromMillisecondsSinceEpoch(source.startedAt).year !=
               DateTime.fromMillisecondsSinceEpoch(source.endedAt).year;
-          return '${precision == TimePrecision.approximate ? '约' : ''}'
-              '${date ? '${year ? '${local.year}年' : ''}${local.month}月${local.day}日 ' : ''}$clock';
+          return '${date ? '${year ? '${local.year}年' : ''}${local.month}月${local.day}日 ' : ''}$clock';
         }
         String duration(DerivedDuration value) {
           final text = formatDerivedDuration(value).replaceAll(' ', '');
           return text.contains('小时') ? text.replaceAll('分钟', '分') : text;
         }
         children.addAll([
-          _DetailPair(
-            label: '当日片段',
-            value:
-                '${endpoint(segment.startedAt, segment.startPrecision)}–${endpoint(segment.endedAt, segment.endPrecision)}',
-          ),
-          _DetailPair(label: '当日时长', value: duration(segment.duration)),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Divider(),
-          ),
-          const Text('完整睡眠'),
+          if (source.startedAt != segment.startedAt ||
+              source.endedAt != segment.endedAt) ...[
+            _DetailPair(
+              label: '当日片段',
+              value:
+                  '${endpoint(segment.startedAt, segment.startPrecision)}–${endpoint(segment.endedAt, segment.endPrecision)}',
+            ),
+            _DetailPair(label: '当日时长', value: duration(segment.duration)),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Divider(),
+            ),
+            const Text('完整睡眠'),
+          ],
           const SizedBox(height: 12),
           _DetailPair(
             label: '入睡',

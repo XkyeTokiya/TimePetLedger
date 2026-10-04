@@ -46,7 +46,7 @@ String formatDerivedDuration(DerivedDuration duration) {
     final remainder = minutes % 60;
     text = remainder == 0 ? '$hours 小时' : '$hours 小时 $remainder 分钟';
   }
-  return duration.hasApproximation ? '约$text' : text;
+  return text;
 }
 
 /// null 表示无需空列表提示；有目标但缺少某项节奏时由单项函数表达。

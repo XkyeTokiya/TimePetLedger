@@ -603,9 +603,7 @@ class _RecordingFormState extends State<RecordingForm> {
               color: Theme.of(context).colorScheme.secondaryContainer,
               child: Text(
                 '请确认这段目标相关时间大致正确：\n'
-                '${model.time.startPrecision == TimePrecision.approximate ? '约 ' : ''}'
                 '${formatRecordingTime(model.time.startedAt)} → '
-                '${model.time.endPrecision == TimePrecision.approximate ? '约 ' : ''}'
                 '${formatRecordingTime(model.time.endedAt)}\n'
                 '可在上方修改时间，大约时间也可以保存。',
               ),
@@ -748,10 +746,7 @@ class _RecordingFormState extends State<RecordingForm> {
     final end = model.time.endedAt;
     if (start == null || end == null || end <= start) return '';
     final minutes = (end - start) ~/ 60000;
-    final approximate =
-        model.time.startPrecision == TimePrecision.approximate ||
-        model.time.endPrecision == TimePrecision.approximate;
-    return '${approximate ? '约' : ''}${minutes >= 60 ? '${minutes ~/ 60}小时' : ''}${minutes % 60 != 0 || minutes == 0 ? '${minutes % 60}分钟' : ''}';
+    return '${minutes >= 60 ? '${minutes ~/ 60}小时' : ''}${minutes % 60 != 0 || minutes == 0 ? '${minutes % 60}分钟' : ''}';
   }
 
   String _overlap(LedgerFactInterval conflict) {

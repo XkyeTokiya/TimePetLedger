@@ -119,7 +119,7 @@ class DayLedgerOverview extends StatelessWidget {
           },
         ),
         if (!compact) const SizedBox(height: 8),
-        if (compact)
+        if (compact && view.unknownDuration.milliseconds > 0)
           InkWell(
             onTap: () =>
                 showExplanation(context, view: view, dateContext: dateContext),
@@ -141,7 +141,7 @@ class DayLedgerOverview extends StatelessWidget {
               ),
             ),
           )
-        else
+        else if (!compact)
           Text(
             '其中想不起来：${formatDerivedDuration(view.unknownDuration)}（已含在已交代中）',
             style: theme.textTheme.bodySmall?.copyWith(fontSize: 13),
