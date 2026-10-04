@@ -690,8 +690,8 @@ class _RecordingFormState extends State<RecordingForm> {
   );
 
   String get _interval =>
-      '${model.time.startPrecision == TimePrecision.approximate ? '约' : ''}${_shortTime(model.time.startedAt)} → '
-      '${model.time.endPrecision == TimePrecision.approximate ? '约' : ''}${model.time.startedAt != null && model.time.endedAt != null && formatRecordingTime(model.time.startedAt).split(' ').first == formatRecordingTime(model.time.endedAt).split(' ').first ? formatRecordingTime(model.time.endedAt).split(' ').last : formatRecordingTime(model.time.endedAt)}';
+      '${_shortTime(model.time.startedAt)} → '
+      '${model.time.startedAt != null && model.time.endedAt != null && formatRecordingTime(model.time.startedAt).split(' ').first == formatRecordingTime(model.time.endedAt).split(' ').first ? formatRecordingTime(model.time.endedAt).split(' ').last : formatRecordingTime(model.time.endedAt)}';
 
   String _shortTime(int? instant) {
     if (instant == null) return formatRecordingTime(instant);

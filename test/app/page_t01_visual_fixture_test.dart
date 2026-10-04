@@ -146,6 +146,8 @@ void main() {
     expect(draft.startPrecision, TimePrecision.approximate);
     expect(draft.endPrecision, TimePrecision.approximate);
     expect(draft.endedAt! - draft.startedAt!, 30 * 60000);
+    expect(find.text('10:30 → 11:00'), findsOneWidget);
+    expect(find.text('约30分钟'), findsOneWidget);
     final goalRect = t.getRect(
       find.byKey(const ValueKey('recording-goal-toggle')),
     );
