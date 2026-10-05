@@ -1,0 +1,138 @@
+<style>
+#tpl-settings-design{--st-paper:#faf7f1;--st-ink:#251b16;--st-muted:#6f6259;--st-line:#dbcbbd;--st-red:#b65f48;--st-wash:#f1e8de;--st-error:#943e2d;color:var(--st-ink);font-family:"Noto Serif SC","Songti SC",Georgia,serif}
+#tpl-settings-design *{box-sizing:border-box}
+#tpl-settings-design [hidden]{display:none!important}
+#tpl-settings-design .st-phone{width:min(100%,450px);margin:auto;background:var(--st-paper);padding:22px 24px 28px;min-height:560px;container-type:inline-size;container-name:settings-phone}
+#tpl-settings-design button{font:inherit;color:inherit;background:transparent;border:0;min-height:44px}
+#tpl-settings-design button:disabled{opacity:.5}
+#tpl-settings-design .st-header{display:flex;align-items:center;gap:12px;margin-bottom:32px;padding-right:78px;font-size:19px}
+#tpl-settings-design .st-back{display:flex;align-items:center;justify-content:center;width:44px;flex-shrink:0}
+#tpl-settings-design .st-back>svg{width:26px;height:26px;flex-shrink:0}
+#tpl-settings-design h1{font-size:34px;font-weight:500;line-height:1.4;margin:0 0 14px;overflow-wrap:anywhere}
+#tpl-settings-design h2{font-size:22px;font-weight:500;margin:0 0 12px;line-height:1.5}
+#tpl-settings-design p{font-size:16px;line-height:1.7;margin:10px 0;overflow-wrap:anywhere}
+#tpl-settings-design .st-muted{font-size:14px;color:var(--st-muted)}
+#tpl-settings-design .st-list{margin-top:28px;border-top:1px solid var(--st-line)}
+#tpl-settings-design .st-entry{width:100%;display:flex;gap:14px;align-items:center;padding:21px 0;border-bottom:1px solid var(--st-line);text-align:left}
+#tpl-settings-design .st-entry>svg{width:26px;height:26px;flex-shrink:0}
+#tpl-settings-design .st-entry-copy{flex:1;min-width:0}
+#tpl-settings-design .st-entry strong{display:block;font-size:23px;font-weight:500;line-height:1.5;overflow-wrap:anywhere}
+#tpl-settings-design .st-entry small{display:block;font-size:14px;color:var(--st-muted);margin-top:5px;line-height:1.6;overflow-wrap:anywhere}
+#tpl-settings-design .st-section{padding:25px 0;border-bottom:1px solid var(--st-line)}
+#tpl-settings-design .st-label-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+#tpl-settings-design .st-current{font-size:14px;color:var(--st-red);white-space:nowrap}
+#tpl-settings-design fieldset{margin:18px 0 0;padding:0;border:0;min-width:0}
+#tpl-settings-design legend{font-size:16px;margin-bottom:7px}
+#tpl-settings-design .st-choice{display:flex;align-items:center;gap:12px;min-height:64px;padding:12px 0;font-size:18px;line-height:1.5}
+#tpl-settings-design .st-choice input{accent-color:var(--st-red);width:21px;height:21px;flex-shrink:0;margin:0}
+#tpl-settings-design .st-choice span{min-width:0;overflow-wrap:anywhere}
+#tpl-settings-design .st-choice small{display:block;font-size:14px;color:var(--st-muted);line-height:1.6}
+#tpl-settings-design .st-switch{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:56px;font-size:20px}
+#tpl-settings-design .st-switch input{appearance:none;width:50px;height:30px;border-radius:20px;background:var(--st-line);position:relative;flex-shrink:0;margin:0}
+#tpl-settings-design .st-switch input::before{content:"";position:absolute;left:4px;top:4px;width:22px;height:22px;border-radius:50%;background:var(--st-paper);transition:transform .16s ease}
+#tpl-settings-design .st-switch input:checked{background:var(--st-red)}
+#tpl-settings-design .st-switch input:checked::before{transform:translateX(20px)}
+#tpl-settings-design .st-switch input:disabled{opacity:.5}
+#tpl-settings-design .st-data{margin:18px 0 0}
+#tpl-settings-design .st-data div{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--st-line)}
+#tpl-settings-design .st-data dt{font-size:16px;color:var(--st-muted)}
+#tpl-settings-design .st-data dd{margin:0;font-size:18px;overflow-wrap:anywhere;text-align:right}
+#tpl-settings-design .st-footer{display:flex;gap:12px;padding-top:20px;margin-top:28px;border-top:1px solid var(--st-line);flex-wrap:wrap}
+#tpl-settings-design .st-footer button{display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:1;padding:12px 17px;font-size:18px;line-height:1.5;border-radius:30px}
+#tpl-settings-design .st-primary{background:var(--st-red);color:#fff8f0}
+#tpl-settings-design .st-secondary{border:1px solid var(--st-line)}
+#tpl-settings-design .st-action{width:100%;text-align:left;font-size:22px;color:var(--st-red);padding:10px 0;display:flex;align-items:center;gap:12px}
+#tpl-settings-design .st-action svg{width:26px;height:26px;flex-shrink:0}
+#tpl-settings-design .st-action:disabled{color:var(--st-muted);opacity:.65}
+#tpl-settings-design .st-feedback{padding:12px 15px;background:var(--st-wash);border-radius:8px;font-size:15px;margin:18px 0}
+#tpl-settings-design .st-error{color:var(--st-error);font-size:16px;margin:16px 0}
+#tpl-settings-design .st-confirm-intro{font-size:18px;margin:24px 0 12px}
+#tpl-settings-design .st-about-mark{font-size:42px;margin:28px 0 8px;line-height:1.3}
+#tpl-settings-design .st-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@container settings-phone (max-width:330px){#tpl-settings-design h1{font-size:30px}#tpl-settings-design .st-entry{gap:11px}#tpl-settings-design .st-entry strong{font-size:22px}}
+@media(prefers-reduced-motion:reduce){#tpl-settings-design .st-switch input::before{transition:none}}
+</style>
+<div id="tpl-settings-design" class="viz-dotted-background" aria-label="设置页第一轮">
+ <article class="st-phone">
+  <header class="st-header"><button type="button" class="st-back cursor-interaction" data-action="back" aria-label="返回菜单"><i data-lucide="arrow-left" aria-hidden="true"></i></button><span id="st-heading">设置</span></header>
+  <div id="st-content"></div>
+  <div id="st-live" class="st-sr" aria-live="polite"></div>
+ </article>
+</div>
+<script>
+(()=>{
+ const root=document.getElementById('tpl-settings-design'),content=root.querySelector('#st-content');
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const clone=v=>JSON.parse(JSON.stringify(v));
+ const icon=name=>`<i data-lucide="${name}" aria-hidden="true"></i>`;
+ const scenes=['已有数据','数据为空','只剩草稿','添加失败','清空失败','设置保存失败'];
+ const variants={scenario:'已有数据'};
+ const owner=`settings-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+ const fields=[['activities','活动记录'],['sleep','睡眠记录'],['goals','目标'],['reviews','每日复盘'],['drafts','未保存草稿']];
+ const empty=()=>({activities:0,sleep:0,goals:0,reviews:0,drafts:0});
+ const sample=()=>({activities:6,sleep:2,goals:2,reviews:1,drafts:0});
+ const fresh=()=>({view:'home',prefs:{heatRange:'week',mode:'guided',reminders:true},data:{activities:8,sleep:2,goals:3,reviews:2,drafts:1},commonGoal:'毕业设计',action:null,error:'',status:'',scenario:'已有数据',failureUsed:false});
+ let state=fresh(),busy=false,busyMessage='',pendingPref=null;
+ const isEmpty=()=>fields.every(([key])=>state.data[key]===0);
+ const modeText=(prefs=state.prefs)=>prefs.mode==='guided'?'问答引导':'表单';
+ const rangeText=(prefs=state.prefs)=>prefs.heatRange==='week'?'本周':'本月';
+ const button=(action,label,cls='',attrs='')=>`<button type="button" class="${cls} cursor-interaction" data-action="${action}" ${attrs} ${busy?'disabled':''}>${label}</button>`;
+ const footer=(primary,secondary='')=>`<footer class="st-footer">${secondary}${primary}</footer>`;
+ const feedback=()=>`${state.error?`<p class="st-error" role="alert">${esc(state.error)}</p>`:''}${state.status?`<p class="st-feedback" role="status">${esc(state.status)}</p>`:''}${busy?`<p class="st-muted" role="status">${busyMessage}</p>`:''}`;
+ function counts(data,compact=false){const items=compact?fields.filter(([key])=>data[key]>0):fields;return `<dl class="st-data">${items.map(([key,label])=>`<div><dt>${label}</dt><dd>${data[key]}${key==='goals'?'个':'条'}</dd></div>`).join('')}</dl>`;}
+ function entry(view,title,description,symbol){return button('open',`${icon(symbol)}<span class="st-entry-copy"><strong>${title}</strong><small>${description}</small></span>${icon('chevron-right')}`,'st-entry',`data-view="${view}" aria-label="${title}"`);}
+ function choices(name,value,options){return options.map(([v,label,description])=>`<label class="st-choice cursor-interaction"><input type="radio" name="${name}" value="${v}" ${value===v?'checked':''} ${busy?'disabled':''}><span>${label}${description?`<small>${description}</small>`:''}</span></label>`).join('');}
+ function render(){
+  const prefs=busy&&pendingPref?{...state.prefs,[pendingPref.key]:pendingPref.value}:state.prefs;
+  const headings={home:'设置',display:'界面设置',recording:'记录与提醒',advanced:'高级设置',about:'关于',confirm:state.action==='clear'?'清空数据':'测试数据',menu:'日账本'};
+  root.querySelector('#st-heading').textContent=headings[state.view];
+  const back=root.querySelector('[data-action="back"]');back.disabled=busy;back.setAttribute('aria-label',state.view==='home'?'返回菜单':state.view==='confirm'?'取消操作':state.view==='menu'?'返回设置':'返回设置');
+  let html='';
+  if(state.view==='home')html=`<h1>设置</h1><div class="st-list">${entry('display','界面设置',`目标热力图 · ${rangeText(prefs)}`,'sliders-horizontal')}${entry('recording','记录与提醒',`${modeText(prefs)} · 首页提醒${prefs.reminders?'已开启':'已关闭'}`,'notebook-pen')}${entry('advanced','高级设置','测试数据与数据清空','settings-2')}${entry('about','关于','日账本 · 版本信息','info')}</div>`;
+  else if(state.view==='display')html=`<h1>界面设置</h1><section class="st-section"><div class="st-label-row"><h2>目标热力图</h2><span class="st-current">${rangeText(prefs)}</span></div><fieldset><legend>日期范围</legend>${choices('heatRange',prefs.heatRange,[['week','本周','查看本自然周的投入'],['month','本月','查看本自然月的投入']])}</fieldset></section>${feedback()}`;
+  else if(state.view==='recording')html=`<h1>记录与提醒</h1><section class="st-section"><div class="st-label-row"><h2>记录方式</h2><span class="st-current">${modeText(prefs)}</span></div><fieldset><legend class="st-sr">记录方式</legend>${choices('mode',prefs.mode,[['guided','问答引导','一步步回想，再记下来'],['form','表单','在一页中填写记录']])}</fieldset></section><section class="st-section"><label class="st-switch cursor-interaction"><span>首页提醒</span><input type="checkbox" role="switch" name="reminders" aria-label="首页提醒" ${prefs.reminders?'checked':''} ${busy?'disabled':''}></label><p class="st-muted">${prefs.reminders?'打开首页时，提醒睡眠、补记或复盘。':'首页不再显示提醒与问候区域。'}</p><p class="st-muted">睡眠 08:00 · 复盘 22:00</p></section>${feedback()}`;
+  else if(state.view==='advanced')html=`<h1>高级设置</h1>${feedback()}<section class="st-section"><h2>当前数据</h2>${isEmpty()?'<p class="st-muted">目前还没有数据。</p>':counts(state.data)}${state.commonGoal?`<p class="st-muted">常用目标 · ${esc(state.commonGoal)}</p>`:''}</section><section class="st-section">${button('seed',`${icon('database')}添加测试数据`,'st-action',!isEmpty()?'disabled aria-describedby="st-seed-note"':'aria-describedby="st-seed-note"')}<p id="st-seed-note" class="st-muted">${isEmpty()?'添加一组示例记录，方便体验。':'已有数据，暂时不能添加测试数据。'}</p></section><section class="st-section">${button('clear',`${icon('trash-2')}清空当前数据`,'st-action',isEmpty()?'disabled aria-describedby="st-clear-note"':'aria-describedby="st-clear-note"')}<p id="st-clear-note" class="st-muted">${isEmpty()?'目前没有需要清空的数据。':'清空记录、目标、复盘和草稿，保留设置。'}</p></section>`;
+  else if(state.view==='confirm'){
+   const clearing=state.action==='clear';
+   html=`<h1>${clearing?'清空当前数据？':'添加测试数据？'}</h1><p class="st-confirm-intro">${clearing?'以下数据会被清空：':'将添加一组示例数据：'}</p>${counts(clearing?state.data:sample(),true)}${clearing?`<p>常用目标选择也会清除。</p><p class="st-muted">界面、记录方式和提醒设置会保留。</p>`:'<p class="st-muted">设置保持原样，测试目标不会自动设为常用。</p>'}${feedback()}${footer(button('confirm',clearing?'确认清空':'确认添加','st-primary'),button('cancel','取消','st-secondary'))}`;
+  }else if(state.view==='about')html=`<h1>关于</h1><p class="st-about-mark">日账本</p><p>把一天慢慢记清楚。</p><dl class="st-data"><div><dt>应用名称</dt><dd>Time Pet Ledger</dd></div><div><dt>版本</dt><dd>0.1.0 · 构建 1</dd></div></dl>`;
+  else html=`<h1>日账本</h1><div class="st-list">${entry('home','设置','界面、记录与数据','settings-2')}</div>`;
+  content.innerHTML=html;
+  if(globalThis.lucide)lucide.createIcons({attrs:{width:26,height:26}});
+ }
+ function remember(){if(!window.openai?.setWidgetState)return;window.openai.setWidgetState({modelContent:{preview:'设置页第一轮',view:state.view,scenario:state.scenario,prefs:state.prefs,data:state.data,commonGoal:state.commonGoal,pendingAction:state.action},privateContent:{kind:'settings-design',version:1,owner,state}}).catch(()=>{});}
+ function restore(snapshot){const p=snapshot?.privateContent,s=p?.state;if(p?.kind!=='settings-design'||p.version!==1||!s||!['home','display','recording','advanced','about','confirm','menu'].includes(s.view)||!scenes.includes(s.scenario)||!['week','month'].includes(s.prefs?.heatRange)||!['guided','form'].includes(s.prefs?.mode)||typeof s.prefs?.reminders!=='boolean'||!s.data||!fields.every(([key])=>Number.isInteger(s.data[key])&&s.data[key]>=0&&s.data[key]<=10000)||!(s.commonGoal===null||typeof s.commonGoal==='string'&&s.commonGoal.length<=200)||!['seed','clear',null].includes(s.action))return false;if(s.view==='confirm'&&!s.action)return false;state=clone(s);variants.scenario=s.scenario;return true;}
+ function scenario(){busy=false;busyMessage='';pendingPref=null;state=fresh();state.scenario=variants.scenario;if(['数据为空','添加失败'].includes(variants.scenario)){state.data=empty();state.commonGoal=null;}if(variants.scenario==='只剩草稿'){state.data=empty();state.data.drafts=1;state.commonGoal=null;}if(['添加失败','清空失败'].includes(variants.scenario))state.view='advanced';render();}
+ function commit(kind,key,value){
+  if(busy)return;
+  if(kind==='seed'&&!isEmpty()){state.error='已有数据，不能添加测试数据。';state.view='advanced';state.action=null;render();remember();return;}
+  if(kind==='clear'&&isEmpty()){state.status='目前没有需要清空的数据。';state.view='advanced';state.action=null;render();remember();return;}
+  busy=true;pendingPref=kind==='pref'?{key,value}:null;busyMessage=kind==='clear'?'正在清空…':kind==='seed'?'正在添加…':'正在保存…';state.error='';state.status='';render();
+  const submitted=state;
+  setTimeout(()=>{
+   if(submitted!==state)return;
+   busy=false;busyMessage='';pendingPref=null;
+   const fail=kind==='seed'&&state.scenario==='添加失败'||kind==='clear'&&state.scenario==='清空失败'||kind==='pref'&&state.scenario==='设置保存失败';
+   if(fail&&!state.failureUsed){state.failureUsed=true;state.error=kind==='clear'?'没清空成功，原有数据还在。再试一次吧。':kind==='seed'?'没添加成功，当前数据没有改变。再试一次吧。':'没保存成功，仍使用之前的设置。再试一次吧。';render();remember();return;}
+   if(kind==='pref'){state.prefs[key]=value;root.querySelector('#st-live').textContent='设置已保存。';}
+   if(kind==='clear'){state.data=empty();state.commonGoal=null;state.view='advanced';state.action=null;state.status='数据已清空，设置已保留。';}
+   if(kind==='seed'){state.data=sample();state.commonGoal=null;state.view='advanced';state.action=null;state.status='测试数据已添加。';}
+   render();remember();
+  },200);
+ }
+ root.addEventListener('click',event=>{
+  const el=event.target.closest('button[data-action]');if(!el||el.disabled||busy)return;
+  const action=el.dataset.action;
+  if(action==='open'){state.view=el.dataset.view;state.action=null;state.error='';state.status='';}
+  if(action==='back'){state.view=state.view==='home'?'menu':state.view==='menu'?'home':state.view==='confirm'?'advanced':'home';state.action=null;state.error='';state.status='';}
+  if(action==='cancel'){state.view='advanced';state.action=null;state.error='';state.status='';}
+  if(action==='seed'||action==='clear'){if(action==='seed'&&!isEmpty()||action==='clear'&&isEmpty())return;state.action=action;state.view='confirm';state.error='';state.status='';}
+  if(action==='confirm'){if(state.action)commit(state.action);return;}
+  render();remember();
+ });
+ root.addEventListener('change',event=>{if(busy)return;const input=event.target;if(input.name==='reminders')commit('pref','reminders',input.checked);if(input.name==='mode'&&['guided','form'].includes(input.value))commit('pref','mode',input.value);if(input.name==='heatRange'&&['week','month'].includes(input.value))commit('pref','heatRange',input.value);});
+ if(!restore(window.openai?.widgetState))scenario();else render();
+ window.addEventListener('openai:set_globals',event=>{const snapshot=event.detail?.globals?.widgetState;if(busy||snapshot?.privateContent?.owner===owner)return;if(restore(snapshot))render();});
+ if(globalThis.Tweak){let previous=variants.scenario;const tweak=new Tweak({container:root,onChange:()=>{if(previous!==variants.scenario){previous=variants.scenario;scenario();remember();}}});tweak.addSelect(variants,'scenario',{label:'示例场景',options:scenes});}
+})();
+</script>

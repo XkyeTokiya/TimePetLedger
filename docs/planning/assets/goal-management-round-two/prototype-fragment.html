@@ -1,0 +1,258 @@
+<style>
+#tpl-goal-design{--gm-paper:#faf7f1;--gm-ink:#251b16;--gm-muted:#6f6259;--gm-line:#dbcbbd;--gm-red:#b65f48;--gm-wash:#f1e8de;color:var(--gm-ink);font-family:"Noto Serif SC","Songti SC",Georgia,serif}
+#tpl-goal-design *{box-sizing:border-box}
+#tpl-goal-design [hidden]{display:none!important}
+#tpl-goal-design .gm-phone{width:min(100%,450px);margin:auto;background:var(--gm-paper);padding:22px 24px 26px;min-height:560px}
+#tpl-goal-design button{font:inherit;color:inherit;min-height:44px;background:transparent;border:0}
+#tpl-goal-design .gm-header{display:flex;align-items:center;gap:12px;margin-bottom:32px;padding-right:78px;font-size:19px}
+#tpl-goal-design .gm-back{display:flex;align-items:center;justify-content:center;width:44px;flex-shrink:0}
+#tpl-goal-design h1{font-size:34px;font-weight:500;line-height:1.4;margin:0 0 16px;overflow-wrap:anywhere}
+#tpl-goal-design h2{font-size:26px;font-weight:500;line-height:1.5;margin:0 0 16px;overflow-wrap:anywhere}
+#tpl-goal-design p{line-height:1.7;margin:10px 0;overflow-wrap:anywhere}
+#tpl-goal-design .gm-muted{color:var(--gm-muted);font-size:15px}
+#tpl-goal-design .gm-tabs{display:flex;border-bottom:1px solid var(--gm-line);margin:26px 0 8px}
+#tpl-goal-design .gm-tab{flex:1;padding:12px 8px;color:var(--gm-muted);border-bottom:3px solid transparent;font-size:18px}
+#tpl-goal-design .gm-tab[aria-selected=true]{color:var(--gm-red);border-color:var(--gm-red)}
+#tpl-goal-design .gm-entry{display:flex;align-items:center;gap:14px;width:100%;padding:23px 0;text-align:left;border-bottom:1px solid var(--gm-line)}
+#tpl-goal-design .gm-entry-text{min-width:0;flex:1}
+#tpl-goal-design .gm-entry strong{font-size:24px;font-weight:500;line-height:1.55;overflow-wrap:anywhere;display:block}
+#tpl-goal-design .gm-entry small{display:block;font-size:14px;color:var(--gm-muted);margin-top:5px}
+#tpl-goal-design .gm-entry .gm-common{color:var(--gm-red);display:flex;align-items:center;gap:7px}
+#tpl-goal-design .gm-entry svg{flex-shrink:0}
+#tpl-goal-design .gm-footer{display:flex;gap:12px;margin-top:32px;padding-top:20px;border-top:1px solid var(--gm-line);flex-wrap:wrap}
+#tpl-goal-design .gm-footer button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 17px;border-radius:30px;font-size:18px}
+#tpl-goal-design .gm-primary{background:var(--gm-red);color:#fff8f0;flex:1}
+#tpl-goal-design .gm-secondary{border:1px solid var(--gm-line);flex:1}
+#tpl-goal-design .gm-text{display:inline-flex;align-items:center;gap:8px;color:var(--gm-red);padding:7px 0;text-align:left}
+#tpl-goal-design .gm-name{font-size:34px;font-weight:500;line-height:1.4;text-align:left;text-decoration:underline;text-decoration-style:dashed;text-decoration-color:var(--gm-line);text-underline-offset:9px;text-decoration-thickness:1px;overflow-wrap:anywhere;width:100%;padding:0 0 8px}
+#tpl-goal-design .gm-section{padding:22px 0;border-bottom:1px solid var(--gm-line)}
+#tpl-goal-design .gm-section-label{display:block;font-size:14px;color:var(--gm-muted);margin-bottom:8px}
+#tpl-goal-design .gm-note{background:var(--gm-wash);padding:13px 16px;border-radius:9px;font-size:16px;margin:18px 0}
+#tpl-goal-design .gm-name-label{display:block;margin:28px 0 9px;font-size:16px}
+#tpl-goal-design textarea{width:100%;min-height:120px;resize:vertical;border:1px solid var(--gm-line);border-radius:9px;background:var(--gm-paper);color:var(--gm-ink);padding:14px;font:20px/1.6 "Noto Serif SC","Songti SC",Georgia,serif}
+#tpl-goal-design .gm-error{color:#943e2d;font-size:16px}
+#tpl-goal-design .gm-empty{padding:34px 0 22px}
+#tpl-goal-design .gm-confirm-value{font-size:22px;margin:24px 0;overflow-wrap:anywhere}
+#tpl-goal-design .gm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+#tpl-goal-design .gd-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:space-between}
+#tpl-goal-design .gd-row h2{font-size:22px;margin:0}
+#tpl-goal-design .gd-row button{padding:0 9px;font-size:15px}
+#tpl-goal-design .gd-toggle{display:flex;gap:4px;flex-wrap:wrap}
+#tpl-goal-design .gd-toggle button[aria-pressed=true]{color:var(--gm-red);text-decoration:underline;text-underline-offset:8px}
+#tpl-goal-design .gd-total{font-size:32px;line-height:1.3;margin:18px 0 5px}
+#tpl-goal-design .gd-name-row{display:flex;gap:12px;align-items:baseline}
+#tpl-goal-design .gd-name-row .gm-name{width:auto;min-width:0;flex:1}
+#tpl-goal-design .gd-common-label{font-size:14px;color:var(--gm-muted);white-space:nowrap;flex-shrink:0;align-self:flex-end;padding-bottom:12px}
+#tpl-goal-design .gd-total-row{display:flex;align-items:baseline;gap:10px;margin:18px 0 5px}
+#tpl-goal-design .gd-total-row .gd-total{margin:0;min-width:0;flex-shrink:1;overflow-wrap:anywhere}
+#tpl-goal-design .gd-total-row[data-empty=true] .gd-total{font-size:21px}
+#tpl-goal-design .gd-total-label{font-size:13px;color:var(--gm-muted);flex-shrink:0;white-space:nowrap}
+#tpl-goal-design .gd-range-row{display:flex;gap:10px;align-items:center;justify-content:space-between}
+#tpl-goal-design .gd-range-row p{margin:10px 0;min-width:0}
+#tpl-goal-design .gd-range-row button{padding:0 8px;flex-shrink:0}
+@container goal-phone (max-width:330px){#tpl-goal-design .gd-total-row .gd-total{font-size:27px}#tpl-goal-design .gd-total-label{font-size:12px}#tpl-goal-design .gd-total-row{gap:7px}}
+#tpl-goal-design .gm-phone{container-type:inline-size;container-name:goal-phone}
+#tpl-goal-design .gd-scale{display:flex;justify-content:space-between;font-size:12px;color:var(--gm-muted);margin:18px 0 5px}
+#tpl-goal-design .gd-bars{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;border-bottom:1px solid var(--gm-line)}
+#tpl-goal-design .gd-bars button{display:flex;align-items:center;flex-direction:column;justify-content:flex-end;min-width:0;padding:0 2px;min-height:180px;font-size:12px}
+#tpl-goal-design .gd-bars .gd-value{height:24px;white-space:nowrap}
+#tpl-goal-design .gd-bar-space{height:130px;width:100%;display:flex;align-items:flex-end;justify-content:center}
+#tpl-goal-design .gd-bar{width:70%;background:var(--gm-red);opacity:.65;min-height:1px;border-radius:3px 3px 0 0;transition:height .22s ease}
+#tpl-goal-design .gd-bars button[aria-pressed=true] .gd-bar{opacity:1}
+#tpl-goal-design .gd-bars .gd-date{height:27px;padding-top:6px;white-space:nowrap}
+#tpl-goal-design .gd-axis{font-size:12px;color:var(--gm-muted);text-align:center;margin-top:8px}
+#tpl-goal-design .gd-heat{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:14px}
+#tpl-goal-design .gd-heat .gd-weekday{text-align:center;color:var(--gm-muted);font-size:12px;padding:5px 0}
+#tpl-goal-design .gd-heat button{min-width:0;min-height:44px;border-radius:5px;font-size:15px;padding:3px;position:relative}
+#tpl-goal-design .gd-heat button[data-level=none]{border:1px dashed var(--gm-line);color:var(--gm-muted)}
+#tpl-goal-design .gd-heat button[data-level=future]{background:var(--gm-wash);opacity:.45}
+#tpl-goal-design .gd-heat button[data-level="1"]{background:#eee0d8}
+#tpl-goal-design .gd-heat button[data-level="2"]{background:#dfb6a5}
+#tpl-goal-design .gd-heat button[data-level="3"]{background:#bf765e;color:#fff8f0}
+#tpl-goal-design .gd-heat button[data-level="4"]{background:#914c3a;color:#fff8f0}
+#tpl-goal-design .gd-heat button[aria-pressed=true]{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px}
+#tpl-goal-design .gd-legend{display:flex;flex-wrap:wrap;gap:8px 13px;color:var(--gm-muted);font-size:12px;margin:13px 0}
+#tpl-goal-design .gd-legend span{display:inline-flex;align-items:center;gap:4px}
+#tpl-goal-design .gd-legend b{font-weight:400}
+#tpl-goal-design .gd-swatch{width:12px;height:12px;border-radius:2px;display:inline-block}
+#tpl-goal-design .gd-swatch[data-level="1"]{background:#eee0d8}
+#tpl-goal-design .gd-swatch[data-level="2"]{background:#dfb6a5}
+#tpl-goal-design .gd-swatch[data-level="3"]{background:#bf765e}
+#tpl-goal-design .gd-swatch[data-level="4"]{background:#914c3a}
+#tpl-goal-design .gd-day-detail{font-size:15px;min-height:27px;margin-top:17px;color:var(--gm-muted)}
+#tpl-goal-design .gd-history{padding-top:28px}
+#tpl-goal-design .gd-history .gm-entry{padding:16px 0;gap:8px}
+#tpl-goal-design .gd-history strong{font-size:20px}
+#tpl-goal-design .gd-history .gd-duration{font-size:14px;color:var(--gm-muted);max-width:92px;text-align:right;flex-shrink:0}
+#tpl-goal-design .gd-goal-row{display:flex;align-items:center;border-bottom:1px solid var(--gm-line);gap:9px}
+#tpl-goal-design .gd-goal-row .gm-entry{border:0;flex:1;min-width:0}
+#tpl-goal-design .gd-goal-row[data-common=true]{background:var(--gm-wash);border-left:3px solid var(--gm-red);padding-left:12px}
+#tpl-goal-design .gd-goal-row .gd-common-button{min-width:50px;padding:6px;font-size:13px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--gm-red);flex-shrink:0}
+@media(prefers-reduced-motion:reduce){#tpl-goal-design .gd-bar{transition:none}}
+@media(max-width:380px){#tpl-goal-design .gm-phone{padding:18px 17px 24px}#tpl-goal-design h1,#tpl-goal-design .gm-name{font-size:30px}}
+</style>
+<div id="tpl-goal-design" class="viz-dotted-background" aria-label="目标详情设计">
+  <article class="gm-phone">
+    <header class="gm-header"><button type="button" class="gm-back cursor-interaction" data-action="back" aria-label="返回菜单"><i data-lucide="arrow-left" aria-hidden="true"></i></button><span id="gm-heading">目标</span></header>
+    <div id="gm-content"></div>
+    <div id="gm-live" class="gm-sr" aria-live="polite"></div>
+  </article>
+</div>
+<script>
+(()=>{
+ const root=document.getElementById('tpl-goal-design'),content=root.querySelector('#gm-content');
+ const clone=v=>JSON.parse(JSON.stringify(v));
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const icon=name=>`<i data-lucide="${name}" aria-hidden="true"></i>`;
+ const button=(action,label,cls='gm-text',attrs='')=>`<button type="button" class="${cls} cursor-interaction" data-action="${action}" ${attrs}>${label}</button>`;
+ const scenes=['目标详情','长时投入','目标列表','没有相关记录','没有目标','同名目标','保存失败','读取失败','常用目标','已归档目标','目标已不存在'];
+ const variants={scenario:'目标详情'};
+ const owner=`goals-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+ const stamp='2026-10-06T02:00:00.000Z';
+  function seed(){return [
+  {id:'g1',name:'毕业设计',status:'active',createdAt:'2026-09-20T01:20:00.000Z',updatedAt:'2026-09-20T01:20:00.000Z',archivedAt:null},
+  {id:'g2',name:'英语学习',status:'active',createdAt:'2026-10-03T03:10:00.000Z',updatedAt:'2026-10-03T03:10:00.000Z',archivedAt:null},
+  {id:'g3',name:'暑期阅读',status:'archived',createdAt:'2026-07-01T01:00:00.000Z',updatedAt:'2026-09-01T02:00:00.000Z',archivedAt:'2026-09-01T02:00:00.000Z'}
+ ];}
+ const now=new Date(2026,9,6,15,0).getTime();
+ const at=(day,hour,minute=0,month=9)=>new Date(2026,month,day,hour,minute).getTime();
+ function records(){return [
+  {id:'a1',goalId:'g1',title:'整理选题',start:at(29,10,0,8),end:at(29,11,0,8),rhythm:'推进'},
+  {id:'a2',goalId:'g1',title:'查阅资料',start:at(30,9,0,8),end:at(30,11,0,8),rhythm:'推进'},
+  {id:'a3',goalId:'g1',title:'梳理页面入口',start:at(1,10),end:at(1,11,30),rhythm:'推进'},
+  {id:'a4',goalId:'g1',title:'想不起来',start:at(2,10),end:at(2,10,30),knowledge:'unknown',rhythm:''},
+  {id:'a5',goalId:'g1',title:'散步时整理思路',start:at(4,9),end:at(4,10),rhythm:'休息'},
+  {id:'a6',goalId:'g1',title:'设计首页',start:at(4,14),end:at(4,16,20),rhythm:'推进'},
+  {id:'a7',goalId:'g1',title:'修改原型',start:at(5,23,30),end:at(6,0,30),rhythm:''},
+  {id:'a8',goalId:'g1',title:'整理设计说明',start:at(6,14),end:at(6,16),rhythm:'推进'},
+  {id:'e1',goalId:'g2',title:'练习听力',start:at(3,11),end:at(3,12),rhythm:'推进'},
+  {id:'s1',goalId:'g3',title:'读完第三章',start:at(31,19,0,7),end:at(31,20,0,7),rhythm:''}
+ ];}
+ const fresh=()=>({view:'detail',tab:'active',selectedId:'g1',goals:seed(),commonId:'g1',refs:records(),chart:'bar',heatRange:'week',selectedDay:null,recordId:null,form:null,pending:null,error:'',status:'',failureUsed:false,scenario:'目标详情',sequence:4});
+ let state=fresh(),busy=false;
+ const goal=()=>state.goals.find(g=>g.id===state.selectedId);
+ const hasRefs=g=>state.refs.some(r=>r.goalId===g.id);
+ function dateText(stamp){const d=new Date(stamp);return `${d.getFullYear()!==2026?d.getFullYear()+'年':''}${d.getMonth()+1}月${d.getDate()}日`;}
+ function duplicate(g){return state.goals.filter(x=>x.name===g.name).length>1;}
+ const dayStart=value=>{const d=new Date(value);return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime();};
+ const shift=(value,days)=>{const d=new Date(value);return new Date(d.getFullYear(),d.getMonth(),d.getDate()+days).getTime();};
+ const clock=value=>{const d=new Date(value);return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+ function duration(ms){if(ms<=0)return '尚无相关记录';const m=Math.round(ms/60000);if(!m)return '少于1分钟';return `${Math.floor(m/60)?Math.floor(m/60)+'小时':''}${m%60?m%60+'分钟':''}`;}
+ function daily(day,g){const end=Math.min(shift(day,1),now),items=state.refs.filter(r=>r.goalId===g.id&&Math.min(r.end,end)>Math.max(r.start,day));return {day,future:day>dayStart(now),hasRecords:items.length>0,ms:items.reduce((total,r)=>total+Math.min(r.end,end)-Math.max(r.start,day),0)};}
+ function chartDays(g){const today=dayStart(now);let first,last;if(state.chart==='bar'){first=shift(today,-6);last=today;}else if(state.heatRange==='week'){first=shift(today,-((new Date(today).getDay()+6)%7));last=shift(first,6);}else{const d=new Date(today);first=new Date(d.getFullYear(),d.getMonth(),1).getTime();last=new Date(d.getFullYear(),d.getMonth()+1,0).getTime();}const values=[];for(let day=first;day<=last;day=shift(day,1))values.push(daily(day,g));return values;}
+ function chartView(g){
+  const days=chartDays(g),total=days.reduce((t,d)=>t+d.ms,0),range=`${dateText(days[0].day)} — ${dateText(days.at(-1).day)}`;
+  const selected=days.find(d=>d.day===state.selectedDay)||days.find(d=>d.day===dayStart(now))||days[0];
+  let plot='';
+  if(state.chart==='bar'){
+   const max=Math.max(1,Math.ceil(Math.max(...days.map(d=>d.ms))/3600000));
+   plot=`<div class="gd-scale"><span>投入（小时）</span><span aria-label="纵向刻度最大值${max}小时">${max} h</span></div><div class="gd-bars" data-scale-hours="${max}" role="group" aria-label="近7天投入，点击日期查看时长">${days.map(d=>button('day',`<span class="gd-value">${d.hasRecords?(d.ms<360000?'＜0.1h':(Math.round(d.ms/360000)/10)+'h'):'—'}</span><span class="gd-bar-space">${d.hasRecords?`<span class="gd-bar" style="height:${d.ms/(max*3600000)*130}px"></span>`:'<span aria-hidden="true">—</span>'}</span><span class="gd-date">${new Date(d.day).getMonth()+1}/${new Date(d.day).getDate()}</span>`,'',`data-day="${d.day}" aria-pressed="${selected.day===d.day}" aria-label="${dateText(d.day)}，${d.hasRecords?duration(d.ms):'未记录相关投入'}"`)).join('')}</div><div class="gd-axis">日期 · — 表示未记录相关投入</div>`;
+  }else{
+   const padding=(new Date(days[0].day).getDay()+6)%7;
+   plot=`<div class="gd-heat" role="group" aria-label="${state.heatRange==='week'?'本周':'本月'}投入热力图">${'一二三四五六日'.split('').map(d=>`<span class="gd-weekday">${d}</span>`).join('')}${'<span aria-hidden="true"></span>'.repeat(padding)}${days.map(d=>{const level=d.future?'future':!d.hasRecords?'none':d.ms<3600000?'1':d.ms<7200000?'2':d.ms<14400000?'3':'4';return button('day',new Date(d.day).getDate(),' ',`data-day="${d.day}" data-level="${level}" aria-pressed="${selected.day===d.day}" ${d.future?'disabled':''} aria-label="${dateText(d.day)}，${d.future?'尚未到来':d.hasRecords?duration(d.ms):'未记录相关投入'}"`);}).join('')}</div><div class="gd-legend"><span>深浅表示时长</span><span><b class="gd-swatch" data-level="1" aria-hidden="true"></b>＜1h</span><span><b class="gd-swatch" data-level="2" aria-hidden="true"></b>1–＜2h</span><span><b class="gd-swatch" data-level="3" aria-hidden="true"></b>2–＜4h</span><span><b class="gd-swatch" data-level="4" aria-hidden="true"></b>≥4h</span><span>虚线：未记录</span><span>淡底：未来</span></div>`;
+  }
+  return `<section class="gm-section"><div class="gd-row"><h2>时间投入</h2><div class="gd-toggle">${button('chart','柱状图','','data-chart="bar" aria-pressed="'+(state.chart==='bar')+'"')}${button('chart','热力图','','data-chart="heat" aria-pressed="'+(state.chart==='heat')+'"')}</div></div><div class="gd-total-row" data-empty="${total<=0}"><p class="gd-total">${duration(total)}</p><span class="gd-total-label">${state.chart==='bar'?'近7天':state.heatRange==='week'?'本周':'本月'} · 已记录投入</span></div><div class="gd-range-row"><p class="gm-muted">${range}</p>${state.chart==='heat'?button('chart-settings',icon('settings-2'),'','aria-label="热力图设置"'):''}</div>${plot}<div class="gd-day-detail" aria-live="polite">${dateText(selected.day)}${selected.day===dayStart(now)?' · 截至15:00':''}：${selected.hasRecords?duration(selected.ms):'未记录相关投入'}</div></section>`;
+ }
+ function historyView(g,all=false){const refs=state.refs.filter(r=>r.goalId===g.id).sort((a,b)=>b.start-a.start);return `<section class="gd-history"><div class="gd-row"><h2>${all?'全部记录':'此前记录'}</h2><span class="gm-muted">${refs.length}条</span></div>${refs.length?(all?refs:refs.slice(0,5)).map(r=>button('record',`<span class="gm-entry-text"><strong>${esc(r.title)}</strong><small>${dateText(r.start)} · ${clock(r.start)}${dayStart(r.start)!==dayStart(r.end)?' → '+dateText(r.end):'–'}${clock(r.end)}</small>${r.knowledge==='unknown'?'<small>已交代 · 想不起来</small>':r.rhythm?`<small>${esc(r.rhythm)}</small>`:''}</span><span class="gd-duration">${duration(r.end-r.start)}</span>${icon('chevron-right')}`,'gm-entry',`data-record="${r.id}" aria-label="查看记录：${esc(r.title)}"`)).join(''):'<p class="gm-muted">还没有关联这个目标的记录。</p>'}${!all&&refs.length>5?button('all-records','查看全部 '+refs.length+' 条'):''}</section>`;}
+ function remember(){if(!window.openai?.setWidgetState)return;const g=goal(),common=state.goals.find(x=>x.id===state.commonId);const snapshot={modelContent:{preview:'目标详情设计',view:state.view,tab:state.tab,selectedGoal:g?.name||null,commonGoal:common?.name||null,chart:state.chart,heatRange:state.heatRange,scenario:state.scenario},privateContent:{kind:'goal-detail',version:2,owner,state}};if(new TextEncoder().encode(JSON.stringify(snapshot)).length<=15500)window.openai.setWidgetState(snapshot).catch(()=>{});}
+ function restore(snapshot){const p=snapshot?.privateContent,s=p?.state;if(p?.kind!=='goal-detail'||p.version!==2||!s||!['list','detail','form','confirm','read-error','missing','menu','chart-settings','all-records','record'].includes(s.view)||!['active','archived'].includes(s.tab)||!['bar','heat'].includes(s.chart)||!['week','month'].includes(s.heatRange)||!Array.isArray(s.goals)||s.goals.length>40||!Array.isArray(s.refs)||s.refs.length>60||!scenes.includes(s.scenario))return false;for(const g of s.goals)if(typeof g.id!=='string'||typeof g.name!=='string'||!['active','archived'].includes(g.status))return false;for(const r of s.refs)if(typeof r.id!=='string'||typeof r.goalId!=='string'||typeof r.title!=='string'||!Number.isFinite(r.start)||!Number.isFinite(r.end)||r.end<=r.start)return false;if(s.form&&typeof s.form.name!=='string')return false;state=clone(s);variants.scenario=s.scenario;return true;}
+ function announce(text){root.querySelector('#gm-live').textContent=text;}
+ function footer(primary,secondary=''){return `<footer class="gm-footer">${secondary}${primary}</footer>`;}
+ function errors(){return state.error?`<p class="gm-error" role="alert">${esc(state.error)}</p>`:'';}
+ function render(){
+  root.querySelector('#gm-heading').textContent=state.view==='chart-settings'?'图表设置':state.view==='all-records'?'历史记录':state.view==='record'?'记录详情':state.view==='form'?(state.form.id?'修改目标':'新建目标'):state.view==='menu'?'日账本':state.view==='confirm'?'目标操作':'目标';
+  root.querySelector('[data-action="back"]').setAttribute('aria-label',state.view==='confirm'?'取消操作':state.view==='form'?'返回目标':['all-records','chart-settings'].includes(state.view)?'返回目标详情':state.view==='record'?'返回记录列表':state.view==='detail'?'返回目标列表':state.view==='menu'?'返回目标':'返回菜单');
+  let html='';const g=goal();
+  if(state.view==='read-error')html=`<h1>目标暂时没读出来</h1><p class="gm-muted">再试一次吧。</p>${footer(button('retry-read','重试','gm-primary'))}`;
+  else if(state.view==='missing')html=`<h1>目标已不存在</h1><p class="gm-muted">回到列表看看其他目标。</p>${footer(button('list','回到目标列表','gm-primary'))}`;
+  else if(state.view==='menu')html=`<h1>日账本</h1><div class="gm-section">${button('list',`${icon('flag')} 目标管理`)}</div>`;
+  else if(state.view==='form'){
+   const form=state.form;
+   html=`<h1>${form.id?'给它换个名字':'想把时间<br>投入什么？'}</h1><label class="gm-name-label" for="gm-name-input">目标名称</label><textarea id="gm-name-input" rows="3" placeholder="比如：毕业设计">${esc(form.name)}</textarea><p class="gm-muted">${form.id?'改名后，以前的记录也会显示新名字。':'一个名字就好，记录时可以选择关联它。'}</p>${errors()}${footer(button('save-name','保存目标','gm-primary'))}`;
+  }else if(state.view==='confirm'&&g){
+   const action=state.pending,referenced=hasRefs(g),archive=action==='archive'||action==='delete'&&referenced;
+   html=`<h2>${archive?'归档这个目标？':'删除这个目标？'}</h2><p class="gm-confirm-value">${esc(g.name)}</p><p>${archive?'归档后，新记录就不再关联它。以前的记录会保留。':'这个目标还没有关联的记录，删除后无法恢复。'}</p>${action==='delete'&&referenced?'<p class="gm-muted">它已有记录，会按归档处理。</p>':''}${state.commonId===g.id?`<p class="gm-muted">它也会从常用目标中移除，恢复后需重新设置。</p>`:''}${errors()}${footer(button('confirm-action',archive?'确认归档':'确认删除','gm-primary'),button('cancel','保留目标','gm-secondary'))}`;
+  }else if(state.view==='chart-settings'&&g){
+   html=`<h1>热力图设置</h1><p class="gm-muted">选择查看本周还是本月。</p><div class="gd-toggle" role="group" aria-label="热力图日期范围">${button('heat-range','本周','gm-secondary',`data-range="week" aria-pressed="${state.heatRange==='week'}"`)}${button('heat-range','本月','gm-secondary',`data-range="month" aria-pressed="${state.heatRange==='month'}"`)}</div><p class="gm-muted">今天只计已经发生的时间。</p>${footer(button('detail','完成','gm-primary'))}`;
+  }else if(state.view==='all-records'&&g){
+   html=`<h1>${esc(g.name)}</h1>${historyView(g,true)}`;
+  }else if(state.view==='record'&&g){
+   const r=state.refs.find(r=>r.id===state.recordId&&r.goalId===g.id);
+   html=r?`<h1>${esc(r.title)}</h1><p>${dateText(r.start)} ${clock(r.start)} → ${dateText(r.end)} ${clock(r.end)}</p><p class="gd-total">${duration(r.end-r.start)}</p><p class="gm-muted">完整记录区间</p><section class="gm-section"><span class="gm-section-label">目标</span><p>${esc(g.name)}</p>${r.knowledge==='unknown'?'<p>已交代 · 想不起来</p>':r.rhythm?`<p>节奏 · ${esc(r.rhythm)}</p>`:''}</section>${footer(button('record-return','返回记录列表','gm-secondary'))}`:`<h1>记录已不存在</h1>${footer(button('record-return','返回记录列表','gm-primary'))}`;
+  }else if(state.view==='detail'&&g){
+   html=`<p class="gm-muted">${g.status==='archived'?'已归档':'当前目标'}</p><div class="gd-name-row">${button('rename',esc(g.name),'gm-name','aria-label="修改目标名称"')}${g.status==='active'&&state.commonId===g.id?'<span class="gd-common-label">常用目标</span>':''}</div><p class="gm-muted">创建于${dateText(g.createdAt)}</p>`;
+   if(g.status==='archived')html+=`<p class="gm-muted">以前的记录还在，恢复后可用于新记录。</p>`;
+   html+=chartView(g)+historyView(g);
+   html+=errors();
+   html+=g.status==='archived'?footer(button('restore','恢复目标','gm-primary'),button('delete','删除','gm-secondary')):footer(button('archive','归档目标','gm-secondary'),button('delete','删除','gm-text'));
+  }else{
+   if(['detail','confirm','chart-settings','all-records','record'].includes(state.view)){state.view='missing';render();return;}
+   const items=state.goals.filter(g=>g.status===state.tab);
+   html=`<h1>我的目标</h1><p class="gm-muted">点名称看投入，点书签设为常用。</p>${state.status?`<div class="gm-note" role="status">${esc(state.status)}</div>`:''}${errors()}<div class="gm-tabs" role="tablist" aria-label="目标状态">${['active','archived'].map(t=>button('tab',t==='active'?'当前':'已归档','gm-tab',`data-value="${t}" role="tab" id="gm-tab-${t}" aria-selected="${state.tab===t}" aria-controls="gm-goal-list"`)).join('')}</div><div id="gm-goal-list" role="tabpanel" aria-labelledby="gm-tab-${state.tab}">${items.length?items.map(g=>`<div class="gd-goal-row" data-common="${state.commonId===g.id&&g.status==='active'}">${button('open',`<span class="gm-entry-text"><strong>${esc(g.name)}</strong>${state.commonId===g.id&&g.status==='active'?'<small class="gm-common">常用</small>':''}${duplicate(g)?`<small>创建于${dateText(g.createdAt)}</small>`:''}</span>${icon('chevron-right')}`,'gm-entry',`data-id="${g.id}" aria-label="查看${esc(g.name)}${duplicate(g)?'，创建于'+dateText(g.createdAt):''}"`)}${g.status==='active'?button('common',`${icon(state.commonId===g.id?'bookmark-check':'bookmark')}${state.commonId===g.id?'已常用':'设常用'}`,'gd-common-button',`data-id="${g.id}" aria-pressed="${state.commonId===g.id}" aria-label="${state.commonId===g.id?'取消':'设置'}${esc(g.name)}为常用${duplicate(g)?'，创建于'+dateText(g.createdAt):''}"`):''}</div>`).join(''):`<div class="gm-empty"><p>${state.tab==='active'?'还没有目标。':'还没有归档的目标。'}</p><p class="gm-muted">${state.tab==='active'?'先给想投入的事情起个名字。':'以后暂时不再关联的目标，会放在这里。'}</p></div>`}</div>${footer(button('new',`${icon('plus')}新建目标`,'gm-primary'))}`;
+  }
+  content.innerHTML=html;
+  if(globalThis.lucide)lucide.createIcons({attrs:{width:18,height:18}});
+ }
+ function commit(action){
+  if(busy)return;const g=goal();if(action!=='name'&&!g){state.view='missing';render();remember();return;}
+  if(action==='name'){
+   const text=state.form.name.trim();if(!text){state.error='先给目标起个名字。';render();announce(state.error);return;}if(Array.from(text).length>200){state.error='目标名称最多200个字，请稍微缩短。';render();announce(state.error);return;}
+   if(state.form.id&&!state.goals.some(g=>g.id===state.form.id)){state.view='missing';render();remember();return;}
+  }
+  busy=true;const control=content.querySelector('[data-action="save-name"], [data-action="confirm-action"], [data-action="restore"], [data-action="common"][data-id="'+state.selectedId+'"]');if(control){control.disabled=true;control.textContent='正在保存…';}
+  const submitted=state;
+  setTimeout(()=>{
+   if(submitted!==state)return;busy=false;
+   if(state.scenario==='保存失败'&&!state.failureUsed){state.failureUsed=true;state.error='没保存成功，内容还在。再试一次吧。';render();remember();announce(state.error);return;}
+   state.error='';
+   if(action==='name'){
+    const form=state.form,text=form.name.trim();let target=state.goals.find(x=>x.id===form.id);
+    if(target){if(target.name!==text){target.name=text;target.updatedAt=stamp;}state.status='目标名称改好了。';}
+    else{target={id:`goal-example-${state.sequence++}`,name:text,status:'active',createdAt:stamp,updatedAt:stamp,archivedAt:null};state.goals.push(target);state.status='目标建好了。';}
+    state.selectedId=target.id;state.form=null;state.view='detail';state.tab=target.status;
+   }else if(action==='common'){
+    if(g.status!=='active'){state.error='这个目标已归档，请先恢复。';render();remember();return;}state.commonId=state.commonId===g.id?null:g.id;state.view='list';state.status='常用目标已更新。';
+   }else if(action==='restore'){
+    if(g.status!=='active'){g.status='active';g.archivedAt=null;g.updatedAt=stamp;}state.tab='active';state.view='detail';state.status='目标已恢复。';
+   }else{
+    const archive=action==='archive'||hasRefs(g);
+    if(archive){if(g.status!=='archived'){g.status='archived';g.archivedAt=stamp;g.updatedAt=stamp;}state.status='目标已归档，以前的记录还在。';}
+    else{state.goals=state.goals.filter(x=>x.id!==g.id);state.status='目标已删除。';}
+    if(state.commonId===g.id)state.commonId=null;
+    state.view='list';state.tab='active';state.selectedId=null;state.pending=null;
+   }
+   render();remember();announce(state.status);
+  },200);
+ }
+ function scenario(){state=fresh();state.scenario=variants.scenario;busy=false;if(variants.scenario==='长时投入'){state.refs=state.refs.filter(r=>!['a5','a6'].includes(r.id));state.refs.push({id:'long1',goalId:'g1',title:'整天整理作品',start:at(4,4),end:at(4,17,30),rhythm:'推进'});}if(['目标列表','常用目标','没有目标','同名目标','保存失败'].includes(variants.scenario))state.view='list';if(variants.scenario==='没有相关记录')state.refs=state.refs.filter(r=>r.goalId!=='g1');if(variants.scenario==='没有目标'){state.goals=[];state.refs=[];state.commonId=null;}if(variants.scenario==='同名目标')state.goals.push({id:'g4',name:'毕业设计',status:'active',createdAt:'2026-10-04T02:00:00.000Z',updatedAt:'2026-10-04T02:00:00.000Z',archivedAt:null});if(variants.scenario==='读取失败')state.view='read-error';if(variants.scenario==='已归档目标'){state.tab='archived';state.view='detail';state.selectedId='g3';}if(variants.scenario==='目标已不存在'){state.view='missing';state.selectedId='removed-goal';}render();}
+ root.addEventListener('click',event=>{
+  const el=event.target.closest('button[data-action]');if(!el||el.disabled||busy)return;const action=el.dataset.action;
+  if(action==='back'){
+   state.error='';if(state.view==='form'){state.view=state.form.id?'detail':'list';state.form=null;}else if(state.view==='confirm'){state.view='detail';state.pending=null;}else if(state.view==='record')state.view=state.recordReturn||'detail';else if(['all-records','chart-settings'].includes(state.view))state.view='detail';else if(state.view==='detail')state.view='list';else if(state.view==='menu')state.view='list';else state.view='menu';
+  }
+  if(action==='list'||action==='retry-read'){state.view='list';state.error='';}
+  if(action==='tab'){state.tab=el.dataset.value;state.view='list';state.error='';state.status='';}
+  if(action==='open'){state.selectedId=el.dataset.id;state.view=goal()?'detail':'missing';state.selectedDay=null;state.error='';state.status='';}
+  if(action==='chart'){state.chart=el.dataset.chart;state.selectedDay=null;}
+  if(action==='day'){state.selectedDay=Number(el.dataset.day);}
+  if(action==='chart-settings')state.view='chart-settings';
+  if(action==='heat-range'){state.heatRange=el.dataset.range;state.selectedDay=null;}
+  if(action==='detail')state.view='detail';
+  if(action==='all-records')state.view='all-records';
+  if(action==='record'){state.recordReturn=state.view;state.recordId=el.dataset.record;state.view='record';}
+  if(action==='record-return')state.view=state.recordReturn||'detail';
+  if(action==='new'){state.form={id:null,name:''};state.view='form';state.error='';}
+  if(action==='rename'){const g=goal();if(g){state.form={id:g.id,name:g.name};state.view='form';state.error='';}else state.view='missing';}
+  if(action==='save-name'){commit('name');return;}
+  if(action==='common'||action==='restore'){if(action==='common')state.selectedId=el.dataset.id;commit(action);return;}
+  if(action==='archive'||action==='delete'){state.pending=action;state.view='confirm';state.error='';}
+  if(action==='cancel'){state.pending=null;state.view='detail';state.error='';}
+  if(action==='confirm-action'){commit(state.pending);return;}
+  render();remember();
+ });
+ root.addEventListener('input',event=>{if(event.target.id==='gm-name-input'&&state.form){state.form.name=event.target.value;state.error='';content.querySelector('.gm-error')?.remove();remember();}});
+ if(!restore(window.openai?.widgetState))scenario();else render();
+ window.addEventListener('openai:set_globals',event=>{const snapshot=event.detail?.globals?.widgetState;if(busy||snapshot?.privateContent?.owner===owner)return;if(restore(snapshot))render();});
+ if(globalThis.Tweak){let previous=variants.scenario;const tweak=new Tweak({container:root,onChange:()=>{if(previous!==variants.scenario){previous=variants.scenario;scenario();remember();}}});tweak.addSelect(variants,'scenario',{label:'示例场景',options:scenes});}
+})();
+</script>

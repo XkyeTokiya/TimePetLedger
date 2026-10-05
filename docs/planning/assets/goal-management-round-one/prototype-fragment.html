@@ -1,0 +1,156 @@
+<style>
+#tpl-goal-design{--gm-paper:#faf7f1;--gm-ink:#251b16;--gm-muted:#6f6259;--gm-line:#dbcbbd;--gm-red:#b65f48;--gm-wash:#f1e8de;color:var(--gm-ink);font-family:"Noto Serif SC","Songti SC",Georgia,serif}
+#tpl-goal-design *{box-sizing:border-box}
+#tpl-goal-design [hidden]{display:none!important}
+#tpl-goal-design .gm-phone{width:min(100%,450px);margin:auto;background:var(--gm-paper);padding:22px 24px 26px;min-height:560px}
+#tpl-goal-design button{font:inherit;color:inherit;min-height:44px;background:transparent;border:0}
+#tpl-goal-design .gm-header{display:flex;align-items:center;gap:12px;margin-bottom:32px;padding-right:78px;font-size:19px}
+#tpl-goal-design .gm-back{display:flex;align-items:center;justify-content:center;width:44px;flex-shrink:0}
+#tpl-goal-design h1{font-size:34px;font-weight:500;line-height:1.4;margin:0 0 16px;overflow-wrap:anywhere}
+#tpl-goal-design h2{font-size:26px;font-weight:500;line-height:1.5;margin:0 0 16px;overflow-wrap:anywhere}
+#tpl-goal-design p{line-height:1.7;margin:10px 0;overflow-wrap:anywhere}
+#tpl-goal-design .gm-muted{color:var(--gm-muted);font-size:15px}
+#tpl-goal-design .gm-tabs{display:flex;border-bottom:1px solid var(--gm-line);margin:26px 0 8px}
+#tpl-goal-design .gm-tab{flex:1;padding:12px 8px;color:var(--gm-muted);border-bottom:3px solid transparent;font-size:18px}
+#tpl-goal-design .gm-tab[aria-selected=true]{color:var(--gm-red);border-color:var(--gm-red)}
+#tpl-goal-design .gm-entry{display:flex;align-items:center;gap:14px;width:100%;padding:23px 0;text-align:left;border-bottom:1px solid var(--gm-line)}
+#tpl-goal-design .gm-entry-text{min-width:0;flex:1}
+#tpl-goal-design .gm-entry strong{font-size:24px;font-weight:500;line-height:1.55;overflow-wrap:anywhere;display:block}
+#tpl-goal-design .gm-entry small{display:block;font-size:14px;color:var(--gm-muted);margin-top:5px}
+#tpl-goal-design .gm-entry .gm-common{color:var(--gm-red);display:flex;align-items:center;gap:7px}
+#tpl-goal-design .gm-entry svg{flex-shrink:0}
+#tpl-goal-design .gm-footer{display:flex;gap:12px;margin-top:32px;padding-top:20px;border-top:1px solid var(--gm-line);flex-wrap:wrap}
+#tpl-goal-design .gm-footer button{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 17px;border-radius:30px;font-size:18px}
+#tpl-goal-design .gm-primary{background:var(--gm-red);color:#fff8f0;flex:1}
+#tpl-goal-design .gm-secondary{border:1px solid var(--gm-line);flex:1}
+#tpl-goal-design .gm-text{display:inline-flex;align-items:center;gap:8px;color:var(--gm-red);padding:7px 0;text-align:left}
+#tpl-goal-design .gm-name{font-size:34px;font-weight:500;line-height:1.4;text-align:left;text-decoration:underline;text-decoration-style:dashed;text-decoration-color:var(--gm-line);text-underline-offset:9px;text-decoration-thickness:1px;overflow-wrap:anywhere;width:100%;padding:0 0 8px}
+#tpl-goal-design .gm-section{padding:22px 0;border-bottom:1px solid var(--gm-line)}
+#tpl-goal-design .gm-section-label{display:block;font-size:14px;color:var(--gm-muted);margin-bottom:8px}
+#tpl-goal-design .gm-note{background:var(--gm-wash);padding:13px 16px;border-radius:9px;font-size:16px;margin:18px 0}
+#tpl-goal-design .gm-name-label{display:block;margin:28px 0 9px;font-size:16px}
+#tpl-goal-design textarea{width:100%;min-height:120px;resize:vertical;border:1px solid var(--gm-line);border-radius:9px;background:var(--gm-paper);color:var(--gm-ink);padding:14px;font:20px/1.6 "Noto Serif SC","Songti SC",Georgia,serif}
+#tpl-goal-design .gm-error{color:#943e2d;font-size:16px}
+#tpl-goal-design .gm-empty{padding:34px 0 22px}
+#tpl-goal-design .gm-confirm-value{font-size:22px;margin:24px 0;overflow-wrap:anywhere}
+#tpl-goal-design .gm-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:380px){#tpl-goal-design .gm-phone{padding:18px 17px 24px}#tpl-goal-design h1,#tpl-goal-design .gm-name{font-size:30px}}
+</style>
+<div id="tpl-goal-design" class="viz-dotted-background" aria-label="目标管理第一轮">
+  <article class="gm-phone">
+    <header class="gm-header"><button type="button" class="gm-back cursor-interaction" data-action="back" aria-label="返回菜单"><i data-lucide="arrow-left" aria-hidden="true"></i></button><span id="gm-heading">目标</span></header>
+    <div id="gm-content"></div>
+    <div id="gm-live" class="gm-sr" aria-live="polite"></div>
+  </article>
+</div>
+<script>
+(()=>{
+ const root=document.getElementById('tpl-goal-design'),content=root.querySelector('#gm-content');
+ const clone=v=>JSON.parse(JSON.stringify(v));
+ const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const icon=name=>`<i data-lucide="${name}" aria-hidden="true"></i>`;
+ const button=(action,label,cls='gm-text',attrs='')=>`<button type="button" class="${cls} cursor-interaction" data-action="${action}" ${attrs}>${label}</button>`;
+ const scenes=['目标列表','没有目标','同名目标','保存失败','读取失败','常用目标','已归档目标','目标已不存在'];
+ const variants={scenario:'目标列表'};
+ const owner=`goals-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+ const stamp='2026-10-06T02:00:00.000Z';
+  function seed(){return [
+  {id:'g1',name:'毕业设计',status:'active',createdAt:'2026-09-20T01:20:00.000Z',updatedAt:'2026-09-20T01:20:00.000Z',archivedAt:null},
+  {id:'g2',name:'英语学习',status:'active',createdAt:'2026-10-03T03:10:00.000Z',updatedAt:'2026-10-03T03:10:00.000Z',archivedAt:null},
+  {id:'g3',name:'暑期阅读',status:'archived',createdAt:'2026-07-01T01:00:00.000Z',updatedAt:'2026-09-01T02:00:00.000Z',archivedAt:'2026-09-01T02:00:00.000Z'}
+ ];}
+ const fresh=()=>({view:'list',tab:'active',selectedId:null,goals:seed(),commonId:null,refs:[{id:'r1',goalId:'g1',title:'设计首页',date:'2026-10-05'},{id:'r2',goalId:'g3',title:'读完第三章',date:'2026-08-31'}],form:null,pending:null,error:'',status:'',failureUsed:false,scenario:'目标列表',sequence:4});
+ let state=fresh(),busy=false;
+ const goal=()=>state.goals.find(g=>g.id===state.selectedId);
+ const hasRefs=g=>state.refs.some(r=>r.goalId===g.id);
+ function dateText(stamp){const d=new Date(stamp);return `${d.getFullYear()!==2026?d.getFullYear()+'年':''}${d.getMonth()+1}月${d.getDate()}日`;}
+ function duplicate(g){return state.goals.filter(x=>x.name===g.name).length>1;}
+ function remember(){if(!window.openai?.setWidgetState)return;const g=goal(),common=state.goals.find(x=>x.id===state.commonId);const snapshot={modelContent:{preview:'目标管理第一轮',view:state.view,tab:state.tab,selectedGoal:g?.name||null,commonGoal:common?.name||null,scenario:state.scenario},privateContent:{kind:'goal-management',version:1,owner,state}};if(new TextEncoder().encode(JSON.stringify(snapshot)).length<=15500)window.openai.setWidgetState(snapshot).catch(()=>{});}
+ function restore(snapshot){const p=snapshot?.privateContent,s=p?.state;if(p?.kind!=='goal-management'||p.version!==1||!s||!['list','detail','form','confirm','read-error','missing','menu'].includes(s.view)||!['active','archived'].includes(s.tab)||!Array.isArray(s.goals)||s.goals.length>40||!Array.isArray(s.refs)||!scenes.includes(s.scenario))return false;for(const g of s.goals)if(typeof g.id!=='string'||typeof g.name!=='string'||!['active','archived'].includes(g.status))return false;if(s.form&&typeof s.form.name!=='string')return false;state=clone(s);variants.scenario=s.scenario;return true;}
+ function announce(text){root.querySelector('#gm-live').textContent=text;}
+ function footer(primary,secondary=''){return `<footer class="gm-footer">${secondary}${primary}</footer>`;}
+ function errors(){return state.error?`<p class="gm-error" role="alert">${esc(state.error)}</p>`:'';}
+ function render(){
+  root.querySelector('#gm-heading').textContent=state.view==='form'?(state.form.id?'修改目标':'新建目标'):state.view==='menu'?'日账本':state.view==='confirm'?'目标操作':'目标';
+  root.querySelector('[data-action="back"]').setAttribute('aria-label',state.view==='confirm'?'取消操作':state.view==='form'?'返回目标':state.view==='detail'?'返回目标列表':state.view==='menu'?'返回目标':'返回菜单');
+  let html='';const g=goal();
+  if(state.view==='read-error')html=`<h1>目标暂时没读出来</h1><p class="gm-muted">再试一次吧。</p>${footer(button('retry-read','重试','gm-primary'))}`;
+  else if(state.view==='missing')html=`<h1>目标已不存在</h1><p class="gm-muted">回到列表看看其他目标。</p>${footer(button('list','回到目标列表','gm-primary'))}`;
+  else if(state.view==='menu')html=`<h1>日账本</h1><div class="gm-section">${button('list',`${icon('flag')} 目标管理`)}</div>`;
+  else if(state.view==='form'){
+   const form=state.form;
+   html=`<h1>${form.id?'给它换个名字':'想把时间<br>投入什么？'}</h1><label class="gm-name-label" for="gm-name-input">目标名称</label><textarea id="gm-name-input" rows="3" placeholder="比如：毕业设计">${esc(form.name)}</textarea><p class="gm-muted">${form.id?'改名后，以前的记录也会显示新名字。':'一个名字就好，记录时可以选择关联它。'}</p>${errors()}${footer(button('save-name','保存目标','gm-primary'))}`;
+  }else if(state.view==='confirm'&&g){
+   const action=state.pending,referenced=hasRefs(g),archive=action==='archive'||action==='delete'&&referenced;
+   html=`<h2>${archive?'归档这个目标？':'删除这个目标？'}</h2><p class="gm-confirm-value">${esc(g.name)}</p><p>${archive?'归档后，新记录就不再关联它。以前的记录会保留。':'这个目标还没有关联的记录，删除后无法恢复。'}</p>${action==='delete'&&referenced?'<p class="gm-muted">它已有记录，会按归档处理。</p>':''}${state.commonId===g.id?`<p class="gm-muted">它也会从常用目标中移除，恢复后需重新设置。</p>`:''}${errors()}${footer(button('confirm-action',archive?'确认归档':'确认删除','gm-primary'),button('cancel','保留目标','gm-secondary'))}`;
+  }else if(state.view==='detail'&&g){
+   html=`<p class="gm-muted">${g.status==='archived'?'已归档':'当前目标'}</p>${button('rename',esc(g.name),'gm-name','aria-label="修改目标名称"')}<p class="gm-muted">创建于${dateText(g.createdAt)}</p>`;
+   if(g.status==='active')html+=`<section class="gm-section"><span class="gm-section-label">常用目标</span><p>${state.commonId===g.id?'新记录会先选这个目标。':'可以设为新记录的初选目标。'}</p><p class="gm-muted">每一笔仍能更换或不关联。</p>${button('common',state.commonId===g.id?'取消常用':'设为常用')}</section>`;
+   else html+=`<p class="gm-muted">以前的记录还在，恢复后可用于新记录。</p>`;
+   const refs=state.refs.filter(r=>r.goalId===g.id);
+   if(refs.length)html+=`<section class="gm-section"><span class="gm-section-label">此前记录</span>${refs.map(r=>`<p>${dateText(r.date+'T12:00:00')} · ${esc(r.title)}<br><span class="gm-muted">${esc(g.name)}</span></p>`).join('')}</section>`;
+   html+=errors();
+   html+=g.status==='archived'?footer(button('restore','恢复目标','gm-primary'),button('delete','删除','gm-secondary')):footer(button('archive','归档目标','gm-secondary'),button('delete','删除','gm-text'));
+  }else{
+   if(state.view==='detail'||state.view==='confirm'){state.view='missing';render();return;}
+   const items=state.goals.filter(g=>g.status===state.tab);
+   html=`<h1>我的目标</h1><p class="gm-muted">给时间一个归属，也可以不关联目标。</p>${state.status?`<div class="gm-note" role="status">${esc(state.status)}</div>`:''}<div class="gm-tabs" role="tablist" aria-label="目标状态">${['active','archived'].map(t=>button('tab',t==='active'?'当前':'已归档','gm-tab',`data-value="${t}" role="tab" id="gm-tab-${t}" aria-selected="${state.tab===t}" aria-controls="gm-goal-list"`)).join('')}</div><div id="gm-goal-list" role="tabpanel" aria-labelledby="gm-tab-${state.tab}">${items.length?items.map(g=>button('open',`<span class="gm-entry-text"><strong>${esc(g.name)}</strong>${state.commonId===g.id&&g.status==='active'?`<small class="gm-common">${icon('bookmark')}常用</small>`:''}${duplicate(g)?`<small>创建于${dateText(g.createdAt)}</small>`:''}</span>${icon('chevron-right')}`,'gm-entry',`data-id="${g.id}" aria-label="查看${esc(g.name)}${duplicate(g)?'，创建于'+dateText(g.createdAt):''}"`)).join(''):`<div class="gm-empty"><p>${state.tab==='active'?'还没有目标。':'还没有归档的目标。'}</p><p class="gm-muted">${state.tab==='active'?'先给想投入的事情起个名字。':'以后暂时不再关联的目标，会放在这里。'}</p></div>`}</div>${footer(button('new',`${icon('plus')}新建目标`,'gm-primary'))}`;
+  }
+  content.innerHTML=html;
+  if(globalThis.lucide)lucide.createIcons({attrs:{width:18,height:18}});
+ }
+ function commit(action){
+  if(busy)return;const g=goal();if(action!=='name'&&!g){state.view='missing';render();remember();return;}
+  if(action==='name'){
+   const text=state.form.name.trim();if(!text){state.error='先给目标起个名字。';render();announce(state.error);return;}if(Array.from(text).length>200){state.error='目标名称最多200个字，请稍微缩短。';render();announce(state.error);return;}
+   if(state.form.id&&!state.goals.some(g=>g.id===state.form.id)){state.view='missing';render();remember();return;}
+  }
+  busy=true;const control=content.querySelector('[data-action="save-name"], [data-action="confirm-action"], [data-action="restore"], [data-action="common"]');if(control){control.disabled=true;control.textContent='正在保存…';}
+  const submitted=state;
+  setTimeout(()=>{
+   if(submitted!==state)return;busy=false;
+   if(state.scenario==='保存失败'&&!state.failureUsed){state.failureUsed=true;state.error='没保存成功，内容还在。再试一次吧。';render();remember();announce(state.error);return;}
+   state.error='';
+   if(action==='name'){
+    const form=state.form,text=form.name.trim();let target=state.goals.find(x=>x.id===form.id);
+    if(target){if(target.name!==text){target.name=text;target.updatedAt=stamp;}state.status='目标名称改好了。';}
+    else{target={id:`goal-example-${state.sequence++}`,name:text,status:'active',createdAt:stamp,updatedAt:stamp,archivedAt:null};state.goals.push(target);state.status='目标建好了。';}
+    state.selectedId=target.id;state.form=null;state.view='detail';state.tab=target.status;
+   }else if(action==='common'){
+    if(g.status!=='active'){state.error='这个目标已归档，请先恢复。';render();remember();return;}state.commonId=state.commonId===g.id?null:g.id;state.view='detail';state.status='常用目标已更新。';
+   }else if(action==='restore'){
+    if(g.status!=='active'){g.status='active';g.archivedAt=null;g.updatedAt=stamp;}state.tab='active';state.view='detail';state.status='目标已恢复。';
+   }else{
+    const archive=action==='archive'||hasRefs(g);
+    if(archive){if(g.status!=='archived'){g.status='archived';g.archivedAt=stamp;g.updatedAt=stamp;}state.status='目标已归档，以前的记录还在。';}
+    else{state.goals=state.goals.filter(x=>x.id!==g.id);state.status='目标已删除。';}
+    if(state.commonId===g.id)state.commonId=null;
+    state.view='list';state.tab='active';state.selectedId=null;state.pending=null;
+   }
+   render();remember();announce(state.status);
+  },200);
+ }
+ function scenario(){state=fresh();state.scenario=variants.scenario;busy=false;if(variants.scenario==='没有目标'){state.goals=[];state.refs=[];}if(variants.scenario==='同名目标')state.goals.push({id:'g4',name:'毕业设计',status:'active',createdAt:'2026-10-04T02:00:00.000Z',updatedAt:'2026-10-04T02:00:00.000Z',archivedAt:null});if(variants.scenario==='读取失败')state.view='read-error';if(variants.scenario==='常用目标')state.commonId='g1';if(variants.scenario==='已归档目标'){state.tab='archived';state.view='detail';state.selectedId='g3';}if(variants.scenario==='目标已不存在'){state.view='missing';state.selectedId='removed-goal';}render();}
+ root.addEventListener('click',event=>{
+  const el=event.target.closest('button[data-action]');if(!el||el.disabled||busy)return;const action=el.dataset.action;
+  if(action==='back'){
+   state.error='';if(state.view==='form'){state.view=state.form.id?'detail':'list';state.form=null;}else if(state.view==='confirm'){state.view='detail';state.pending=null;}else if(state.view==='detail')state.view='list';else if(state.view==='menu')state.view='list';else state.view='menu';
+  }
+  if(action==='list'||action==='retry-read'){state.view='list';state.error='';}
+  if(action==='tab'){state.tab=el.dataset.value;state.view='list';state.error='';state.status='';}
+  if(action==='open'){state.selectedId=el.dataset.id;state.view=goal()?'detail':'missing';state.error='';state.status='';}
+  if(action==='new'){state.form={id:null,name:''};state.view='form';state.error='';}
+  if(action==='rename'){const g=goal();if(g){state.form={id:g.id,name:g.name};state.view='form';state.error='';}else state.view='missing';}
+  if(action==='save-name'){commit('name');return;}
+  if(action==='common'||action==='restore'){commit(action);return;}
+  if(action==='archive'||action==='delete'){state.pending=action;state.view='confirm';state.error='';}
+  if(action==='cancel'){state.pending=null;state.view='detail';state.error='';}
+  if(action==='confirm-action'){commit(state.pending);return;}
+  render();remember();
+ });
+ root.addEventListener('input',event=>{if(event.target.id==='gm-name-input'&&state.form){state.form.name=event.target.value;state.error='';content.querySelector('.gm-error')?.remove();remember();}});
+ restore(window.openai?.widgetState);render();
+ window.addEventListener('openai:set_globals',event=>{const snapshot=event.detail?.globals?.widgetState;if(busy||snapshot?.privateContent?.owner===owner)return;if(restore(snapshot))render();});
+ if(globalThis.Tweak){let previous=variants.scenario;const tweak=new Tweak({container:root,onChange:()=>{if(previous!==variants.scenario){previous=variants.scenario;scenario();remember();}}});tweak.addSelect(variants,'scenario',{label:'示例场景',options:scenes});}
+})();
+</script>

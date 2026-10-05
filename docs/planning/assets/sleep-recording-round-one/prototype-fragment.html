@@ -1,0 +1,240 @@
+<div id="tpl-sleep-design" class="viz-dotted-background">
+  <div class="sr-stage" aria-label="记录睡眠交互草案">
+    <p class="sr-preview">交互草案 · 示例数据</p>
+    <article class="sr-phone">
+      <header class="sr-header">
+        <button class="sr-icon cursor-interaction" type="button" data-action="exit" aria-label="返回账本"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+        <span id="sr-heading">记录睡眠</span>
+      </header>
+      <div id="sr-content"></div>
+      <p id="sr-live" class="sr-only" aria-live="polite"></p>
+    </article>
+  </div>
+</div>
+<style>
+#tpl-sleep-design {padding:20px 0;color-scheme:light;}
+#tpl-sleep-design * {box-sizing:border-box;}
+#tpl-sleep-design .sr-stage {width:min(100%,450px);margin:auto;--sr-paper:#fcf9f4;--sr-ink:#241f1a;--sr-muted:#6c625a;--sr-line:#e1d3c4;--sr-red:#ae563f;--sr-tint:#f4e8dc;--sr-soft:#f5eee6;--sr-green:#6d7e64;color:var(--sr-ink);font:17px/1.55 Georgia,'Noto Serif CJK SC','Songti SC',SimSun,serif;}
+#tpl-sleep-design .sr-preview {font:13px/1.5 system-ui,sans-serif;color:var(--sr-muted);margin:0 0 8px 2px;}
+#tpl-sleep-design .sr-phone {background:var(--sr-paper);box-shadow:0 8px 32px #241f1a12;padding:20px 22px 18px;min-width:0;}
+#tpl-sleep-design .sr-header {display:flex;align-items:center;gap:10px;min-height:44px;margin:0 -8px 16px;}
+#tpl-sleep-design button,#tpl-sleep-design select,#tpl-sleep-design textarea {font:inherit;color:inherit;}
+#tpl-sleep-design button {background:none;border:0;text-align:left;}
+#tpl-sleep-design button:disabled {opacity:.55;cursor:default;}
+#tpl-sleep-design .sr-icon {min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:8px;}
+#tpl-sleep-design .sr-icon svg {width:23px;height:23px;}
+#tpl-sleep-design h1,#tpl-sleep-design h2,#tpl-sleep-design p {margin:0;font-weight:400;}
+#tpl-sleep-design h1 {font-size:32px;line-height:1.35;letter-spacing:-.5px;}
+#tpl-sleep-design h2 {font-size:23px;line-height:1.4;}
+#tpl-sleep-design .sr-body {padding:19px 0 26px;min-height:465px;}
+#tpl-sleep-design .sr-muted {font-size:14px;color:var(--sr-muted);margin-top:9px;}
+#tpl-sleep-design .sr-types {display:flex;gap:4px;padding:4px;border-radius:26px;background:var(--sr-soft);margin:25px 0 23px;}
+#tpl-sleep-design .sr-types button {display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:1;min-height:46px;padding:8px 5px;border-radius:24px;}
+#tpl-sleep-design .sr-types button[aria-pressed=true] {background:var(--sr-paper);box-shadow:0 2px 5px #241f1a0a;color:var(--sr-red);}
+#tpl-sleep-design .sr-types svg {width:19px;height:19px;}
+#tpl-sleep-design .sr-endpoint {border-top:1px solid var(--sr-line);padding:12px 0 18px;}
+#tpl-sleep-design .sr-endpoint-label {display:block;font-size:14px;color:var(--sr-muted);}
+#tpl-sleep-design .sr-endpoint-row {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:3px 0 0;}
+#tpl-sleep-design .sr-date {display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0;font-size:16px;}
+#tpl-sleep-design .sr-date svg {width:15px;height:15px;color:var(--sr-muted);}
+#tpl-sleep-design .sr-time {padding:0;min-height:52px;font:36px/1.25 Georgia,serif;letter-spacing:-1px;}
+#tpl-sleep-design .sr-time.sr-empty {font:23px/1.4 Georgia,'Songti SC',serif;letter-spacing:0;color:var(--sr-muted);}
+#tpl-sleep-design .sr-duration {text-align:center;padding:10px 0 18px;color:var(--sr-muted);font-size:16px;}
+#tpl-sleep-design .sr-duration strong {color:var(--sr-ink);font-size:25px;font-weight:400;display:block;margin-top:4px;}
+#tpl-sleep-design .sr-link {display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:7px 0;color:var(--sr-red);font-size:15px;}
+#tpl-sleep-design .sr-link svg {width:16px;height:16px;}
+#tpl-sleep-design .sr-field-label {display:block;font-size:15px;margin:9px 0 8px;}
+#tpl-sleep-design textarea {display:block;width:100%;resize:vertical;padding:13px;border:1px solid var(--sr-line);border-radius:9px;background:var(--sr-paper);font-size:18px;min-height:115px;}
+#tpl-sleep-design textarea::placeholder {color:#887970;}
+#tpl-sleep-design select {width:100%;padding:11px;border:1px solid var(--sr-line);border-radius:9px;background:var(--sr-paper);min-height:48px;font-size:17px;}
+#tpl-sleep-design .sr-footer {display:flex;gap:10px;align-items:center;padding-top:13px;border-top:1px solid var(--sr-line);}
+#tpl-sleep-design .sr-primary,#tpl-sleep-design .sr-secondary {display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:52px;padding:12px 18px;border-radius:30px;text-align:center;}
+#tpl-sleep-design .sr-primary {background:var(--sr-red);color:var(--sr-paper);flex:1;border:1px solid var(--sr-red);}
+#tpl-sleep-design .sr-secondary {border:1px solid var(--sr-line);flex:.65;}
+#tpl-sleep-design .sr-primary svg {width:19px;height:19px;}
+#tpl-sleep-design .sr-error {color:#9c3325;background:#f9e9e1;padding:12px 14px;border-radius:8px;margin:13px 0;font-size:15px;overflow-wrap:anywhere;}
+#tpl-sleep-design .sr-status {color:var(--sr-green);background:var(--sr-soft);padding:13px 14px;border-radius:8px;margin:13px 0;font-size:15px;overflow-wrap:anywhere;}
+#tpl-sleep-design .sr-notice {font-size:14px;color:var(--sr-muted);margin-bottom:18px;}
+#tpl-sleep-design .sr-sheet {padding:18px 0 24px;min-height:440px;}
+#tpl-sleep-design .sr-sheet h1 {font-size:28px;margin-bottom:20px;}
+#tpl-sleep-design .sr-clock-value {text-align:center;font:52px/1.2 Georgia,serif;letter-spacing:-2px;margin:20px 0;}
+#tpl-sleep-design .sr-clock-selects {display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:26px 0 20px;}
+#tpl-sleep-design .sr-calendar-nav {display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;gap:6px;}
+#tpl-sleep-design .sr-calendar-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;}
+#tpl-sleep-design .sr-calendar-grid>span {display:flex;align-items:center;justify-content:center;min-height:30px;font-size:13px;color:var(--sr-muted);}
+#tpl-sleep-design .sr-calendar-grid button {min-height:44px;padding:6px 0;text-align:center;border-radius:50%;font:16px/1.5 Georgia,serif;}
+#tpl-sleep-design .sr-calendar-grid button[aria-pressed=true] {background:var(--sr-red);color:var(--sr-paper);}
+#tpl-sleep-design .sr-selected-date {margin-top:16px;color:var(--sr-red);text-align:center;}
+#tpl-sleep-design .sr-ledger-title {font:48px/1.3 Georgia,'Noto Serif CJK SC',serif;margin:12px 0 20px;}
+#tpl-sleep-design .sr-entry {display:flex;align-items:baseline;gap:17px;width:100%;padding:18px 0;border-bottom:1px solid var(--sr-line);overflow-wrap:anywhere;}
+#tpl-sleep-design .sr-entry small {font-size:14px;color:var(--sr-muted);flex:none;}
+#tpl-sleep-design .sr-entry strong {font-weight:400;font-size:25px;}
+#tpl-sleep-design .sr-detail-value {border-top:1px solid var(--sr-line);padding:17px 0;}
+#tpl-sleep-design .sr-detail-value span {display:block;font-size:14px;color:var(--sr-muted);}
+#tpl-sleep-design .sr-detail-value strong {font-size:23px;font-weight:400;display:block;margin-top:4px;overflow-wrap:anywhere;}
+#tpl-sleep-design .sr-note-text {white-space:pre-wrap;overflow-wrap:anywhere;margin-top:18px;}
+#tpl-sleep-design .sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+@media(max-width:360px) {#tpl-sleep-design .sr-phone {padding:17px 16px;}#tpl-sleep-design h1 {font-size:28px;}#tpl-sleep-design .sr-time {font-size:33px;}}
+</style>
+<script>
+(() => {
+  const root=document.getElementById('tpl-sleep-design'),content=root.querySelector('#sr-content');
+  const types={mainSleep:'主睡眠',nap:'小睡'};
+  const scenes=['空白记录','已填主睡眠','小睡','编辑睡眠','时间冲突','保存失败','已保存，收尾失败','离开时草稿失败'];
+  const variants={scenario:'空白记录'};
+  const owner=`sleep-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const demoDate='2026-10-05',demoNow='2026-10-05T18:00:00';
+  const endpoint=()=>({date:null,time:null,precision:'approximate'});
+  const base=()=>({view:'editor',sourceDate:demoDate,type:'mainSleep',start:endpoint(),end:endpoint(),note:'',noteOpen:false,dirty:false,editing:false,original:null,fact:null,committed:false,cleanup:false,error:'',status:'',failureUsed:false,draftFailureUsed:false,resumed:false});
+  let state=base(),sheet=null,busy=false;
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const pad=n=>String(n).padStart(2,'0');
+  const icon=name=>`<i data-lucide="${name}" aria-hidden="true"></i>`;
+  const btn=(action,label,cls='sr-link',attrs='')=>`<button type="button" class="${cls} cursor-interaction" data-action="${action}" ${attrs}>${label}</button>`;
+  const dayText=date=>{if(!date)return '选日期';const [y,m,d]=date.split('-').map(Number);return `${y!==2026?y+'年':''}${m}月${d}日`;};
+  const timeValue=e=>e.date&&e.time?Date.parse(`${e.date}T${e.time}:00`):NaN;
+  const count=text=>Array.from(String(text??'').trim()).length;
+  function durationText(ms){const n=Math.round(ms/60000);return n===0&&ms>0?'少于1分钟':n>=60?`${Math.floor(n/60)} 小时${n%60?' '+n%60+' 分钟':''}`:`${n} 分钟`;}
+  function validate(s){
+    if(!Object.hasOwn(types,s.type))return '先选择主睡眠或小睡。';
+    if(!Number.isFinite(timeValue(s.start))||!Number.isFinite(timeValue(s.end)))return '先选好入睡和醒来的日期、时间。';
+    if(timeValue(s.end)<=timeValue(s.start))return '醒来要晚于入睡。跨夜的话，请确认醒来的日期。';
+    if(count(s.note)>2000)return '备注最多2000个字，请稍微缩短。';
+    return '';
+  }
+  function dateWindow(date){
+    const [y,m,d]=date.split('-').map(Number),a=new Date(y,m-1,d).getTime(),b=new Date(y,m-1,d+1).getTime();
+    return date>demoDate?[a,a]:[a,date===demoDate?Math.min(b,Date.parse(demoNow)):b];
+  }
+  function daySlice(f,date){const [a,b]=dateWindow(date);return {start:Math.max(a,timeValue(f.start)),end:Math.min(b,timeValue(f.end)),duration:Math.max(0,Math.min(b,timeValue(f.end))-Math.max(a,timeValue(f.start)))};}
+  function clockText(ms){const d=new Date(ms);return `${pad(d.getHours())}:${pad(d.getMinutes())}`;}
+  function remember(){
+    if(!window.openai?.setWidgetState)return;
+    const snapshot={modelContent:{preview:'记录睡眠第一轮',scenario:variants.scenario,view:state.view,type:types[state.type],start:state.start,end:state.end,editing:state.editing,committed:state.committed},privateContent:{kind:'sleep-recording',version:1,owner,state,scenario:variants.scenario}};
+    if(new TextEncoder().encode(JSON.stringify(snapshot)).length<=15500)window.openai.setWidgetState(snapshot).catch(()=>{});
+  }
+  function restore(snapshot){
+    const p=snapshot?.privateContent,s=p?.state;
+    if(p?.kind!=='sleep-recording'||p.version!==1||!s||!['editor','ledger','detail'].includes(s.view)||!Object.hasOwn(types,s.type)||typeof s.note!=='string')return false;
+    for(const key of ['start','end'])if(!s[key]||!(s[key].date===null||/^\d{4}-\d{2}-\d{2}$/.test(s[key].date))||!(s[key].time===null||/^([01]\d|2[0-3]):[0-5]\d$/.test(s[key].time)))return false;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(s.sourceDate))return false;
+    state={...base(),...s,start:{...s.start,precision:'approximate'},end:{...s.end,precision:'approximate'}};
+    if(scenes.includes(p.scenario))variants.scenario=p.scenario;
+    return true;
+  }
+  function announce(text){root.querySelector('#sr-live').textContent=text;}
+  function changed(){state.dirty=true;state.error='';content.querySelector('.sr-error')?.remove();remember();}
+  function icons(){if(globalThis.lucide)lucide.createIcons({attrs:{width:18,height:18}});}
+  function errorText(){return state.error?`<p class="sr-error" role="alert">${esc(state.error)}</p>`:'';}
+  function footer(primary,secondary=''){return `<footer class="sr-footer">${secondary}${primary}</footer>`;}
+  function render(){
+    root.querySelector('#sr-heading').textContent=sheet?'记录睡眠':state.view==='ledger'?'日账本':state.view==='detail'?'睡眠记录':state.editing?'编辑睡眠':'记录睡眠';
+    root.querySelector('[data-action="exit"]').setAttribute('aria-label',sheet?'取消修改':state.view==='detail'?'返回账本':state.view==='ledger'?'返回睡眠记录':'返回账本');
+    if(sheet){renderSheet();return;}
+    if(state.view==='ledger'){renderLedger();return;}
+    if(state.view==='detail'){renderDetail();return;}
+    const duration=timeValue(state.end)-timeValue(state.start);
+    let html=`<main class="sr-body">${state.resumed?'<p class="sr-notice">上次没写完，接着记吧。</p>':''}<h1>几点睡，<br>几点醒？</h1><div class="sr-types" role="group" aria-label="睡眠类型">${[['mainSleep','moon'],['nap','cloud-moon']].map(([type,symbol])=>btn('type',`${icon(symbol)}${types[type]}`,'',`data-value="${type}" aria-pressed="${state.type===type}"`)).join('')}</div>${['start','end'].map(key=>`<section class="sr-endpoint"><span class="sr-endpoint-label">${key==='start'?'入睡':'醒来'}</span><div class="sr-endpoint-row">${btn('date',`${dayText(state[key].date)}${icon('chevron-down')}`,'sr-date',`data-key="${key}" aria-label="选择${key==='start'?'入睡':'醒来'}日期"`)}${btn('time',state[key].time||'选时间',`sr-time ${state[key].time?'':'sr-empty'}`,`data-key="${key}" aria-label="选择${key==='start'?'入睡':'醒来'}时间"`)}</div></section>`).join('')}<div class="sr-duration">${Number.isFinite(duration)&&duration>0?`这次睡眠<strong>${durationText(duration)}</strong>`:Number.isFinite(duration)?'请确认入睡和醒来的日期':'选好时间，就能看到睡了多久。'}</div>${btn('note',`${icon(state.noteOpen?'minus':'plus')}${state.noteOpen?'收起备注':state.note?'查看备注':'补充备注'}`,'sr-link',`aria-expanded="${state.noteOpen}" aria-controls="sr-note-region"`)}<div id="sr-note-region" ${state.noteOpen?'':'hidden'}><label class="sr-field-label" for="sr-note">还有什么想记下的？</label><textarea id="sr-note" data-field="note" rows="3" placeholder="可以留空">${esc(state.note)}</textarea></div>${errorText()}${state.cleanup?'<p class="sr-status" role="status">睡眠已经保存。还有收尾没完成，再试一次就好。</p>':''}${state.editing&&!state.committed?'<p class="sr-muted">保存后才会更新这条睡眠。</p>':''}</main>`;
+    html+=footer(state.cleanup?btn('finish','重试收尾','sr-primary'):state.committed?btn('ledger','回到账本','sr-primary'):btn('save',`${icon('check')}${state.editing?'保存修改':'保存睡眠'}`,'sr-primary'));
+    content.innerHTML=html;
+    if(state.committed)content.querySelectorAll('[data-action]').forEach(b=>{if(!['finish','ledger'].includes(b.dataset.action))b.disabled=true;});
+    icons();
+  }
+  function openSheet(type,key){
+    sheet={type,key,temp:{date:state[key].date,time:state[key].time}};
+    if(type==='date'){sheet.temp.date||=state[key==='start'?'end':'start'].date||demoDate;const [y,m]=sheet.temp.date.split('-').map(Number);sheet.month=[y,m];}
+    if(type==='time')sheet.temp.time||='00:00';
+    render();announce(type==='date'?'选择日期':'选择时间');
+  }
+  function renderSheet(){
+    const title=sheet.key==='start'?'入睡':'醒来';
+    let html=`<section class="sr-sheet" aria-label="睡眠时间选择器"><h1>${title}${sheet.type==='date'?'日期':'时间'}</h1>`;
+    if(sheet.type==='time'){
+      const [hour,minute]=sheet.temp.time.split(':');
+      html+=`<p class="sr-muted">${dayText(state[sheet.key].date)} · 24小时制</p><div class="sr-clock-value" id="sr-clock-value">${sheet.temp.time}</div><div class="sr-clock-selects"><div><label class="sr-field-label" for="sr-hour">小时</label><select id="sr-hour" data-clock="hour">${Array.from({length:24},(_,n)=>`<option value="${pad(n)}" ${pad(n)===hour?'selected':''}>${pad(n)}</option>`).join('')}</select></div><div><label class="sr-field-label" for="sr-minute">分钟</label><select id="sr-minute" data-clock="minute">${Array.from({length:60},(_,n)=>`<option value="${pad(n)}" ${pad(n)===minute?'selected':''}>${pad(n)}</option>`).join('')}</select></div></div><p class="sr-muted">确认后只修改${title}时间。</p>`;
+    }else{
+      const [y,m]=sheet.month,first=(new Date(y,m-1,1).getDay()+6)%7,days=new Date(y,m,0).getDate();
+      html+=`<div class="sr-calendar-nav">${btn('month',icon('chevron-left'),'sr-icon','data-value="-1" aria-label="上个月"')}<span>${y}年${m}月</span>${btn('month',icon('chevron-right'),'sr-icon','data-value="1" aria-label="下个月"')}</div><div class="sr-calendar-grid" aria-label="日期选择">${['一','二','三','四','五','六','日'].map(d=>`<span>${d}</span>`).join('')}${'<span></span>'.repeat(first)}${Array.from({length:days},(_,n)=>{const date=`${y}-${pad(m)}-${pad(n+1)}`;return btn('day',String(n+1),'',`data-value="${date}" aria-label="${y}年${m}月${n+1}日" aria-pressed="${sheet.temp.date===date}"`);}).join('')}</div><p class="sr-selected-date">已选 ${dayText(sheet.temp.date)}</p>`;
+    }
+    content.innerHTML=html+'</section>'+footer(btn('apply','确认','sr-primary'),btn('cancel','取消','sr-secondary'));icons();
+  }
+  function visibleFact(){return state.fact||state.original;}
+  function renderLedger(){
+    const f=visibleFact(),slice=f?daySlice(f,state.sourceDate):null;
+    content.innerHTML=`<main class="sr-body"><div class="sr-ledger-title">${dayText(state.sourceDate)}</div>${state.status?`<p class="sr-status" role="status">${esc(state.status)}</p>`:''}${f&&slice.duration>0?btn('detail',`<small>${clockText(slice.start)}<br>${slice.end===dateWindow(state.sourceDate)[1]&&state.sourceDate<demoDate?'24:00':clockText(slice.end)}</small><span><strong>${types[f.type]}</strong><p class="sr-muted">本日 ${durationText(slice.duration)}</p><p class="sr-muted">这次睡眠 ${durationText(timeValue(f.end)-timeValue(f.start))}</p></span>`,'sr-entry'):f?'<p class="sr-muted">这次睡眠不在本日时间线内，可以查看完整记录。</p>':''}${state.dirty&&!state.committed?`<div class="sr-status"><p>还有一段睡眠没记完。</p>${btn('resume','继续这条睡眠')}</div>`:''}${!f&&!state.dirty?'<p class="sr-muted">尚未记录睡眠。</p>':''}</main>${footer(state.dirty&&!state.committed?btn('resume','继续记录','sr-primary'):f?btn('detail','查看睡眠','sr-primary'):btn('new','记录睡眠','sr-primary'),state.dirty&&!state.committed?btn('discard','放弃草稿','sr-secondary'):'')}`;icons();
+  }
+  function renderDetail(){
+    const f=visibleFact();if(!f){state.view='ledger';render();return;}
+    content.innerHTML=`<main class="sr-body"><h1>${types[f.type]}</h1><p class="sr-muted">完整睡眠记录</p><div class="sr-detail-value"><span>入睡</span><strong>${dayText(f.start.date)} ${esc(f.start.time)}</strong></div><div class="sr-detail-value"><span>醒来</span><strong>${dayText(f.end.date)} ${esc(f.end.time)}</strong></div><div class="sr-detail-value"><span>这次睡眠</span><strong>${durationText(timeValue(f.end)-timeValue(f.start))}</strong></div>${f.note?`<p class="sr-note-text">${esc(f.note)}</p>`:''}</main>${footer(btn('edit','编辑睡眠','sr-primary'),btn('ledger','回到账本','sr-secondary'))}`;icons();
+  }
+  function finish(message){state.cleanup=false;state.dirty=false;state.view='ledger';state.status=message;state.error='';render();remember();announce(message);}
+  function save(){
+    if(busy||state.committed)return;
+    state.error=validate(state);
+    if(state.error){if(count(state.note)>2000)state.noteOpen=true;render();announce(state.error);return;}
+    if(variants.scenario==='时间冲突'&&timeValue(state.start)<Date.parse('2026-10-05T07:30:00')&&timeValue(state.end)>Date.parse('2026-10-05T07:00:00')){state.error='和“早餐 · 10月5日 07:00—07:30”重叠了。请调整睡眠时间。';render();announce(state.error);return;}
+    busy=true;const button=content.querySelector('[data-action="save"]');button.disabled=true;button.textContent='正在保存…';
+    const submitted=state;
+    setTimeout(()=>{
+      if(submitted!==state)return;
+      busy=false;
+      if(variants.scenario==='保存失败'&&!state.failureUsed){state.failureUsed=true;state.error='没保存成功，内容还在。再试一次吧。';render();remember();announce(state.error);return;}
+      state.note=state.note.trim();state.fact={id:state.original?.id||'sleep-example-1',type:state.type,start:{...state.start,precision:'approximate'},end:{...state.end,precision:'approximate'},note:state.note};state.committed=true;
+      if(variants.scenario==='已保存，收尾失败'){state.cleanup=true;render();remember();announce('睡眠已保存，请重试收尾。');return;}
+      finish(state.editing?'睡眠修改好了。':'这段睡眠记好了。');
+    },250);
+  }
+  function scenario(){
+    state=base();sheet=null;busy=false;
+    if(variants.scenario!=='空白记录'){
+      state.start={date:'2026-10-04',time:'23:40',precision:'approximate'};
+      state.end={date:'2026-10-05',time:'07:20',precision:'approximate'};
+      state.dirty=true;
+    }
+    if(variants.scenario==='小睡'){state.type='nap';state.start={date:demoDate,time:'13:10',precision:'approximate'};state.end={date:demoDate,time:'13:40',precision:'approximate'};}
+    if(variants.scenario==='编辑睡眠'){state.editing=true;state.original={id:'sleep-example-existing',type:state.type,start:{...state.start},end:{...state.end},note:'夜里醒了一次'};state.note=state.original.note;state.dirty=false;}
+    render();announce(variants.scenario);
+  }
+  root.addEventListener('click',event=>{
+    const b=event.target.closest('button[data-action]');if(!b||b.disabled||busy)return;
+    const {action,key,value}=b.dataset;
+    if(action==='exit'){
+      if(sheet){sheet=null;render();announce('修改已取消。');return;}
+      if(state.view==='detail'){state.view='ledger';render();remember();return;}
+      if(state.view==='ledger'){if(state.dirty&&!state.committed){state.view='editor';state.resumed=true;render();remember();}return;}
+      if(state.cleanup){state.error='睡眠已经保存，请先重试收尾。';render();return;}
+      if(variants.scenario==='离开时草稿失败'&&!state.draftFailureUsed){state.draftFailureUsed=true;state.error='还没保留好，先留在这里。点返回可以再试一次。';render();remember();return;}
+      state.view='ledger';state.status=state.dirty?'未保存的内容已保留，可以接着记。':'';render();remember();return;
+    }
+    if(action==='date'||action==='time'){openSheet(action,key);return;}
+    if(action==='day'){sheet.temp.date=value;render();return;}
+    if(action==='month'){const d=new Date(sheet.month[0],sheet.month[1]-1+Number(value),1);sheet.month=[d.getFullYear(),d.getMonth()+1];render();return;}
+    if(action==='cancel'){sheet=null;render();announce('修改已取消。');return;}
+    if(action==='apply'){state[sheet.key][sheet.type]=sheet.temp[sheet.type];sheet=null;changed();render();announce('时间已更新。');return;}
+    if(action==='type'){state.type=value;changed();render();return;}
+    if(action==='note'){state.noteOpen=!state.noteOpen;render();remember();return;}
+    if(action==='save'){save();return;}
+    if(action==='finish'){finish('睡眠已保存，收尾也完成了。');return;}
+    if(action==='resume'){state.view='editor';state.resumed=true;state.error='';render();remember();return;}
+    if(action==='ledger'){state.view='ledger';render();remember();return;}
+    if(action==='detail'){state.view='detail';render();remember();return;}
+    if(action==='edit'){
+      if(state.dirty&&!state.committed){state.view='editor';state.resumed=true;render();remember();return;}
+      const f=visibleFact();if(!f)return;
+      state.original={...f,start:{...f.start},end:{...f.end}};state.fact=null;state.editing=true;state.committed=false;state.dirty=false;state.resumed=false;state.type=f.type;state.start={...f.start};state.end={...f.end};state.note=f.note||'';state.error='';state.view='editor';render();remember();return;
+    }
+    if(action==='discard'){
+      const f=visibleFact();state=base();state.original=f;state.view='ledger';state.status='草稿已放弃。';render();remember();return;
+    }
+    if(action==='new'){state=base();render();remember();}
+  });
+  root.addEventListener('input',event=>{if(event.target.dataset.field==='note'){state.note=event.target.value;changed();}});
+  root.addEventListener('change',event=>{
+    if(event.target.dataset.clock&&sheet){sheet.temp.time=content.querySelector('#sr-hour').value+':'+content.querySelector('#sr-minute').value;content.querySelector('#sr-clock-value').textContent=sheet.temp.time;}
+  });
+  root.addEventListener('keydown',event=>{if(event.key==='Escape'&&sheet){sheet=null;render();announce('修改已取消。');}});
+  restore(window.openai?.widgetState);render();
+  window.addEventListener('openai:set_globals',event=>{const snapshot=event.detail?.globals?.widgetState;if(busy||snapshot?.privateContent?.owner===owner)return;if(restore(snapshot)){sheet=null;render();}});
+  if(globalThis.Tweak){let previous=variants.scenario;const tweak=new Tweak({container:root.querySelector('.sr-stage'),onChange:()=>{if(previous!==variants.scenario){previous=variants.scenario;scenario();}else render();remember();}});tweak.addSelect(variants,'scenario',{label:'示例场景',options:scenes});}
+})();
+</script>

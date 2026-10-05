@@ -1,0 +1,232 @@
+<div id="tpl-round-one" class="viz-dotted-background">
+  <div class="tpl-device" aria-label="日账本与摘要设计草案">
+    <header class="tpl-header">
+      <button type="button" class="tpl-icon" id="tpl-menu" aria-label="打开菜单"><i data-lucide="menu" aria-hidden="true"></i></button>
+      <span>日账本</span>
+    </header>
+    <div class="tpl-date-row">
+      <button type="button" id="tpl-date" aria-label="选择日期"></button>
+      <span id="tpl-weekday"></span>
+    </div>
+    <div class="tpl-coverage">
+      <div>已交代 <strong id="tpl-accounted"></strong><span class="tpl-separator"> / </span>尚未记录 <strong id="tpl-gap-total"></strong></div>
+      <p id="tpl-unknown-note"></p>
+    </div>
+    <nav class="tpl-tabs" role="tablist" aria-label="日账本视角">
+      <button type="button" role="tab" id="tpl-tab-timeline" aria-controls="tpl-timeline" aria-selected="true" data-tab="timeline">时间线</button>
+      <button type="button" role="tab" id="tpl-tab-summary" aria-controls="tpl-summary" aria-selected="false" data-tab="summary">摘要</button>
+      <button type="button" role="tab" id="tpl-tab-review" aria-controls="tpl-review" aria-selected="false" data-tab="review">复盘</button>
+    </nav>
+    <main id="tpl-content">
+      <section id="tpl-timeline" role="tabpanel" aria-labelledby="tpl-tab-timeline"></section>
+      <section id="tpl-summary" role="tabpanel" aria-labelledby="tpl-tab-summary" hidden>
+        <section class="tpl-summary-section">
+          <div class="tpl-section-title"><h2>这一天怎么过的</h2><span id="tpl-window"></span></div>
+          <div class="tpl-ring-wrap"><svg id="tpl-day-ring" class="tpl-ring" role="img" aria-label="一天时间去向环图"></svg><div class="tpl-ring-center"><span id="tpl-day-label">已交代</span><strong id="tpl-day-value"></strong><span id="tpl-day-ratio"></span></div></div>
+          <div id="tpl-day-legend" class="tpl-legend" aria-label="一天时间去向明细"></div>
+          <p class="tpl-sleep-detail" id="tpl-sleep-detail"></p>
+        </section>
+        <section class="tpl-summary-section">
+          <div class="tpl-section-title"><h2>时间花在哪些目标上</h2></div>
+          <div id="tpl-goal-chart"><div class="tpl-ring-wrap"><svg id="tpl-goal-ring" class="tpl-ring" role="img" aria-label="目标时间分布环图"></svg><div class="tpl-ring-center"><span id="tpl-goal-label">目标相关</span><strong id="tpl-goal-value"></strong><span id="tpl-goal-ratio"></span></div></div><div id="tpl-goal-list"></div></div>
+          <p id="tpl-no-goals" hidden>这一天还没有目标相关记录。</p>
+          <div class="tpl-global-rest"><span>这一天的休息</span><strong id="tpl-rest"></strong></div>
+        </section>
+      </section>
+      <section id="tpl-review" role="tabpanel" aria-labelledby="tpl-tab-review" hidden><div class="tpl-review-placeholder"><i data-lucide="notebook-pen" aria-hidden="true"></i><h2>复盘</h2><p>这一页留待下一轮设计。</p></div></section>
+    </main>
+    <aside id="tpl-suggestion" class="tpl-suggestion" aria-live="polite"></aside>
+    <footer class="tpl-footer"><button type="button" id="tpl-record-sleep"><i data-lucide="moon" aria-hidden="true"></i>记录睡眠</button><button type="button" id="tpl-record-activity"><i data-lucide="pencil" aria-hidden="true"></i>记录一笔</button></footer>
+    <dialog id="tpl-dialog" aria-labelledby="tpl-dialog-title"><div class="tpl-dialog-heading"><h2 id="tpl-dialog-title"></h2><button type="button" id="tpl-close" class="tpl-icon" aria-label="关闭"><i data-lucide="x" aria-hidden="true"></i></button></div><div id="tpl-dialog-content"></div></dialog>
+  </div>
+</div>
+<style>
+#tpl-round-one {padding:20px 0;color-scheme:light;}
+#tpl-round-one .tpl-device {--tpl-paper:#fcf9f4;--tpl-ink:#241f1a;--tpl-muted:#6c625a;--tpl-line:#e1d3c4;--tpl-accent:#b65f48;--tpl-soft:#f5eee6;--tpl-sleep:#748190;--tpl-known:#bc936d;--tpl-unknown:#aaa09a;--tpl-gap:#e4dcd1;--tpl-goal-one:#b65f48;--tpl-goal-two:#77886e;position:relative;width:min(100%,450px);margin:auto;padding:23px 20px 15px;box-sizing:border-box;background:var(--tpl-paper);color:var(--tpl-ink);font:17px/1.55 Georgia,'Noto Serif CJK SC','Songti SC',SimSun,serif;box-shadow:0 8px 32px #241f1a12;}
+#tpl-round-one * {box-sizing:border-box;}
+#tpl-round-one button,#tpl-round-one input,#tpl-round-one select {font:inherit;}
+#tpl-round-one button {color:inherit;background:none;border:0;cursor:var(--cursor-interaction,pointer);}
+#tpl-round-one button:focus-visible,#tpl-round-one input:focus-visible {outline:2px solid var(--tpl-accent);outline-offset:4px;}
+#tpl-round-one button:disabled {cursor:default;opacity:.55;}
+#tpl-round-one h2,#tpl-round-one p {margin:0;}
+#tpl-round-one h2 {font-size:21px;font-weight:500;}
+#tpl-round-one [hidden] {display:none!important;}
+#tpl-round-one .tpl-header {display:flex;align-items:center;gap:20px;color:var(--tpl-muted);font-size:20px;margin-bottom:18px;}
+#tpl-round-one .tpl-icon {display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:8px;}
+#tpl-round-one .tpl-header .tpl-icon {margin-left:-8px;}
+#tpl-round-one .tpl-header svg {width:26px;height:26px;}
+#tpl-round-one .tpl-date-row {display:flex;align-items:baseline;flex-wrap:wrap;gap:13px;padding-bottom:12px;border-bottom:1px solid var(--tpl-line);}
+#tpl-round-one #tpl-date {padding:0;font-size:clamp(36px,9vw,54px);line-height:1.25;letter-spacing:-2px;text-align:left;}
+#tpl-round-one #tpl-date.tpl-with-year {font-size:clamp(26px,7vw,38px);letter-spacing:-1px;}
+#tpl-round-one #tpl-weekday {font-size:17px;white-space:nowrap;}
+#tpl-round-one .tpl-coverage {padding:15px 0 17px;}
+#tpl-round-one .tpl-coverage>div {font-size:21px;line-height:1.55;}
+#tpl-round-one .tpl-coverage strong {font-weight:500;color:var(--tpl-goal-two);white-space:nowrap;}
+#tpl-round-one #tpl-gap-total {color:var(--tpl-accent);}
+#tpl-round-one .tpl-separator {color:var(--tpl-muted);}
+#tpl-round-one .tpl-coverage p {margin-top:5px;font-size:14px;color:var(--tpl-muted);}
+#tpl-round-one .tpl-tabs {display:flex;border-bottom:1px solid var(--tpl-line);}
+#tpl-round-one .tpl-tabs button {flex:1;padding:10px 4px 12px;min-height:44px;color:var(--tpl-muted);border-bottom:2px solid transparent;}
+#tpl-round-one .tpl-tabs button[aria-selected=true] {color:var(--tpl-accent);border-bottom-color:var(--tpl-accent);}
+#tpl-round-one #tpl-content {touch-action:pan-y;}
+#tpl-round-one .tpl-entry {display:grid;grid-template-columns:51px 20px minmax(0,1fr);gap:8px;width:100%;padding:18px 0;text-align:left;border-bottom:1px solid var(--tpl-line);min-height:85px;}
+#tpl-round-one .tpl-entry:last-child {border-bottom:0;}
+#tpl-round-one .tpl-times {display:flex;flex-direction:column;line-height:1.7;font-size:14px;color:var(--tpl-muted);font-variant-numeric:tabular-nums;}
+#tpl-round-one .tpl-track {position:relative;display:flex;justify-content:center;}
+#tpl-round-one .tpl-track:after {content:'';position:absolute;top:18px;bottom:-31px;width:1px;background:var(--entry-color);opacity:.6;}
+#tpl-round-one .tpl-entry:last-child .tpl-track:after {display:none;}
+#tpl-round-one .tpl-dot {width:11px;height:11px;border-radius:50%;background:var(--entry-color);margin-top:7px;position:relative;z-index:1;}
+#tpl-round-one .tpl-entry-gap .tpl-dot {background:var(--tpl-paper);border:1px dashed var(--tpl-accent);}
+#tpl-round-one .tpl-entry-gap .tpl-track:after {background:none;border-left:1px dashed var(--tpl-accent);}
+#tpl-round-one .tpl-entry-heading {display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:3px 12px;}
+#tpl-round-one .tpl-entry-title {font-size:21px;font-weight:500;}
+#tpl-round-one .tpl-entry-duration {font-size:15px;color:var(--tpl-muted);white-space:nowrap;}
+#tpl-round-one .tpl-entry-notes {display:block;font-size:14px;color:var(--tpl-muted);margin-top:3px;line-height:1.65;}
+#tpl-round-one .tpl-gap-action {display:block;text-align:right;color:var(--tpl-accent);font-size:15px;text-decoration:underline;text-decoration-style:dashed;text-underline-offset:5px;}
+#tpl-round-one .tpl-suggestion {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px;margin:17px 0 9px;border-radius:8px;background:var(--tpl-soft);font-size:17px;min-height:70px;}
+#tpl-round-one .tpl-suggestion span {display:block;font-size:13px;color:var(--tpl-muted);margin-top:3px;}
+#tpl-round-one .tpl-suggestion button {color:var(--tpl-accent);font-size:14px;white-space:nowrap;min-height:44px;padding:0;}
+#tpl-round-one .tpl-suggestion svg {width:16px;height:16px;vertical-align:middle;}
+#tpl-round-one .tpl-footer {display:flex;gap:9px;border-top:1px solid var(--tpl-line);padding-top:10px;margin-top:7px;}
+#tpl-round-one .tpl-footer button {display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid var(--tpl-accent);border-radius:40px;padding:12px 9px;min-height:50px;flex:1;white-space:nowrap;}
+#tpl-round-one .tpl-footer button:last-child {background:var(--tpl-accent);color:var(--tpl-paper);flex:1.5;}
+#tpl-round-one .tpl-footer svg {width:19px;height:19px;}
+#tpl-round-one .tpl-summary-section {padding:22px 0;border-bottom:1px solid var(--tpl-line);}
+#tpl-round-one .tpl-summary-section:last-child {border-bottom:0;}
+#tpl-round-one .tpl-section-title {display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+#tpl-round-one .tpl-section-title>span {font-size:13px;color:var(--tpl-muted);}
+#tpl-round-one .tpl-ring-wrap {position:relative;width:min(100%,248px);aspect-ratio:1;margin:17px auto 15px;}
+#tpl-round-one .tpl-ring {display:block;width:100%;height:100%;}
+#tpl-round-one .tpl-ring-center {position:absolute;inset:25%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none;}
+#tpl-round-one .tpl-ring-center span {font-size:14px;color:var(--tpl-muted);white-space:nowrap;}
+#tpl-round-one .tpl-ring-center strong {font-size:26px;font-weight:500;line-height:1.6;white-space:nowrap;}
+#tpl-round-one .tpl-legend {display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;}
+#tpl-round-one .tpl-legend button {display:grid;grid-template-columns:9px 1fr;gap:3px 8px;text-align:left;padding:8px 0;min-height:52px;}
+#tpl-round-one .tpl-swatch {display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--swatch);margin-top:8px;}
+#tpl-round-one .tpl-legend strong {grid-column:2;font-size:15px;font-weight:400;color:var(--tpl-muted);}
+#tpl-round-one .tpl-legend button[aria-pressed=true] {text-decoration:underline;text-underline-offset:5px;}
+#tpl-round-one .tpl-sleep-detail {padding-top:12px;margin-top:10px;border-top:1px solid var(--tpl-line);font-size:14px;color:var(--tpl-muted);}
+#tpl-round-one .tpl-goal {border-top:1px solid var(--tpl-line);}
+#tpl-round-one .tpl-goal>button {width:100%;display:flex;align-items:center;gap:8px;text-align:left;padding:13px 0;min-height:50px;}
+#tpl-round-one .tpl-goal-name {flex:1;}
+#tpl-round-one .tpl-goal-minutes {color:var(--tpl-muted);font-size:15px;}
+#tpl-round-one .tpl-goal>button svg {width:17px;height:17px;color:var(--tpl-muted);}
+#tpl-round-one .tpl-rhythm {display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;padding:2px 16px 16px;}
+#tpl-round-one .tpl-rhythm>div {display:flex;justify-content:space-between;gap:8px;font-size:14px;}
+#tpl-round-one .tpl-rhythm span {color:var(--tpl-muted);}
+#tpl-round-one .tpl-global-rest {display:flex;justify-content:space-between;gap:16px;margin-top:18px;padding:13px 0 0;border-top:1px solid var(--tpl-line);font-size:15px;}
+#tpl-round-one .tpl-global-rest strong {font-weight:400;}
+#tpl-round-one .tpl-review-placeholder {padding:75px 10px;text-align:center;color:var(--tpl-muted);}
+#tpl-round-one .tpl-review-placeholder svg {width:30px;height:30px;margin-bottom:14px;}
+#tpl-round-one .tpl-review-placeholder p {font-size:15px;margin-top:8px;}
+#tpl-round-one dialog {color:var(--tpl-ink);background:var(--tpl-paper);border:1px solid var(--tpl-line);border-radius:12px;width:min(390px,calc(100% - 28px));padding:19px;max-height:85%;overflow:auto;box-shadow:0 16px 50px #241f1a33;}
+#tpl-round-one dialog::backdrop {background:#241f1a66;}
+#tpl-round-one .tpl-dialog-heading {display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:16px;}
+#tpl-round-one .tpl-dialog-heading .tpl-icon {margin-right:-8px;}
+#tpl-round-one .tpl-dialog-heading svg {width:20px;height:20px;}
+#tpl-round-one .tpl-dialog-row {display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--tpl-line);}
+#tpl-round-one .tpl-dialog-note {font-size:14px;color:var(--tpl-muted);margin-top:14px;}
+#tpl-round-one .tpl-dialog-action {display:block;width:100%;text-align:center;padding:12px;border-radius:8px;background:var(--tpl-accent);color:var(--tpl-paper);margin-top:18px;min-height:44px;}
+#tpl-round-one .tpl-dialog-list {display:block;width:100%;text-align:left;padding:15px 0;border-bottom:1px solid var(--tpl-line);}
+#tpl-round-one input[type=date] {width:100%;color:var(--tpl-ink);background:var(--tpl-paper);border:1px solid var(--tpl-line);border-radius:6px;padding:10px;min-height:44px;}
+#tpl-round-one input[type=checkbox] {width:22px;height:22px;accent-color:var(--tpl-accent);}
+#tpl-round-one .tpl-step {display:grid;grid-template-columns:28px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--tpl-line);}
+#tpl-round-one .tpl-step>span {color:var(--tpl-accent);}
+#tpl-round-one .tpl-step small {display:block;font-size:14px;color:var(--tpl-muted);}
+@media(max-width:360px){#tpl-round-one .tpl-device{padding:18px 14px 13px;}#tpl-round-one .tpl-entry{grid-template-columns:44px 16px minmax(0,1fr);gap:6px;}#tpl-round-one .tpl-entry-title{font-size:19px;}#tpl-round-one .tpl-coverage>div{font-size:19px;}#tpl-round-one .tpl-entry-notes{font-size:13px;}#tpl-round-one .tpl-footer button{font-size:15px;}}
+</style>
+<script>
+(() => {
+  const root = document.getElementById('tpl-round-one');
+  const el = id => root.querySelector('#tpl-' + id);
+  const state = {tab:'timeline',date:'2026-10-05',suggestions:true,dayPart:null,goal:null,scenario:'补记提醒',menuOpen:false};
+  const scenarios = ['补记提醒','睡眠优先','晚间复盘','普通问候','无目标记录','无记录'];
+  const fmt = minutes => minutes >= 60 ? Math.floor(minutes / 60) + '小时' + (minutes % 60 ? minutes % 60 + '分' : '') : minutes + '分钟';
+  const time = m => String(Math.floor(m / 60)).padStart(2,'0') + ':' + String(m % 60).padStart(2,'0');
+  const entries = [
+    {s:0,e:440,title:'主睡眠',kind:'sleep',detail:'10月4日 23:40 → 10月5日 07:20',full:460,approx:true},
+    {s:440,e:480,title:'早餐',kind:'known'},
+    {s:480,e:600,title:'设计首页',kind:'known',goal:'毕业设计',rhythm:'推进',hint:'先画补记弹层'},
+    {s:600,e:630,title:'想不起来',kind:'unknown'},
+    {s:630,e:660,title:'尚未记录',kind:'gap'},
+    {s:660,e:690,title:'散步',kind:'known',rhythm:'休息'},
+    {s:690,e:780,title:'尚未记录',kind:'gap'},
+    {s:780,e:840,title:'阅读论文',kind:'known',goal:'毕业设计',rhythm:'卡住'},
+    {s:840,e:900,title:'背单词',kind:'known',goal:'英语学习',rhythm:'推进'},
+    {s:900,e:930,title:'整理笔记',kind:'known',goal:'英语学习'},
+    {s:930,e:1080,title:'尚未记录',kind:'gap'}
+  ];
+  function model() {
+    const noRecords = state.scenario === '无记录';
+    const noSleep = state.scenario === '睡眠优先';
+    const morning = noSleep || state.scenario === '普通问候';
+    const now = morning ? 480 : state.scenario === '晚间复盘' ? 1320 : 1080;
+    const historical = state.date < '2026-10-05';
+    const end = historical ? 1440 : now;
+    let facts = entries.filter(x => x.kind !== 'gap' && x.s < end).filter(x => !(noSleep && x.kind === 'sleep')).map(x => ({...x,e:Math.min(x.e,end)}));
+    if (noRecords) facts=[];
+    if (state.scenario === '无目标记录') facts=facts.map(x=>({...x,goal:undefined}));
+    if (state.scenario === '晚间复盘') facts.push({s:930,e:1320,title:'晚间生活',kind:'known'});
+    const segments=[];let last=0;
+    for(const fact of facts){if(fact.s>last)segments.push({s:last,e:fact.s,title:'尚未记录',kind:'gap'});segments.push(fact);last=fact.e;}
+    if(last<end)segments.push({s:last,e:end,title:'尚未记录',kind:'gap'});
+    const parts=[{key:'sleep',name:'睡眠',value:0,color:'var(--tpl-sleep)'},{key:'known',name:'已知活动',value:0,color:'var(--tpl-known)'},{key:'unknown',name:'想不起来',value:0,color:'var(--tpl-unknown)'},{key:'gap',name:'尚未记录',value:0,color:'var(--tpl-gap)'}];
+    for(const x of segments)parts.find(p=>p.key===x.kind).value+=x.e-x.s;
+    const goalMap=new Map();
+    for(const x of facts.filter(x=>x.goal)){if(!goalMap.has(x.goal))goalMap.set(x.goal,{name:x.goal,value:0,rhythm:{'推进':0,'卡住':0,'休息':0,'未标记':0}});const g=goalMap.get(x.goal);g.value+=x.e-x.s;g.rhythm[x.rhythm||'未标记']+=x.e-x.s;}
+    const goals=[...goalMap.values()].map((g,i)=>({...g,key:g.name,color:i===0?'var(--tpl-goal-one)':'var(--tpl-goal-two)'}));
+    const rest=facts.filter(x=>x.rhythm==='休息').reduce((a,x)=>a+x.e-x.s,0);
+    const trailing=segments.at(-1)?.kind==='gap'?segments.at(-1):null;
+    let suggestion={title:now<720?'早上好。':now<1080?'下午好。':'晚上好。',type:'greeting'};
+    if(!historical){
+      if(now>=480&&!facts.some(x=>x.kind==='sleep'))suggestion={title:'先记一下昨晚的睡眠吧。',action:'记录睡眠',type:'sleep'};
+      else if(trailing&&trailing.e-trailing.s>=120)suggestion={title:'刚才做了些什么？',action:'补记一笔',type:'gap',span:trailing};
+      else if(now>=1320)suggestion={title:'回看一下今天吧。',action:'开始复盘',type:'review'};
+    }
+    return {segments,parts,goals,rest,suggestion,end,now,historical,accounted:end-parts[3].value};
+  }
+  function save(){if(window.openai?.setWidgetState)window.openai.setWidgetState({modelContent:{preview:'日账本第一轮',view:state.tab,date:state.date,scenario:state.scenario,suggestions:state.suggestions,selectedGoal:state.goal},privateContent:{...state}}).catch(()=>{});}
+  function icon(){if(globalThis.lucide)lucide.createIcons({attrs:{width:18,height:18}});}
+  function drawRing(id,parts,selected,select){
+    const svg=el(id);const ns='http://www.w3.org/2000/svg';const size=248,r=95,c=124,total=parts.reduce((a,p)=>a+p.value,0),circ=2*Math.PI*r;svg.setAttribute('viewBox','0 0 '+size+' '+size);svg.replaceChildren();
+    const title=document.createElementNS(ns,'title');title.textContent=parts.map(p=>p.name+' '+fmt(p.value)).join('，');svg.append(title);let offset=0;
+    for(const p of parts){if(!p.value)continue;const circle=document.createElementNS(ns,'circle');circle.setAttribute('cx',c);circle.setAttribute('cy',c);circle.setAttribute('r',r);circle.setAttribute('fill','none');circle.setAttribute('stroke',p.color);circle.setAttribute('stroke-width',selected===p.key?35:29);circle.setAttribute('stroke-dasharray',Math.max(0,p.value/total*circ-3)+' '+circ);circle.setAttribute('stroke-dashoffset',-offset);circle.setAttribute('transform','rotate(-90 '+c+' '+c+')');circle.setAttribute('aria-label',p.name+' '+fmt(p.value));circle.addEventListener('click',()=>select(p.key));svg.append(circle);offset+=p.value/total*circ;}
+  }
+  function setTab(tab,persist=true){state.tab=tab;for(const name of ['timeline','summary','review']){el(name).hidden=name!==tab;el('tab-'+name).setAttribute('aria-selected',String(name===tab));}if(persist)save();}
+  function render(){
+    const m=model();const d=new Date(state.date+'T12:00:00');const month=d.getMonth()+1,day=d.getDate();const showYear=d.getFullYear()!==2026;const previous=new Date(d);previous.setDate(previous.getDate()-1);const sleepStarted=(previous.getFullYear()!==d.getFullYear()?previous.getFullYear()+'年':'')+(previous.getMonth()+1)+'月'+previous.getDate()+'日 23:40';const sleepEnded=(showYear?d.getFullYear()+'年':'')+month+'月'+day+'日 07:20';
+    el('date').textContent=(showYear?d.getFullYear()+'年':'')+month+'月'+day+'日';el('date').classList.toggle('tpl-with-year',showYear);el('weekday').textContent='周'+'日一二三四五六'[d.getDay()]+(state.date==='2026-10-05'?' · 今天':state.date==='2026-10-04'?' · 昨天':'');
+    el('accounted').textContent=fmt(m.accounted);el('gap-total').textContent=fmt(m.parts[3].value);el('unknown-note').textContent='其中想不起来 '+fmt(m.parts[2].value)+'（已包含在已交代时间中）';
+    el('timeline').innerHTML=m.segments.map((x,i)=>'<button type="button" class="tpl-entry '+(x.kind==='gap'?'tpl-entry-gap':'')+'" data-entry="'+i+'" style="--entry-color:'+m.parts.find(p=>p.key===x.kind).color+'"><span class="tpl-times"><span>'+time(x.s)+'</span><span>'+time(x.e)+'</span></span><span class="tpl-track"><span class="tpl-dot"></span></span><span><span class="tpl-entry-heading"><span class="tpl-entry-title">'+x.title+'</span><span class="tpl-entry-duration">'+fmt(x.e-x.s)+'</span></span>'+(x.kind==='sleep'?'<span class="tpl-entry-notes">'+(x.approx?'约 ':'')+sleepStarted+' → '+sleepEnded+'<br>完整时长 '+(x.approx?'约 ':'')+fmt(x.full)+'</span>':x.kind==='unknown'?'<span class="tpl-entry-notes">已交代</span>':x.kind==='gap'?'<span class="tpl-gap-action">补记</span>':(x.goal||x.rhythm?'<span class="tpl-entry-notes">'+[x.goal,x.rhythm].filter(Boolean).join(' · ')+(x.hint?'<br>接续点：'+x.hint:'')+'</span>':''))+'</span></button>').join('');
+    el('timeline').querySelectorAll('[data-entry]').forEach(b=>b.addEventListener('click',()=>showEntry(m.segments[Number(b.dataset.entry)])));
+    el('window').textContent=m.historical?'完整自然日':'截至 '+time(m.end);const selected=m.parts.find(p=>p.key===state.dayPart);
+    el('day-label').textContent=selected?selected.name:'已交代';el('day-value').textContent=fmt(selected?selected.value:m.accounted);el('day-ratio').textContent=selected?Math.round(selected.value/m.end*100)+'%':'共 '+fmt(m.end);
+    drawRing('day-ring',m.parts,state.dayPart,key=>{state.dayPart=state.dayPart===key?null:key;render();save();});
+    el('day-legend').innerHTML=m.parts.map(p=>'<button type="button" data-part="'+p.key+'" aria-pressed="'+(state.dayPart===p.key)+'"><span class="tpl-swatch" style="--swatch:'+p.color+'"></span><span>'+p.name+'</span><strong>'+fmt(p.value)+'</strong></button>').join('');
+    el('day-legend').querySelectorAll('[data-part]').forEach(b=>b.addEventListener('click',()=>{state.dayPart=state.dayPart===b.dataset.part?null:b.dataset.part;render();save();}));
+    el('sleep-detail').textContent=m.parts[0].value?'主睡眠完整时长约 '+fmt(460):'这一天还没有睡眠记录。';
+    el('goal-chart').hidden=!m.goals.length;el('no-goals').hidden=!!m.goals.length;const goal=m.goals.find(g=>g.key===state.goal);const goalTotal=m.goals.reduce((a,g)=>a+g.value,0);
+    el('goal-label').textContent=goal?goal.name:'目标相关';el('goal-value').textContent=fmt(goal?goal.value:goalTotal);el('goal-ratio').textContent=goal?Math.round(goal.value/goalTotal*100)+'%':'共 '+m.goals.length+'个目标';
+    drawRing('goal-ring',m.goals,state.goal,key=>{state.goal=state.goal===key?null:key;render();save();});
+    el('goal-list').innerHTML=m.goals.map(g=>'<div class="tpl-goal"><button type="button" data-goal="'+g.key+'" aria-expanded="'+(state.goal===g.key)+'"><span class="tpl-swatch" style="--swatch:'+g.color+'"></span><span class="tpl-goal-name">'+g.name+'</span><span class="tpl-goal-minutes">'+fmt(g.value)+'</span><i data-lucide="'+(state.goal===g.key?'chevron-up':'chevron-down')+'" aria-hidden="true"></i></button><div class="tpl-rhythm" '+(state.goal!==g.key?'hidden':'')+'>'+Object.entries(g.rhythm).map(([k,v])=>'<div><span>'+k+'</span><span>'+fmt(v)+'</span></div>').join('')+'</div></div>').join('');
+    el('goal-list').querySelectorAll('[data-goal]').forEach(b=>b.addEventListener('click',()=>{state.goal=state.goal===b.dataset.goal?null:b.dataset.goal;render();save();}));el('rest').textContent=fmt(m.rest);
+    el('suggestion').hidden=!state.suggestions;const s=m.suggestion;el('suggestion').innerHTML='<div>'+s.title+(s.type==='gap'?'<span>'+time(s.span.s)+'–'+time(s.span.e)+' · '+fmt(s.span.e-s.span.s)+'</span>':'')+'</div>'+(s.action?'<button type="button">'+s.action+' <i data-lucide="chevron-right" aria-hidden="true"></i></button>':'');
+    el('suggestion').querySelector('button')?.addEventListener('click',()=>{if(s.type==='sleep')showSleep();if(s.type==='gap')showEntry(s.span);if(s.type==='review')setTab('review');});setTab(state.tab,false);icon();
+  }
+  function dialog(title,content){el('dialog-title').textContent=title;el('dialog-content').innerHTML=content;if(!el('dialog').open)el('dialog').showModal();icon();}
+  function previewAction(title,content){dialog(title,content+'<button type="button" class="tpl-dialog-action" id="tpl-back-preview">返回日账本</button>');el('back-preview').addEventListener('click',()=>el('dialog').close());}
+  function showSleep(){previewAction('记录睡眠 · 入口预览','<div class="tpl-dialog-row"><span>类型</span><span>主睡眠 / 午睡</span></div><div class="tpl-dialog-row"><span>开始</span><span>日期与时间</span></div><div class="tpl-dialog-row"><span>结束</span><span>日期与时间</span></div><p class="tpl-dialog-note">起止精度独立，跨日保存为一段完整睡眠。</p>');}
+  function showActivity(span){previewAction((span?'补记这段时间':'记录一笔')+' · 入口预览',(span?'<p>'+time(span.s)+'–'+time(span.e)+'</p>':'')+'<div class="tpl-step"><span>一</span><div>节奏<small>推进、卡住、休息，也可以不选</small></div></div><div class="tpl-step"><span>二</span><div>事项<small>做了什么，或标记为想不起来</small></div></div><div class="tpl-step"><span>三</span><div>时间<small>确认起止时间后保存</small></div></div><p class="tpl-dialog-note">目标持续可见，可更换或取消关联。</p>');}
+  function showEntry(x){if(x.kind==='gap'){showActivity(x);return;}dialog(x.title,'<div class="tpl-dialog-row"><span>当天区间</span><span>'+time(x.s)+'–'+time(x.e)+'</span></div><div class="tpl-dialog-row"><span>当天时长</span><span>'+fmt(x.e-x.s)+'</span></div>'+(x.full?'<div class="tpl-dialog-row"><span>完整睡眠</span><span>约 '+fmt(x.full)+'</span></div>':'')+(x.goal?'<div class="tpl-dialog-row"><span>目标</span><span>'+x.goal+'</span></div>':'')+(x.rhythm?'<div class="tpl-dialog-row"><span>节奏</span><span>'+x.rhythm+'</span></div>':'')+'<button type="button" class="tpl-dialog-action" id="tpl-edit-preview">更正记录</button><button type="button" class="tpl-dialog-list" id="tpl-delete-preview">删除记录</button>');el('edit-preview').addEventListener('click',()=>x.kind==='sleep'?showSleep():showActivity());el('delete-preview').addEventListener('click',()=>previewAction('删除确认 · 入口预览','<p>删除这条记录？</p><p class="tpl-dialog-note">本次预览保留样例数据。</p>'));}
+  function settings(){dialog('设置','<label class="tpl-dialog-row"><span>首页问候与提醒</span><input type="checkbox" id="tpl-enabled" '+(state.suggestions?'checked':'')+'></label><div class="tpl-dialog-row"><span>睡眠提醒</span><span>08:00</span></div><div class="tpl-dialog-row"><span>补记提醒</span><span>连续缺口满2小时</span></div><div class="tpl-dialog-row"><span>复盘提醒</span><span>22:00</span></div><p class="tpl-dialog-note">优先顺序：睡眠 → 补记 → 复盘</p>');el('enabled').addEventListener('change',e=>{state.suggestions=e.target.checked;render();save();});}
+  el('menu').addEventListener('click',()=>{dialog('菜单','<button type="button" class="tpl-dialog-list" id="tpl-goals-menu">目标管理</button><button type="button" class="tpl-dialog-list" id="tpl-settings-menu">设置</button>');el('settings-menu').addEventListener('click',settings);el('goals-menu').addEventListener('click',()=>previewAction('目标管理 · 入口预览','<div class="tpl-dialog-row"><span>毕业设计</span><span>活跃</span></div><div class="tpl-dialog-row"><span>英语学习</span><span>活跃</span></div>'));});
+  el('date').addEventListener('click',()=>{dialog('选择日期','<label for="tpl-date-input">日期</label><input type="date" id="tpl-date-input" value="'+state.date+'" max="2026-10-05"><button type="button" class="tpl-dialog-action" id="tpl-date-apply">查看这一天</button>');el('date-apply').addEventListener('click',()=>{const input=el('date-input');if(!input.value||!input.checkValidity())return;state.date=input.value;state.dayPart=null;state.goal=null;render();save();el('dialog').close();});});
+  el('close').addEventListener('click',()=>el('dialog').close());el('dialog').addEventListener('click',e=>{if(e.target===el('dialog')){const r=e.target.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.target.close();}});
+  el('record-sleep').addEventListener('click',showSleep);el('record-activity').addEventListener('click',()=>showActivity());
+  root.querySelectorAll('[data-tab]').forEach(b=>{b.addEventListener('click',()=>setTab(b.dataset.tab));b.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();const tabs=['timeline','summary','review'];const i=(tabs.indexOf(state.tab)+(e.key==='ArrowRight'?1:2))%3;setTab(tabs[i]);el('tab-'+tabs[i]).focus();});});
+  let touch=null;el('content').addEventListener('touchstart',e=>{touch={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});el('content').addEventListener('touchend',e=>{if(!touch)return;const dx=e.changedTouches[0].clientX-touch.x,dy=e.changedTouches[0].clientY-touch.y;if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.5){const tabs=['timeline','summary','review'];const i=Math.max(0,Math.min(2,tabs.indexOf(state.tab)+(dx<0?1:-1)));setTab(tabs[i]);}touch=null;},{passive:true});
+  function restore(saved){const p=saved?.privateContent;if(!p)return;if(['timeline','summary','review'].includes(p.tab))state.tab=p.tab;if(/^\d{4}-\d{2}-\d{2}$/.test(p.date)&&p.date<='2026-10-05')state.date=p.date;if(typeof p.suggestions==='boolean')state.suggestions=p.suggestions;if(scenarios.includes(p.scenario))state.scenario=p.scenario;state.dayPart=p.dayPart||null;state.goal=p.goal||null;}
+  restore(window.openai?.widgetState);render();window.addEventListener('openai:set_globals',e=>{restore(e.detail?.globals?.widgetState);render();});
+  if(globalThis.Tweak){const tweak=new Tweak({container:el('suggestion'),onChange:()=>{state.dayPart=null;state.goal=null;render();save();}});tweak.addSelect(state,'scenario',{label:'样例场景',options:scenarios});}
+})();
+</script>

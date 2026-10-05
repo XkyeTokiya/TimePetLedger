@@ -1,0 +1,709 @@
+<style>
+#tpl-detail-design{--rd-paper:#faf7f1;--rd-ink:#251b16;--rd-muted:#6f6259;--rd-line:#dbcbbd;--rd-accent:#b65f48;--rd-wash:#f1e8de;color:var(--rd-ink);font-family:"Noto Serif SC","Songti SC",Georgia,serif}
+#tpl-detail-design *{box-sizing:border-box}
+#tpl-detail-design [hidden]{display:none!important}
+#tpl-detail-design .rd-stage{max-width:450px;margin:0 auto;background:var(--rd-paper);padding:22px 24px 26px;min-height:570px}
+#tpl-detail-design button{font:inherit;color:inherit;min-height:44px;background:transparent;border:0}
+#tpl-detail-design .rd-header{display:flex;align-items:center;gap:10px;margin-bottom:32px;padding-right:70px}
+#tpl-detail-design .rd-back{display:flex;align-items:center;justify-content:center;width:44px;flex-shrink:0}
+#tpl-detail-design .rd-header span{font-size:19px}
+#tpl-detail-design .rd-eyebrow{font-size:15px;color:var(--rd-muted);margin:0 0 9px}
+#tpl-detail-design h1{font-size:34px;font-weight:500;line-height:1.35;margin:0 0 20px;overflow-wrap:anywhere}
+#tpl-detail-design h2{font-size:27px;font-weight:500;line-height:1.45;margin:0 0 16px}
+#tpl-detail-design p{line-height:1.65;margin:10px 0;overflow-wrap:anywhere}
+#tpl-detail-design .rd-duration{font-size:32px;padding-bottom:24px;border-bottom:1px solid var(--rd-line)}
+#tpl-detail-design .rd-duration small{display:block;font-size:15px;color:var(--rd-muted);margin-bottom:8px}
+#tpl-detail-design .rd-field{padding:19px 0;border-bottom:1px solid var(--rd-line)}
+#tpl-detail-design .rd-label{color:var(--rd-muted);font-size:14px;margin:0 0 6px;display:block}
+#tpl-detail-design .rd-value{font-size:20px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+#tpl-detail-design .rd-time-line{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+#tpl-detail-design .rd-time-line small{font-size:14px;color:var(--rd-muted);width:32px}
+#tpl-detail-design .rd-note{font-size:17px;white-space:pre-wrap;line-height:1.7}
+#tpl-detail-design .rd-muted{color:var(--rd-muted);font-size:15px}
+#tpl-detail-design .rd-footer{margin-top:30px;padding-top:20px;border-top:1px solid var(--rd-line);display:flex;gap:12px;flex-wrap:wrap}
+#tpl-detail-design .rd-footer button{padding:12px 18px;border-radius:30px;font-size:18px}
+#tpl-detail-design .rd-primary{background:var(--rd-accent);color:#fff8f0;flex:1}
+#tpl-detail-design .rd-secondary{border:1px solid var(--rd-line);flex:1}
+#tpl-detail-design .rd-delete{color:var(--rd-accent);flex:0 0 auto}
+#tpl-detail-design .rd-error{color:#943e2d;font-size:16px}
+#tpl-detail-design .rd-confirm{padding:8px 0 12px}
+#tpl-detail-design .rd-status{background:var(--rd-wash);padding:12px 15px;border-radius:9px;font-size:16px;margin-bottom:20px}
+#tpl-detail-design .rd-entry{width:100%;padding:17px 0;text-align:left;border-bottom:1px solid var(--rd-line);display:grid;grid-template-columns:66px 1fr 20px;gap:10px;align-items:start}
+#tpl-detail-design .rd-entry small{font-size:15px;line-height:1.6;color:var(--rd-muted)}
+#tpl-detail-design .rd-entry strong{font-size:22px;line-height:1.5;font-weight:500;overflow-wrap:anywhere}
+#tpl-detail-design .rd-entry p{font-size:14px;color:var(--rd-muted);margin:4px 0 0}
+#tpl-detail-design .rd-gap{color:var(--rd-muted)}
+#tpl-detail-design .rd-sr{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:380px){#tpl-detail-design .rd-stage{padding:18px 17px 24px}#tpl-detail-design h1{font-size:30px}#tpl-detail-design .rd-entry{grid-template-columns:60px 1fr 16px;gap:7px}}
+</style>
+<div id="tpl-detail-design" class="viz-dotted-background" aria-label="记录详情与删除流程">
+  <section id="rd-reader" class="rd-stage">
+    <header class="rd-header"><button type="button" class="rd-back cursor-interaction" data-rd-action="back" aria-label="返回时间线"><i data-lucide="arrow-left" aria-hidden="true"></i></button><span id="rd-heading">记录详情</span></header>
+    <div id="rd-content"></div>
+    <div id="rd-live" class="rd-sr" aria-live="polite"></div>
+  </section>
+  <section id="rd-activity-editor" hidden>
+<div id="tpl-activity-design" class="viz-dotted-background">
+  <div class="ar-stage" aria-label="记录一笔三幕交互草案">
+    <div class="ar-preview-note">交互草案 · 示例数据</div>
+    <article class="ar-phone">
+      <header class="ar-header">
+        <button type="button" class="ar-icon cursor-interaction" data-action="exit" aria-label="返回账本"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+        <span id="ar-heading">记录一笔</span>
+      </header>
+      <div id="ar-content"></div>
+      <p id="ar-announcement" class="ar-sr" aria-live="polite"></p>
+    </article>
+  </div>
+</div>
+<style>
+#tpl-activity-design {padding:20px 0;color-scheme:light;}
+#tpl-activity-design .ar-stage {width:min(100%,450px);margin:auto;--ar-paper:#fcf9f4;--ar-ink:#241f1a;--ar-muted:#6c625a;--ar-line:#e1d3c4;--ar-red:#ae563f;--ar-tint:#f4e8dc;--ar-soft:#f5eee6;--ar-green:#6d7e64;color:var(--ar-ink);font:17px/1.55 Georgia,'Noto Serif CJK SC','Songti SC',SimSun,serif;}
+#tpl-activity-design * {box-sizing:border-box;}
+#tpl-activity-design [hidden] {display:none!important;}
+#tpl-activity-design .ar-preview-note {font:13px/1.5 system-ui,sans-serif;color:var(--ar-muted);margin:0 0 8px 2px;}
+#tpl-activity-design .ar-phone {background:var(--ar-paper);box-shadow:0 8px 32px #241f1a12;padding:20px 22px 18px;min-width:0;}
+#tpl-activity-design .ar-header {display:flex;align-items:center;gap:10px;min-height:44px;margin:0 -8px 14px;}
+#tpl-activity-design button,#tpl-activity-design select,#tpl-activity-design textarea,#tpl-activity-design input {font:inherit;color:inherit;}
+#tpl-activity-design button {background:none;border:0;text-align:left;}
+#tpl-activity-design button:disabled {opacity:.55;cursor:default;}
+#tpl-activity-design .ar-icon {min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:8px;}
+#tpl-activity-design .ar-icon svg {width:23px;height:23px;}
+#tpl-activity-design h1,#tpl-activity-design h2,#tpl-activity-design p {margin:0;font-weight:400;}
+#tpl-activity-design h1 {font-size:32px;line-height:1.35;letter-spacing:-.5px;}
+#tpl-activity-design h2 {font-size:23px;line-height:1.4;}
+#tpl-activity-design .ar-body {min-height:465px;padding:24px 0 26px;}
+#tpl-activity-design .ar-question {margin-bottom:8px;}
+#tpl-activity-design .ar-muted {color:var(--ar-muted);font-size:14px;}
+#tpl-activity-design .ar-goal {display:flex;align-items:center;gap:11px;padding:10px 0 13px;border-bottom:1px solid var(--ar-line);min-width:0;}
+#tpl-activity-design .ar-goal>svg {width:18px;height:18px;color:var(--ar-muted);flex:none;}
+#tpl-activity-design .ar-goal-text {flex:1;min-width:0;overflow-wrap:anywhere;}
+#tpl-activity-design .ar-goal-text small {display:block;font-size:12px;color:var(--ar-muted);margin-bottom:1px;}
+#tpl-activity-design .ar-goal-name {min-height:44px;padding:4px 0;text-decoration-line:underline;text-decoration-style:dashed;text-decoration-color:var(--ar-red);text-underline-offset:7px;text-decoration-thickness:1px;overflow-wrap:anywhere;max-width:100%;}
+#tpl-activity-design .ar-subchoices {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:18px 0 22px;}
+#tpl-activity-design .ar-subchoice {min-height:48px;padding:10px 12px;border:1px solid var(--ar-line);border-radius:9px;overflow-wrap:anywhere;}
+#tpl-activity-design .ar-subchoice[aria-pressed=true] {background:var(--ar-tint);border-color:var(--ar-red);color:var(--ar-red);}
+#tpl-activity-design .ar-link {display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:7px 0;color:var(--ar-red);font-size:14px;}
+#tpl-activity-design .ar-link svg {width:16px;height:16px;}
+#tpl-activity-design .ar-options {margin:26px 0 12px;}
+#tpl-activity-design .ar-option {width:100%;display:flex;gap:15px;align-items:center;min-height:86px;padding:16px 13px;border:1px solid var(--ar-line);border-radius:12px;margin-bottom:11px;background:var(--ar-paper);}
+#tpl-activity-design .ar-option[aria-pressed=true] {border-color:var(--ar-red);background:var(--ar-tint);}
+#tpl-activity-design .ar-option svg {width:24px;height:24px;flex:none;color:var(--ar-red);}
+#tpl-activity-design .ar-option span {flex:1;min-width:0;}
+#tpl-activity-design .ar-option strong {display:block;font-size:22px;font-weight:400;}
+#tpl-activity-design .ar-option small {display:block;font-size:14px;color:var(--ar-muted);}
+#tpl-activity-design .ar-option .ar-check {width:19px;height:19px;}
+#tpl-activity-design .ar-option:not([aria-pressed=true]) .ar-check {visibility:hidden;}
+#tpl-activity-design .ar-options.ar-compact {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+#tpl-activity-design .ar-compact .ar-option {display:flex;flex-direction:column;text-align:center;gap:9px;padding:17px 6px;margin:0;}
+#tpl-activity-design .ar-compact .ar-option strong {font-size:20px;}
+#tpl-activity-design .ar-compact .ar-option small {display:none;}
+#tpl-activity-design .ar-compact .ar-check {display:none;}
+#tpl-activity-design .ar-footer {display:flex;gap:10px;align-items:center;padding-top:13px;border-top:1px solid var(--ar-line);}
+#tpl-activity-design .ar-primary,#tpl-activity-design .ar-secondary {display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:52px;padding:12px 18px;border-radius:30px;text-align:center;}
+#tpl-activity-design .ar-primary {background:var(--ar-red);color:var(--ar-paper);flex:1;border:1px solid var(--ar-red);}
+#tpl-activity-design .ar-secondary {border:1px solid var(--ar-line);flex:.65;}
+#tpl-activity-design .ar-primary svg {width:19px;height:19px;}
+#tpl-activity-design .ar-segment {display:flex;gap:4px;padding:4px;background:var(--ar-soft);border-radius:24px;margin:23px 0 20px;}
+#tpl-activity-design .ar-segment button {flex:1;min-height:44px;text-align:center;padding:7px 5px;border-radius:22px;font-size:16px;}
+#tpl-activity-design .ar-segment button[aria-pressed=true] {background:var(--ar-paper);box-shadow:0 2px 5px #241f1a0a;color:var(--ar-red);}
+#tpl-activity-design textarea {display:block;width:100%;resize:vertical;padding:13px;border:1px solid var(--ar-line);border-radius:9px;background:var(--ar-paper);font-size:18px;min-height:125px;}
+#tpl-activity-design textarea::placeholder {color:#887970;}
+#tpl-activity-design .ar-field-label {display:block;font-size:15px;margin-bottom:8px;}
+#tpl-activity-design .ar-input-note {font-size:14px;color:var(--ar-muted);margin-top:9px;}
+#tpl-activity-design .ar-unknown {padding:22px 10px;text-align:center;color:var(--ar-muted);}
+#tpl-activity-design .ar-unknown svg {display:block;margin:0 auto 12px;width:27px;height:27px;}
+#tpl-activity-design .ar-time-question {margin-top:23px;}
+#tpl-activity-design .ar-endpoints {margin-top:19px;}
+#tpl-activity-design .ar-endpoint {border-top:1px solid var(--ar-line);padding:12px 0 16px;}
+#tpl-activity-design .ar-endpoint>small {display:block;font-size:13px;color:var(--ar-muted);}
+#tpl-activity-design .ar-endpoint-row {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:3px 0 5px;}
+#tpl-activity-design .ar-date {display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0;font-size:16px;}
+#tpl-activity-design .ar-date svg {width:15px;height:15px;color:var(--ar-muted);}
+#tpl-activity-design .ar-time {padding:0;min-height:50px;font:36px/1.25 Georgia,serif;letter-spacing:-1px;}
+#tpl-activity-design .ar-duration {text-align:center;font-size:16px;padding:0 0 15px;color:var(--ar-muted);}
+#tpl-activity-design .ar-duration strong {color:var(--ar-ink);font-size:21px;font-weight:400;}
+#tpl-activity-design .ar-gap-list {display:grid;gap:8px;margin:16px 0;}
+#tpl-activity-design .ar-gap-list button {padding:10px 12px;min-height:44px;border:1px dashed var(--ar-line);border-radius:7px;}
+#tpl-activity-design .ar-error {color:#9c3325;background:#f9e9e1;padding:12px 14px;border-radius:8px;margin:13px 0;font-size:15px;overflow-wrap:anywhere;}
+#tpl-activity-design .ar-success {color:var(--ar-green);background:var(--ar-soft);padding:13px 14px;border-radius:8px;margin:13px 0;font-size:15px;}
+#tpl-activity-design .ar-extra-preview {margin:7px 0 0;color:var(--ar-muted);font-size:14px;overflow-wrap:anywhere;}
+#tpl-activity-design .ar-sheet-body {padding:18px 0 24px;min-height:440px;}
+#tpl-activity-design .ar-sheet-body h1 {margin-bottom:20px;font-size:28px;}
+#tpl-activity-design .ar-sheet-body .ar-field-label {margin-top:17px;}
+#tpl-activity-design select {width:100%;padding:11px;border:1px solid var(--ar-line);border-radius:9px;background:var(--ar-paper);min-height:48px;font-size:17px;}
+#tpl-activity-design .ar-clock-selects {display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:26px 0 20px;}
+#tpl-activity-design .ar-clock-value {text-align:center;font:52px/1.2 Georgia,serif;letter-spacing:-2px;margin:20px 0;}
+#tpl-activity-design .ar-calendar-nav {display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;gap:6px;}
+#tpl-activity-design .ar-calendar-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;}
+#tpl-activity-design .ar-calendar-grid>span {display:flex;align-items:center;justify-content:center;min-height:30px;font-size:13px;color:var(--ar-muted);}
+#tpl-activity-design .ar-calendar-grid button {min-height:44px;padding:6px 0;text-align:center;border-radius:50%;font:16px/1.5 Georgia,serif;}
+#tpl-activity-design .ar-calendar-grid button[aria-pressed=true] {background:var(--ar-red);color:var(--ar-paper);}
+#tpl-activity-design .ar-selected-date {margin-top:16px;color:var(--ar-red);text-align:center;}
+#tpl-activity-design .ar-goal-choice {display:flex;align-items:center;justify-content:space-between;width:100%;gap:10px;min-height:60px;padding:13px 2px;border-bottom:1px solid var(--ar-line);overflow-wrap:anywhere;}
+#tpl-activity-design .ar-goal-choice[aria-pressed=true] {color:var(--ar-red);}
+#tpl-activity-design .ar-return {min-height:44px;padding:0 0 10px;font-size:14px;color:var(--ar-red);}
+#tpl-activity-design .ar-ledger-title {font:48px/1.3 Georgia,'Noto Serif CJK SC',serif;margin:12px 0 10px;}
+#tpl-activity-design .ar-ledger-entry {display:flex;gap:14px;align-items:baseline;padding:18px 0;border-bottom:1px solid var(--ar-line);overflow-wrap:anywhere;}
+#tpl-activity-design .ar-ledger-entry small {font-size:13px;color:var(--ar-muted);flex:none;}
+#tpl-activity-design .ar-ledger-entry strong {font-weight:400;font-size:23px;}
+#tpl-activity-design .ar-sr {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+@media(max-width:360px) {#tpl-activity-design .ar-phone {padding:17px 16px;}#tpl-activity-design h1 {font-size:28px;}#tpl-activity-design .ar-goal {gap:7px;}#tpl-activity-design .ar-goal-text {font-size:16px;}#tpl-activity-design .ar-goal .ar-link {font-size:13px;}}
+</style>
+<script>
+(() => {
+  const root=document.getElementById('tpl-activity-design');
+  const content=root.querySelector('#ar-content');
+  const labels={progress:'推进',stuck:'卡住',recovery:'休息'};
+  const goals=['毕业设计','英语学习'];
+  const reasonCodes={taskTooLarge:'任务太大',unclearNextStep:'不知道下一步',sleepy:'困',brainFog:'脑雾',anxious:'焦虑',interrupted:'被打断',unsure:'说不清',other:'其他'};
+  const methods={walk:'散步',meal:'吃饭',shower:'洗澡',empty:'放空',entertainment:'娱乐',switchTask:'切换任务',breakDownTask:'拆小任务',askForHelp:'寻求帮助',other:'其他'};
+  const qualities={notRecovered:'没缓过来',partlyRecovered:'缓过来一些',readyToContinue:'可以继续了'};
+  const variants={scenario:'普通记录',layout:'叙述列表'};
+  const base=()=>({step:1,view:'editor',sourceDate:'2026-10-05',rhythm:null,goal:'毕业设计',knowledge:'known',title:'',note:'',reasonCode:'',reasonText:'',method:'',quality:'',hint:'',start:{date:'2026-10-05',time:'16:00',precision:'approximate'},end:{date:'2026-10-05',time:'18:00',precision:'approximate'},dirty:false,committed:false,cleanup:false,status:'',error:'',failureUsed:false,draftFailureUsed:false,candidate:false});
+  let state=base(),sheet=null,busy=false;
+  const stateOwner=`activity-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const icon=(name,cls='')=>`<i data-lucide="${name}" class="${cls}" aria-hidden="true"></i>`;
+  const btn=(action,text,cls='ar-link',attrs='')=>`<button type="button" class="${cls} cursor-interaction" data-action="${action}" ${attrs}>${text}</button>`;
+  const pad=n=>String(n).padStart(2,'0');
+  // Pure input rules for the interactive example, never a production repository.
+  function codepoints(s){return Array.from(String(s).trim()).length;}
+  function dateValue(date,time){if(!date||!time)return NaN;return Date.parse(`${date}T${time}:00`);}
+  function durationText(minutes){const n=Math.round(minutes);return n>=60?`${Math.floor(n/60)} 小时${n%60?' '+n%60+' 分钟':''}`:`${n} 分钟`;}
+  function validateRecord(s){
+    if(s.knowledge==='known'&&!s.title.trim())return {step:2,message:'写几个字，或选“想不起来”。'};
+    if(codepoints(s.title)>200)return {step:2,message:'事项最多200个字，请稍微缩短。'};
+    const textFields=[['note','备注']];
+    if(s.rhythm)textFields.push(['hint','接续点']);
+    if(s.rhythm==='stuck')textFields.push(['reasonText','原因']);
+    for(const [field,label] of textFields)if(codepoints(s[field])>2000)return {step:field==='reasonText'?1.5:3,message:`${label}最多2000个字，请稍微缩短。`};
+    const a=dateValue(s.start.date,s.start.time),b=dateValue(s.end.date,s.end.time);
+    if(!Number.isFinite(a)||!Number.isFinite(b))return {step:3,message:'先选好开始和结束的日期、时间。'};
+    if(b<=a)return {step:3,message:'结束要晚于开始。跨日的话，请把结束日期选到第二天。'};
+    return null;
+  }
+  function formatDate(date){if(!date)return '选择日期';const [y,m,d]=date.split('-').map(Number);return `${y!==2026?y+'年':''}${m}月${d}日`;}
+  function restore(snapshot){
+    const raw=snapshot?.privateContent;if(!raw||![1,2].includes(raw.version)||!raw.state)return false;
+    const s=raw.state;if(![1,1.5,2,3].includes(s.step)||!['editor','ledger'].includes(s.view)||!['known','unknown'].includes(s.knowledge)||![null,'progress','stuck','recovery'].includes(s.rhythm))return false;
+    for(const key of ['start','end'])if(!s[key]||!['approximate','exact'].includes(s[key].precision)||!(s[key].date===null||/^\d{4}-\d{2}-\d{2}$/.test(s[key].date))||!(s[key].time===null||/^([01]\d|2[0-3]):[0-5]\d$/.test(s[key].time)))return false;
+    if(![null,...goals].includes(s.goal))return false;
+    state={...base(),...s,start:{...s.start,precision:'approximate'},end:{...s.end,precision:'approximate'}};delete state.returnStep;if(typeof raw.scenario==='string'&&scenarioNames.includes(raw.scenario))variants.scenario=raw.scenario;
+    if(['叙述列表','紧凑选择'].includes(raw.layout))variants.layout=raw.layout;return true;
+  }
+  function remember(){
+    root.dispatchEvent(new CustomEvent('tpl:editor-draft',{bubbles:true,detail:{state:JSON.parse(JSON.stringify(state))}}));
+  }
+  function changed(){state.dirty=true;state.error='';content.querySelector('.ar-error')?.remove();remember();}
+  function announce(text){root.querySelector('#ar-announcement').textContent=text;}
+  function goalBar(){return `<div class="ar-goal">${icon('flag')}<div class="ar-goal-text"><small>这笔关联的目标</small>${btn('goal',state.goal?esc(state.goal):'暂不关联','ar-goal-name','aria-label="编辑本笔目标"')}</div></div>`;}
+  function footer(primary,secondary){return `<footer class="ar-footer">${secondary||''}${primary}</footer>`;}
+  function question(){return {progress:'这段推进了什么？',stuck:'刚才在做什么时卡住了？',recovery:'这段怎么休息的？'}[state.rhythm]||'这段主要做了什么？';}
+  function errors(){return state.error?`<p class="ar-error" role="alert">${esc(state.error)}</p>`:'';}
+  function hasChildren(){return state.rhythm==='stuck'||state.rhythm==='recovery';}
+  function detailChoices(field,options,label){return `<div class="ar-subchoices" role="group" aria-label="${label}">${Object.entries(options).map(([value,name])=>btn('detail',esc(name),'ar-subchoice',`data-key="${field}" data-value="${value}" aria-pressed="${state[field]===value}"`)).join('')}</div>`;}
+  function extraSummary(){const parts=[];if(state.rhythm==='stuck')parts.push(reasonCodes[state.reasonCode],state.reasonText);if(state.rhythm==='recovery')parts.push(methods[state.method],qualities[state.quality]);if(state.rhythm)parts.push(state.hint);parts.push(state.note);return parts.filter(Boolean).join(' · ');}
+  function render(){
+    root.querySelector('#ar-heading').textContent=sheet?'记录一笔':state.view==='ledger'?'日账本':'编辑记录';
+    root.querySelector('[data-action=exit]').setAttribute('aria-label',sheet?'取消修改':state.view==='ledger'?'返回记录':'返回详情');
+    if(sheet){renderSheet();return;}
+    if(state.view==='ledger'){renderLedger();return;}
+    let html=goalBar();
+    if(state.step===1){
+      html+=`<main class="ar-body"><h1 class="ar-question">这段时间，<br>节奏怎么样？</h1><p class="ar-muted">可以不选，直接继续。</p><div class="ar-options ${variants.layout==='紧凑选择'?'ar-compact':''}">${[['progress','move-up-right','推进','事情向前走了一点'],['stuck','pause','卡住','想往前，但遇到了阻力'],['recovery','leaf','休息','让自己缓一缓']].map(([value,symbol,title,desc])=>btn('rhythm',`${icon(symbol)}<span><strong>${title}</strong><small>${desc}</small></span>${icon('check','ar-check')}`,'ar-option',`data-value="${value}" aria-pressed="${state.rhythm===value}" aria-label="${title}：${desc}"`)).join('')}</div>${variants.layout==='紧凑选择'&&state.rhythm?`<p class="ar-muted">${{progress:'事情向前走了一点',stuck:'想往前，但遇到了阻力',recovery:'让自己缓一缓'}[state.rhythm]}</p>`:''}${errors()}</main>`;
+    }else if(state.step===1.5){
+      html+=`<main class="ar-body"><h1 class="ar-question">${state.rhythm==='stuck'?'是什么让你卡住了？':'怎么让自己缓一缓？'}</h1><p class="ar-muted">可以不选，直接继续。</p>${state.rhythm==='stuck'?detailChoices('reasonCode',reasonCodes,'卡住原因')+`<label class="ar-field-label" for="ar-reason-text">还有想补充的吗？</label><textarea id="ar-reason-text" data-field="reasonText" rows="2" placeholder="可以留空">${esc(state.reasonText)}</textarea>`:detailChoices('method',methods,'休息方式')+`<h2>现在感觉怎么样？</h2>`+detailChoices('quality',qualities,'休息后的感受')}${errors()}</main>`;
+    }else if(state.step===2){
+      html+=`<main class="ar-body"><h1 class="ar-question">${question()}</h1><p class="ar-muted">几个字就好。</p><div class="ar-segment" aria-label="是否记得这段时间">${btn('knowledge','记得','','data-value="known" aria-pressed="'+(state.knowledge==='known')+'"')}${btn('knowledge','想不起来','','data-value="unknown" aria-pressed="'+(state.knowledge==='unknown')+'"')}</div>${state.knowledge==='known'?`<label class="ar-field-label" for="ar-title">这段做的事</label><textarea id="ar-title" data-field="title" rows="3" placeholder="比如：改首页的布局">${esc(state.title)}</textarea><p class="ar-input-note">只写实际做过的事。</p>`:`<div class="ar-unknown">${icon('cloud')}<p>想不起来，也可以记下来。</p><p class="ar-input-note">目标和节奏会保留。</p></div>`}${errors()}</main>`;
+    }else{
+      const minutes=(dateValue(state.end.date,state.end.time)-dateValue(state.start.date,state.start.time))/60000;
+      html+=`<main class="ar-body"><h1 class="ar-time-question">${state.start.time&&state.end.time?'是这段时间吗？':'这段是什么时候？'}</h1>${state.candidate?`<p class="ar-input-note">这一天还有两段没记录，先选一段。</p><div class="ar-gap-list">${btn('gap','10月2日 10:30 — 11:00','','data-value="first"')}${btn('gap','10月2日 11:30 — 24:00','','data-value="second"')}</div>`:''}<div class="ar-endpoints">${['start','end'].map(key=>`<section class="ar-endpoint"><small>${key==='start'?'开始':'结束'}</small><div class="ar-endpoint-row">${btn('date',`${formatDate(state[key].date)}${icon('chevron-down')}`,'ar-date',`data-key="${key}" aria-label="选择${key==='start'?'开始':'结束'}日期"`)}${btn('time',state[key].time||'选时间','ar-time',`data-key="${key}" aria-label="选择${key==='start'?'开始':'结束'}时间"`)}</div></section>`).join('')}</div><div class="ar-duration">${Number.isFinite(minutes)&&minutes>0?`共 <strong>${durationText(minutes)}</strong>`:Number.isFinite(minutes)?'请确认结束日期和时间':'选择两端后显示时长'}</div>${!state.committed?btn('extra',`${icon('plus')}补充这笔记录`):''}${extraSummary()?`<p class="ar-extra-preview">${esc(extraSummary())}</p>`:''}${errors()}${state.committed?`<div class="ar-success" role="status">记录已经保存。${state.cleanup?'草稿清理还没完成，重试只会完成收尾。':'可以回到账本了。'}</div>`:''}</main>`;
+    }
+    const primary=state.step<3?btn('next','继续','ar-primary'):state.cleanup?btn('finish','重试收尾','ar-primary'):state.committed?btn('ledger','回到账本','ar-primary'):btn('save',`${icon('check')}保存修改`,'ar-primary');
+    html+=footer(primary,state.step>1&&!state.committed?btn('previous','上一步','ar-secondary'):'');
+    content.innerHTML=html;
+    if(state.committed)content.querySelectorAll('[data-action]').forEach(el=>{if(!['ledger','finish'].includes(el.dataset.action))el.disabled=true;});
+    icons();
+  }
+  function icons(){if(globalThis.lucide)lucide.createIcons({attrs:{width:18,height:18}});}
+  function openSheet(type,key){
+    sheet={type,key,temp:type==='extra'?{note:state.note,reasonCode:state.reasonCode,reasonText:state.reasonText,method:state.method,quality:state.quality,hint:state.hint}:type==='goal'?{goal:state.goal}:{date:state[key].date,time:state[key].time}};
+    if(type==='date'){sheet.temp.date||='2026-10-05';const [y,m]=sheet.temp.date.split('-').map(Number);sheet.month=[y,m];}
+    if(type==='time'){sheet.temp.time||=key==='start'?'16:00':'18:00';}
+    render();announce(type==='date'?'选择日期':type==='time'?'选择时间':type==='extra'?'补充记录':'更换目标');
+  }
+  function textField(id,label,field){return `<label class="ar-field-label" for="${id}">${label}</label><textarea id="${id}" data-temp="${field}" rows="2">${esc(sheet.temp[field])}</textarea>`;}
+  function renderSheet(){
+    let html='<section class="ar-sheet-body" aria-label="记录输入选择器">';
+    if(sheet.type==='goal'){
+      html+='<h1>这笔关联哪个目标？</h1><p class="ar-muted">只调整这一笔。</p>';
+      html+=[null,...goals].map(goal=>btn('choose-goal',`<span>${goal||'不关联目标'}</span>${sheet.temp.goal===goal?icon('check'):''}`,'ar-goal-choice',`data-value="${goal||''}" aria-pressed="${sheet.temp.goal===goal}"`)).join('');
+    }else if(sheet.type==='time'){
+      const [hour,minute]=sheet.temp.time.split(':');
+      html+=`<h1>${sheet.key==='start'?'开始':'结束'}时间</h1><p class="ar-muted">${formatDate(state[sheet.key].date)} · 24小时制</p><div class="ar-clock-value" id="ar-clock-value">${sheet.temp.time}</div><div class="ar-clock-selects"><div><label class="ar-field-label" for="ar-hour">小时</label><select id="ar-hour" data-clock="hour">${Array.from({length:24},(_,i)=>`<option value="${pad(i)}" ${pad(i)===hour?'selected':''}>${pad(i)}</option>`).join('')}</select></div><div><label class="ar-field-label" for="ar-minute">分钟</label><select id="ar-minute" data-clock="minute">${Array.from({length:60},(_,i)=>`<option value="${pad(i)}" ${pad(i)===minute?'selected':''}>${pad(i)}</option>`).join('')}</select></div></div><p class="ar-muted">确认后只修改这一端的时间。</p>`;
+    }else if(sheet.type==='date'){
+      const [y,m]=sheet.month,first=(new Date(y,m-1,1).getDay()+6)%7,days=new Date(y,m,0).getDate();
+      html+=`<h1>${sheet.key==='start'?'开始':'结束'}日期</h1><div class="ar-calendar-nav">${btn('month',icon('chevron-left'),'ar-icon','data-value="-1" aria-label="上个月"')}<span>${y}年${m}月</span>${btn('month',icon('chevron-right'),'ar-icon','data-value="1" aria-label="下个月"')}</div><div class="ar-calendar-grid" aria-label="日期选择">${['一','二','三','四','五','六','日'].map(day=>`<span>${day}</span>`).join('')}${Array.from({length:first},()=>'<span></span>').join('')}${Array.from({length:days},(_,i)=>{const date=`${y}-${pad(m)}-${pad(i+1)}`;return btn('day',String(i+1),'',`data-value="${date}" aria-label="${y}年${m}月${i+1}日" aria-pressed="${sheet.temp.date===date}"`);}).join('')}</div><p class="ar-selected-date">已选 ${formatDate(sheet.temp.date)}</p>`;
+    }else if(sheet.type==='extra'){
+      html+='<h1>再补充一点</h1><p class="ar-muted">都可以留空。</p>';
+      if(state.rhythm)html+=textField('ar-hint','下次从哪里接上？','hint');
+      html+=textField('ar-note','备注','note');
+    }
+    html+=errors()+'</section>'+footer(btn('apply','确认','ar-primary'),btn('cancel','取消','ar-secondary'));
+    content.innerHTML=html;icons();
+  }
+  function renderLedger(){
+    root.dispatchEvent(new CustomEvent('tpl:editor-return',{bubbles:true,detail:{state:JSON.parse(JSON.stringify(state))}}));
+    return;
+    // Original standalone ledger rendering retained below for traceability.
+    content.innerHTML=`<main class="ar-body"><div class="ar-ledger-title">${formatDate(state.sourceDate)}</div>${state.status?`<p class="ar-success" role="status">${esc(state.status)}</p>`:''}${state.committed?`<div class="ar-ledger-entry"><small>${esc(state.start.time)}<br>${esc(state.end.time)}</small><div><strong>${esc(state.knowledge==='unknown'?'想不起来':state.title)}</strong><p class="ar-input-note">${esc([state.goal,labels[state.rhythm]].filter(Boolean).join(' · ')||'未标记节奏')}</p></div></div>`:''}${state.dirty&&!state.committed?`<div class="ar-success"><p>还有一笔没写完。</p>${btn('resume','继续这笔记录')}</div>`:''}<p class="ar-input-note">${state.committed?'这笔已显示在示例时间线上。':'返回后可以继续填写。'}</p></main>${footer(!state.committed&&state.dirty?btn('resume','继续记录','ar-primary'):btn('new','记录一笔','ar-primary'),!state.committed&&state.dirty?btn('discard','放弃草稿','ar-secondary'):'')}`;icons();
+  }
+  function changeStep(step){state.step=step;state.error='';render();remember();announce(({1:'选择节奏',1.5:'节奏补充',2:'填写事项',3:'确认时间'})[step]);}
+  function save(){
+    if(busy||state.committed)return;
+    const error=validateRecord(state);if(error){state.step=error.step;state.error=error.message;render();announce(error.message);return;}
+    const checked={state,error:''};root.dispatchEvent(new CustomEvent('tpl:editor-validate',{bubbles:true,detail:checked}));
+    if(checked.error){state.step=3;state.error=checked.error;render();announce(state.error);return;}
+    const start=dateValue(state.start.date,state.start.time),end=dateValue(state.end.date,state.end.time);
+    if(variants.scenario==='时间冲突'&&start<dateValue('2026-10-05','17:00')&&end>dateValue('2026-10-05','16:30')){state.error='和“散步 · 16:30—17:00”重叠了。请调整这笔时间，已有记录会保留。';render();announce(state.error);return;}
+    busy=true;const button=content.querySelector('[data-action=save]');button.disabled=true;button.textContent='正在保存…';
+    const submitted=state;
+    setTimeout(()=>{
+      if(state!==submitted)return;
+      busy=false;
+      if(variants.scenario==='保存失败'&&!state.failureUsed){state.failureUsed=true;state.error='没保存成功，内容还在。再试一次吧。';render();remember();announce(state.error);return;}
+      state.title=state.title.trim();state.note=state.note.trim();state.committed=true;
+      if(variants.scenario==='已保存，收尾失败'){state.cleanup=true;state.error='';render();remember();announce('记录已保存，草稿清理需要重试。');return;}
+      state.dirty=false;state.view='ledger';state.status='这一笔记好了。';render();remember();announce('记录已保存。');
+    },250);
+  }
+  const scenarioNames=['普通记录','选中缺口','无时间建议','历史日补记','时间冲突','保存失败','已保存，收尾失败','离开时草稿失败'];
+  function scenario(){
+    state=base();sheet=null;busy=false;
+    if(variants.scenario==='选中缺口'){state.start.time='10:30';state.end.time='11:00';}
+    if(variants.scenario==='无时间建议'){state.start={date:null,time:null,precision:'approximate'};state.end={date:null,time:null,precision:'approximate'};state.goal=null;}
+    if(variants.scenario==='历史日补记'){state.sourceDate='2026-10-02';state.candidate=true;state.start={date:'2026-10-02',time:null,precision:'approximate'};state.end={date:'2026-10-02',time:null,precision:'approximate'};}
+    if(['时间冲突','保存失败','已保存，收尾失败','离开时草稿失败'].includes(variants.scenario)){state.step=3;state.rhythm='progress';state.title='设计首页';state.dirty=true;}
+    render();announce(variants.scenario);
+  }
+  root.addEventListener('click',event=>{
+    const button=event.target.closest('button[data-action]');if(!button||button.disabled||busy)return;
+    const {action,value,key}=button.dataset;
+    if(action==='exit'){
+      if(sheet){sheet=null;state.error='';render();return;}
+      if(state.view==='ledger'){if(state.dirty&&!state.committed){state.view='editor';state.status='';render();remember();}return;}
+      if(variants.scenario==='离开时草稿失败'&&!state.draftFailureUsed&&!state.committed){state.draftFailureUsed=true;state.error='草稿还没保留成功，先留在这里。点击返回可以重试。';render();remember();return;}
+      if(state.cleanup){state.error='记录已保存，请先重试收尾。';render();return;}
+      state.view='ledger';state.status=state.dirty&&!state.committed?'未保存的内容已保留为草稿。':'';render();remember();return;
+    }
+    if(action==='rhythm'){state.rhythm=state.rhythm===value?null:value;changed();render();return;}
+    if(action==='knowledge'){state.knowledge=value;changed();render();return;}
+    if(action==='goal'){openSheet('goal');return;}
+    if(action==='choose-goal'){sheet.temp.goal=value||null;render();return;}
+    if(action==='date'||action==='time'){openSheet(action,key);return;}
+    if(action==='extra'){openSheet('extra');return;}
+    if(action==='cancel'){sheet=null;state.error='';render();return;}
+    if(action==='apply'){
+      if(sheet.type==='extra'){for(const field of ['note','reasonText','hint'])if(codepoints(sheet.temp[field])>2000){state.error='补充文字最多2000个字，请稍微缩短。';render();return;}Object.assign(state,sheet.temp);}
+      else if(sheet.type==='goal')state.goal=sheet.temp.goal;
+      else if(sheet.type==='date')state[sheet.key].date=sheet.temp.date;
+      else state[sheet.key].time=sheet.temp.time;
+      sheet=null;changed();render();announce('修改已应用。');return;
+    }
+    if(action==='day'){sheet.temp.date=value;render();return;}
+    if(action==='month'){const d=new Date(sheet.month[0],sheet.month[1]-1+Number(value),1);sheet.month=[d.getFullYear(),d.getMonth()+1];render();return;}
+    if(action==='next'){
+      if(state.step===2){if(state.knowledge==='known'&&!state.title.trim()){state.error='写几个字，或选“想不起来”。';render();return;}if(codepoints(state.title)>200){state.error='事项最多200个字，请稍微缩短。';render();return;}}
+      if(state.step===1.5&&codepoints(state.reasonText)>2000&&state.rhythm==='stuck'){state.error='原因最多2000个字，请稍微缩短。';render();return;}
+      changed();changeStep(state.step===1?(hasChildren()?1.5:2):state.step===1.5?2:3);return;
+    }
+    if(action==='previous'){changeStep(state.step===3?2:state.step===2&&hasChildren()?1.5:1);return;}
+    if(action==='detail'){if(!['reasonCode','method','quality'].includes(key))return;state[key]=state[key]===value?'':value;changed();render();return;}
+    if(action==='gap'){state.start={date:'2026-10-02',time:value==='first'?'10:30':'11:30',precision:'approximate'};state.end={date:value==='first'?'2026-10-02':'2026-10-03',time:value==='first'?'11:00':'00:00',precision:'approximate'};state.candidate=false;changed();render();return;}
+    if(action==='save'){save();return;}
+    if(action==='finish'){state.cleanup=false;state.dirty=false;state.view='ledger';state.status='记录已保存，收尾也完成了。';state.error='';render();remember();announce('记录已保存，收尾完成。');return;}
+    if(action==='ledger'){state.view='ledger';state.status='这一笔记好了。';render();remember();return;}
+    if(action==='resume'){state.view='editor';state.status='';render();remember();return;}
+    if(action==='discard'){state=base();state.goal=null;state.start={date:null,time:null,precision:'approximate'};state.end={date:null,time:null,precision:'approximate'};state.view='ledger';state.status='草稿已放弃。';render();remember();return;}
+    if(action==='new'){scenario();remember();}
+  });
+  root.addEventListener('input',event=>{
+    const {field,temp}=event.target.dataset;
+    if(field){state[field]=event.target.value;changed();}
+    if(temp&&sheet)sheet.temp[temp]=event.target.value;
+  });
+  root.addEventListener('change',event=>{
+    const {temp,clock}=event.target.dataset;
+    if(temp&&sheet)sheet.temp[temp]=event.target.value;
+    if(clock&&sheet){sheet.temp.time=content.querySelector('#ar-hour').value+':'+content.querySelector('#ar-minute').value;content.querySelector('#ar-clock-value').textContent=sheet.temp.time;}
+  });
+  root.addEventListener('tpl:cancel-editor',()=>{state=base();sheet=null;busy=false;});
+  root.addEventListener('tpl:start-edit',event=>{
+    const {fact,draft,sourceDate}=event.detail;
+    state={...base(),...JSON.parse(JSON.stringify(draft||fact)),step:draft?.step||1,view:'editor',sourceDate,committed:false,cleanup:false,error:'',status:'',dirty:!!draft?.dirty};
+    state.start.precision='approximate';state.end.precision='approximate';sheet=null;busy=false;render();
+    root.querySelector('.ar-header span').textContent='编辑记录';
+  });
+  render();
+})();
+</script>
+
+</section>
+  <section id="rd-sleep-editor" hidden>
+<div id="tpl-sleep-design" class="viz-dotted-background">
+  <div class="sr-stage" aria-label="记录睡眠交互草案">
+    <p class="sr-preview">交互草案 · 示例数据</p>
+    <article class="sr-phone">
+      <header class="sr-header">
+        <button class="sr-icon cursor-interaction" type="button" data-action="exit" aria-label="返回账本"><i data-lucide="chevron-left" aria-hidden="true"></i></button>
+        <span id="sr-heading">记录睡眠</span>
+      </header>
+      <div id="sr-content"></div>
+      <p id="sr-live" class="sr-only" aria-live="polite"></p>
+    </article>
+  </div>
+</div>
+<style>
+#tpl-sleep-design {padding:20px 0;color-scheme:light;}
+#tpl-sleep-design * {box-sizing:border-box;}
+#tpl-sleep-design .sr-stage {width:min(100%,450px);margin:auto;--sr-paper:#fcf9f4;--sr-ink:#241f1a;--sr-muted:#6c625a;--sr-line:#e1d3c4;--sr-red:#ae563f;--sr-tint:#f4e8dc;--sr-soft:#f5eee6;--sr-green:#6d7e64;color:var(--sr-ink);font:17px/1.55 Georgia,'Noto Serif CJK SC','Songti SC',SimSun,serif;}
+#tpl-sleep-design .sr-preview {font:13px/1.5 system-ui,sans-serif;color:var(--sr-muted);margin:0 0 8px 2px;}
+#tpl-sleep-design .sr-phone {background:var(--sr-paper);box-shadow:0 8px 32px #241f1a12;padding:20px 22px 18px;min-width:0;}
+#tpl-sleep-design .sr-header {display:flex;align-items:center;gap:10px;min-height:44px;margin:0 -8px 16px;}
+#tpl-sleep-design button,#tpl-sleep-design select,#tpl-sleep-design textarea {font:inherit;color:inherit;}
+#tpl-sleep-design button {background:none;border:0;text-align:left;}
+#tpl-sleep-design button:disabled {opacity:.55;cursor:default;}
+#tpl-sleep-design .sr-icon {min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:8px;}
+#tpl-sleep-design .sr-icon svg {width:23px;height:23px;}
+#tpl-sleep-design h1,#tpl-sleep-design h2,#tpl-sleep-design p {margin:0;font-weight:400;}
+#tpl-sleep-design h1 {font-size:32px;line-height:1.35;letter-spacing:-.5px;}
+#tpl-sleep-design h2 {font-size:23px;line-height:1.4;}
+#tpl-sleep-design .sr-body {padding:19px 0 26px;min-height:465px;}
+#tpl-sleep-design .sr-muted {font-size:14px;color:var(--sr-muted);margin-top:9px;}
+#tpl-sleep-design .sr-types {display:flex;gap:4px;padding:4px;border-radius:26px;background:var(--sr-soft);margin:25px 0 23px;}
+#tpl-sleep-design .sr-types button {display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:1;min-height:46px;padding:8px 5px;border-radius:24px;}
+#tpl-sleep-design .sr-types button[aria-pressed=true] {background:var(--sr-paper);box-shadow:0 2px 5px #241f1a0a;color:var(--sr-red);}
+#tpl-sleep-design .sr-types svg {width:19px;height:19px;}
+#tpl-sleep-design .sr-endpoint {border-top:1px solid var(--sr-line);padding:12px 0 18px;}
+#tpl-sleep-design .sr-endpoint-label {display:block;font-size:14px;color:var(--sr-muted);}
+#tpl-sleep-design .sr-endpoint-row {display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:3px 0 0;}
+#tpl-sleep-design .sr-date {display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0;font-size:16px;}
+#tpl-sleep-design .sr-date svg {width:15px;height:15px;color:var(--sr-muted);}
+#tpl-sleep-design .sr-time {padding:0;min-height:52px;font:36px/1.25 Georgia,serif;letter-spacing:-1px;}
+#tpl-sleep-design .sr-time.sr-empty {font:23px/1.4 Georgia,'Songti SC',serif;letter-spacing:0;color:var(--sr-muted);}
+#tpl-sleep-design .sr-duration {text-align:center;padding:10px 0 18px;color:var(--sr-muted);font-size:16px;}
+#tpl-sleep-design .sr-duration strong {color:var(--sr-ink);font-size:25px;font-weight:400;display:block;margin-top:4px;}
+#tpl-sleep-design .sr-link {display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:7px 0;color:var(--sr-red);font-size:15px;}
+#tpl-sleep-design .sr-link svg {width:16px;height:16px;}
+#tpl-sleep-design .sr-field-label {display:block;font-size:15px;margin:9px 0 8px;}
+#tpl-sleep-design textarea {display:block;width:100%;resize:vertical;padding:13px;border:1px solid var(--sr-line);border-radius:9px;background:var(--sr-paper);font-size:18px;min-height:115px;}
+#tpl-sleep-design textarea::placeholder {color:#887970;}
+#tpl-sleep-design select {width:100%;padding:11px;border:1px solid var(--sr-line);border-radius:9px;background:var(--sr-paper);min-height:48px;font-size:17px;}
+#tpl-sleep-design .sr-footer {display:flex;gap:10px;align-items:center;padding-top:13px;border-top:1px solid var(--sr-line);}
+#tpl-sleep-design .sr-primary,#tpl-sleep-design .sr-secondary {display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:52px;padding:12px 18px;border-radius:30px;text-align:center;}
+#tpl-sleep-design .sr-primary {background:var(--sr-red);color:var(--sr-paper);flex:1;border:1px solid var(--sr-red);}
+#tpl-sleep-design .sr-secondary {border:1px solid var(--sr-line);flex:.65;}
+#tpl-sleep-design .sr-primary svg {width:19px;height:19px;}
+#tpl-sleep-design .sr-error {color:#9c3325;background:#f9e9e1;padding:12px 14px;border-radius:8px;margin:13px 0;font-size:15px;overflow-wrap:anywhere;}
+#tpl-sleep-design .sr-status {color:var(--sr-green);background:var(--sr-soft);padding:13px 14px;border-radius:8px;margin:13px 0;font-size:15px;overflow-wrap:anywhere;}
+#tpl-sleep-design .sr-notice {font-size:14px;color:var(--sr-muted);margin-bottom:18px;}
+#tpl-sleep-design .sr-sheet {padding:18px 0 24px;min-height:440px;}
+#tpl-sleep-design .sr-sheet h1 {font-size:28px;margin-bottom:20px;}
+#tpl-sleep-design .sr-clock-value {text-align:center;font:52px/1.2 Georgia,serif;letter-spacing:-2px;margin:20px 0;}
+#tpl-sleep-design .sr-clock-selects {display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:26px 0 20px;}
+#tpl-sleep-design .sr-calendar-nav {display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;gap:6px;}
+#tpl-sleep-design .sr-calendar-grid {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;}
+#tpl-sleep-design .sr-calendar-grid>span {display:flex;align-items:center;justify-content:center;min-height:30px;font-size:13px;color:var(--sr-muted);}
+#tpl-sleep-design .sr-calendar-grid button {min-height:44px;padding:6px 0;text-align:center;border-radius:50%;font:16px/1.5 Georgia,serif;}
+#tpl-sleep-design .sr-calendar-grid button[aria-pressed=true] {background:var(--sr-red);color:var(--sr-paper);}
+#tpl-sleep-design .sr-selected-date {margin-top:16px;color:var(--sr-red);text-align:center;}
+#tpl-sleep-design .sr-ledger-title {font:48px/1.3 Georgia,'Noto Serif CJK SC',serif;margin:12px 0 20px;}
+#tpl-sleep-design .sr-entry {display:flex;align-items:baseline;gap:17px;width:100%;padding:18px 0;border-bottom:1px solid var(--sr-line);overflow-wrap:anywhere;}
+#tpl-sleep-design .sr-entry small {font-size:14px;color:var(--sr-muted);flex:none;}
+#tpl-sleep-design .sr-entry strong {font-weight:400;font-size:25px;}
+#tpl-sleep-design .sr-detail-value {border-top:1px solid var(--sr-line);padding:17px 0;}
+#tpl-sleep-design .sr-detail-value span {display:block;font-size:14px;color:var(--sr-muted);}
+#tpl-sleep-design .sr-detail-value strong {font-size:23px;font-weight:400;display:block;margin-top:4px;overflow-wrap:anywhere;}
+#tpl-sleep-design .sr-note-text {white-space:pre-wrap;overflow-wrap:anywhere;margin-top:18px;}
+#tpl-sleep-design .sr-only {position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+@media(max-width:360px) {#tpl-sleep-design .sr-phone {padding:17px 16px;}#tpl-sleep-design h1 {font-size:28px;}#tpl-sleep-design .sr-time {font-size:33px;}}
+</style>
+<script>
+(() => {
+  const root=document.getElementById('tpl-sleep-design'),content=root.querySelector('#sr-content');
+  const types={mainSleep:'主睡眠',nap:'小睡'};
+  const scenes=['空白记录','已填主睡眠','小睡','编辑睡眠','时间冲突','保存失败','已保存，收尾失败','离开时草稿失败'];
+  const variants={scenario:'空白记录'};
+  const owner=`sleep-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const demoDate='2026-10-05',demoNow='2026-10-05T18:00:00';
+  const endpoint=()=>({date:null,time:null,precision:'approximate'});
+  const base=()=>({view:'editor',sourceDate:demoDate,type:'mainSleep',start:endpoint(),end:endpoint(),note:'',noteOpen:false,dirty:false,editing:false,original:null,fact:null,committed:false,cleanup:false,error:'',status:'',failureUsed:false,draftFailureUsed:false,resumed:false});
+  let state=base(),sheet=null,busy=false;
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const pad=n=>String(n).padStart(2,'0');
+  const icon=name=>`<i data-lucide="${name}" aria-hidden="true"></i>`;
+  const btn=(action,label,cls='sr-link',attrs='')=>`<button type="button" class="${cls} cursor-interaction" data-action="${action}" ${attrs}>${label}</button>`;
+  const dayText=date=>{if(!date)return '选日期';const [y,m,d]=date.split('-').map(Number);return `${y!==2026?y+'年':''}${m}月${d}日`;};
+  const timeValue=e=>e.date&&e.time?Date.parse(`${e.date}T${e.time}:00`):NaN;
+  const count=text=>Array.from(String(text??'').trim()).length;
+  function durationText(ms){const n=Math.round(ms/60000);return n===0&&ms>0?'少于1分钟':n>=60?`${Math.floor(n/60)} 小时${n%60?' '+n%60+' 分钟':''}`:`${n} 分钟`;}
+  function validate(s){
+    if(!Object.hasOwn(types,s.type))return '先选择主睡眠或小睡。';
+    if(!Number.isFinite(timeValue(s.start))||!Number.isFinite(timeValue(s.end)))return '先选好入睡和醒来的日期、时间。';
+    if(timeValue(s.end)<=timeValue(s.start))return '醒来要晚于入睡。跨夜的话，请确认醒来的日期。';
+    if(count(s.note)>2000)return '备注最多2000个字，请稍微缩短。';
+    return '';
+  }
+  function dateWindow(date){
+    const [y,m,d]=date.split('-').map(Number),a=new Date(y,m-1,d).getTime(),b=new Date(y,m-1,d+1).getTime();
+    return date>demoDate?[a,a]:[a,date===demoDate?Math.min(b,Date.parse(demoNow)):b];
+  }
+  function daySlice(f,date){const [a,b]=dateWindow(date);return {start:Math.max(a,timeValue(f.start)),end:Math.min(b,timeValue(f.end)),duration:Math.max(0,Math.min(b,timeValue(f.end))-Math.max(a,timeValue(f.start)))};}
+  function clockText(ms){const d=new Date(ms);return `${pad(d.getHours())}:${pad(d.getMinutes())}`;}
+  function remember(){
+    root.dispatchEvent(new CustomEvent('tpl:editor-draft',{bubbles:true,detail:{state:JSON.parse(JSON.stringify(state))}}));
+  }
+  function restore(snapshot){
+    const p=snapshot?.privateContent,s=p?.state;
+    if(p?.kind!=='sleep-recording'||p.version!==1||!s||!['editor','ledger','detail'].includes(s.view)||!Object.hasOwn(types,s.type)||typeof s.note!=='string')return false;
+    for(const key of ['start','end'])if(!s[key]||!(s[key].date===null||/^\d{4}-\d{2}-\d{2}$/.test(s[key].date))||!(s[key].time===null||/^([01]\d|2[0-3]):[0-5]\d$/.test(s[key].time)))return false;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(s.sourceDate))return false;
+    state={...base(),...s,start:{...s.start,precision:'approximate'},end:{...s.end,precision:'approximate'}};
+    if(scenes.includes(p.scenario))variants.scenario=p.scenario;
+    return true;
+  }
+  function announce(text){root.querySelector('#sr-live').textContent=text;}
+  function changed(){state.dirty=true;state.error='';content.querySelector('.sr-error')?.remove();remember();}
+  function icons(){if(globalThis.lucide)lucide.createIcons({attrs:{width:18,height:18}});}
+  function errorText(){return state.error?`<p class="sr-error" role="alert">${esc(state.error)}</p>`:'';}
+  function footer(primary,secondary=''){return `<footer class="sr-footer">${secondary}${primary}</footer>`;}
+  function render(){
+    root.querySelector('#sr-heading').textContent=sheet?'记录睡眠':state.view==='ledger'?'日账本':state.view==='detail'?'睡眠记录':state.editing?'编辑睡眠':'记录睡眠';
+    root.querySelector('[data-action="exit"]').setAttribute('aria-label',sheet?'取消修改':state.view==='detail'?'返回账本':state.view==='ledger'?'返回睡眠记录':'返回详情');
+    if(sheet){renderSheet();return;}
+    if(state.view==='ledger'){renderLedger();return;}
+    if(state.view==='detail'){renderDetail();return;}
+    const duration=timeValue(state.end)-timeValue(state.start);
+    let html=`<main class="sr-body">${state.resumed?'<p class="sr-notice">上次没写完，接着记吧。</p>':''}<h1>几点睡，<br>几点醒？</h1><div class="sr-types" role="group" aria-label="睡眠类型">${[['mainSleep','moon'],['nap','cloud-moon']].map(([type,symbol])=>btn('type',`${icon(symbol)}${types[type]}`,'',`data-value="${type}" aria-pressed="${state.type===type}"`)).join('')}</div>${['start','end'].map(key=>`<section class="sr-endpoint"><span class="sr-endpoint-label">${key==='start'?'入睡':'醒来'}</span><div class="sr-endpoint-row">${btn('date',`${dayText(state[key].date)}${icon('chevron-down')}`,'sr-date',`data-key="${key}" aria-label="选择${key==='start'?'入睡':'醒来'}日期"`)}${btn('time',state[key].time||'选时间',`sr-time ${state[key].time?'':'sr-empty'}`,`data-key="${key}" aria-label="选择${key==='start'?'入睡':'醒来'}时间"`)}</div></section>`).join('')}<div class="sr-duration">${Number.isFinite(duration)&&duration>0?`这次睡眠<strong>${durationText(duration)}</strong>`:Number.isFinite(duration)?'请确认入睡和醒来的日期':'选好时间，就能看到睡了多久。'}</div>${btn('note',`${icon(state.noteOpen?'minus':'plus')}${state.noteOpen?'收起备注':state.note?'查看备注':'补充备注'}`,'sr-link',`aria-expanded="${state.noteOpen}" aria-controls="sr-note-region"`)}<div id="sr-note-region" ${state.noteOpen?'':'hidden'}><label class="sr-field-label" for="sr-note">还有什么想记下的？</label><textarea id="sr-note" data-field="note" rows="3" placeholder="可以留空">${esc(state.note)}</textarea></div>${errorText()}${state.cleanup?'<p class="sr-status" role="status">睡眠已经保存。还有收尾没完成，再试一次就好。</p>':''}${state.editing&&!state.committed?'<p class="sr-muted">保存后才会更新这条睡眠。</p>':''}</main>`;
+    html+=footer(state.cleanup?btn('finish','重试收尾','sr-primary'):state.committed?btn('ledger','回到账本','sr-primary'):btn('save',`${icon('check')}${state.editing?'保存修改':'保存睡眠'}`,'sr-primary'));
+    content.innerHTML=html;
+    if(state.committed)content.querySelectorAll('[data-action]').forEach(b=>{if(!['finish','ledger'].includes(b.dataset.action))b.disabled=true;});
+    icons();
+  }
+  function openSheet(type,key){
+    sheet={type,key,temp:{date:state[key].date,time:state[key].time}};
+    if(type==='date'){sheet.temp.date||=state[key==='start'?'end':'start'].date||demoDate;const [y,m]=sheet.temp.date.split('-').map(Number);sheet.month=[y,m];}
+    if(type==='time')sheet.temp.time||='00:00';
+    render();announce(type==='date'?'选择日期':'选择时间');
+  }
+  function renderSheet(){
+    const title=sheet.key==='start'?'入睡':'醒来';
+    let html=`<section class="sr-sheet" aria-label="睡眠时间选择器"><h1>${title}${sheet.type==='date'?'日期':'时间'}</h1>`;
+    if(sheet.type==='time'){
+      const [hour,minute]=sheet.temp.time.split(':');
+      html+=`<p class="sr-muted">${dayText(state[sheet.key].date)} · 24小时制</p><div class="sr-clock-value" id="sr-clock-value">${sheet.temp.time}</div><div class="sr-clock-selects"><div><label class="sr-field-label" for="sr-hour">小时</label><select id="sr-hour" data-clock="hour">${Array.from({length:24},(_,n)=>`<option value="${pad(n)}" ${pad(n)===hour?'selected':''}>${pad(n)}</option>`).join('')}</select></div><div><label class="sr-field-label" for="sr-minute">分钟</label><select id="sr-minute" data-clock="minute">${Array.from({length:60},(_,n)=>`<option value="${pad(n)}" ${pad(n)===minute?'selected':''}>${pad(n)}</option>`).join('')}</select></div></div><p class="sr-muted">确认后只修改${title}时间。</p>`;
+    }else{
+      const [y,m]=sheet.month,first=(new Date(y,m-1,1).getDay()+6)%7,days=new Date(y,m,0).getDate();
+      html+=`<div class="sr-calendar-nav">${btn('month',icon('chevron-left'),'sr-icon','data-value="-1" aria-label="上个月"')}<span>${y}年${m}月</span>${btn('month',icon('chevron-right'),'sr-icon','data-value="1" aria-label="下个月"')}</div><div class="sr-calendar-grid" aria-label="日期选择">${['一','二','三','四','五','六','日'].map(d=>`<span>${d}</span>`).join('')}${'<span></span>'.repeat(first)}${Array.from({length:days},(_,n)=>{const date=`${y}-${pad(m)}-${pad(n+1)}`;return btn('day',String(n+1),'',`data-value="${date}" aria-label="${y}年${m}月${n+1}日" aria-pressed="${sheet.temp.date===date}"`);}).join('')}</div><p class="sr-selected-date">已选 ${dayText(sheet.temp.date)}</p>`;
+    }
+    content.innerHTML=html+'</section>'+footer(btn('apply','确认','sr-primary'),btn('cancel','取消','sr-secondary'));icons();
+  }
+  function visibleFact(){return state.fact||state.original;}
+  function renderLedger(){
+    root.dispatchEvent(new CustomEvent('tpl:editor-return',{bubbles:true,detail:{state:JSON.parse(JSON.stringify(state))}}));
+    return;
+    // Original standalone ledger rendering retained below for traceability.
+    const f=visibleFact(),slice=f?daySlice(f,state.sourceDate):null;
+    content.innerHTML=`<main class="sr-body"><div class="sr-ledger-title">${dayText(state.sourceDate)}</div>${state.status?`<p class="sr-status" role="status">${esc(state.status)}</p>`:''}${f&&slice.duration>0?btn('detail',`<small>${clockText(slice.start)}<br>${slice.end===dateWindow(state.sourceDate)[1]&&state.sourceDate<demoDate?'24:00':clockText(slice.end)}</small><span><strong>${types[f.type]}</strong><p class="sr-muted">本日 ${durationText(slice.duration)}</p><p class="sr-muted">这次睡眠 ${durationText(timeValue(f.end)-timeValue(f.start))}</p></span>`,'sr-entry'):f?'<p class="sr-muted">这次睡眠不在本日时间线内，可以查看完整记录。</p>':''}${state.dirty&&!state.committed?`<div class="sr-status"><p>还有一段睡眠没记完。</p>${btn('resume','继续这条睡眠')}</div>`:''}${!f&&!state.dirty?'<p class="sr-muted">尚未记录睡眠。</p>':''}</main>${footer(state.dirty&&!state.committed?btn('resume','继续记录','sr-primary'):f?btn('detail','查看睡眠','sr-primary'):btn('new','记录睡眠','sr-primary'),state.dirty&&!state.committed?btn('discard','放弃草稿','sr-secondary'):'')}`;icons();
+  }
+  function renderDetail(){
+    const f=visibleFact();if(!f){state.view='ledger';render();return;}
+    content.innerHTML=`<main class="sr-body"><h1>${types[f.type]}</h1><p class="sr-muted">完整睡眠记录</p><div class="sr-detail-value"><span>入睡</span><strong>${dayText(f.start.date)} ${esc(f.start.time)}</strong></div><div class="sr-detail-value"><span>醒来</span><strong>${dayText(f.end.date)} ${esc(f.end.time)}</strong></div><div class="sr-detail-value"><span>这次睡眠</span><strong>${durationText(timeValue(f.end)-timeValue(f.start))}</strong></div>${f.note?`<p class="sr-note-text">${esc(f.note)}</p>`:''}</main>${footer(btn('edit','编辑睡眠','sr-primary'),btn('ledger','回到账本','sr-secondary'))}`;icons();
+  }
+  function finish(message){state.cleanup=false;state.dirty=false;state.view='ledger';state.status=message;state.error='';render();remember();announce(message);}
+  function save(){
+    if(busy||state.committed)return;
+    state.error=validate(state);
+    if(state.error){if(count(state.note)>2000)state.noteOpen=true;render();announce(state.error);return;}
+    const checked={state,error:''};root.dispatchEvent(new CustomEvent('tpl:editor-validate',{bubbles:true,detail:checked}));
+    if(checked.error){state.error=checked.error;render();announce(state.error);return;}
+    if(variants.scenario==='时间冲突'&&timeValue(state.start)<Date.parse('2026-10-05T07:30:00')&&timeValue(state.end)>Date.parse('2026-10-05T07:00:00')){state.error='和“早餐 · 10月5日 07:00—07:30”重叠了。请调整睡眠时间。';render();announce(state.error);return;}
+    busy=true;const button=content.querySelector('[data-action="save"]');button.disabled=true;button.textContent='正在保存…';
+    const submitted=state;
+    setTimeout(()=>{
+      if(submitted!==state)return;
+      busy=false;
+      if(variants.scenario==='保存失败'&&!state.failureUsed){state.failureUsed=true;state.error='没保存成功，内容还在。再试一次吧。';render();remember();announce(state.error);return;}
+      state.note=state.note.trim();state.fact={id:state.original?.id||'sleep-example-1',type:state.type,start:{...state.start,precision:'approximate'},end:{...state.end,precision:'approximate'},note:state.note};state.committed=true;
+      if(variants.scenario==='已保存，收尾失败'){state.cleanup=true;render();remember();announce('睡眠已保存，请重试收尾。');return;}
+      finish(state.editing?'睡眠修改好了。':'这段睡眠记好了。');
+    },250);
+  }
+  function scenario(){
+    state=base();sheet=null;busy=false;
+    if(variants.scenario!=='空白记录'){
+      state.start={date:'2026-10-04',time:'23:40',precision:'approximate'};
+      state.end={date:'2026-10-05',time:'07:20',precision:'approximate'};
+      state.dirty=true;
+    }
+    if(variants.scenario==='小睡'){state.type='nap';state.start={date:demoDate,time:'13:10',precision:'approximate'};state.end={date:demoDate,time:'13:40',precision:'approximate'};}
+    if(variants.scenario==='编辑睡眠'){state.editing=true;state.original={id:'sleep-example-existing',type:state.type,start:{...state.start},end:{...state.end},note:'夜里醒了一次'};state.note=state.original.note;state.dirty=false;}
+    render();announce(variants.scenario);
+  }
+  root.addEventListener('click',event=>{
+    const b=event.target.closest('button[data-action]');if(!b||b.disabled||busy)return;
+    const {action,key,value}=b.dataset;
+    if(action==='exit'){
+      if(sheet){sheet=null;render();announce('修改已取消。');return;}
+      if(state.view==='detail'){state.view='ledger';render();remember();return;}
+      if(state.view==='ledger'){if(state.dirty&&!state.committed){state.view='editor';state.resumed=true;render();remember();}return;}
+      if(state.cleanup){state.error='睡眠已经保存，请先重试收尾。';render();return;}
+      if(variants.scenario==='离开时草稿失败'&&!state.draftFailureUsed){state.draftFailureUsed=true;state.error='还没保留好，先留在这里。点返回可以再试一次。';render();remember();return;}
+      state.view='ledger';state.status=state.dirty?'未保存的内容已保留，可以接着记。':'';render();remember();return;
+    }
+    if(action==='date'||action==='time'){openSheet(action,key);return;}
+    if(action==='day'){sheet.temp.date=value;render();return;}
+    if(action==='month'){const d=new Date(sheet.month[0],sheet.month[1]-1+Number(value),1);sheet.month=[d.getFullYear(),d.getMonth()+1];render();return;}
+    if(action==='cancel'){sheet=null;render();announce('修改已取消。');return;}
+    if(action==='apply'){state[sheet.key][sheet.type]=sheet.temp[sheet.type];sheet=null;changed();render();announce('时间已更新。');return;}
+    if(action==='type'){state.type=value;changed();render();return;}
+    if(action==='note'){state.noteOpen=!state.noteOpen;render();remember();return;}
+    if(action==='save'){save();return;}
+    if(action==='finish'){finish('睡眠已保存，收尾也完成了。');return;}
+    if(action==='resume'){state.view='editor';state.resumed=true;state.error='';render();remember();return;}
+    if(action==='ledger'){state.view='ledger';render();remember();return;}
+    if(action==='detail'){state.view='detail';render();remember();return;}
+    if(action==='edit'){
+      if(state.dirty&&!state.committed){state.view='editor';state.resumed=true;render();remember();return;}
+      const f=visibleFact();if(!f)return;
+      state.original={...f,start:{...f.start},end:{...f.end}};state.fact=null;state.editing=true;state.committed=false;state.dirty=false;state.resumed=false;state.type=f.type;state.start={...f.start};state.end={...f.end};state.note=f.note||'';state.error='';state.view='editor';render();remember();return;
+    }
+    if(action==='discard'){
+      const f=visibleFact();state=base();state.original=f;state.view='ledger';state.status='草稿已放弃。';render();remember();return;
+    }
+    if(action==='new'){state=base();render();remember();}
+  });
+  root.addEventListener('input',event=>{if(event.target.dataset.field==='note'){state.note=event.target.value;changed();}});
+  root.addEventListener('change',event=>{
+    if(event.target.dataset.clock&&sheet){sheet.temp.time=content.querySelector('#sr-hour').value+':'+content.querySelector('#sr-minute').value;content.querySelector('#sr-clock-value').textContent=sheet.temp.time;}
+  });
+  root.addEventListener('keydown',event=>{if(event.key==='Escape'&&sheet){sheet=null;render();announce('修改已取消。');}});
+  root.addEventListener('tpl:cancel-editor',()=>{state=base();sheet=null;busy=false;});
+  root.addEventListener('tpl:start-edit',event=>{
+    const {fact,draft,sourceDate}=event.detail;
+    state={...base(),...JSON.parse(JSON.stringify(draft||fact)),view:'editor',sourceDate,editing:true,original:JSON.parse(JSON.stringify(fact)),fact:null,committed:false,cleanup:false,error:'',status:'',dirty:!!draft?.dirty};
+    state.start.precision='approximate';state.end.precision='approximate';sheet=null;busy=false;render();
+  });
+  render();
+})();
+</script>
+
+</section>
+</div>
+<!-- The two approved input prototypes are mounted here by a source-preserving integration step. -->
+<!-- RD_CONTROLLER -->
+<script>
+(()=>{
+  const root=document.getElementById('tpl-detail-design'),content=root.querySelector('#rd-content');
+  const clone=value=>JSON.parse(JSON.stringify(value)),esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const icon=name=>`<i data-lucide="${name}" aria-hidden="true"></i>`;
+  const button=(action,label,cls='rd-secondary',attrs='')=>`<button type="button" class="${cls} cursor-interaction" data-rd-action="${action}" ${attrs}>${label}</button>`;
+  const endpoint=(date,time)=>({date,time,precision:'approximate'});
+  const now=Date.parse('2026-10-05T18:00:00'),today='2026-10-05';
+  const owner=`detail-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  const names={progress:'推进',stuck:'卡住',recovery:'休息',mainSleep:'主睡眠',nap:'小睡'};
+  const reasons={taskTooLarge:'任务太大',unclearNextStep:'不知道下一步',sleepy:'困',brainFog:'脑雾',anxious:'焦虑',interrupted:'被打断',unsure:'说不清',other:'其他'};
+  const methods={walk:'散步',meal:'吃饭',shower:'洗澡',empty:'放空',entertainment:'娱乐',switchTask:'切换任务',breakDownTask:'拆小任务',askForHelp:'寻求帮助',other:'其他'};
+  const qualities={notRecovered:'没缓过来',partlyRecovered:'缓过来一些',readyToContinue:'可以继续了'};
+  function seed(){return [
+    {id:'s1',kind:'sleep',type:'mainSleep',start:endpoint('2026-10-04','23:40'),end:endpoint(today,'07:20'),note:'夜里醒了一次'},
+    {id:'a0',kind:'activity',knowledge:'known',title:'早餐',start:endpoint(today,'07:20'),end:endpoint(today,'08:00'),goal:null,rhythm:null,note:''},
+    {id:'a1',kind:'activity',knowledge:'known',title:'设计首页',start:endpoint(today,'08:00'),end:endpoint(today,'10:00'),goal:'毕业设计',rhythm:'progress',hint:'先画补记弹层',note:''},
+    {id:'u1',kind:'activity',knowledge:'unknown',title:'',start:endpoint(today,'10:00'),end:endpoint(today,'10:30'),goal:null,rhythm:null,note:''},
+    {id:'a2',kind:'activity',knowledge:'known',title:'散步',start:endpoint(today,'11:00'),end:endpoint(today,'11:30'),goal:null,rhythm:'recovery',method:'walk',quality:'partlyRecovered',note:''},
+    {id:'s2',kind:'sleep',type:'nap',start:endpoint(today,'13:10'),end:endpoint(today,'13:40'),note:''}
+  ];}
+  const fresh=()=>({mode:'detail',sourceDate:today,selectedId:'a1',facts:seed(),drafts:{},editorState:null,scenario:'活动记录',error:'',status:'',failureUsed:false});
+  let state=fresh(),busy=false;
+  const variants={scenario:'活动记录'};
+  const scenes=['活动记录','想不起来','跨夜睡眠','小睡','读取失败','记录已不存在','删除失败','删除后刷新失败'];
+  const value=e=>e?Date.parse(`${e.date}T${e.time}:00`):NaN;
+  function duration(ms){const n=Math.round(ms/60000);return n<1?'少于1分钟':n>=60?`${Math.floor(n/60)} 小时${n%60?' '+n%60+' 分钟':''}`:`${n} 分钟`;}
+  function dateText(date){const [y,m,d]=date.split('-').map(Number);return `${y!==2026?y+'年':''}${m}月${d}日`;}
+  function full(e){return `${dateText(e.date)} ${e.time}`;}
+  function title(f){return f.kind==='sleep'?names[f.type]:f.knowledge==='unknown'?'想不起来':f.title;}
+  const fact=()=>state.facts.find(f=>f.id===state.selectedId);
+  function windowOf(date){const [y,m,d]=date.split('-').map(Number),a=new Date(y,m-1,d).getTime(),b=new Date(y,m-1,d+1).getTime();return [a,date>today?a:date===today?Math.min(b,now):b];}
+  function rows(){const [a,b]=windowOf(state.sourceDate);let cursor=a;const result=[];for(const f of [...state.facts].sort((x,y)=>value(x.start)-value(y.start))){const start=Math.max(a,value(f.start)),end=Math.min(b,value(f.end));if(end<=start)continue;if(start>cursor)result.push({gap:true,start:cursor,end:start});result.push({f,start,end});cursor=Math.max(cursor,end);}if(cursor<b)result.push({gap:true,start:cursor,end:b});return result;}
+  function clock(ms){const [a,b]=windowOf(state.sourceDate);if(ms===b&&state.sourceDate<today&&b>a)return '24:00';const d=new Date(ms);return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
+  function remember(){if(!window.openai?.setWidgetState)return;const f=fact(),snapshot={modelContent:{preview:'记录详情与删除第一轮',scenario:state.scenario,view:state.mode,record:f?title(f):null,sourceDate:state.sourceDate,draft:!!state.drafts[state.selectedId]},privateContent:{kind:'record-detail',version:1,owner,state}};if(new TextEncoder().encode(JSON.stringify(snapshot)).length<=15500)window.openai.setWidgetState(snapshot).catch(()=>{});}
+  function restore(snapshot){const p=snapshot?.privateContent,s=p?.state;if(p?.kind!=='record-detail'||p.version!==1||!s||!['detail','timeline','confirm','read-error','missing','refresh-error','editor'].includes(s.mode)||!Array.isArray(s.facts)||s.facts.length>20||!s.drafts||!scenes.includes(s.scenario)||!/^\d{4}-\d{2}-\d{2}$/.test(s.sourceDate))return false;for(const f of s.facts){if(!['activity','sleep'].includes(f.kind)||typeof f.id!=='string'||!Number.isFinite(value(f.start))||!Number.isFinite(value(f.end))||value(f.end)<=value(f.start))return false;}state=clone(s);variants.scenario=state.scenario;return true;}
+  function announce(text){root.querySelector('#rd-live').textContent=text;}
+  function field(label,text,cls='rd-value'){return `<section class="rd-field"><span class="rd-label">${label}</span><div class="${cls}">${esc(text)}</div></section>`;}
+  function footer(primary,secondary=''){return `<footer class="rd-footer">${secondary}${primary}</footer>`;}
+  function render(){
+    root.querySelector('#rd-reader').hidden=state.mode==='editor';root.querySelector('#rd-activity-editor').hidden=state.mode!=='editor'||fact()?.kind!=='activity';root.querySelector('#rd-sleep-editor').hidden=state.mode!=='editor'||fact()?.kind!=='sleep';
+    if(state.mode==='editor')return;
+    root.querySelector('#rd-heading').textContent=state.mode==='timeline'?'日账本':state.mode==='confirm'?'删除记录':'记录详情';
+    root.querySelector('[data-rd-action="back"]').setAttribute('aria-label',state.mode==='confirm'?'取消删除':'返回时间线');
+    const f=fact();let html='';
+    if(state.mode==='read-error')html=`<h1>暂时没读出来</h1><p class="rd-muted">重新打开这条记录试试。</p>${footer(button('retry-read','重试','rd-primary'))}`;
+    else if(state.mode==='missing')html=`<h1>记录已不存在</h1><p class="rd-muted">回到时间线看看其他记录。</p>${footer(button('timeline','回到时间线','rd-primary'))}`;
+    else if(state.mode==='refresh-error')html=`<h1>记录已删除</h1><p class="rd-muted">时间线还没刷新出来，再试一次就好。</p>${footer(button('refresh','刷新时间线','rd-primary'))}`;
+    else if(state.mode==='timeline'){
+      html=`<p class="rd-eyebrow">${dateText(state.sourceDate)}</p><h1>时间线</h1>${state.status?`<div class="rd-status" role="status">${esc(state.status)}</div>`:''}`;
+      html+=rows().map(r=>r.gap?`<div class="rd-entry rd-gap"><small>${clock(r.start)}<br>${clock(r.end)}</small><div><strong>尚未记录</strong><p>${duration(r.end-r.start)}</p></div></div>`:button('open',`<small>${clock(r.start)}<br>${clock(r.end)}</small><div><strong>${esc(title(r.f))}</strong><p>${duration(r.end-r.start)}${r.f.kind==='sleep'&&value(r.f.start)<r.start?' · 跨夜睡眠':''}</p></div>${icon('chevron-right')}`,'rd-entry',`data-id="${r.f.id}"`)).join('');
+    }else if(!f){state.mode='missing';render();return;}
+    else if(state.mode==='confirm'){
+      const cross=f.start.date!==f.end.date;
+      html=`<div class="rd-confirm"><p class="rd-eyebrow">${f.kind==='sleep'?'睡眠记录':'时间记录'}</p><h2>删除这${f.kind==='sleep'?'段睡眠':'条记录'}？</h2><p class="rd-value">${esc(title(f))}</p><p class="rd-muted">${full(f.start)}<br>至 ${full(f.end)}</p><p>${f.kind==='sleep'&&cross?'会删除整段跨夜睡眠，包括其他日期里显示的部分。':'删除后，这段时间会重新显示为尚未记录。'}</p>${f.kind==='sleep'&&cross?'<p class="rd-muted">相关日期的时间线会随之更新。</p>':''}${state.drafts[f.id]?'<p class="rd-muted">这条记录未保存的修改也会一并清除。</p>':''}${state.error?`<p class="rd-error" role="alert">${esc(state.error)}</p>`:''}</div>${footer(button('confirm-delete','确认删除','rd-primary'),button('cancel','保留记录','rd-secondary'))}`;
+    }else{
+      const slice=rows().find(r=>r.f?.id===f.id);
+      html=`<p class="rd-eyebrow">${f.kind==='sleep'?'睡眠记录':f.knowledge==='unknown'?'已交代这段时间':'时间记录'}</p><h1>${esc(title(f))}</h1><div class="rd-duration"><small>${f.kind==='sleep'?'这次睡眠':'这段时间'}</small>${duration(value(f.end)-value(f.start))}</div><section class="rd-field"><span class="rd-label">${f.kind==='sleep'?'完整睡眠区间':'时间区间'}</span><div class="rd-value rd-time-line"><small>${f.kind==='sleep'?'入睡':'开始'}</small>${full(f.start)}</div><div class="rd-value rd-time-line"><small>${f.kind==='sleep'?'醒来':'结束'}</small>${full(f.end)}</div>${f.start.date!==f.end.date?`<p class="rd-muted">${slice?`${dateText(state.sourceDate)}时间线计入 ${duration(slice.end-slice.start)}`:'这条记录不在当前日期的时间线内'}</p>`:''}</section>`;
+      if(f.kind==='activity'){
+        if(f.knowledge==='unknown'&&f.title)html+=field('保留的事项',f.title);
+        if(f.goal)html+=field('目标',f.goal);
+        if(f.rhythm){html+=field('节奏',names[f.rhythm]);if(f.rhythm==='stuck'&&(f.reasonCode||f.reasonText))html+=field('卡住的原因',[reasons[f.reasonCode],f.reasonText].filter(Boolean).join(' · '),'rd-note');if(f.rhythm==='recovery'&&(f.method||f.quality))html+=field('休息',[methods[f.method],qualities[f.quality]].filter(Boolean).join(' · '),'rd-note');if(f.hint)html+=field('接续点',f.hint,'rd-note');}
+      }
+      if(f.note)html+=field('备注',f.note,'rd-note');
+      if(state.drafts[f.id])html+=`<div class="rd-status"><p>上次的修改还没保存。</p>${button('discard','放弃这份草稿','rd-delete')}</div>`;
+      html+=footer(button('edit',state.drafts[f.id]?'继续修改':'编辑记录','rd-primary'),button('delete','删除','rd-delete'));
+    }
+    content.innerHTML=html;if(globalThis.lucide)lucide.createIcons({attrs:{width:18,height:18}});
+  }
+  function launchEditor(){const f=fact();if(!f){state.mode='missing';render();remember();return;}state.mode='editor';render();const target=root.querySelector(f.kind==='sleep'?'#tpl-sleep-design':'#tpl-activity-design');target.dispatchEvent(new CustomEvent('tpl:start-edit',{detail:{fact:clone(f),draft:clone(state.drafts[f.id]||null),sourceDate:state.sourceDate}}));}
+  function scenario(){for(const id of ['#tpl-activity-design','#tpl-sleep-design'])root.querySelector(id).dispatchEvent(new CustomEvent('tpl:cancel-editor'));state=fresh();state.scenario=variants.scenario;if(state.scenario==='跨夜睡眠')state.selectedId='s1';if(state.scenario==='小睡')state.selectedId='s2';if(state.scenario==='想不起来')state.selectedId='u1';if(state.scenario==='读取失败')state.mode='read-error';if(state.scenario==='记录已不存在'){state.facts=state.facts.filter(f=>f.id!==state.selectedId);state.mode='missing';}busy=false;render();remember();}
+  root.addEventListener('click',event=>{
+    const el=event.target.closest('[data-rd-action]');if(!el||el.disabled||busy)return;const action=el.dataset.rdAction;
+    if(action==='back'){state.mode=state.mode==='confirm'?'detail':'timeline';state.error='';}
+    if(action==='timeline'||action==='refresh'){state.mode='timeline';state.error='';}
+    if(action==='open'){state.selectedId=el.dataset.id;state.mode='detail';state.error='';state.status='';}
+    if(action==='retry-read'){state.mode=fact()?'detail':'missing';}
+    if(action==='edit'){launchEditor();remember();return;}
+    if(action==='discard'){delete state.drafts[state.selectedId];state.editorState=null;}
+    if(action==='delete'){state.mode='confirm';state.error='';}
+    if(action==='cancel'){state.mode='detail';state.error='';}
+    if(action==='confirm-delete'){
+      busy=true;el.disabled=true;el.textContent='正在删除…';const submitted=state;
+      setTimeout(()=>{if(state!==submitted)return;busy=false;if(state.scenario==='删除失败'&&!state.failureUsed){state.failureUsed=true;state.error='没删掉，记录还在。再试一次吧。';render();remember();announce(state.error);return;}
+        state.facts=state.facts.filter(f=>f.id!==state.selectedId);delete state.drafts[state.selectedId];state.editorState=null;state.error='';state.status='记录已删除。';state.mode=state.scenario==='删除后刷新失败'?'refresh-error':'timeline';render();remember();announce('记录已删除。');
+      },200);return;
+    }
+    render();remember();
+  });
+  root.addEventListener('tpl:editor-validate',event=>{
+    const d=event.detail,s=d.state,f=fact();if(!f){d.error='记录已不存在。未保存的内容仍在，请返回时间线。';return;}
+    const conflict=state.facts.find(x=>x.id!==f.id&&value(s.start)<value(x.end)&&value(s.end)>value(x.start));if(conflict)d.error=`和“${title(conflict)} · ${full(conflict.start)}—${full(conflict.end)}”重叠了。请调整时间。`;
+  });
+  root.addEventListener('tpl:editor-draft',event=>{const s=event.detail.state;if(s.dirty&&!s.committed)state.drafts[state.selectedId]=clone(s);state.editorState=clone(s);remember();});
+  root.addEventListener('tpl:editor-return',event=>{
+    const s=event.detail.state,f=fact();if(s.committed&&f){const fields=f.kind==='sleep'?['type','start','end','note']:['rhythm','goal','knowledge','title','note','reasonCode','reasonText','method','quality','hint','start','end'];for(const key of fields)if(s[key]!==undefined)f[key]=clone(s[key]);delete state.drafts[f.id];state.status='修改已保存。';}
+    else if(s.dirty&&!s.committed&&f)state.drafts[f.id]=clone(s);
+    state.editorState=null;state.mode=f?'detail':'missing';render();remember();announce(s.committed?'修改已保存。':'未保存的修改已保留。');
+  });
+  restore(window.openai?.widgetState);render();if(state.mode==='editor'){const f=fact();if(f&&state.editorState)state.drafts[f.id]=clone(state.editorState);launchEditor();}
+  window.addEventListener('openai:set_globals',event=>{const snapshot=event.detail?.globals?.widgetState;if(busy||snapshot?.privateContent?.owner===owner)return;if(restore(snapshot)){render();if(state.mode==='editor'){if(state.editorState&&!state.editorState.committed)state.drafts[state.selectedId]=clone(state.editorState);launchEditor();}}});
+  if(globalThis.Tweak){let previous=variants.scenario;const tweak=new Tweak({container:root,onChange:()=>{if(previous!==variants.scenario){previous=variants.scenario;scenario();}}});tweak.addSelect(variants,'scenario',{label:'示例场景',options:scenes});}
+})();
+</script>
