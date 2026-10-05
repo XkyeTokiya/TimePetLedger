@@ -1,10 +1,14 @@
 # Tasks
 
+**当前：全应用前端重做的设计探索与上下文交接（2026-10-06）。** 贯通原型第一轮已交付：首页、活动 / 睡眠输入、详情 / 删除、目标与设置共享模拟数据，复盘继续占位；先评审连续使用和返回路径。首页 / 摘要已认可，活动第二轮保持反馈基线，睡眠获基本认可，设置当前方向暂采纳，独立原型保留。目标投入沿Q-033日期范围 / 自适应刻度 / 约5条历史，常用归档后清除与恢复手动再设沿Q-025，高级数据操作沿Q-034。表单排法与模式生效时点、列表常用入口、周起点 / 首次图表默认仍待评审。素材、范围及53项原型流程断言与浏览器证据见[重做交接](docs/planning/UI_REBUILD_PLAN.md)。新输入统一approximate（Q-030），Q-029 / Q-031 / Q-032未决边界保持；未添加 / 清空真实数据、启动Flutter开发或标记旧任务完成。下方旧UI计划暂停执行，领域任务及历史交付记录保留。
+
 ## 使用方式与当前状态
 
-**UI新路线（2026-10-04）：** 当前执行入口为[界面层重建计划](docs/planning/UI_REBUILD_PLAN.md)。本轮仅授权RB-00前期文档；RB-01起待明确授权。下面PAGE旧计划保留历史索引，不再自动按逐页补丁路线推进。
+**历史路线起点（2026-10-04）：** 当时执行入口为[界面层重建计划](docs/planning/UI_REBUILD_PLAN.md)。当时仅授权RB-00前期文档；RB-01起待明确授权。下面PAGE旧计划保留历史索引，不再自动按逐页补丁路线推进。
 
-当前页面改造专项见 [页面实现设计](docs/planning/UI_IMPLEMENTATION_DESIGN.md) 与 [整体任务清单 PAGE-T01–T09](docs/planning/UI_IMPLEMENTATION_TASKS.md)。三编辑页上一版视觉验收未通过，进入返工规划；专项任务状态不覆盖下述领域/工程任务及旧UI-T交付状态。
+**记录设计更新（2026-10-05）：** 用户已基本认可[三幕问答规格](docs/planning/GUIDED_RECORDING_DESIGN.md)，初版重点为节奏 → 事项 → 时间、持续目标、用户指定常用目标、无键盘时间调整与MD3基础组件；表单作为设置中的另一种方式保留。此次只同步文档。RB活动任务的布局与模式清理应按新基线细化，不以旧单页表单或“仅一套UI”约束覆盖新决定；任务完成和授权状态不变。
+
+历史页面改造专项见 [页面实现设计](docs/planning/UI_IMPLEMENTATION_DESIGN.md) 与 [整体任务清单 PAGE-T01–T09](docs/planning/UI_IMPLEMENTATION_TASKS.md)。三编辑页上一版视觉验收未通过，进入返工规划；专项任务状态不覆盖下述领域/工程任务及旧UI-T交付状态。
 
 本文件与 [已完成任务归档](docs/planning/COMPLETED_TASKS.md) 将 [IMPLEMENTATION_PLAN](docs/planning/IMPLEMENTATION_PLAN.md) 的前 10 个 Epic（Epic 0–9）细化为可单独交付的任务。Epic 10 只列工作包，不是可直接交给 coding agent 执行的大任务。范围以 [MVP_SCOPE](docs/planning/MVP_SCOPE.md) 为准，执行方式遵守 [AGENTS](AGENTS.md)。
 
