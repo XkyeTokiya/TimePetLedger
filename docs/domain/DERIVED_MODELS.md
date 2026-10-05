@@ -197,6 +197,12 @@
 
 **Persistence: NO**
 
+## 目标详情的多日投入视图（Q-033）
+
+目标详情分别对范围内每个当地自然日构造W并计算选定goalId的Σ d(t,W)：柱状图近7天含今天；热力图本自然周 / 本自然月，今天截至调用方传入的当前时刻、未来日窗口为空。总投入先按毫秒求和，最后统一舍入到分钟；各日分别保留hasRecords与hasApproximation，不把无参与记录画成真实零投入。SleepSession、Gap、复盘解释与下一步引用不贡献目标投入；Unknown、有Goal的recovery及未标记节奏的TimeBlock仍按已有合同计入。跨日按日切片，详情历史记录保留完整原区间，同名不同id不合并。
+
+这是详情presentation的派生视图，不改变上文Q-020的单日goalSummaries输出，也不持久化为新的事实源。周起点及首次图表偏好等具体布局仍按[交接](../planning/UI_REBUILD_PLAN.md)待评审建议处理。
+
 ## hasApproximation
 
 **Inputs:** 具体结果实际采用的边界及其精度来源，包括事实边界、窗口裁剪边界与 Gap 相邻边界。

@@ -45,6 +45,8 @@
 
 此表定义 `active ↔ archived` 双向转换及重复请求结果。
 
+Q-025的2026-10-06补充：成功归档所选常用目标后清除本机常用选择；恢复Goal只恢复新增关联资格，不自动恢复常用，需手动再设。不自动选择另一个Goal。该交互偏好不增加Goal状态；已有事实和草稿仍按原关联处理。删除按下述引用合同执行后，同样清除对应常用选择。
+
 ### Invalid transitions
 
 不得转换到 completed、paused、deleted 等未定义状态；不得以“归档”为名引入百分比、里程碑或任务树。archived Goal 不得用于新增关联，但既有引用继续有效。
@@ -103,7 +105,7 @@ Gap 是派生的未处理区间，不是 TimeBlock 的起始状态或第三个�
 | goalId / note / categoryId | 不因状态切换自动清空或重置；可选内容可由用户修改或清空，新增目标关联仍受 Q-006 约束 |
 | RhythmAnnotation | 保留已有解释，不自动添加、移除或改变节奏；用户编辑 / 移除解释的通用合同见 Q-005、Q-013 |
 | startedAt / endedAt | 允许同次编辑；结果仍须严格正区间且不重叠 |
-| startPrecision / endPrecision | 允许同次独立更正；不从 known / unknown 自动推断 exact / approximate |
+| startPrecision / endPrecision | 当前回顾式输入按Q-030统一approximate，无精度选择；旧exact记录的更正处理待Q-031。不从known / unknown推断精度 |
 | id / createdAt / updatedAt | 元数据遵循 Q-018；通用更正操作合同仍见 Q-013 |
 
 若在同一个窗口中仅改变 knowledgeState、区间不变，则 accountedDuration 不变；unknownDuration 按该区间是否被标为 unknown 改变。

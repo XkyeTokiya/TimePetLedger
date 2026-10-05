@@ -157,7 +157,7 @@ stuckReasonText 可以独立于代码填写，也可补充任一选项；选择 
 
 | 类型 / Purpose | Values / Field semantics | Relationships 与 Required / optional | Persistence status | What this object must NOT represent |
 | --- | --- | --- | --- | --- |
-| TimePrecision：边界可信精度 | exact：精确；approximate：近似 | TimeBlock、SleepSession 的起止分别必需 | 随所属实体字段保存 | 内容是否已知、对用户的质量评分 |
+| TimePrecision：边界可信精度 | 当前回顾式输入统一approximate：近似（Q-030）；旧模型含exact，兼容及值域调整待Q-031 | TimeBlock、SleepSession 的起止分别必需 | 随所属实体字段保存 | 内容是否已知、对用户的质量评分 |
 | BlockKnowledgeState：活动内容的已知性 | known：知道大概做了什么；unknown：无法恢复内容但已交代时间 | TimeBlock.knowledgeState 必需 | 随 TimeBlock 保存 | Gap、时间精度或记录失败 |
 | RhythmState：用户节奏解释 | progress：主要产生用户确认的目标推进；stuck：尝试推进目标相关事情但主要消耗于阻力、停滞或反复尝试；recovery：主要作用是重新获得继续行动的可能 | RhythmAnnotation.state 必需；annotation 本身可不存在 | 随 RhythmAnnotation 保存 | neutral、useless、活动类别、自动生产力判断 |
 | SleepType：睡眠类型 | mainSleep：主睡眠；nap：午睡 / 小睡 | SleepSession.type 必需 | 随 SleepSession 保存 | 恢复方式或睡眠质量；不自行添加时长分类阈值 |
@@ -185,7 +185,7 @@ Goal.status 明确只有 active、archived；不额外引入新的生命周期�
 
 **Purpose:** 支撑时间建议、活动输入、补账草稿及时间编辑。
 
-**Fields / Field semantics:** 补账草稿包含可修改的起止与独立精度；Q-023 定义尾部 Gap 建议、候选选择和无法推断时手动输入，新建默认 approximate，用户可独立明确选择精度；具体 UI 类型按实现职责组织。
+**Fields / Field semantics:** 补账草稿包含可修改的起止与独立精度；Q-023 定义尾部 Gap 建议、候选选择和无法推断时手动输入，新建统一approximate，无精度选择（Q-030）；旧草稿精度处理待Q-031；具体 UI 类型按实现职责组织。
 
 **Relationships:** 草稿可由 UnresolvedSpan 预填，确认后形成领域事实；系统猜测本身不等于用户确认的记录。
 

@@ -82,21 +82,21 @@
 
 ## RULE TB-002
 
-**Title:** 起止精度独立且承认近似
+**Title:** 回顾式输入统一承认近似
 
 **Applies to:** TimeBlock.startPrecision / endPrecision
 
-**Rule:** 两个字段各自取 exact 或 approximate，分别表达对应边界的精度；仍保存具体起止时间用于排序和计算，不能把一个精度强制复制到另一个。
+**Rule:** 按Q-030，当前回顾式输入的起止均为approximate，不提供精度选择，不因手动选取分钟变为exact。保留具体起止时间用于排序和计算。旧模型的两个字段分别表达边界精度，历史exact事实及字段调整等待Q-031，不通过UI改版自动改写。
 
-**Reason:** 用户对开始与结束可能有不同把握。
+**Reason:** 用户明确回顾式记录只能表达大概时间，不应承担声明精确边界的负担。
 
-**Examples:** startedAt=15:00、startPrecision=approximate；endedAt=16:20、endPrecision=exact。
+**Examples:** 当前新输入startedAt=15:00、endedAt=16:20，两端均为approximate。
 
-**Invalid examples:** 仅存一个精度并强制两个边界一致；将 approximate 替换成 unknown。
+**Invalid examples:** 选择具体分钟后声称exact；将approximate替换成unknown；未经Q-031决定擅自删除旧精度字段或改写历史事实。
 
 **Enforcement layer:** Domain；Database 可限制枚举值域；Presentation 表达近似。
 
-**Source:** §5–6
+**Source:** §5–6及后续精度决定，Q-030 / Q-031
 
 
 ## RULE TB-003
@@ -105,7 +105,7 @@
 
 **Applies to:** TimeBlock 与可选 RhythmAnnotation
 
-**Rule:** 目标相关时间以及明确 progress 都允许 approximate；高价值时间通过交互优先确认，不以必须 exact 阻止保存。
+**Rule:** 目标相关时间以及明确progress的回顾式输入按Q-030统一approximate；高价值时间通过交互优先确认，不以必须exact阻止保存。
 
 **Reason:** 次日回忆的近似目标时间仍是合法、有价值的数据。
 
@@ -124,7 +124,7 @@
 
 **Applies to:** TimeBlock.knowledgeState
 
-**Rule:** knowledgeState 仅为 known 或 unknown。known 表示知道大概发生了什么；unknown 表示知道时间过去了但无法恢复内容。两种已知性均可与可选 Goal 和可选 RhythmAnnotation 组合；允许双向更正，不设置额外转换门槛；转换不自动清空已有内容或解释，转为 known 时必须填写合法活动名称，允许同次修改区间和独立精度。保存仍须满足既有规则，详见 Q-003 和 DOMAIN_STATE_MACHINES。
+**Rule:** knowledgeState 仅为 known 或 unknown。known 表示知道大概发生了什么；unknown 表示知道时间过去了但无法恢复内容。两种已知性均可与可选 Goal 和可选 RhythmAnnotation 组合；允许双向更正，不设置额外转换门槛；转换不自动清空已有内容或解释，转为 known 时必须填写合法活动名称，允许同次修改区间；当前回顾式输入按Q-030统一approximate，旧精度兼容见Q-031。保存仍须满足既有规则，详见 Q-003 和 DOMAIN_STATE_MACHINES。
 
 **Reason:** 语义清晰度不等于边界精度。
 
@@ -428,11 +428,11 @@
 
 **Applies to:** SleepSession.type、startPrecision / endPrecision
 
-**Rule:** type 仅为 mainSleep 或 nap；起止分别保留 exact / approximate，不用睡眠类型推导时间精度，不增加类型时长阈值。SleepSession 必须为正区间，允许未来区间，不设置固定历史回溯上限。
+**Rule:** type 仅为 mainSleep 或 nap；当前回顾式起止输入按Q-030统一approximate，不提供精度选择；旧exact事实处理见Q-031，不用睡眠类型推导时间精度，不增加类型时长阈值。SleepSession 必须为正区间，允许未来区间，不设置固定历史回溯上限。
 
 **Reason:** 睡眠类型、边界精度是不同维度。
 
-**Examples:** mainSleep，开始 approximate、结束 exact。
+**Examples:** mainSleep，当前回顾式输入开始与结束均为approximate。
 
 **Invalid examples:** 把 sleepQuality 当 SleepType；强制所有睡眠边界 exact。
 
@@ -505,6 +505,10 @@
 **Applies to:** Goal.status / archivedAt
 
 **Rule:** status 仅为 active、archived。Goal 只能以 active 创建；active 与 archived 可双向切换。归档写入当前 UTC archivedAt，恢复时清除；相同状态重复请求幂等且不更新 updatedAt。已有引用保留，archived Goal 不可用于新增关联；未被引用的 Goal 可物理删除，有引用的删除操作归档并隐藏，不新增 deleted 状态。改名实时作用于历史记录。
+
+**交互偏好补充（Q-025，2026-10-06）：** 成功归档 / 删除所选常用目标后清除本机常用选择；恢复后不自动设回，须用户手动再设，也不自动替换为另一目标。失败保留此前结果，不能声称清除成功。此偏好不是Goal字段，不改变已有事实 / 草稿自身关联。
+
+**全量数据操作补充（Q-034，2026-10-06）：** 高级设置的“清空当前数据”是用户另行指定的全量操作：清空活动及依附解释、睡眠、目标、复盘及其下一步、未保存草稿，并清除常用目标选择，保留界面 / 记录方式 / 提醒等设置。它不同于此处单个有引用Goal的归档式删除。测试数据只允许数据为空时添加，已有数据不追加或覆盖；测试内容不能绕过现有事实校验。实际事务、失败与并发处理需正式任务明确，本轮不执行清空或添加。
 
 **Reason:** 值域确定不代表完整转换合同已确定。
 
@@ -713,7 +717,7 @@
 
 **Applies to:** hasApproximation、时间汇总
 
-**Rule:** 时间聚合应携带 hasApproximation。按 Q-014，每项切片、Gap 与汇总分别携带该标志：保留的近似事实边界才传播，被裁掉的边界不传播；Gap 继承其实际采用的相邻边界精度；汇总任一参与时长近似则为近似。unresolvedDuration 从实际 Gap 标志汇总，不直接继承 accountedDuration 或全日标志。内部按毫秒计算，展示时最终统一舍入到分钟。2026-10-04用户明确决定：首版全应用时间及时长数值不显示“约”，不以其他常驻近似前缀替代；隐藏不代表精度转为exact，不修改字段或传播计算。编辑精度选择保留，高级显示开关仅后续候选。
+**Rule:** 时间聚合应携带 hasApproximation。按 Q-014，每项切片、Gap 与汇总分别携带该标志：保留的近似事实边界才传播，被裁掉的边界不传播；Gap 继承其实际采用的相邻边界精度；汇总任一参与时长近似则为近似。unresolvedDuration 从实际 Gap 标志汇总，不直接继承 accountedDuration 或全日标志。内部按毫秒计算，展示时最终统一舍入到分钟。2026-10-04用户明确决定：首版全应用时间及时长数值不显示“约”，不以其他常驻近似前缀替代；隐藏不代表精度转为exact，不修改字段或传播计算。Q-030进一步取消输入精度选择，当前回顾式输入统一approximate；旧exact处理见Q-031。高级显示开关仅后续候选。
 
 **Reason:** 具体时间值不等于绝对精确的认知。
 
@@ -792,7 +796,7 @@
 | 普通入口查看今天，已有事实且存在截至当前时刻的尾部 Gap | 直接建议该尾部 Gap |
 | 普通入口其余情况，包括历史日期有 Gap | 展示 Gap 供选择，即使只有一个也先由用户确认 |
 
-新建输入的起止精度默认 approximate；系统建议、Gap 预填或手动输入都不自动声称 exact，用户可分别明确选择精度。编辑已有记录保留其已存精度，修改时间值本身不自动改变精度。所有建议均可修改，正式保存仍满足正区间、不重叠等规则。当前时刻由调用方提供，Gap 按 Q-009 的对账窗口与已有正式事实派生，草稿不计入覆盖。
+新建输入的起止精度按Q-030统一approximate，系统建议、Gap预填及手动输入均无精度选择。已存exact记录与草稿如何编辑 / 迁移依赖Q-031，本轮不改写。所有建议均可修改，正式保存仍满足正区间、不重叠等规则。当前时刻由调用方提供，Gap 按 Q-009 的对账窗口与已有正式事实派生，草稿不计入覆盖。
 
 ## 摘要缺失表达（Q-021）
 
