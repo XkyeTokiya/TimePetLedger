@@ -78,7 +78,7 @@ void main() {
       );
       await t.pumpAndSettle();
       await tapText(t, '打开按日复盘');
-      expect(find.text('按日复盘'), findsOneWidget);
+      expect(find.text('日账本'), findsOneWidget);
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
       expect(find.text('未填写反思'), findsNothing);
       expect(find.text('明天第一步'), findsNothing);

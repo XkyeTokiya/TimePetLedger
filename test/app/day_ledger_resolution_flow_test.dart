@@ -488,7 +488,7 @@ void main() {
         isNull,
       );
       app.clock = DateTime(2026, 9, 29, 13);
-      await tester.tap(find.byTooltip('更多'));
+      await tester.tap(find.byKey(const ValueKey('home-menu')));
       await tester.pumpAndSettle();
       await tap(tester, '刷新账本');
       expectLedger(

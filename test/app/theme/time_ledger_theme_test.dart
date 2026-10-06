@@ -215,8 +215,11 @@ void main() {
                 .errorText,
             isNotNull,
           );
-          expect(find.byKey(const ValueKey('root-回看')), findsOneWidget);
-          expect(find.byKey(const ValueKey('root-复盘')), findsOneWidget);
+          expect(
+            find.byKey(const ValueKey('home-tab-timeline')),
+            findsOneWidget,
+          );
+          expect(find.byKey(const ValueKey('home-tab-review')), findsOneWidget);
           await capture(tester, 'ready-error-$width-$scale');
           await guidelines(tester);
           expect(tester.takeException(), isNull);

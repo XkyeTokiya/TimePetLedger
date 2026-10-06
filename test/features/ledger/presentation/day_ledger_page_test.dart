@@ -6,6 +6,7 @@ import 'package:time_pet_ledger/app/time/device_recording_date.dart';
 import 'package:time_pet_ledger/features/ledger/application/day_ledger_loader.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_page.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_overview.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/home/home_day_header.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/ledger_date_header.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_date_dialog.dart';
 
@@ -14,7 +15,9 @@ import '../../../support/ledger_date_selection.dart';
 import 'day_ledger_controller_test.dart' show emptyFacts;
 
 Finder dateLabel(String date) => find.byWidgetPredicate(
-  (w) => w is LedgerDateHeader && ledgerDateText(w.date) == date,
+  (w) =>
+      (w is LedgerDateHeader && ledgerDateText(w.date) == date) ||
+      (w is HomeDateTitle && ledgerDateText(w.date) == date),
 );
 Finder dateMode(bool following) => find.byWidgetPredicate(
   (w) => w is LedgerDateHeader && w.followToday == following,

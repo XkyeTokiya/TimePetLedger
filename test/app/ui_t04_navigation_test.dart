@@ -11,7 +11,8 @@ import 'package:time_pet_ledger/features/ledger/data/drift_ledger_repository.dar
 import 'package:time_pet_ledger/features/ledger/domain/block_knowledge_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/recording_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_page.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/home/home_timeline_tab.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart';
 import 'package:time_pet_ledger/features/review/presentation/review_form.dart';
 
@@ -117,7 +118,7 @@ void main() {
       final app = await mount(t);
       await selectLedgerDate(t, '2026-10-02');
       await settleNative(t);
-      final ledger = t.state(find.byType(DayLedgerPage));
+      final ledger = t.state(find.byType(HomeShell));
       await t.tap(find.byKey(const ValueKey('root-create')));
       await settleNative(t);
       expect(find.text('记录活动'), findsOneWidget);
@@ -126,13 +127,13 @@ void main() {
       await t.binding.handlePopRoute();
       await settleNative(t);
       expect(find.text('记录活动'), findsNothing);
-      expect(t.state(find.byType(DayLedgerPage)), same(ledger));
+      expect(t.state(find.byType(HomeShell)), same(ledger));
       await tapRootAction(t, '打开按日复盘');
       await settleNative(t);
       expect(find.text('日期：2026-10-02'), findsOneWidget);
       await t.binding.handlePopRoute();
       await settleNative(t);
-      expect(find.byType(DayLedgerPage), findsOneWidget);
+      expect(find.byType(HomeTimelineTab), findsOneWidget);
       expect(dateLabel('2026-10-02'), findsOneWidget);
       await tapRootAction(t, '打开基础摘要');
       await settleNative(t);
@@ -211,7 +212,7 @@ void main() {
       await t.ensureVisible(tile);
       await settleNative(t);
       final before = t.getTopLeft(tile).dy;
-      await t.tap(find.byKey(const ValueKey('root-回看')));
+      await t.tap(find.byKey(const ValueKey('home-tab-timeline')));
       await settleNative(t);
       expect(t.getTopLeft(tile).dy, closeTo(before, 1));
       await tapRootAction(t, '记录活动');
@@ -235,7 +236,7 @@ void main() {
       await t.binding.setSurfaceSize(const Size(800, 360));
       await settleNative(t);
       expect(
-        t.getRect(tile).overlaps(t.getRect(find.byType(DayLedgerPage))),
+        t.getRect(tile).overlaps(t.getRect(find.byType(HomeTimelineTab))),
         isTrue,
       );
       await t.runAsync(
@@ -304,18 +305,22 @@ void main() {
             meetsGuideline(RenderedTextContrast(captureKey: captureKey)),
           );
           final barTop = t
-              .getTopLeft(find.byKey(const ValueKey('root-create')))
+              .getTopLeft(find.byKey(const ValueKey('home-record-activity')))
               .dy;
-          final bodyBottom = t.getBottomLeft(find.byType(DayLedgerPage)).dy;
+          final bodyBottom = t
+              .getBottomLeft(find.byType(HomeTimelineTab))
+              .dy;
           expect(bodyBottom, lessThan(barTop));
           expect(
-            t.getSize(find.byKey(const ValueKey('root-create'))).height,
+            t
+                .getSize(find.byKey(const ValueKey('home-record-activity')))
+                .height,
             greaterThanOrEqualTo(48),
           );
           await tapRootAction(t, '打开按日复盘');
           await settleNative(t);
           await capture(t, 'review-$width-$scale');
-          await t.tap(find.byKey(const ValueKey('root-create')));
+          await t.tap(find.byKey(const ValueKey('home-record-activity')));
           await settleNative(t);
           await capture(t, 'create-$width-$scale');
           await expectLater(t, meetsGuideline(androidTapTargetGuideline));

@@ -46,18 +46,13 @@ int at(int d, int h, [int m = 0]) =>
     DateTime(2026, 9, d, h, m).millisecondsSinceEpoch;
 final now = DateTime(2026, 10, 1, 12);
 
-DayLedgerController controller(WidgetTester t) =>
-    t
-            .widget<ListenableBuilder>(
-              find
-                  .descendant(
-                    of: find.byType(DayLedgerPage),
-                    matching: find.byType(ListenableBuilder),
-                  )
-                  .first,
-            )
-            .listenable
-        as DayLedgerController;
+DayLedgerController controller(WidgetTester t) => t
+    .widgetList<ListenableBuilder>(
+      find.byType(ListenableBuilder, skipOffstage: false),
+    )
+    .map((builder) => builder.listenable)
+    .whereType<DayLedgerController>()
+    .first;
 
 Future<void> select(WidgetTester t, int date) async {
   await selectLedgerDate(t, '2026-09-${date.toString().padLeft(2, '0')}');

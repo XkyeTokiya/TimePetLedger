@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_overview.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/home/home_timeline_tab.dart';
 import 'package:time_pet_ledger/features/ledger/domain/projection/ledger_segment.dart';
 import 'package:time_pet_ledger/features/ledger/domain/ledger_conflicts.dart';
 
 /// Routes existing flow assertions through UI-T04's actual root controls.
 Future<bool> tapRootAction(WidgetTester tester, String text) async {
-  final root = find.byKey(const ValueKey('root-create'));
+  final root = find.byKey(const ValueKey('home-record-activity'));
   if (root.evaluate().isEmpty) return false;
   Future<void> tap(Finder target) async {
     await tester.tap(target);
@@ -15,26 +15,25 @@ Future<bool> tapRootAction(WidgetTester tester, String text) async {
 
   switch (text) {
     case '打开日账本':
-      await tap(find.byKey(const ValueKey('root-回看')));
+    case '查看记录':
+      await tap(find.byKey(const ValueKey('home-tab-timeline')));
       return true;
     case '打开此日复盘':
     case '打开按日复盘':
-      await tap(find.byKey(const ValueKey('root-复盘')));
-      return true;
-    case '查看记录':
-      await tap(find.byKey(const ValueKey('root-回看')));
-      await tap(find.byTooltip('更多'));
-      await tap(find.text('刷新账本'));
+      await tap(find.byKey(const ValueKey('home-tab-review')));
       return true;
     case '打开基础摘要':
+      await tap(find.byKey(const ValueKey('home-tab-summary')));
+      return true;
     case '打开目标':
-      await tap(find.byTooltip('更多'));
-      await tap(find.text(text == '打开目标' ? '目标管理' : '当日摘要'));
+      await tap(find.byKey(const ValueKey('home-menu')));
+      await tap(find.text('目标管理'));
       return true;
     case '记录活动':
-    case '记录睡眠':
       await tap(root);
-      await tap(find.text(text));
+      return true;
+    case '记录睡眠':
+      await tap(find.byKey(const ValueKey('home-record-sleep')));
       return true;
     default:
       return false;
@@ -45,19 +44,21 @@ Future<void> backFromPage(WidgetTester tester) async {
   await tester.binding.handlePopRoute();
 }
 
-Finder ledgerDuration(String label, String value) => find.descendant(
-  of: find.byWidgetPredicate(
-    (widget) =>
-        widget is Column &&
-        widget.children.any((child) => child is Text && child.data == label),
-  ),
-  matching: find.text(value),
+/// Matches a coverage metric by its label key, so "0 分钟" for 已交代 never
+/// collides with the identical value shown for 尚未记录.
+Finder ledgerDuration(String label, String value) => find.byWidgetPredicate(
+  (widget) =>
+      widget is Text &&
+      widget.key == ValueKey('coverage-$label') &&
+      widget.data == value,
 );
 
 int ledgerFactCount(WidgetTester tester, String type) {
   final view = tester
-      .widget<DayLedgerOverview>(find.byType(DayLedgerOverview))
-      .view;
+      .widget<HomeTimelineTab>(
+        find.byType(HomeTimelineTab, skipOffstage: false),
+      )
+      .view!;
   return view.segments
       .where(
         (segment) => type == '睡眠'

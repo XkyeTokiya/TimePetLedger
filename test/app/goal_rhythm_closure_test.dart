@@ -3,7 +3,7 @@ import '../support/root_navigation.dart';
 import 'dart:io';
 
 import 'package:drift/drift.dart'
-    show ApplyInterceptor, QueryExecutor, QueryInterceptor;
+    show ApplyInterceptor, QueryExecutor, QueryInterceptor, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,13 +20,14 @@ import 'package:time_pet_ledger/features/ledger/domain/recording_draft_store.dar
 import 'package:time_pet_ledger/features/ledger/domain/rhythm_details.dart';
 import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/activity/activity_recording_entry.dart';
+import 'package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart';
 
-import '../support/app_recording_navigation.dart'
-    show show, tap, textTap, enter, stateTap;
+import '../support/app_recording_navigation.dart' show tap, textTap;
+import '../support/activity_recorder.dart';
 import 'day_ledger_editing_flow_test.dart' show controller;
 import 'day_ledger_resolution_flow_test.dart' show BlockReadFailure;
-import 'recording_goal_flow_test.dart' show time, disposeApp;
+import 'recording_goal_flow_test.dart' show disposeApp;
 import 'support/checked_sleep_opening.dart';
 
 const hour = Duration.millisecondsPerHour;
@@ -76,6 +77,8 @@ class ClosureApp {
         openSleepDrafts: () =>
             DriftSleepDraftStore.open(NativeDatabase.memory()),
         openSleepOpenings: () => openCheckedSleepOpening(clock),
+        openPreferences: () =>
+            DriftAppPreferencesStore.open(NativeDatabase.memory()),
         now: () => clock,
       ),
     );
@@ -126,9 +129,15 @@ Future<void> back(WidgetTester t) async {
 
 Future<String> createGoal(WidgetTester t, ClosureApp app) async {
   final before = (await t.runAsync(app.goals.listActive))!;
-  await enter(t, 'goal-name', '  同名目标 🐾  ');
-  await textTap(t, '创建目标');
+  await tap(t, find.byKey(const ValueKey('goal-new')));
+  await t.enterText(
+    find.byKey(const ValueKey('goal-name-input')),
+    '  同名目标 🐾  ',
+  );
+  await textTap(t, '保存目标');
   final after = (await t.runAsync(app.goals.listActive))!;
+  // Return to the goal list so a second create starts from the same place.
+  await back(t);
   return after.singleWhere((g) => !before.any((b) => b.id == g.id)).id;
 }
 
@@ -137,36 +146,56 @@ Future<void> chooseGoal(WidgetTester t, String id) async {
   await tap(t, find.byKey(ValueKey('goal-option-$id')));
 }
 
+/// Opens a goal from the list and runs a lifecycle action from its detail.
 Future<void> goalAction(WidgetTester t, String id, String action) async {
-  await tap(t, find.byKey(ValueKey('goal-actions-$id')));
-  await textTap(t, action);
+  await tap(t, find.byKey(ValueKey('goal-open-$id')));
+  final button = switch (action) {
+    '归档目标' => const ValueKey('goal-archive'),
+    '恢复目标' => const ValueKey('goal-restore'),
+    _ => const ValueKey('goal-delete'),
+  };
+  await tap(t, find.byKey(button));
+  if (action == '归档目标' || action == '删除目标') {
+    await textTap(t, '确认归档');
+  } else {
+    await t.pumpAndSettle();
+  }
 }
 
 Future<void> fill(WidgetTester t, {String? goal}) async {
-  await enter(t, 'activity', '  写作 🐾  ');
-  await textTap(t, '记得');
-  await time(t, '开始时间', '2026-10-02 10:00');
-  await time(t, '结束时间', '2026-10-02 11:00');
-  if (goal != null) await chooseGoal(t, goal);
-  await stateTap(t, RhythmState.progress);
-  await enter(t, 'continuation-hint', '  从第二段接上\n检查字段 🐾  ');
+  // Selecting a rhythm advances automatically; then title, then time.
+  await recorderRhythm(t, RhythmState.progress);
+  await recorderTitle(t, '  写作 🐾  ');
+  await recorderToTime(t);
+  await recorderTime(t, '开始时间', '2026-10-02 10:00');
+  await recorderTime(t, '结束时间', '2026-10-02 11:00');
+  if (goal != null) await recorderChooseGoal(t, goal);
+  await recorderDetail(t, 'continuation-hint', '  从第二段接上\n检查字段 🐾  ');
 }
 
-RecordingDraftContext context(WidgetTester t) =>
-    t.widget<RecordingForm>(find.byType(RecordingForm)).context;
+RecordingDraftContext context(WidgetTester t) => t
+    .widget<ActivityRecordingEntry>(find.byType(ActivityRecordingEntry))
+    .context;
 
 Future<void> edit(WidgetTester t, String id) =>
     tap(t, find.byKey(ValueKey((type: LedgerFactType.timeBlock, id: id))));
 
 void main() {
+  final previousWarning = driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+  setUpAll(() => driftRuntimeOptions.dontWarnAboutMultipleDatabases = true);
+  tearDownAll(
+    () => driftRuntimeOptions.dontWarnAboutMultipleDatabases = previousWarning,
+  );
   testWidgets(
     'file-backed bootstrap closes the optional Goal/rhythm/lifecycle loop and preserves old fields',
     (t) async {
       final app = await ClosureApp.open(t);
       await textTap(t, '记录活动');
-      await textTap(t, '想不起来');
-      await time(t, '开始时间', '2026-10-02 08:00');
-      await time(t, '结束时间', '2026-10-02 09:00');
+      await recorderAdvance(t);
+      await recorderTap(t, 'activity-unknown');
+      await recorderAdvance(t);
+      await recorderTime(t, '开始时间', '2026-10-02 08:00');
+      await recorderTime(t, '结束时间', '2026-10-02 09:00');
       await textTap(t, '保存到账本');
       var rows = (await t.runAsync(app.snapshot))!;
       expect(rows['goals'], isEmpty);
@@ -181,16 +210,16 @@ void main() {
       expect(unknown.timeBlock.endPrecision, TimePrecision.approximate);
 
       await textTap(t, '打开目标');
-      expect(find.text('尚未创建目标。'), findsOneWidget);
+      expect(find.text('还没有目标。'), findsOneWidget);
       final unusedGoal = await createGoal(t, app);
       final goal = await createGoal(t, app);
       expect(goal, isNot(unusedGoal));
       await back(t);
       await textTap(t, '记录活动');
       await fill(t, goal: goal);
-      await enter(t, 'note', '原备注');
+      await recorderDetail(t, 'activity-note', '原备注');
       final draftContext = context(t);
-      await textTap(t, '保留草稿并返回');
+      await recorderKeep(t);
       rows = (await t.runAsync(app.snapshot))!;
       final beforeSave = rows;
       final raw = (await t.runAsync(() => app.drafts.read(draftContext)))!;
@@ -201,7 +230,7 @@ void main() {
       expect(await t.runAsync(app.snapshot), beforeSave);
       await textTap(t, '记录活动');
       expect(find.text('已恢复上次输入'), findsOneWidget);
-      await show(t, find.byKey(const ValueKey('continuation-hint')));
+      await recorderOpenDetails(t);
       expect(
         t
             .widget<TextField>(find.byKey(const ValueKey('continuation-hint')))
@@ -209,6 +238,8 @@ void main() {
             .text,
         raw.continuationHint,
       );
+      await recorderTap(t, 'activity-details-apply');
+      await recorderAdvanceTimed(t);
       await textTap(t, '保存到账本');
       expect(await t.runAsync(() => app.drafts.read(draftContext)), isNull);
       rows = (await t.runAsync(app.snapshot))!;
@@ -247,8 +278,9 @@ void main() {
       expect(view.goalSummaries.single.totalDuration.hasApproximation, isTrue);
       app.clock = DateTime(2026, 10, 2, 12, 1);
       await edit(t, blockId);
-      await stateTap(t, RhythmState.stuck);
-      await enter(t, 'continuation-hint', '换个例子再试');
+      await recorderRhythm(t, RhythmState.stuck);
+      await recorderToTime(t);
+      await recorderDetail(t, 'continuation-hint', '换个例子再试');
       await textTap(t, '保存更正');
       rows = (await t.runAsync(app.snapshot))!;
       expect(rows['time_blocks'], factBefore);
@@ -288,7 +320,8 @@ void main() {
       expect(find.text('目标：同名目标 🐾（已归档）'), findsOneWidget);
       await edit(t, blockId);
       expect(find.text('同名目标 🐾（已归档）'), findsOneWidget);
-      await stateTap(t, null);
+      await recorderRhythm(t, null);
+      await recorderToTime(t);
       await textTap(t, '保存更正');
       view = controller(t).view!;
       expect(view.accountedDuration.milliseconds, 2 * hour);
@@ -335,7 +368,7 @@ void main() {
         ),
       );
       await textTap(t, '保存到账本');
-      expect(find.byType(RecordingForm), findsOneWidget);
+      expect(find.byType(ActivityRecordingEntry), findsOneWidget);
       expect(await t.runAsync(app.snapshot), before);
       expect(find.text('正式保存失败，输入和草稿已保留，请重试。'), findsOneWidget);
       final draft = (await t.runAsync(() => app.drafts.read(draftContext)))!;
@@ -353,9 +386,11 @@ void main() {
       await textTap(t, '打开日账本');
       await edit(t, id);
       final editContext = context(t);
-      await enter(t, 'activity', '更正后的活动');
-      await stateTap(t, RhythmState.recovery);
-      await enter(t, 'continuation-hint', '恢复后接着写');
+      await recorderRhythm(t, RhythmState.recovery);
+      await recorderAdvance(t);
+      await recorderTitle(t, '更正后的活动');
+      await recorderToTime(t);
+      await recorderDetail(t, 'continuation-hint', '恢复后接着写');
       app.clock = DateTime(2026, 10, 2, 12, 1);
       await t.runAsync(
         () => app.db.customStatement(
@@ -382,7 +417,8 @@ void main() {
       );
       await edit(t, id);
       expect(find.text('已恢复上次输入'), findsOneWidget);
-      await show(t, find.byKey(const ValueKey('activity')));
+      await recorderAdvance(t);
+      await recorderAdvance(t);
       expect(
         t
             .widget<TextField>(find.byKey(const ValueKey('activity')))
@@ -390,6 +426,7 @@ void main() {
             .text,
         '更正后的活动',
       );
+      await recorderToTime(t);
       await textTap(t, '保存更正');
       final read = (await t.runAsync(() => app.repo.readTimeBlock(id)))!;
       expect(read.timeBlock.title, '更正后的活动');
@@ -426,9 +463,9 @@ void main() {
       app.reads.arm = true;
       app.clear.fail = true;
       await textTap(t, '保存到账本');
-      expect(find.text('已正式保存到账本，请不要再次提交。'), findsOneWidget);
-      expect(find.text('草稿清理失败，旧草稿仍可能显示；请重试清理。'), findsOneWidget);
-      expect(find.text('账本刷新失败，记录已保存；请重试刷新。'), findsOneWidget);
+      expect(find.textContaining('已正式保存到账本，请不要再次提交。'), findsOneWidget);
+      expect(find.textContaining('草稿清理失败，旧草稿仍可能显示'), findsOneWidget);
+      expect(find.textContaining('账本刷新失败，记录已保存'), findsOneWidget);
       expect(find.text('保存到账本'), findsNothing);
       final committed = (await t.runAsync(app.snapshot))!;
       expect(committed['time_blocks'], hasLength(1));
@@ -444,14 +481,13 @@ void main() {
       app.reads.failReads = false;
       await app.reopen(t);
       await textTap(t, '记录活动');
-      await show(t, find.text('已正式保存到账本，请不要再次提交。'));
-      expect(find.text('已正式保存到账本，请不要再次提交。'), findsOneWidget);
+      expect(find.textContaining('已正式保存到账本，请不要再次提交。'), findsOneWidget);
       expect(find.text('保存到账本'), findsNothing);
       expect(await t.runAsync(app.snapshot), committed);
       app.clear.fail = false;
       app.clock = DateTime(2026, 10, 2, 12, 2);
       await textTap(t, '继续清理并刷新');
-      expect(find.byType(RecordingForm), findsNothing);
+      expect(find.byType(ActivityRecordingEntry), findsNothing);
       expect(await t.runAsync(() => app.drafts.read(draftContext)), isNull);
       expect(await t.runAsync(app.snapshot), committed);
       expect(app.reads.blockInserts, 1);

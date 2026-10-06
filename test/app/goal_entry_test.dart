@@ -7,6 +7,7 @@ import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/features/goals/data/drift_goal_repository.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_recording_draft_store.dart';
+import 'package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart';
 
 import 'support/checked_sleep_opening.dart';
 
@@ -26,66 +27,67 @@ void main() {
         openDatabase: () async => db,
         openDrafts: () async => drafts,
         openSleepOpenings: () => openCheckedSleepOpening(clock),
+        openPreferences: () =>
+            DriftAppPreferencesStore.open(NativeDatabase.memory()),
         now: () => clock,
       ),
     );
     await tester.pumpAndSettle();
     expect(await tester.runAsync(DriftGoalRepository(db).listActive), isEmpty);
-    expect(find.byKey(const ValueKey('root-create')), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('root-create')));
-    await tester.pumpAndSettle();
-    expect(find.text('记录睡眠'), findsOneWidget);
-    await tester.tap(find.text('取消'));
-    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('home-record-activity')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-record-sleep')), findsOneWidget);
+
     await tapRootAction(tester, '打开目标');
     await tester.pumpAndSettle();
-    expect(find.text('尚未创建目标。'), findsOneWidget);
-    await tester.enterText(find.byKey(const ValueKey('goal-name')), '  本机目标  ');
-    await tester.tap(find.text('创建目标'));
+    expect(find.text('还没有目标。'), findsOneWidget);
+
+    // Create from the list footer; the new goal opens its detail.
+    await tester.tap(find.byKey(const ValueKey('goal-new')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('goal-name-input')),
+      '  本机目标  ',
+    );
+    await tester.tap(find.byKey(const ValueKey('goal-save-name')));
     await tester.pumpAndSettle();
     final goals = (await tester.runAsync(DriftGoalRepository(db).listActive))!;
     expect(goals.single.name, '本机目标');
     expect(goals.single.createdAt, clock.millisecondsSinceEpoch);
-    expect(find.byKey(ValueKey(goals.single.id)), findsOneWidget);
-    await backFromPage(tester);
-    await tester.pumpAndSettle();
-    await tapRootAction(tester, '打开目标');
-    await tester.pumpAndSettle();
-    expect(find.text('本机目标'), findsOneWidget);
-    expect(find.text('目标已保存。'), findsNothing);
-    final actions = find.byKey(ValueKey('goal-actions-${goals.single.id}'));
-    await tester.tap(actions);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('改名'));
+    final id = goals.single.id;
+
+    // Rename from the detail name field.
+    await tester.tap(find.byKey(const ValueKey('goal-rename')));
     await tester.pumpAndSettle();
     await tester.enterText(
-      find.byKey(const ValueKey('goal-rename-name')),
+      find.byKey(const ValueKey('goal-name-input')),
       '目标新名',
     );
-    await tester.tap(find.text('保存名称'));
+    await tester.tap(find.byKey(const ValueKey('goal-save-name')));
     await tester.pumpAndSettle();
-    expect(find.text('目标新名'), findsOneWidget);
+    expect(find.text('目标新名'), findsWidgets);
+
+    // Archive: confirm, then the active list is empty and the archived tab
+    // holds the goal.
     clock = DateTime(2026, 10, 1, 12, 1);
-    await tester.tap(actions);
+    await tester.tap(find.byKey(const ValueKey('goal-archive')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('归档目标'));
+    await tester.tap(find.byKey(const ValueKey('goal-confirm-action')));
     await tester.pumpAndSettle();
-    expect(find.text('尚未创建目标。'), findsOneWidget);
-    await tester.tap(find.text('查看已归档目标'));
+    expect(find.text('还没有目标。'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('goal-tab-archived')));
     await tester.pumpAndSettle();
     expect(find.text('目标新名'), findsOneWidget);
-    expect(find.text('已归档'), findsOneWidget);
+
+    // Restore from the archived detail.
     clock = DateTime(2026, 10, 1, 12, 2);
-    await tester.tap(actions);
+    await tester.tap(find.byKey(ValueKey('goal-open-$id')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('恢复目标'));
+    await tester.tap(find.byKey(const ValueKey('goal-restore')));
     await tester.pumpAndSettle();
-    expect(find.text('暂无已归档目标。'), findsOneWidget);
-    await backFromPage(tester);
-    await tester.pumpAndSettle();
-    expect(find.text('目标新名'), findsOneWidget);
+    expect(find.text('目标新名'), findsWidgets);
+
     final restored = (await tester.runAsync(
-      () => DriftGoalRepository(db).findById(goals.single.id),
+      () => DriftGoalRepository(db).findById(id),
     ))!;
     expect(restored.createdAt, goals.single.createdAt);
     expect(restored.updatedAt, clock.millisecondsSinceEpoch);

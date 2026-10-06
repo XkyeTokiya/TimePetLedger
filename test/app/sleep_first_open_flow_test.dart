@@ -25,6 +25,12 @@ Future<void> tapText(WidgetTester tester, String text) async {
   await sleep_test.tapText(tester, text);
 }
 
+/// Advances the stepped activity recorder (节奏 → 事项 → 时间).
+Future<void> advanceRecorder(WidgetTester tester) async {
+  await tester.tap(find.byKey(const ValueKey('activity-primary')));
+  await tester.pumpAndSettle();
+}
+
 final day = CivilDate(year: 2026, month: 9, day: 30);
 const id = '00000000-0000-4000-8000-000000000001';
 
@@ -103,6 +109,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('尚未记录主睡眠'), findsOneWidget);
       await tapText(tester, '记录活动');
+      await advanceRecorder(tester);
       expect(find.byKey(const ValueKey('activity')), findsOneWidget);
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
@@ -293,6 +300,7 @@ void main() {
       expect(find.text('主睡眠确认检查失败；可继续记账，或重试检查。'), findsOneWidget);
       expect(find.textContaining('private marker'), findsNothing);
       await tapText(tester, '记录活动');
+      await advanceRecorder(tester);
       expect(find.byKey(const ValueKey('activity')), findsOneWidget);
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
