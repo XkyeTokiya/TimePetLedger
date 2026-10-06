@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+import '../../../support/date_time_pickers.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +19,7 @@ import 'package:time_pet_ledger/features/ledger/domain/recording_draft_store.dar
 import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/guided_recording_page.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/activity_editor.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form_controller.dart';
 
 Future<void> tap(WidgetTester t, Finder finder) async {
@@ -29,8 +30,9 @@ Future<void> tap(WidgetTester t, Finder finder) async {
     final scrollable = find.byType(Scrollable).last;
     t.state<ScrollableState>(scrollable).position.jumpTo(0);
     await t.pumpAndSettle();
-    if (finder.evaluate().isEmpty)
+    if (finder.evaluate().isEmpty) {
       await t.scrollUntilVisible(finder, 160, scrollable: scrollable);
+    }
   }
   await t.ensureVisible(finder.first);
   await t.pumpAndSettle();
@@ -79,6 +81,68 @@ Future<void> toTime(WidgetTester t, {String? title}) async {
 }
 
 void main() {
+  testWidgets(
+    'retained activity editor exposes independent date/time fields and keeps precision',
+    (t) async {
+      final s = await session(GuidedSampleScenario.crossDay);
+      addTearDown(s.dispose);
+      await t.pumpWidget(
+        MaterialApp(
+          theme: timeLedgerTheme,
+          home: ActivityEditor(
+            controller: s.model!,
+            createGoal: (_) => throw UnimplementedError(),
+            onExit: () {},
+            onSaved: () {},
+          ),
+        ),
+      );
+      await t.pumpAndSettle();
+      final before = s.model!.time;
+      for (final field in [
+        'activity-start-date',
+        'activity-start-time',
+        'activity-end-date',
+        'activity-end-time',
+      ]) {
+        await openEndpointField(t, field);
+        expect(s.model!.time, same(before));
+        await tap(
+          t,
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text('取消'),
+          ),
+        );
+        expect(s.model!.time, same(before));
+      }
+      await chooseEndpointTime(
+        t,
+        'activity-start',
+        DateTime(2026, 10, 4, 23, 37),
+      );
+      expect(s.model!.time.startedAt, guidedSampleTime(23, 37, 4));
+      expect(s.model!.time.endedAt, before.endedAt);
+      await chooseEndpointDate(t, 'activity-end', DateTime(2026, 10, 6));
+      final originalEnd = DateTime.fromMillisecondsSinceEpoch(before.endedAt!);
+      expect(
+        s.model!.time.endedAt,
+        DateTime(
+          2026,
+          10,
+          6,
+          originalEnd.hour,
+          originalEnd.minute,
+        ).millisecondsSinceEpoch,
+      );
+      expect(s.model!.time.startPrecision, before.startPrecision);
+      expect(s.model!.time.endPrecision, before.endPrecision);
+      await tap(t, find.text('开始准确'));
+      expect(s.model!.time.startPrecision, TimePrecision.exact);
+      expect(s.model!.time.endPrecision, before.endPrecision);
+    },
+  );
+
   testWidgets(
     'goal creation failure is retryable and committed association survives metadata refresh failure',
     (t) async {
@@ -252,101 +316,87 @@ void main() {
             ? guidedSampleId(11)
             : guidedSampleId(14),
       );
-      if (scenario == GuidedSampleScenario.archived)
+      if (scenario == GuidedSampleScenario.archived) {
         expect(find.text('已归档 · 保留本笔原关联'), findsOneWidget);
+      }
       await t.pumpWidget(const SizedBox());
       s.dispose();
     }
   });
 
   testWidgets(
-    'time adjustment cancel and invalid apply preserve parent and independent precision',
+    'date and time cancel preserve parent; confirm changes only the selected field',
     (t) async {
       final s = await session(GuidedSampleScenario.crossDay);
       addTearDown(s.dispose);
       s.navigation.step = 2;
       await mount(t, s.model!, s.navigation);
       final before = s.model!.time;
-      await tap(t, key('guided-edit-time'));
-      await tap(t, find.text('直接输入日期时间'));
-      await t.enterText(key('guided-start-manual'), '2026-02-30 23:40');
-      await tap(t, key('guided-time-apply'));
-      expect(find.text('调整这段时间'), findsOneWidget);
-      expect(s.model!.time, same(before));
-      await tap(t, find.text('取消修改'));
-      await tap(t, key('guided-edit-time'));
-      expect(key('guided-start-manual'), findsNothing);
-      expect(find.text('2026-10-04'), findsOneWidget);
-      await tap(t, find.text('直接输入日期时间'));
-      await t.enterText(key('guided-start-manual'), '2026-10-04 23:37');
-      await tap(t, key('guided-time-apply'));
+      for (final field in [
+        'guided-start-date',
+        'guided-start-time',
+        'guided-end-date',
+        'guided-end-time',
+      ]) {
+        await openEndpointField(t, field);
+        expect(s.model!.time, same(before));
+        await tap(
+          t,
+          find.descendant(
+            of: find.byType(AlertDialog),
+            matching: find.text('取消'),
+          ),
+        );
+        expect(s.model!.time, same(before));
+      }
+      await chooseEndpointTime(
+        t,
+        'guided-start',
+        DateTime(2026, 10, 4, 23, 37),
+      );
       expect(s.model!.time.startedAt, guidedSampleTime(23, 37, 4));
+      expect(s.model!.time.endedAt, before.endedAt);
       expect(s.model!.time.endPrecision, TimePrecision.exact);
       expect(s.model!.time.startPrecision, TimePrecision.approximate);
+      await chooseEndpointDate(t, 'guided-end', DateTime(2026, 10, 6));
+      final originalEnd = DateTime.fromMillisecondsSinceEpoch(before.endedAt!);
+      expect(
+        s.model!.time.endedAt,
+        DateTime(
+          2026,
+          10,
+          6,
+          originalEnd.hour,
+          originalEnd.minute,
+        ).millisecondsSinceEpoch,
+      );
+      expect(s.model!.time.startedAt, guidedSampleTime(23, 37, 4));
     },
   );
 
   testWidgets(
-    'unset times are filled entirely with calendar and dial, including arbitrary minute and next day',
+    'unset dates and times are independently filled without a total panel',
     (t) async {
       final s = await session(GuidedSampleScenario.manual);
       addTearDown(s.dispose);
       s.navigation.step = 2;
       await mount(t, s.model!, s.navigation);
-      await tap(t, key('guided-edit-time'));
-      await tap(t, key('guided-start-date'));
+      await openEndpointField(t, 'guided-start-date');
       expect(find.byType(TextField), findsNothing);
-      await tap(t, find.text('取消'));
-      await tap(t, find.text('取消修改'));
+      await tap(
+        t,
+        find.descendant(
+          of: find.byType(AlertDialog),
+          matching: find.text('取消'),
+        ),
+      );
       expect(s.model!.time.startedAt, isNull);
-      await tap(t, key('guided-edit-time'));
-      for (final endpoint in ['start', 'end']) {
-        await tap(t, key('guided-$endpoint-date'));
-        expect(
-          t
-              .widget<DatePickerDialog>(find.byType(DatePickerDialog))
-              .initialEntryMode,
-          DatePickerEntryMode.calendarOnly,
-        );
-        if (endpoint == 'end') await tap(t, find.text('6').last);
-        await tap(t, find.text('确定'));
-        await tap(t, key('guided-$endpoint-clock'));
-        expect(
-          t
-              .widget<TimePickerDialog>(find.byType(TimePickerDialog))
-              .initialEntryMode,
-          TimePickerEntryMode.dialOnly,
-        );
-        final dial = find.byWidgetPredicate(
-          (w) => w.runtimeType.toString() == '_Dial',
-        );
-        final rect = t.getRect(dial);
-        // Native 24h double ring: inner 14h, then outer 17 minutes.
-        final angle = 2 * math.pi * 2 / 12;
-        await t.tapAt(
-          rect.center +
-              Offset(math.sin(angle), -math.cos(angle)) * rect.width * .25,
-        );
-        await t.pumpAndSettle();
-        final minuteAngle = 2 * math.pi * 17 / 60;
-        final gesture = await t.startGesture(
-          rect.center + Offset(rect.width * .4, 0),
-        );
-        await gesture.moveTo(
-          rect.center +
-              Offset(math.sin(minuteAngle), -math.cos(minuteAngle)) *
-                  rect.width *
-                  .4,
-        );
-        await gesture.up();
-        await t.pumpAndSettle();
-        await tap(t, find.text('确定'));
-      }
-      expect(t.testTextInput.isVisible, isFalse);
-      expect(find.byType(TextField), findsNothing);
-      await tap(t, key('guided-time-apply'));
+      await chooseEndpoint(t, 'guided-start', '2026-10-05 14:17');
+      await chooseEndpoint(t, 'guided-end', '2026-10-06 14:17');
       expect(s.model!.time.startedAt, guidedSampleTime(14, 17));
       expect(s.model!.time.endedAt, guidedSampleTime(14, 17, 6));
+      expect(t.testTextInput.isVisible, isFalse);
+      expect(find.byType(TextField), findsNothing);
     },
   );
 
@@ -530,25 +580,30 @@ void main() {
           expect(t.takeException(), isNull, reason: 'rhythm $width/$scale');
           await toTime(t, title: '整理跨学科资料并完成阅读笔记');
           expect(t.takeException(), isNull, reason: 'answers $width/$scale');
-          await tap(t, key('guided-edit-time'));
           await tap(t, key('guided-start-date'));
-          expect(find.byType(CalendarDatePicker), findsOneWidget);
+          expect(key('date-picker-confirm'), findsOneWidget);
           expect(find.byType(TextField), findsNothing);
           expect(find.text('确定').hitTestable(), findsOneWidget);
           expect(t.takeException(), isNull, reason: 'calendar $width/$scale');
-          await tap(t, find.text('取消'));
-          await tap(t, key('guided-start-clock'));
-          expect(
-            find
-                .byWidgetPredicate((w) => w.runtimeType.toString() == '_Dial')
-                .hitTestable(),
-            findsOneWidget,
+          await tap(
+            t,
+            find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.text('取消'),
+            ),
           );
+          await tap(t, key('guided-start-time'));
+          expect(find.byType(ListWheelScrollView), findsNWidgets(2));
           expect(find.byType(TextField), findsNothing);
           expect(find.text('确定').hitTestable(), findsOneWidget);
           expect(t.takeException(), isNull, reason: 'clock $width/$scale');
-          await tap(t, find.text('取消'));
-          await tap(t, find.text('取消修改'));
+          await tap(
+            t,
+            find.descendant(
+              of: find.byType(AlertDialog),
+              matching: find.text('取消'),
+            ),
+          );
           await tap(t, key('guided-edit-activity'));
           t.view.viewInsets = const FakeViewPadding(bottom: 240);
           await t.pumpAndSettle();

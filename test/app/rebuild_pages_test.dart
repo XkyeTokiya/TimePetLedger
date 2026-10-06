@@ -294,6 +294,53 @@ void main() {
 
     await t.tap(find.byKey(const ValueKey('settings-back')));
     await t.pumpAndSettle();
+    await t.tap(find.byKey(const ValueKey('settings-open-recording')));
+    await t.pumpAndSettle();
+    for (final entry in ['sleep', 'review']) {
+      final field = find.byKey(ValueKey('settings-$entry-reminder'));
+      await t.ensureVisible(field);
+      await t.tap(field);
+      await t.pumpAndSettle();
+      final original = (await t.runAsync(prefsStore.read))!;
+      final wheels = t
+          .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
+          .toList();
+      expect(
+        (wheels[0].controller! as FixedExtentScrollController).selectedItem,
+        entry == 'sleep' ? 8 : 22,
+      );
+      expect(
+        (wheels[1].controller! as FixedExtentScrollController).selectedItem,
+        0,
+      );
+      await t.tap(find.text('取消'));
+      await t.pumpAndSettle();
+      final cancelled = (await t.runAsync(prefsStore.read))!;
+      expect(
+        (cancelled.sleepReminderMinutes, cancelled.reviewReminderMinutes),
+        (original.sleepReminderMinutes, original.reviewReminderMinutes),
+      );
+      await t.tap(field);
+      await t.pumpAndSettle();
+      final changed = t
+          .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
+          .toList();
+      (changed[0].controller! as FixedExtentScrollController).jumpToItem(9);
+      (changed[1].controller! as FixedExtentScrollController).jumpToItem(17);
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('time-picker-confirm')));
+      await t.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      final saved = (await t.runAsync(prefsStore.read))!;
+      expect(
+        entry == 'sleep'
+            ? saved.sleepReminderMinutes
+            : saved.reviewReminderMinutes,
+        9 * 60 + 17,
+      );
+    }
+    await t.tap(find.byKey(const ValueKey('settings-back')));
+    await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey('settings-open-advanced')));
     await t.pumpAndSettle();
     expect(find.text('目前还没有数据。'), findsOneWidget);

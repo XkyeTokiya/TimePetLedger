@@ -1,3 +1,4 @@
+import '../support/review_date_picker.dart';
 import '../support/ledger_date_selection.dart';
 import '../support/root_navigation.dart';
 
@@ -300,6 +301,11 @@ Future<void> text(WidgetTester t, String value) async {
 }
 
 Future<void> enter(WidgetTester t, String key, String value) async {
+  if (key == 'review-date') {
+    await changeReviewDate(t, value);
+    await settleNative(t);
+    return;
+  }
   final finder = find.byKey(ValueKey(key));
   await show(t, finder);
   await t.enterText(finder, value);
@@ -328,8 +334,9 @@ Future<void> source(WidgetTester t) async {
   await text(t, '填写复盘');
 }
 
-String input(WidgetTester t, String key) =>
-    t.widget<TextField>(find.byKey(ValueKey(key))).controller!.text;
+String input(WidgetTester t, String key) => key == 'review-date'
+    ? reviewDateInput(t)
+    : t.widget<TextField>(find.byKey(ValueKey(key))).controller!.text;
 void unchangedFacts(
   Map<String, List<Map<String, Object?>>> after,
   Map<String, List<Map<String, Object?>>> before,

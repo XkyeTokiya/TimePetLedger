@@ -1,3 +1,5 @@
+import 'date_time_pickers.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
@@ -87,17 +89,13 @@ Future<void> recorderOpenDetails(WidgetTester t) async {
   }
 }
 
-/// Picks one endpoint through the time sheet's direct-input path.
-Future<void> recorderTime(WidgetTester t, String label, String value) async {
-  final key = label == '开始时间' ? 'activity-start' : 'activity-end';
-  await recorderTap(t, '$key-row');
-  if (recorderKey('$key-manual').evaluate().isEmpty) {
-    await recorderTap(t, 'activity-time-manual');
-  }
-  await t.enterText(recorderKey('$key-manual'), value);
-  await t.pumpAndSettle();
-  await recorderTap(t, 'activity-time-apply');
-}
+/// 通过实际日期 / 时间选择器分别修改端点。
+Future<void> recorderTime(WidgetTester t, String label, String value) =>
+    chooseEndpoint(
+      t,
+      label == '开始时间' ? 'activity-start' : 'activity-end',
+      value,
+    );
 
 Future<void> recorderChooseGoal(WidgetTester t, String id) async {
   await recorderTap(t, 'activity-goal');

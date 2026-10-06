@@ -1,3 +1,4 @@
+import '../support/review_date_picker.dart';
 import '../support/ledger_date_selection.dart';
 
 import 'package:flutter/material.dart';
@@ -19,7 +20,11 @@ import 'review_form_entry_test.dart' show settleNative, tapText;
 import 'support/checked_sleep_opening.dart';
 
 Future<void> enter(WidgetTester t, String key, String value) async {
-  if (key == 'review-date') await tapText(t, '修改日期');
+  if (key == 'review-date') {
+    await changeReviewDate(t, value);
+    await settleNative(t);
+    return;
+  }
   if (['review-summary', 'review-reflection'].contains(key) &&
       find.byKey(ValueKey(key)).evaluate().isEmpty) {
     await tapText(t, '再写几句 ＋');
@@ -28,7 +33,6 @@ Future<void> enter(WidgetTester t, String key, String value) async {
   await t.ensureVisible(finder);
   await t.enterText(finder, value);
   await settleNative(t);
-  if (key == 'review-date') await tapText(t, '应用日期');
 }
 
 Future<void> host(WidgetTester t, ReviewHarness h) async {

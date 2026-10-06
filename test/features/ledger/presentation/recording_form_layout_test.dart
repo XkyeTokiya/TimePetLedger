@@ -1,3 +1,5 @@
+import '../../../support/date_time_pickers.dart';
+
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -15,7 +17,6 @@ import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form_controller.dart';
 
-import '../../../support/recording_fields.dart';
 import '../../../support/rendered_text_contrast.dart';
 import '../../../app/review_form_entry_test.dart' show settleNative;
 import 'recording_rhythm_test.dart' as support;
@@ -135,7 +136,14 @@ void main() {
       await mount(t, f);
       final instance = model(t);
       expect(find.text('开始时间'), findsNothing);
-      expect(find.text('修改时间'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('recording-start-date')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('recording-start-time')),
+        findsOneWidget,
+      );
       expect(find.byKey(const ValueKey('note')), findsNothing);
       expect(
         t
@@ -221,30 +229,18 @@ void main() {
         isTrue,
       );
       await support.enter(t, 'note', '合法备注');
-      await revealRecordingField(t, '开始时间');
-      await support.tap(t, find.widgetWithText(ChoiceChip, '准确').first);
-      await support.textTap(t, '开始时间');
-      await support.textTap(t, '选择日期');
-      expect(find.byType(DatePickerDialog), findsOneWidget);
-      await t.binding.handlePopRoute();
-      await t.pumpAndSettle();
-      await support.textTap(t, '选择时间');
-      expect(find.byType(TimePickerDialog), findsOneWidget);
-      await t.binding.handlePopRoute();
-      await t.pumpAndSettle();
-      await t.enterText(
-        find.byKey(const ValueKey('time-dialog-input')),
-        '2040-01-02 03:04',
+      await support.textTap(t, '开始准确');
+      for (final field in ['recording-start-date', 'recording-start-time']) {
+        await openEndpointField(t, field);
+        expect(model(t).time.startedAt, support.start);
+        await support.textTap(t, '取消');
+        expect(find.byType(AlertDialog), findsNothing);
+      }
+      await chooseEndpointTime(
+        t,
+        'recording-start',
+        DateTime(2026, 10, 1, 9, 45),
       );
-      await support.textTap(t, '取消');
-      expect(model(t).time.startedAt, support.start);
-      await support.textTap(t, '开始时间');
-      await t.enterText(
-        find.byKey(const ValueKey('time-dialog-input')),
-        '2026-10-01 09:45',
-      );
-      await support.textTap(t, '确认');
-      await support.textTap(t, '应用时间');
       expect(
         model(t).time.startedAt,
         DateTime(2026, 10, 1, 9, 45).millisecondsSinceEpoch,
@@ -317,22 +313,13 @@ void main() {
         isFalse,
       );
       await support.enter(t, 'activity', '活动');
-      await support.textTap(t, '开始时间');
-      await t.enterText(
-        find.byKey(const ValueKey('time-dialog-input')),
-        '2040-01-02 03:04',
-      );
+      final before = model(t).time.startedAt;
+      await openEndpointField(t, 'recording-start-time');
       await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
       expect(find.byType(AlertDialog), findsNothing);
-      expect(model(t).time.startedAt, isNull);
-      expect(
-        t
-            .widget<ListTile>(find.widgetWithText(ListTile, '开始时间'))
-            .focusNode!
-            .hasFocus,
-        isTrue,
-      );
+      expect(model(t).time.startedAt, before);
+      expect(t.testTextInput.isVisible, isFalse);
       await t.sendKeyEvent(LogicalKeyboardKey.escape);
       await t.pumpAndSettle();
       expect(find.byType(RecordingForm), findsNothing);
@@ -452,8 +439,12 @@ void main() {
         expect(find.textContaining('冲突记录：睡眠'), findsOneWidget);
         expect(find.text('标识：${support.id(20)}'), findsNothing);
         await capture(t, 'failure-conflict');
-        await support.textTap(t, '调整当前记录时间');
-        expect(find.text('开始时间'), findsOneWidget);
+        await support.textTap(t, '修改开始时间');
+        expect(
+          find.byKey(const ValueKey('time-picker-confirm')),
+          findsOneWidget,
+        );
+        await support.textTap(t, '取消');
         expect(model(t).time.startPrecision, TimePrecision.approximate);
 
         final missing = await support.openWidget(t);
@@ -519,53 +510,23 @@ void main() {
               await expectLater(t, meetsGuideline(labeledTapTargetGuideline));
               await t.sendKeyEvent(LogicalKeyboardKey.escape);
               await t.pumpAndSettle();
-              await support.textTap(t, '开始时间');
-              await capture(t, 'time-dialog-$width-$scale');
-              await support.textTap(t, '选择日期');
-              expect(find.byType(DatePickerDialog), findsOneWidget);
-              if (scale > 1.25) {
-                expect(find.byType(InputDatePickerFormField), findsOneWidget);
-                expect(find.byType(CalendarDatePicker), findsNothing);
-              } else {
-                expect(find.byType(CalendarDatePicker), findsOneWidget);
-                expect(
-                  t
-                      .renderObject<RenderParagraph>(find.text('10'))
-                      .didExceedMaxLines,
-                  isFalse,
-                );
-              }
+              await openEndpointField(t, 'recording-start-date');
+              expect(
+                find.byKey(const ValueKey('date-picker-confirm')),
+                findsOneWidget,
+              );
               await capture(t, 'date-picker-$width-$scale');
               expect(t.takeException(), isNull);
               await t.sendKeyEvent(LogicalKeyboardKey.escape);
               await t.pumpAndSettle();
-              expect(
-                t
-                    .widget<TextButton>(find.widgetWithText(TextButton, '选择日期'))
-                    .focusNode!
-                    .hasFocus,
-                isTrue,
-              );
-              await support.textTap(t, '选择时间');
-              expect(find.byType(TimePickerDialog), findsOneWidget);
+              await openEndpointField(t, 'recording-start-time');
+              expect(find.byType(ListWheelScrollView), findsNWidgets(2));
               await capture(t, 'time-picker-$width-$scale');
               expect(t.takeException(), isNull);
-              // Confirm the current picker value; it stays in the outer dialog.
-              await t.tap(find.text('OK'));
+              await t.tap(find.byKey(const ValueKey('time-picker-confirm')));
               await t.pumpAndSettle();
-              expect(find.byType(TimePickerDialog), findsNothing);
+              expect(find.byType(AlertDialog), findsNothing);
               expect(model(t).time.startedAt, support.start);
-              expect(
-                t
-                    .widget<TextField>(
-                      find.byKey(const ValueKey('time-dialog-input')),
-                    )
-                    .controller!
-                    .text,
-                formatRecordingTime(support.start),
-              );
-              await t.sendKeyEvent(LogicalKeyboardKey.escape);
-              await t.pumpAndSettle();
               expect(model(t).time.startPrecision, TimePrecision.approximate);
               expect(model(t).time.endPrecision, TimePrecision.approximate);
               expect(t.takeException(), isNull);

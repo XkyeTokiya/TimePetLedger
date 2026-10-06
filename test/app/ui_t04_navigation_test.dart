@@ -1,3 +1,5 @@
+import '../support/review_date_picker.dart';
+
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -137,10 +139,7 @@ void main() {
       expect(dateLabel('2026-10-02'), findsOneWidget);
       await tapRootAction(t, '打开基础摘要');
       await settleNative(t);
-      await t.enterText(
-        find.widgetWithText(TextField, '摘要日期 YYYY-MM-DD'),
-        '2026-10-01',
-      );
+      await selectLedgerDate(t, '2026-10-01');
       await settleNative(t);
       await backFromPage(t);
       await settleNative(t);
@@ -150,23 +149,14 @@ void main() {
       await t.ensureVisible(find.text('填写复盘'));
       await t.tap(find.text('填写复盘'));
       await settleNative(t);
-      await t.enterText(
-        find.byKey(const ValueKey('review-date')),
-        '2026-10-03',
-      );
+      await changeReviewDate(t, '2026-10-03');
       await t.enterText(find.byKey(const ValueKey('review-step')), '尚在草稿🐾');
       await backFromPage(t);
       await settleNative(t);
       expect(find.text('日期：2026-10-01'), findsOneWidget);
       await t.tap(find.text('填写复盘'));
       await settleNative(t);
-      expect(
-        t
-            .widget<TextField>(find.byKey(const ValueKey('review-date')))
-            .controller!
-            .text,
-        '2026-10-03',
-      );
+      expect(reviewDateInput(t), '2026-10-03');
       await t.ensureVisible(find.text('保存复盘'));
       await t.tap(find.text('保存复盘'));
       await settleNative(t);

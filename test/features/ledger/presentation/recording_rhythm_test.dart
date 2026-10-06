@@ -1,3 +1,4 @@
+import '../../../support/date_time_pickers.dart';
 import '../../../support/recording_fields.dart';
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
@@ -631,18 +632,21 @@ void main() {
       await t.pumpWidget(f.app(editContext));
       await textTap(t, '打开');
       await stateTap(t, RhythmState.progress);
-      await textTap(t, '结束时间');
-      await enter(t, 'time-dialog-input', '2026-10-01 11:30');
-      await textTap(t, '确认');
-      await textTap(t, '应用时间');
+      await chooseEndpointTime(
+        t,
+        'recording-end',
+        DateTime.parse('2026-10-01 11:30'),
+      );
       await textTap(t, '保存更正');
       expect(find.textContaining('重叠区间为'), findsOneWidget);
       expect(await t.runAsync(f.snapshot), before);
-      await textTap(t, '调整当前记录时间');
-      await textTap(t, '结束时间');
-      await enter(t, 'time-dialog-input', '2026-10-01 11:00');
-      await textTap(t, '确认');
-      await textTap(t, '应用时间');
+      await textTap(t, '修改开始时间');
+      await textTap(t, '取消');
+      await chooseEndpointTime(
+        t,
+        'recording-end',
+        DateTime.parse('2026-10-01 11:00'),
+      );
       await textTap(t, '保存更正');
       expect(
         (await t.runAsync(() => f.repo.readTimeBlock(id(8))))!

@@ -15,16 +15,13 @@ Future<void> revealRecordingField(WidgetTester tester, String field) async {
   }
   final toggle = switch (field) {
     'note' => 'recording-note-toggle',
-    '开始时间' || '结束时间' => 'edit-recording-time',
     _ => null,
   };
   if (toggle == null) return;
   FocusManager.instance.primaryFocus?.unfocus();
   tester.testTextInput.hide();
   await tester.pumpAndSettle();
-  final target = field == '开始时间' || field == '结束时间'
-      ? find.text(field)
-      : find.byKey(ValueKey(field));
+  final target = find.byKey(ValueKey(field));
   if (target.evaluate().isNotEmpty) return;
   final action = find.byKey(ValueKey(toggle));
   await Scrollable.ensureVisible(tester.element(action), alignment: .5);

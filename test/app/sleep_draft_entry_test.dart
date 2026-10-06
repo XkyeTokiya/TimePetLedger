@@ -20,6 +20,7 @@ import 'package:time_pet_ledger/features/ledger/domain/sleep_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/sleep_form.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/sleep/sleep_recording_page.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/sleep_form_controller.dart';
 
 import '../support/app_sleep_navigation.dart' show tapText, enter;
@@ -67,13 +68,30 @@ void main() {
       ); // lazy app-owned connection, ordinary entry unchanged
       await tapRootAction(tester, '记录睡眠');
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('sleep-start')), findsOneWidget);
-      await enter(tester, 'sleep-start', '2026-09-28 23:50');
-      await enter(tester, 'sleep-end', '2026-09-');
-      await tapText(tester, '主睡眠');
-      await tapText(tester, '入睡大约');
-      await tapText(tester, '保留草稿并返回');
-      expect(find.text('日账本'), findsOneWidget);
+      expect(find.byKey(const ValueKey('sleep-start-time')), findsOneWidget);
+      final first = tester
+          .widget<SleepRecordingPage>(find.byType(SleepRecordingPage))
+          .controller;
+      expect(
+        (first.startedAt, first.endedAt),
+        (
+          DateTime(2026, 9, 28, 23).millisecondsSinceEpoch,
+          DateTime(2026, 9, 29, 7).millisecondsSinceEpoch,
+        ),
+      );
+      first.setTime(
+        start: DateTime(2026, 9, 28, 23, 50).millisecondsSinceEpoch,
+        end: DateTime(2026, 9, 29, 7, 40).millisecondsSinceEpoch,
+      );
+      first.setType(SleepType.mainSleep);
+      first.setNote('保留备注');
+      await tester.runAsync(first.flush);
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pumpAndSettle();
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 30)),
+      );
+      expect(find.byType(SleepRecordingPage), findsNothing);
       await tester.runAsync(
         () => expectLater(
           opened.single.read(context),
@@ -86,13 +104,18 @@ void main() {
       await tapRootAction(tester, '记录睡眠');
       await tester.pumpAndSettle();
       expect(opened, hasLength(2));
-      expect(find.text('已恢复上次睡眠输入'), findsOneWidget);
+      final second = tester
+          .widget<SleepRecordingPage>(find.byType(SleepRecordingPage))
+          .controller;
+      expect(second.restored, isTrue);
+      expect(second.note, '保留备注');
+      expect(second.type, SleepType.mainSleep);
       expect(
-        tester
-            .widget<TextField>(find.byKey(const ValueKey('sleep-end')))
-            .controller!
-            .text,
-        '2026-09-',
+        (second.startedAt, second.endedAt),
+        (
+          DateTime(2026, 9, 28, 23).millisecondsSinceEpoch,
+          DateTime(2026, 9, 29, 7).millisecondsSinceEpoch,
+        ),
       );
       for (final table in [
         'goals',
@@ -108,7 +131,14 @@ void main() {
           isEmpty,
         );
       }
+      await tester.runAsync(second.flush);
       await tapText(tester, '放弃草稿');
+      await tester.pumpAndSettle();
+      expect(find.text('放弃这次睡眠？'), findsOneWidget);
+      await tester.tap(find.widgetWithText(TextButton, '放弃草稿').last);
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 30)),
+      );
       await tester.pumpAndSettle();
       final verification = (await tester.runAsync(
         () => DriftSleepDraftStore.open(NativeDatabase(file)),

@@ -126,15 +126,41 @@ Future<void> tapKey(WidgetTester t, String value) async {
   await settleNative(t);
 }
 
-/// Drives the shared time sheet through its direct-input path, then applies.
+/// Drives an endpoint directly: time component, then date component.
 Future<void> pickTimes(WidgetTester t, String start, String end) async {
-  await tapKey(t, 'sleep-start-row');
-  await tapKey(t, 'sleep-time-manual');
-  await t.enterText(key('sleep-start-manual'), start);
-  await settleNative(t);
-  await t.enterText(key('sleep-end-manual'), end);
-  await settleNative(t);
-  await tapKey(t, 'sleep-time-apply');
+  for (final entry in [('sleep-start', start), ('sleep-end', end)]) {
+    final target = DateTime.parse(entry.$2);
+    await tapKey(t, '${entry.$1}-date');
+    expect(find.byKey(const ValueKey('time-picker-confirm')), findsNothing);
+    while (true) {
+      final heading = t
+          .widgetList<Text>(find.byType(Text))
+          .map((v) => v.data ?? '')
+          .firstWhere((v) => RegExp(r'^\d+年\d+月$').hasMatch(v));
+      final values = RegExp(r'(\d+)年(\d+)月').firstMatch(heading)!;
+      final shown = int.parse(values[1]!) * 12 + int.parse(values[2]!);
+      final wanted = target.year * 12 + target.month;
+      if (shown == wanted) break;
+      await t.tap(find.byTooltip(shown > wanted ? '上个月' : '下个月'));
+      await settleNative(t);
+    }
+    await t.tap(find.text('${target.day}').last);
+    await settleNative(t);
+    await tapKey(t, 'date-picker-confirm');
+    await tapKey(t, '${entry.$1}-time');
+    expect(find.byKey(const ValueKey('sleep-time-apply')), findsNothing);
+    final wheels = t
+        .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
+        .toList();
+    (wheels[0].controller! as FixedExtentScrollController).jumpToItem(
+      target.hour,
+    );
+    (wheels[1].controller! as FixedExtentScrollController).jumpToItem(
+      target.minute,
+    );
+    await settleNative(t);
+    await tapKey(t, 'time-picker-confirm');
+  }
 }
 
 void main() {

@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Future<void> openManualLedgerDate(WidgetTester tester) async {
+  for (final key in ['review-context-date', 'summary-date']) {
+    final field = find.byKey(ValueKey(key));
+    if (field.evaluate().isNotEmpty) {
+      await tester.ensureVisible(field);
+      await tester.tap(field);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      break;
+    }
+  }
   final button = find.text('手动输入日期');
   if (button.evaluate().isEmpty) {
     final datePicker = find.byKey(const ValueKey('ledger-date-picker')).first;

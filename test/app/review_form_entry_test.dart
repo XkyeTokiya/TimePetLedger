@@ -1,3 +1,4 @@
+import '../support/review_date_picker.dart';
 import '../support/ledger_date_selection.dart';
 import '../support/root_navigation.dart';
 
@@ -240,12 +241,7 @@ void main() {
         '未提交的\n反思😀',
       );
       await settleNative(t);
-      await tapText(t, '修改日期');
-      await t.enterText(
-        find.byKey(const ValueKey('review-date')),
-        '2024-02-29',
-      );
-      await tapText(t, '应用日期');
+      await changeReviewDate(t, '2024-02-29');
       await settleNative(t);
       await tapText(t, '保留草稿并返回');
       expect(find.text('已存原反思'), findsOneWidget);

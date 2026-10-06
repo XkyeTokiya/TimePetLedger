@@ -1,3 +1,4 @@
+import '../support/review_date_picker.dart';
 import '../support/root_navigation.dart';
 
 import 'dart:io';
@@ -192,8 +193,9 @@ Future<void> date(WidgetTester t, String label, String value) async {
   await settleNative(t);
 }
 
-String input(WidgetTester t, String key) =>
-    t.widget<TextField>(find.byKey(ValueKey(key))).controller!.text;
+String input(WidgetTester t, String key) => key == 'review-date'
+    ? reviewDateInput(t)
+    : t.widget<TextField>(find.byKey(ValueKey(key))).controller!.text;
 
 void main() {
   testWidgets(

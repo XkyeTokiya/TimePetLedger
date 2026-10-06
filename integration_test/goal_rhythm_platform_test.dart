@@ -1,3 +1,5 @@
+import '../test/support/review_date_picker.dart';
+
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' hide Table;
@@ -185,6 +187,11 @@ Future<void> tap(WidgetTester t, String label) async {
 }
 
 Future<void> enter(WidgetTester t, String key, String value) async {
+  if (key == 'review-date') {
+    await changeReviewDate(t, value);
+    await waitForUI(t);
+    return;
+  }
   final target = find.byKey(ValueKey(key));
   await visible(t, target);
   // Re-entering the same field must refocus its real IME connection.
@@ -196,6 +203,7 @@ Future<void> enter(WidgetTester t, String key, String value) async {
 }
 
 Future<String> input(WidgetTester t, String key) async {
+  if (key == 'review-date') return reviewDateInput(t);
   final target = find.byKey(ValueKey(key));
   await visible(t, target);
   return t.widget<TextField>(target).controller!.text;

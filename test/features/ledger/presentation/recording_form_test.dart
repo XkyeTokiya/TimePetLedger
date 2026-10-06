@@ -1,3 +1,4 @@
+import '../../../support/date_time_pickers.dart';
 import '../../../support/recording_fields.dart';
 
 import 'package:drift/native.dart';
@@ -68,37 +69,12 @@ Future<void> tap(WidgetTester tester, String text) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> enterTime(WidgetTester tester, String label, String value) async {
-  if (find.text('调整记录时间').evaluate().isEmpty &&
-      find.text(label).evaluate().isEmpty) {
-    await tester.ensureVisible(
-      find.byKey(const ValueKey('edit-recording-time')),
+Future<void> enterTime(WidgetTester tester, String label, String value) =>
+    chooseEndpoint(
+      tester,
+      label == '开始时间' ? 'recording-start' : 'recording-end',
+      value,
     );
-    await tester.tap(find.byKey(const ValueKey('edit-recording-time')));
-    await tester.pumpAndSettle();
-  }
-  if (find.text('调整记录时间').evaluate().isNotEmpty) {
-    final field = find.byKey(
-      ValueKey(label == '开始时间' ? 'time-start' : 'time-end'),
-    );
-    await tester.scrollUntilVisible(
-      field,
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.ensureVisible(field);
-    await tester.enterText(field, value);
-    await tap(tester, '应用时间');
-    return;
-  }
-  await revealRecordingField(tester, label);
-  await tap(tester, label);
-  await tester.enterText(
-    find.byKey(const ValueKey('time-dialog-input')),
-    value,
-  );
-  await tap(tester, '确认');
-}
 
 void main() {
   testWidgets(
@@ -109,7 +85,11 @@ void main() {
       await tap(tester, '打开');
       expect(
         tester.getTopLeft(find.byKey(const ValueKey('activity'))).dy,
-        lessThan(tester.getTopLeft(find.text('开始时间')).dy),
+        lessThan(
+          tester
+              .getTopLeft(find.byKey(const ValueKey('recording-start-date')))
+              .dy,
+        ),
       );
       expect(find.text('请选择是否记得这段时间的内容。'), findsNothing);
       expect(
@@ -162,7 +142,8 @@ void main() {
       app(store, suggestion: TimeCandidates([candidate])),
     );
     await tap(tester, '打开');
-    expect(find.widgetWithText(ListTile, '未填写'), findsNWidgets(2));
+    expect(find.text('选日期'), findsNWidgets(2));
+    expect(find.text('选时间'), findsNWidgets(2));
     await tap(
       tester,
       '${formatRecordingTime(candidate.startedAt)} → ${formatRecordingTime(candidate.endedAt)}',
@@ -176,7 +157,7 @@ void main() {
     );
   });
   testWidgets(
-    'incomplete input survives leaving; restored draft ignores new suggestion; discard clears',
+    'non-time input survives leaving; new entry recalculates time; discard clears',
     (tester) async {
       final store = FormDraftStore();
       await tester.pumpWidget(app(store));
@@ -208,7 +189,12 @@ void main() {
             .text,
         '  未完\n备注  ',
       );
-      expect(find.widgetWithText(ListTile, '未填写'), findsNWidgets(2));
+      expect((store.value!.startedAt, store.value!.endedAt), (10, 20));
+      expect(
+        find.byKey(const ValueKey('recording-start-date')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('recording-end-time')), findsOneWidget);
       await tap(tester, '放弃草稿');
       expect(store.value, isNull);
       expect(find.text('打开'), findsOneWidget);

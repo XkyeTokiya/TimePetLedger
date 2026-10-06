@@ -48,7 +48,7 @@ RecordingFormController controller(FormDraftStore store) =>
 
 void main() {
   test(
-    'restore precedes suggestions, retains incomplete title/time and precision',
+    'fresh interval replaces cached times while retaining activity and note',
     () async {
       final store = FormDraftStore();
       final first = controller(store);
@@ -63,16 +63,24 @@ void main() {
       final restored = RecordingFormController(
         context: formContext,
         store: store,
-        loadSuggestion: () async => throw StateError('must not load'),
+        loadSuggestion: () async => const DirectTimeSuggestion(
+          RecordingTimeInput(startedAt: 300, endedAt: 1800300),
+        ),
       );
       await restored.initialize();
       expect(restored.restored, isTrue);
       expect(restored.title, '  未完成\n');
       expect(restored.note, '  并行\n活动  ');
-      expect(restored.time.startedAt, 200);
-      expect(restored.time.endedAt, isNull);
-      expect(restored.time.startPrecision, TimePrecision.exact);
+      expect(restored.time.startedAt, 300);
+      expect(restored.time.endedAt, 1800300);
+      expect(restored.time.startPrecision, TimePrecision.approximate);
       expect(restored.time.endPrecision, TimePrecision.approximate);
+      expect(await restored.flush(), isTrue);
+      expect(store.value!.startedAt, 300);
+      restored.setTime(start: 400, end: 1800400);
+      await restored.initialize();
+      expect(restored.time.startedAt, 400);
+      await restored.flush();
       restored.dispose();
     },
   );
@@ -89,6 +97,25 @@ void main() {
     expect(await c.flush(), isTrue);
     c.dispose();
   });
+  test(
+    'manual new entry keeps content but does not restore cached endpoints',
+    () async {
+      final store = FormDraftStore();
+      final first = controller(store);
+      await first.initialize();
+      first.setTitle('跳跃记录');
+      first.setTime(start: 100, end: 200);
+      await first.flush();
+      first.dispose();
+      final second = controller(store);
+      await second.initialize();
+      expect(second.title, '跳跃记录');
+      expect((second.time.startedAt, second.time.endedAt), (null, null));
+      await second.flush();
+      expect(store.value!.startedAt, isNull);
+      second.dispose();
+    },
+  );
   test(
     'queued autosaves cannot finish out of order; discard waits then clears',
     () async {

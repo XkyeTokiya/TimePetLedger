@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/core/time/civil_date.dart';
+import 'package:time_pet_ledger/features/ledger/application/recording_time_suggestion.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_session.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
@@ -52,6 +53,65 @@ void fill(SleepFormController c) {
 }
 
 void main() {
+  test(
+    'manual sleep entry retains type/note without restoring old times',
+    () async {
+      final store = FormSleepStore();
+      final first = model(store);
+      await first.initialize();
+      fill(first);
+      first.setNote('手动补记');
+      await first.flush();
+      first.dispose();
+      final second = SleepFormController(
+        context: sleepContext,
+        store: store,
+        loadSuggestion: () async => const ManualTimeEntry(),
+      );
+      await second.initialize();
+      expect((second.startedAt, second.endedAt), (null, null));
+      expect(second.startedAtInput, isEmpty);
+      expect(second.endedAtInput, isEmpty);
+      expect(second.type, SleepType.mainSleep);
+      expect(second.note, '手动补记');
+      await second.flush();
+      expect(store.value!.startedAt, isNull);
+      second.dispose();
+    },
+  );
+
+  test(
+    'fresh sleep endpoints replace cached times and keep type/note',
+    () async {
+      final store = FormSleepStore();
+      final first = model(store);
+      await first.initialize();
+      fill(first);
+      first.setNote('昼夜颠倒');
+      await first.flush();
+      first.dispose();
+      final second = SleepFormController(
+        context: sleepContext,
+        store: store,
+        loadSuggestion: () async => const DirectTimeSuggestion(
+          RecordingTimeInput(startedAt: 1000000, endedAt: 2800000),
+        ),
+      );
+      await second.initialize();
+      expect((second.startedAt, second.endedAt), (1000000, 2800000));
+      expect(second.type, SleepType.mainSleep);
+      expect(second.note, '昼夜颠倒');
+      expect(second.startPrecision, TimePrecision.approximate);
+      expect(await second.flush(), isTrue);
+      expect(store.value!.endedAt, 2800000);
+      second.setEndedAtInput('2026-09-29 19:40');
+      await second.initialize();
+      expect(second.endedAtInput, '2026-09-29 19:40');
+      await second.flush();
+      second.dispose();
+    },
+  );
+
   test(
     'incomplete text, type and independent precision restore without inference',
     () async {

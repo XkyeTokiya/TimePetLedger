@@ -84,33 +84,37 @@ class Fixture {
     ),
   );
 
-  Widget app(RecordingDraftContext context, {VoidCallback? onSaved}) =>
-      MaterialApp(
-        theme: homeTheme,
-        home: Builder(
-          builder: (outer) => Scaffold(
-            body: TextButton(
-              key: const ValueKey('open'),
-              onPressed: () => Navigator.push(
-                outer,
-                MaterialPageRoute<Object?>(
-                  builder: (_) => ActivityRecordingEntry(
-                    context: context,
-                    store: drafts,
-                    entrySaver: saver,
-                    entryEditor: editor,
-                    goals: goals,
-                    loadSuggestion: () async => DirectTimeSuggestion(
+  Widget app(
+    RecordingDraftContext context, {
+    VoidCallback? onSaved,
+    RecordingTimeInput? suggestedTime,
+  }) => MaterialApp(
+    theme: homeTheme,
+    home: Builder(
+      builder: (outer) => Scaffold(
+        body: TextButton(
+          key: const ValueKey('open'),
+          onPressed: () => Navigator.push(
+            outer,
+            MaterialPageRoute<Object?>(
+              builder: (_) => ActivityRecordingEntry(
+                context: context,
+                store: drafts,
+                entrySaver: saver,
+                entryEditor: editor,
+                goals: goals,
+                loadSuggestion: () async => DirectTimeSuggestion(
+                  suggestedTime ??
                       RecordingTimeInput(startedAt: start, endedAt: end),
-                    ),
-                  ),
                 ),
-              ).then((_) => onSaved?.call()),
-              child: const Text('打开'),
+              ),
             ),
-          ),
+          ).then((_) => onSaved?.call()),
+          child: const Text('打开'),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 Future<Fixture> open(WidgetTester t) async {
@@ -148,6 +152,99 @@ String _screen(WidgetTester t) => t
     .join(' | ');
 
 void main() {
+  testWidgets(
+    'activity endpoint selects time independently and duration advances from start',
+    (t) async {
+      final f = await open(t);
+      final began = DateTime(2026, 12, 31, 23, 50).millisecondsSinceEpoch + 123;
+      final ended = DateTime(2027, 1, 1, 0, 20).millisecondsSinceEpoch;
+      await t.pumpWidget(
+        f.app(
+          newContext,
+          suggestedTime: RecordingTimeInput(startedAt: began, endedAt: ended),
+        ),
+      );
+      await settleNative(t);
+      await tapKey(t, 'open');
+      await tapKey(t, 'activity-rhythm-progress');
+      await t.enterText(key('activity'), '跨年活动');
+      await tapKey(t, 'activity-primary');
+      expect(find.text('2027年1月1日'), findsOneWidget);
+      await tapKey(t, 'activity-end-time');
+      expect(find.text('选择时分'), findsOneWidget);
+      final wheels = t
+          .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
+          .toList();
+      (wheels[0].controller! as FixedExtentScrollController).jumpToItem(7);
+      (wheels[1].controller! as FixedExtentScrollController).jumpToItem(20);
+      await settleNative(t);
+      await tapKey(t, 'time-picker-confirm');
+      expect(find.byType(AlertDialog), findsNothing);
+      final changed = (await t.runAsync(() => f.drafts.read(newContext)))!;
+      expect(
+        (changed.startedAt, changed.endedAt),
+        (began, DateTime(2027, 1, 1, 7, 20).millisecondsSinceEpoch),
+      );
+
+      for (final field in [
+        'activity-start-date',
+        'activity-start-time',
+        'activity-end-date',
+        'activity-end-time',
+      ]) {
+        await tapKey(t, field);
+        final opening = (await t.runAsync(() => f.drafts.read(newContext)))!;
+        expect(
+          (opening.startedAt, opening.endedAt),
+          (changed.startedAt, changed.endedAt),
+        );
+        expect(
+          field.endsWith('date')
+              ? key('date-picker-confirm')
+              : key('time-picker-confirm'),
+          findsOneWidget,
+        );
+        await t.tap(find.text('取消'));
+        await settleNative(t);
+        final cancelled = (await t.runAsync(() => f.drafts.read(newContext)))!;
+        expect(
+          (cancelled.startedAt, cancelled.endedAt),
+          (changed.startedAt, changed.endedAt),
+        );
+      }
+      await tapKey(t, 'activity-end-date');
+      expect(find.text('2027年1月'), findsOneWidget);
+      expect(find.byType(ListWheelScrollView), findsNothing);
+      await t.tap(find.text('2').last);
+      await tapKey(t, 'date-picker-confirm');
+      final dateChanged = (await t.runAsync(() => f.drafts.read(newContext)))!;
+      expect(
+        (dateChanged.startedAt, dateChanged.endedAt),
+        (began, DateTime(2027, 1, 2, 7, 20).millisecondsSinceEpoch),
+      );
+      expect(find.byType(AlertDialog), findsNothing);
+      await tapKey(t, 'activity-time-summary');
+      final durationWheels = t
+          .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
+          .toList();
+      (durationWheels[0].controller! as FixedExtentScrollController).jumpToItem(
+        9,
+      );
+      (durationWheels[1].controller! as FixedExtentScrollController).jumpToItem(
+        10,
+      );
+      await settleNative(t);
+      await tapKey(t, 'duration-picker-confirm');
+      final adjusted = (await t.runAsync(() => f.drafts.read(newContext)))!;
+      expect(
+        (adjusted.startedAt, adjusted.endedAt),
+        (began, began + const Duration(hours: 9, minutes: 10).inMilliseconds),
+      );
+      await t.pumpWidget(const SizedBox.shrink());
+      await settleNative(t);
+    },
+  );
+
   testWidgets('steps 节奏 → 事项 → 时间 save one known record with a hint', (
     t,
   ) async {
@@ -188,10 +285,7 @@ void main() {
     expect(saved.timeBlocks.single.startPrecision, TimePrecision.approximate);
     expect(saved.annotations.single.state, RhythmState.progress);
     expect(saved.annotations.single.continuationHint, '先画补记弹层');
-    expect(
-      await t.runAsync(() => f.drafts.read(newContext)),
-      isNull,
-    );
+    expect(await t.runAsync(() => f.drafts.read(newContext)), isNull);
   });
 
   testWidgets('想不起来 skips the title and still saves an unknown fact', (
@@ -296,7 +390,10 @@ void main() {
     ))!;
     expect(saved.timeBlocks.single.title, '散步');
     expect(saved.annotations.single.state, RhythmState.recovery);
-    expect(saved.annotations.single.applicableRecoveryMethod, RecoveryMethod.walk);
+    expect(
+      saved.annotations.single.applicableRecoveryMethod,
+      RecoveryMethod.walk,
+    );
     expect(
       saved.annotations.single.applicableRecoveryQuality,
       RecoveryQuality.readyToContinue,

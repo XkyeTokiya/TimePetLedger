@@ -69,6 +69,56 @@ Future<void> _mutate(File file, Future<void> Function(_Probe) action) async {
 }
 
 void main() {
+  test('corrupt auxiliary feedback is rejected rather than treated as missing history', () async {
+    final file = await tempFile();
+    final created = await DriftSleepDraftStore.open(NativeDatabase(file));
+    await created.close();
+    await _mutate(
+      file,
+      (db) => db.customStatement('''
+INSERT INTO sleep_learning_feedback (sleep_id,payload) VALUES (
+'00000000-0000-4000-8000-000000000001',
+'{"origin":{"startedAt":1,"endedAt":2,"type":"mainSleep","version":1},"startedAt":5,"endedAt":4,"startOffsetMinutes":0,"endOffsetMinutes":0}'
+)
+'''),
+    );
+    final store = await DriftSleepDraftStore.open(NativeDatabase(file));
+    await expectLater(
+      store.readSleepFeedback(),
+      throwsA(isA<SleepDraftDataException>()),
+    );
+    await store.close();
+  });
+  for (final version in [1, 2]) {
+    test(
+      'version $version sleep drafts upgrade without losing raw input',
+      () async {
+        final file = await tempFile();
+        final legacy = _LegacySleepDraftDatabase(NativeDatabase(file), version);
+        await legacy.customStatement('''
+INSERT INTO sleep_drafts (
+context_key,year,month,day,sleep_session_id,started_at,ended_at,
+start_precision,end_precision,sleep_type,started_at_input,ended_at_input
+) VALUES ('new:2026:9:29',2026,9,29,NULL,5,NULL,'approximate',NULL,'mainSleep','未完成','')
+''');
+        if (version == 2) {
+          await legacy.customStatement(
+            "UPDATE sleep_drafts SET note='保留备注', note_provided=1",
+          );
+        }
+        await legacy.close();
+        final upgraded = await DriftSleepDraftStore.open(NativeDatabase(file));
+        final input = (await upgraded.read(context))!;
+        expect(input.startedAt, 5);
+        expect(input.endedAt, isNull);
+        expect(input.startedAtInput, '未完成');
+        expect(input.note, version == 2 ? '保留备注' : null);
+        expect(input.predictionOrigin, isNull);
+        expect(await upgraded.readSleepFeedback(), isEmpty);
+        await upgraded.close();
+      },
+    );
+  }
   test('reopen preserves incomplete input, create dates and stable edit identities', () async {
     final file = await tempFile();
     final contexts = [
@@ -321,7 +371,7 @@ void main() {
       );
       await _mutate(
         file,
-        (db) => db.customStatement('PRAGMA user_version = 3'),
+        (db) => db.customStatement('PRAGMA user_version = 4'),
       );
       await expectLater(
         DriftSleepDraftStore.open(NativeDatabase(file)),
@@ -334,7 +384,27 @@ void main() {
 class _Probe extends GeneratedDatabase {
   _Probe(super.executor);
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
+}
+
+class _LegacySleepDraftDatabase extends GeneratedDatabase {
+  _LegacySleepDraftDatabase(super.executor, this.version);
+  final int version;
+  @override
+  int get schemaVersion => version;
+  @override
+  Iterable<TableInfo<Table, Object?>> get allTables => const [];
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (_) => customStatement('''
+CREATE TABLE sleep_drafts (
+context_key TEXT PRIMARY KEY,year INTEGER,month INTEGER,day INTEGER,
+sleep_session_id TEXT,started_at INTEGER,ended_at INTEGER,start_precision TEXT,
+end_precision TEXT,sleep_type TEXT,started_at_input TEXT,ended_at_input TEXT
+${version == 2 ? ',note TEXT,note_provided INTEGER NOT NULL DEFAULT 0' : ''}
+)
+'''),
+  );
 }

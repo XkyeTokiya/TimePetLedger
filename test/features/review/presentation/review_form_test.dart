@@ -1,3 +1,5 @@
+import '../../../support/review_date_picker.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -37,7 +39,8 @@ Future<void> tap(WidgetTester t, String text) async {
 
 Future<void> enter(WidgetTester t, String key, String value) async {
   if (key == 'review-date') {
-    await tap(t, '修改日期');
+    await changeReviewDate(t, value);
+    return;
   }
   if (['review-summary', 'review-reflection'].contains(key) &&
       find.byKey(ValueKey(key)).evaluate().isEmpty) {
@@ -48,9 +51,6 @@ Future<void> enter(WidgetTester t, String key, String value) async {
   await t.enterText(field, value);
   await t.pump();
   await t.pump(const Duration(milliseconds: 400));
-  if (key == 'review-date') {
-    await tap(t, '应用日期');
-  }
 }
 
 Future<void> host(
