@@ -5,7 +5,7 @@ import '../domain/block_knowledge_state.dart';
 import '../domain/projection/derived_duration.dart';
 import '../domain/rhythm_state.dart';
 import 'guided_recording_sheets.dart';
-import 'guided_recording_time_sheet.dart';
+import 'recording_time_picker.dart';
 import 'recording_form_controller.dart';
 import 'sleep_time_input.dart';
 import 'summary_formatting.dart';
@@ -106,15 +106,18 @@ class _GuidedRecordingPageState extends State<GuidedRecordingPage> {
     }
   }
 
-  Future<void> time() async {
-    final result = await showGuidedRecordingTimeSheet(
+  Future<void> time({bool isStart = true, bool isDate = false}) async {
+    final picker = isDate ? showRecordingDatePicker : showRecordingTimePicker;
+    final value = await picker(
       context,
-      initial: model.time,
+      value: isStart ? model.time.startedAt : model.time.endedAt,
       date: model.context.date,
     );
-    if (!mounted || result == null) return;
-    model.setTime(start: result.startedAt, end: result.endedAt);
-    model.setPrecision(start: result.startPrecision, end: result.endPrecision);
+    if (!mounted || value == null) return;
+    model.setTime(
+      start: isStart ? value : model.time.startedAt,
+      end: isStart ? model.time.endedAt : value,
+    );
   }
 
   Future<void> details() async {
@@ -408,20 +411,25 @@ class _GuidedRecordingPageState extends State<GuidedRecordingPage> {
             ),
           ),
       ],
-      for (final endpoint in [
-        ('开始', model.time.startedAt, model.time.startPrecision),
-        ('结束', model.time.endedAt, model.time.endPrecision),
-      ])
+      for (final isStart in [true, false])
         Card.outlined(
-          child: ListTile(
-            title: Text(endpoint.$1),
-            subtitle: Text(
-              endpoint.$2 == null
-                  ? '选择日期和时分'
-                  : '${formatSleepTime(endpoint.$2)} · ${endpoint.$3.name == 'exact' ? '准确' : '大概'}',
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: RecordingEndpointFields(
+              label: isStart ? '开始' : '结束',
+              keyPrefix: isStart ? 'guided-start' : 'guided-end',
+              value: isStart ? model.time.startedAt : model.time.endedAt,
+              enabled: model.editable,
+              onDate: () => time(isStart: isStart, isDate: true),
+              onTime: () => time(isStart: isStart),
+              precision: isStart
+                  ? model.time.startPrecision
+                  : model.time.endPrecision,
+              onPrecision: (precision) => model.setPrecision(
+                start: isStart ? precision : null,
+                end: isStart ? null : precision,
+              ),
             ),
-            trailing: const Icon(Icons.edit_calendar_outlined),
-            onTap: model.editable ? time : null,
           ),
         ),
       if (model.timeError == null)
@@ -432,12 +440,6 @@ class _GuidedRecordingPageState extends State<GuidedRecordingPage> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
-      OutlinedButton.icon(
-        key: const ValueKey('guided-edit-time'),
-        onPressed: model.editable ? time : null,
-        icon: const Icon(Icons.schedule),
-        label: const Text('调整时间'),
-      ),
       if (errors && model.timeError != null)
         Text(
           model.timeError!,

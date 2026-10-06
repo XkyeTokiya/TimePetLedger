@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/widgets/editor_body.dart';
 import '../../ledger/presentation/recording_optional_section.dart';
+import '../../ledger/presentation/day_ledger_date_dialog.dart';
 
 import '../../../core/time/civil_date.dart';
 import '../../goals/domain/goal_status.dart';
@@ -36,7 +37,6 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
     dateOfInstant: widget.dateOfInstant,
     selectedDate: model.original?.date ?? model.context.entryDate!,
   );
-  final date = TextEditingController();
   final summary = TextEditingController();
   final reflection = TextEditingController();
   final step = TextEditingController();
@@ -53,39 +53,15 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
   FocusNode? lastWritingFocus;
 
   Future<void> _date() async {
-    final input = TextEditingController(text: date.text);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('修改日期'),
-        content: TextField(
-          key: const ValueKey('review-date'),
-          controller: input,
-          enabled: model.editable,
-          decoration: InputDecoration(
-            labelText: '复盘日期 YYYY-MM-DD',
-            errorText: model.dateError,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, input.text),
-            child: const Text('应用日期'),
-          ),
-        ],
-      ),
+    final picked = await showDayLedgerDateDialog(
+      context,
+      model.date ??
+          model.original?.date ??
+          model.context.entryDate ??
+          widget.dateOfInstant(widget.now()),
     );
-    if (mounted && result != null) {
-      date.text = result;
-      model.setDateInput(result);
-    }
-    // The route may still be animating its TextField out.
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-    input.dispose();
+    if (!mounted || picked == null) return;
+    model.setDateInput(formatReviewDate(picked));
   }
 
   void _focus(FocusNode node) {
@@ -117,7 +93,6 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
   void _changed() {
     if (!mounted) return;
     if (!synced && !model.loading && model.loadError == null) {
-      date.text = model.dateInput;
       summary.text = model.summary;
       reflection.text = model.reflection;
       step.text = model.firstStep;
@@ -285,7 +260,6 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
     model.removeListener(_changed);
     facts.removeListener(_factsChanged);
     facts.dispose();
-    date.dispose();
     summary.dispose();
     reflection.dispose();
     step.dispose();
@@ -433,7 +407,16 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
           ],
           Row(
             children: [
-              Expanded(child: Text('复盘 · ${model.dateInput}')),
+              Expanded(
+                child: InkWell(
+                  key: const ValueKey('review-date'),
+                  onTap: model.editable ? _date : null,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Text('复盘 · ${model.dateInput}'),
+                  ),
+                ),
+              ),
               TextButton(
                 onPressed: model.editable ? _date : null,
                 child: const Text('修改日期'),

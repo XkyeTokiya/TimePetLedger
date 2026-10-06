@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/widgets/editor_body.dart';
-import 'editor_time_page.dart';
-import 'sleep_time_input.dart';
+import 'recording_time_picker.dart';
 
 import 'package:flutter/services.dart';
 
@@ -67,164 +66,6 @@ int? parseRecordingTime(String value) {
   }
 }
 
-/// 日期时间选择对话框：只有确认的分钟值会应用到表单，取消不修改输入。
-Future<int?> editRecordingTime(
-  BuildContext context, {
-  required String label,
-  int? initial,
-  CivilDate? initialDate,
-}) => showDialog<int>(
-  context: context,
-  builder: (_) => _RecordingTimeDialog(
-    label: label,
-    initial: initial,
-    initialDate: initialDate,
-  ),
-);
-
-class _RecordingTimeDialog extends StatefulWidget {
-  const _RecordingTimeDialog({
-    required this.label,
-    this.initial,
-    this.initialDate,
-  });
-  final String label;
-  final int? initial;
-  final CivilDate? initialDate;
-  @override
-  State<_RecordingTimeDialog> createState() => _RecordingTimeDialogState();
-}
-
-class _RecordingTimeDialogState extends State<_RecordingTimeDialog> {
-  late final text = TextEditingController(
-    text: widget.initial == null ? '' : formatRecordingTime(widget.initial),
-  );
-  String? error;
-  final dateFocus = FocusNode();
-  final pickerFocus = FocusNode();
-  @override
-  void dispose() {
-    text.dispose();
-    dateFocus.dispose();
-    pickerFocus.dispose();
-    super.dispose();
-  }
-
-  DateTime get _base {
-    final value = parseRecordingTime(text.text) ?? widget.initial;
-    if (value != null) return DateTime.fromMillisecondsSinceEpoch(value);
-    final date = widget.initialDate!;
-    return DateTime(date.year, date.month, date.day);
-  }
-
-  Future<void> _pickDate() async {
-    final base = _base;
-    if (base.year < 1 || base.year > 9999) return;
-    final date = await showDatePicker(
-      context: context,
-      initialDate: base,
-      // Material's fixed calendar cells clip two-digit days with large text.
-      // Use its date input mode rather than reducing the user's font size.
-      initialEntryMode: MediaQuery.textScalerOf(context).scale(16) > 20
-          ? DatePickerEntryMode.inputOnly
-          : DatePickerEntryMode.calendar,
-      firstDate: DateTime(1),
-      lastDate: DateTime(9999, 12, 31),
-      helpText: '选择${widget.label}的日期',
-    );
-    if (!mounted) return;
-    dateFocus.requestFocus();
-    if (date == null) return;
-    _setPicked(date.year, date.month, date.day, base.hour, base.minute);
-  }
-
-  Future<void> _pickTime() async {
-    final base = _base;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(hour: base.hour, minute: base.minute),
-    );
-    if (!mounted) return;
-    pickerFocus.requestFocus();
-    if (time == null) return;
-    _setPicked(base.year, base.month, base.day, time.hour, time.minute);
-  }
-
-  void _setPicked(int year, int month, int day, int hour, int minute) {
-    String two(int n) => n.toString().padLeft(2, '0');
-    // Keep the chosen civil minute literal. The existing parser rejects a
-    // nonexistent local minute instead of DateTime silently normalizing it.
-    final y = '${year < 0 ? '-' : ''}${year.abs().toString().padLeft(4, '0')}';
-    text.text = '$y-${two(month)}-${two(day)} ${two(hour)}:${two(minute)}';
-    setState(
-      () => error = parseRecordingTime(text.text) == null
-          ? '请选择有效的当地日期和时间。'
-          : null,
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    scrollable: true,
-    title: Text(widget.label),
-    content: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        TextField(
-          key: const ValueKey('time-dialog-input'),
-          controller: text,
-          textInputAction: TextInputAction.next,
-          decoration: InputDecoration(
-            labelText: '年-月-日 时:分',
-            hintText: '2026-09-28 14:30',
-            errorText: error,
-          ),
-        ),
-        if (widget.initialDate != null) ...[
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              TextButton.icon(
-                focusNode: dateFocus,
-                onPressed: _base.year >= 1 && _base.year <= 9999
-                    ? _pickDate
-                    : null,
-                icon: const Icon(Icons.calendar_month_outlined),
-                label: const Text('选择日期'),
-              ),
-              TextButton.icon(
-                focusNode: pickerFocus,
-                onPressed: _pickTime,
-                icon: const Icon(Icons.schedule),
-                label: const Text('选择时间'),
-              ),
-            ],
-          ),
-          const Text('也可手动输入完整日期时间；确认后才应用。'),
-        ],
-      ],
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('取消'),
-      ),
-      TextButton(
-        onPressed: () {
-          final parsed = parseRecordingTime(text.text);
-          if (parsed == null) {
-            setState(() => error = '请输入有效日期和时间，格式为 YYYY-MM-DD HH:mm。');
-            return;
-          }
-          Navigator.pop(context, parsed);
-        },
-        child: const Text('确认'),
-      ),
-    ],
-  );
-}
-
 class RecordingForm extends StatefulWidget {
   const RecordingForm({
     super.key,
@@ -251,11 +92,13 @@ class _RecordingFormState extends State<RecordingForm> {
   final note = TextEditingController();
   final continuationHint = TextEditingController();
   final stuckReasonText = TextEditingController();
+  final startDateFocus = FocusNode();
+  final startTimeFocus = FocusNode();
+  final endDateFocus = FocusNode();
+  final endTimeFocus = FocusNode();
   final titleFocus = FocusNode();
   final noteFocus = FocusNode();
   final goalFocus = FocusNode();
-  final startTimeFocus = FocusNode();
-  final endTimeFocus = FocusNode();
   final statusKey = GlobalKey();
   final titleKey = GlobalKey();
   final noteKey = GlobalKey();
@@ -265,7 +108,6 @@ class _RecordingFormState extends State<RecordingForm> {
   bool titleVisited = false;
   bool noteVisited = false;
   bool timeVisited = false;
-  bool timeExpanded = false;
   bool goalExpanded = false;
   bool rhythmExpanded = false;
   final Map<LedgerFactInterval, Future<String>> conflictLabels = {};
@@ -388,11 +230,13 @@ class _RecordingFormState extends State<RecordingForm> {
     note.dispose();
     continuationHint.dispose();
     stuckReasonText.dispose();
+    startDateFocus.dispose();
+    startTimeFocus.dispose();
+    endDateFocus.dispose();
+    endTimeFocus.dispose();
     titleFocus.dispose();
     noteFocus.dispose();
     goalFocus.dispose();
-    startTimeFocus.dispose();
-    endTimeFocus.dispose();
     super.dispose();
   }
 
@@ -437,18 +281,20 @@ class _RecordingFormState extends State<RecordingForm> {
     if (mounted) Navigator.of(context).pop(refreshed);
   }
 
-  Future<void> _time(bool start) async {
-    FocusManager.instance.primaryFocus?.unfocus();
-    setState(() => timeExpanded = true);
-    final value = await editRecordingTime(
+  Future<void> _time(bool start, {bool isDate = false}) async {
+    final picker = isDate ? showRecordingDatePicker : showRecordingTimePicker;
+    final value = await picker(
       context,
-      label: start ? '开始时间' : '结束时间',
-      initial: start ? model.time.startedAt : model.time.endedAt,
-      initialDate: widget.context.date,
+      value: start ? model.time.startedAt : model.time.endedAt,
+      date: widget.context.date,
     );
-    if (!mounted) return;
-    (start ? startTimeFocus : endTimeFocus).requestFocus();
-    if (value == null || !model.editable) return;
+    if (mounted) {
+      (isDate
+              ? (start ? startDateFocus : endDateFocus)
+              : (start ? startTimeFocus : endTimeFocus))
+          .requestFocus();
+    }
+    if (!mounted || value == null || !model.editable) return;
     setState(() => timeVisited = true);
     model.setTime(
       start: start ? value : model.time.startedAt,
@@ -762,43 +608,8 @@ class _RecordingFormState extends State<RecordingForm> {
     return '重叠区间为${_shortTime(start)}–${_shortTime(end)}${approximate ? '（估算边界）' : ''}。';
   }
 
-  Future<void> _editCurrentTime() async {
-    FocusManager.instance.primaryFocus?.unfocus();
-    final result = await showModalBottomSheet<EditorTimes>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(context).bottom,
-        ),
-        child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * .65,
-          child: EditorTimePage(
-            inSheet: true,
-            date: widget.context.date,
-            initial: (
-              start: formatSleepTime(model.time.startedAt),
-              end: formatSleepTime(model.time.endedAt),
-              startPrecision: model.time.startPrecision,
-              endPrecision: model.time.endPrecision,
-            ),
-          ),
-        ),
-      ),
-    );
-    if (!mounted || result == null) return;
-    model.setTime(
-      start: parseSleepTime(result.start),
-      end: parseSleepTime(result.end),
-    );
-    model.setPrecision(start: result.startPrecision, end: result.endPrecision);
-  }
-
   Widget _timeSection(BuildContext context) {
     final error = (showErrors || timeVisited) ? model.timeError : null;
-    final expanded = timeExpanded || model.timeError != null;
     return Container(
       key: timeKey,
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -831,30 +642,24 @@ class _RecordingFormState extends State<RecordingForm> {
                   ],
                 ),
               ),
-              if (model.conflicts.isEmpty &&
-                  model.time.startedAt != null &&
-                  model.time.endedAt != null)
-                TextButton.icon(
-                  key: const ValueKey('edit-recording-time'),
-                  onPressed: model.editable ? _editCurrentTime : null,
-                  icon: const SizedBox.shrink(),
-                  label: Text(expanded ? '收起时间编辑' : '修改时间'),
-                ),
             ],
           ),
-          if (expanded)
-            for (final start in [true, false])
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                focusNode: start ? startTimeFocus : endTimeFocus,
-                title: Text(start ? '开始时间' : '结束时间'),
-                subtitle: Text(
-                  formatRecordingTime(
-                    start ? model.time.startedAt : model.time.endedAt,
+          for (final start in [true, false])
+            Row(
+              children: [
+                Expanded(
+                  child: RecordingEndpointFields(
+                    label: start ? '开始' : '结束',
+                    keyPrefix: start ? 'recording-start' : 'recording-end',
+                    value: start ? model.time.startedAt : model.time.endedAt,
+                    enabled: model.editable,
+                    onDate: () => _time(start, isDate: true),
+                    onTime: () => _time(start),
+                    dateFocus: start ? startDateFocus : endDateFocus,
+                    timeFocus: start ? startTimeFocus : endTimeFocus,
                   ),
                 ),
-                onTap: model.editable ? () => _time(start) : null,
-                trailing: IconButton(
+                IconButton(
                   tooltip: start ? '清空开始时间' : '清空结束时间',
                   icon: const Icon(Icons.clear),
                   onPressed: model.editable
@@ -867,7 +672,8 @@ class _RecordingFormState extends State<RecordingForm> {
                         }
                       : null,
                 ),
-              ),
+              ],
+            ),
           if (error != null)
             Text(
               error,
@@ -875,31 +681,30 @@ class _RecordingFormState extends State<RecordingForm> {
             )
           else if (model.timeError != null)
             const Text('请确认完整的开始与结束时间。'),
-          if (expanded) const SizedBox(height: 8),
-          if (expanded)
-            for (final start in [true, false])
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final precision in TimePrecision.values)
-                    ChoiceChip(
-                      label: Text(
-                        '${start ? '开始' : '结束'}${precision == TimePrecision.exact ? '准确' : '大约'}',
-                      ),
-                      selected:
-                          (start
-                              ? model.time.startPrecision
-                              : model.time.endPrecision) ==
-                          precision,
-                      onSelected: model.editable
-                          ? (_) => model.setPrecision(
-                              start: start ? precision : null,
-                              end: start ? null : precision,
-                            )
-                          : null,
+          const SizedBox(height: 8),
+          for (final start in [true, false])
+            Wrap(
+              spacing: 8,
+              children: [
+                for (final precision in TimePrecision.values)
+                  ChoiceChip(
+                    label: Text(
+                      '${start ? '开始' : '结束'}${precision == TimePrecision.exact ? '准确' : '大约'}',
                     ),
-                ],
-              ),
+                    selected:
+                        (start
+                            ? model.time.startPrecision
+                            : model.time.endPrecision) ==
+                        precision,
+                    onSelected: model.editable
+                        ? (_) => model.setPrecision(
+                            start: start ? precision : null,
+                            end: start ? null : precision,
+                          )
+                        : null,
+                  ),
+              ],
+            ),
         ],
       ),
     );
@@ -1018,7 +823,6 @@ class _RecordingFormState extends State<RecordingForm> {
           OutlinedButton(
             onPressed: model.editable
                 ? () {
-                    setState(() => timeExpanded = false);
                     model.chooseCandidate(candidate);
                   }
                 : null,
@@ -1156,8 +960,8 @@ class _RecordingFormState extends State<RecordingForm> {
 
   Widget _saveAction() => model.conflicts.isNotEmpty
       ? FilledButton(
-          onPressed: model.editable ? _editCurrentTime : null,
-          child: const Text('调整当前记录时间'),
+          onPressed: model.editable ? () => _time(true) : null,
+          child: const Text('修改开始时间'),
         )
       : model.committed == null
       ? FilledButton(

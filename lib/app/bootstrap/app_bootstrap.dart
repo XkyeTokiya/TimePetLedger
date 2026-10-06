@@ -18,6 +18,8 @@ import '../../features/ledger/application/recording_entry_editor.dart';
 import 'recording_drafts.dart';
 import 'app_preferences.dart';
 import 'sleep_drafts.dart';
+import '../time/device_sleep_prediction_calendar.dart';
+import '../../features/ledger/application/sleep_time_prediction_loader.dart';
 import 'sleep_entry.dart';
 import 'sleep_ledger.dart';
 import 'day_ledger.dart';
@@ -304,17 +306,25 @@ class _AppBootstrapState extends State<AppBootstrap> {
             claimOpening: _claimSleepOpening,
           ),
           sleepLedger: sleepLedger,
-          sleepEntry: (context) => SleepEntry(
-            context: context,
-            openStore: widget.openSleepDrafts,
-            createEditor: createSleepEntryEditor,
-            createSaver: (drafts) => createSleepEntrySaver(
-              database: _database!,
-              drafts: drafts,
-              ledger: sleepLedger,
-              clock: widget.now,
-            ),
-          ),
+          sleepEntry: (context) {
+            final openedAt = widget.now().millisecondsSinceEpoch;
+            return SleepEntry(
+              context: context,
+              loadPredictions: (store) => SleepTimePredictionLoader(
+                repository: ledger.repository,
+                resolveDate: ledger.resolveDate,
+                calendar: const DeviceSleepPredictionCalendar(),
+              ).load(date: context.date, now: openedAt, learning: store),
+              openStore: widget.openSleepDrafts,
+              createEditor: createSleepEntryEditor,
+              createSaver: (drafts) => createSleepEntrySaver(
+                database: _database!,
+                drafts: drafts,
+                ledger: sleepLedger,
+                clock: widget.now,
+              ),
+            );
+          },
           ledger: ledger,
           drafts: _drafts!,
           now: widget.now,

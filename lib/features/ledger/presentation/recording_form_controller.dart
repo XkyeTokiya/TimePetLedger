@@ -74,6 +74,8 @@ class RecordingFormController extends ChangeNotifier {
   String? loadError;
   String? storageError;
   bool _disposed = false;
+  bool _initialized = false;
+  bool _initializing = false;
   int _revision = 0;
   Future<void> _writes = Future.value();
 
@@ -82,6 +84,9 @@ class RecordingFormController extends ChangeNotifier {
   }
 
   Future<void> initialize() async {
+    if (_initialized || _initializing || _disposed) return;
+    _initializing = true;
+    var initializedTime = false;
     loading = true;
     loadError = null;
     missingOriginal = false;
@@ -185,28 +190,37 @@ class RecordingFormController extends ChangeNotifier {
         );
       } else {
         knowledgeState = BlockKnowledgeState.known;
+      }
+      // 先识别已经提交的草稿，避免重算时间后重试产生重复正式记录。
+      if (context.entry != RecordingDraftEntry.edit && committed == null) {
         final suggestion = await loadSuggestion();
         if (_disposed) return;
+        candidates = const [];
         switch (suggestion) {
           case DirectTimeSuggestion(:final input):
             time = input;
+            initializedTime = true;
           case TimeCandidates(:final candidates):
             this.candidates = candidates;
-          case ManualTimeEntry(:final input):
-            time = input;
+          case ManualTimeEntry():
+            // 新建不恢复旧端点；全开区间由用户在本次编辑中填写。
+            time = const RecordingTimeInput();
+            initializedTime = restored;
         }
       }
       if (!_disposed && goals != null) await loadGoals();
+      _initialized = true;
     } catch (_) {
       loadError = '无法读取草稿、时间建议或账本，请重试。';
     } finally {
+      _initializing = false;
       loading = false;
       _emit();
       if (!_disposed &&
           loadError == null &&
-          !restored &&
-          context.entry != RecordingDraftEntry.edit &&
-          time.startedAt != null) {
+          initializedTime &&
+          committed == null &&
+          context.entry != RecordingDraftEntry.edit) {
         _persist();
       }
     }

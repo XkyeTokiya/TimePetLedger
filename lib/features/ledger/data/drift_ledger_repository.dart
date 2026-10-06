@@ -27,6 +27,82 @@ final class DriftLedgerRepository implements LedgerRepository {
   final AppDatabase _database;
 
   @override
+  Future<List<LedgerFactInterval>> readRecordingContext({
+    required InstantMilliseconds startedAt,
+    required InstantMilliseconds endedAt,
+  }) async {
+    if (startedAt > endedAt) {
+      throw ArgumentError('Read window must not be reversed.');
+    }
+    try {
+      return await _database.transaction(() async {
+        final intervals = <LedgerFactInterval>[];
+        for (final table in ['time_blocks', 'sleep_sessions']) {
+          final rows = await _database
+              .customSelect(
+                'SELECT * FROM $table WHERE started_at < ? AND ended_at > ? '
+                'UNION SELECT * FROM $table WHERE id = '
+                '(SELECT id FROM $table WHERE ended_at <= ? '
+                'ORDER BY ended_at DESC, id LIMIT 1) '
+                'UNION SELECT * FROM $table WHERE id = '
+                '(SELECT id FROM $table WHERE started_at >= ? '
+                'ORDER BY started_at, id LIMIT 1) '
+                'ORDER BY started_at, id',
+                variables: [
+                  Variable(endedAt),
+                  Variable(startedAt),
+                  Variable(startedAt),
+                  Variable(endedAt),
+                ],
+                readsFrom: table == 'time_blocks'
+                    ? {_database.timeBlocks}
+                    : {_database.sleepSessions},
+              )
+              .get();
+          intervals.addAll(
+            rows.map(
+              (row) => table == 'time_blocks'
+                  ? LedgerFactInterval.fromTimeBlock(
+                      timeBlockFromDatabase(row.data),
+                    )
+                  : LedgerFactInterval.fromSleepSession(
+                      sleepSessionFromDatabase(row.data),
+                    ),
+            ),
+          );
+        }
+        intervals.sort((a, b) => a.startedAt.compareTo(b.startedAt));
+        return List.unmodifiable(intervals);
+      });
+    } on LedgerDataException {
+      rethrow;
+    } catch (error, stack) {
+      Error.throwWithStackTrace(LedgerStorageException(error), stack);
+    }
+  }
+
+  @override
+  Future<List<SleepSession>> readSleepHistory({required int now}) async {
+    try {
+      final rows = await _database
+          .customSelect(
+            'SELECT * FROM sleep_sessions WHERE ended_at <= ? '
+            'ORDER BY ended_at DESC, started_at DESC, id',
+            variables: [Variable(now)],
+            readsFrom: {_database.sleepSessions},
+          )
+          .get();
+      return List.unmodifiable(
+        rows.map((row) => sleepSessionFromDatabase(row.data)),
+      );
+    } on LedgerDataException {
+      rethrow;
+    } catch (error, stack) {
+      Error.throwWithStackTrace(LedgerStorageException(error), stack);
+    }
+  }
+
+  @override
   Future<LedgerSnapshot> readWindow({
     required InstantMilliseconds startedAt,
     required InstantMilliseconds endedAt,

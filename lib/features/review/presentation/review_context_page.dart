@@ -7,7 +7,6 @@ import '../domain/review_draft_store.dart';
 import 'review_form.dart';
 import 'review_form_controller.dart';
 import 'review_facts_view.dart';
-import '../../ledger/presentation/recording_form.dart' show parseRecordingDate;
 import '../application/review_context_loader.dart';
 import '../application/review_entry_saver.dart';
 import 'review_context_controller.dart';
@@ -65,19 +64,14 @@ class _ReviewContextPageState extends State<ReviewContextPage>
     dateOfInstant: widget.dateOfInstant,
     selectedDate: widget.initialDate,
   );
-  late final dateText = TextEditingController(
-    text: _dateText(widget.initialDate),
-  );
-  bool invalidDate = false;
   bool openingEntry = false;
   ModalRoute<void>? route;
 
   void _refresh() {
-    if (!widget.active || invalidDate) return;
+    if (!widget.active) return;
     if (widget.selection case final selection?) {
       controller.selectedDate =
           selection.date ?? widget.dateOfInstant(widget.now());
-      dateText.text = _dateText(controller.selectedDate);
     }
     controller.refresh();
   }
@@ -91,7 +85,6 @@ class _ReviewContextPageState extends State<ReviewContextPage>
   }
 
   void _selectionChanged() {
-    invalidDate = false;
     _refresh();
   }
 
@@ -157,7 +150,6 @@ class _ReviewContextPageState extends State<ReviewContextPage>
     WidgetsBinding.instance.removeObserver(this);
     widget.selection?.removeListener(_selectionChanged);
     controller.dispose();
-    dateText.dispose();
     super.dispose();
   }
 
@@ -188,10 +180,6 @@ class _ReviewContextPageState extends State<ReviewContextPage>
         ),
       );
       if (savedDate != null && mounted) {
-        setState(() {
-          invalidDate = false;
-          dateText.text = _dateText(savedDate);
-        });
         _select(savedDate);
       }
     } finally {
@@ -231,37 +219,24 @@ class _ReviewContextPageState extends State<ReviewContextPage>
               child: const Text('手动输入日期'),
             ),
           ] else
-            TextField(
-              controller: dateText,
-              decoration: InputDecoration(
-                labelText: '复盘日期 YYYY-MM-DD',
-                errorText: invalidDate ? '请输入有效日期 YYYY-MM-DD。' : null,
+            InkWell(
+              key: const ValueKey('review-context-date'),
+              onTap: openingEntry ? null : () => _chooseDate(),
+              child: InputDecorator(
+                decoration: const InputDecoration(labelText: '复盘日期'),
+                child: Text(_dateText(controller.selectedDate)),
               ),
-              onChanged: (value) {
-                final date = parseRecordingDate(value);
-                setState(() => invalidDate = date == null);
-                if (date == null) {
-                  controller.invalidate();
-                } else {
-                  _select(date);
-                }
-              },
             ),
           Wrap(
             spacing: 12,
             children: [
               TextButton(
                 onPressed: () {
-                  setState(() => invalidDate = false);
                   _select(null);
-                  dateText.text = _dateText(controller.selectedDate);
                 },
                 child: const Text('今天'),
               ),
-              OutlinedButton(
-                onPressed: invalidDate ? null : _refresh,
-                child: const Text('刷新复盘上下文'),
-              ),
+              OutlinedButton(onPressed: _refresh, child: const Text('刷新复盘上下文')),
             ],
           ),
           if (controller.status == ReviewReadStatus.loading)

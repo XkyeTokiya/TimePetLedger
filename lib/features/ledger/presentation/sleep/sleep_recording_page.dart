@@ -4,7 +4,7 @@ import '../../../../app/theme/home_theme.dart';
 import '../../domain/projection/derived_duration.dart';
 import '../../domain/sleep_type.dart';
 import '../../domain/time_precision.dart';
-import '../activity/activity_time_sheet.dart';
+import '../recording_time_picker.dart';
 import '../sleep_form_controller.dart';
 import '../sleep_time_input.dart';
 import '../summary_formatting.dart';
@@ -75,23 +75,31 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
     }
   }
 
-  Future<void> _times() async {
-    final result = await showActivityTimeSheet(
+  Future<void> _times({bool isStart = true, bool isDate = false}) async {
+    final picker = isDate ? showRecordingDatePicker : showRecordingTimePicker;
+    final result = await picker(
+      context,
+      value: isStart ? model.startedAt : model.endedAt,
+      date: model.context.date,
+    );
+    if (!mounted || result == null) return;
+    model.setTime(
+      start: isStart ? result : model.startedAt,
+      end: isStart ? model.endedAt : result,
+    );
+    _defaultPrecision();
+    setState(() => showErrors = false);
+  }
+
+  Future<void> _adjustDuration() async {
+    final result = await showRecordingDurationPicker(
       context,
       startedAt: model.startedAt,
       endedAt: model.endedAt,
-      date: model.context.date,
-      title: '这次睡眠是什么时候？',
-      subtitle: '两端各自独立。',
-      startLabel: '入睡',
-      endLabel: '醒来',
-      keyPrefix: 'sleep',
     );
     if (!mounted || result == null) return;
-    model.setStartedAtInput(formatSleepTime(result.start));
-    model.setEndedAtInput(formatSleepTime(result.end));
+    model.setTime(start: result.start, end: result.end);
     _defaultPrecision();
-    setState(() => showErrors = false);
   }
 
   Future<void> _save() async {
@@ -399,28 +407,26 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
       border: Border(top: BorderSide(color: HomePalette.hairline)),
     ),
     padding: const EdgeInsets.symmetric(vertical: 10),
-    child: InkWell(
-      key: ValueKey('$key-row'),
-      onTap: model.editable ? _times : null,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(name, style: _label),
-          const SizedBox(height: 3),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Container(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(name, style: _label),
+        const SizedBox(height: 3),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            InkWell(
+              key: ValueKey('$key-date'),
+              onTap: model.editable
+                  ? () => _times(isStart: key == 'sleep-start', isDate: true)
+                  : null,
+              child: Container(
                 constraints: const BoxConstraints(minHeight: 44),
                 alignment: Alignment.centerLeft,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      _dateLabel(value),
-                      key: ValueKey('$key-date'),
-                      style: _dateStyle,
-                    ),
+                    Text(_dateLabel(value), style: _dateStyle),
                     const SizedBox(width: 6),
                     const Icon(
                       Icons.keyboard_arrow_down,
@@ -430,22 +436,27 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
                   ],
                 ),
               ),
-              const Spacer(),
-              Container(
+            ),
+            const Spacer(),
+            InkWell(
+              key: ValueKey('$key-time'),
+              onTap: model.editable
+                  ? () => _times(isStart: key == 'sleep-start')
+                  : null,
+              child: Container(
                 constraints: const BoxConstraints(minHeight: 52),
                 alignment: Alignment.centerRight,
                 child: Text(
                   value == null
                       ? '选时间'
                       : formatSleepTime(value).split(' ').last,
-                  key: ValueKey('$key-time'),
                   style: value == null ? _emptyTimeStyle : _timeStyle,
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     ),
   );
 
@@ -477,13 +488,18 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
         children: [
           const Text('这次睡眠', style: _durationLabel),
           const SizedBox(height: 4),
-          Text(
-            text ??
-                (start != null && end != null
-                    ? '请确认入睡和醒来的日期'
-                    : '选好时间，就能看到睡了多久。'),
-            key: const ValueKey('sleep-duration'),
-            style: text == null ? _durationLabel : _durationValue,
+          TextButton(
+            onPressed: model.editable && (start != null || end != null)
+                ? _adjustDuration
+                : null,
+            child: Text(
+              text ??
+                  (start != null && end != null
+                      ? '请确认入睡和醒来的日期'
+                      : '选好时间，就能看到睡了多久。'),
+              key: const ValueKey('sleep-duration'),
+              style: text == null ? _durationLabel : _durationValue,
+            ),
           ),
         ],
       ),

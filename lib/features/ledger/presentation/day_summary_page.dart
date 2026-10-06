@@ -5,7 +5,7 @@ import '../application/day_ledger_loader.dart';
 import '../domain/projection/derived_duration.dart';
 import 'day_ledger_controller.dart';
 import 'day_date_selection.dart';
-import 'recording_form.dart';
+import 'day_ledger_date_dialog.dart';
 import 'summary_formatting.dart';
 import 'sleep_summary_view.dart';
 import 'goal_rhythm_summary_view.dart';
@@ -43,28 +43,27 @@ class _DaySummaryPageState extends State<DaySummaryPage>
     dateOfInstant: widget.dateOfInstant,
     selectedDate: widget.selection?.date ?? widget.initialDate,
   );
-  final dateText = TextEditingController();
-  bool invalidDate = false;
   bool openingEntry = false;
+  bool selectingDate = false;
   ModalRoute<void>? route;
 
-  void _syncDate() {
-    final date = controller.date;
-    if (date != null) {
-      dateText.text =
-          '${date.year.toString().padLeft(4, '0')}-'
-          '${date.month.toString().padLeft(2, '0')}-'
-          '${date.day.toString().padLeft(2, '0')}';
-    }
+  Future<void> _chooseDate() async {
+    if (openingEntry || selectingDate) return;
+    setState(() => selectingDate = true);
+    final picked = await showDayLedgerDateDialog(
+      context,
+      controller.date ?? widget.dateOfInstant(widget.now()),
+    );
+    if (!mounted) return;
+    setState(() => selectingDate = false);
+    if (picked != null) _select(picked);
   }
 
   void _refresh() {
-    if (invalidDate) return;
     if (widget.selection case final selection?) {
       controller.selectedDate = selection.date;
     }
     controller.refresh();
-    _syncDate();
   }
 
   @override
@@ -102,7 +101,7 @@ class _DaySummaryPageState extends State<DaySummaryPage>
   Future<void> _openReview() async {
     final date = controller.date;
     final entry = widget.reviewEntry;
-    if (openingEntry || invalidDate || date == null || entry == null) return;
+    if (openingEntry || date == null || entry == null) return;
     setState(() => openingEntry = true);
     try {
       await Navigator.of(context)
@@ -128,7 +127,6 @@ class _DaySummaryPageState extends State<DaySummaryPage>
     WidgetsBinding.instance.removeObserver(this);
     widget.selection?.removeListener(_refresh);
     controller.dispose();
-    dateText.dispose();
     super.dispose();
   }
 
@@ -140,49 +138,39 @@ class _DaySummaryPageState extends State<DaySummaryPage>
       builder: (context, _) => ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          TextField(
-            controller: dateText,
-            decoration: InputDecoration(
-              labelText: '摘要日期 YYYY-MM-DD',
-              errorText: invalidDate ? '请输入有效日期 YYYY-MM-DD。' : null,
+          InkWell(
+            key: const ValueKey('summary-date'),
+            onTap: openingEntry || selectingDate ? null : _chooseDate,
+            child: InputDecorator(
+              decoration: const InputDecoration(labelText: '摘要日期'),
+              child: Text(
+                ledgerDateText(
+                  controller.date ?? widget.dateOfInstant(widget.now()),
+                ),
+              ),
             ),
-            onChanged: (value) {
-              final date = parseRecordingDate(value);
-              setState(() => invalidDate = date == null);
-              if (date == null) {
-                controller.invalidate();
-              } else {
-                _select(date);
-              }
-            },
           ),
           Wrap(
             spacing: 12,
             children: [
               TextButton(
                 onPressed: () {
-                  setState(() => invalidDate = false);
                   _select(null);
-                  _syncDate();
                 },
                 child: const Text('今天'),
               ),
-              OutlinedButton(
-                onPressed: invalidDate ? null : _refresh,
-                child: const Text('刷新摘要'),
-              ),
+              OutlinedButton(onPressed: _refresh, child: const Text('刷新摘要')),
               if (widget.reviewEntry != null)
                 FilledButton(
-                  onPressed:
-                      invalidDate || openingEntry || controller.date == null
+                  onPressed: openingEntry || controller.date == null
                       ? null
                       : _openReview,
                   child: const Text('打开此日复盘'),
                 ),
             ],
           ),
-          if (!invalidDate && controller.date != null)
-            Text('日期：${dateText.text}'),
+          if (controller.date != null)
+            Text('日期：${ledgerDateText(controller.date!)}'),
           if (controller.status == DayLedgerStatus.loading)
             const Center(child: CircularProgressIndicator()),
           if (controller.status == DayLedgerStatus.failed) ...[

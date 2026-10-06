@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../features/ledger/application/sleep_entry_saver.dart';
 import '../../features/ledger/application/sleep_entry_editor.dart';
+import '../../features/ledger/application/recording_time_suggestion.dart';
+import '../../features/ledger/application/sleep_time_prediction_loader.dart';
 import '../../features/ledger/data/drift_sleep_draft_store.dart';
 import '../../features/ledger/domain/sleep_draft_store.dart';
 import '../../features/ledger/presentation/sleep/sleep_recording_page.dart';
@@ -18,8 +20,13 @@ class SleepEntry extends StatefulWidget {
     required this.openStore,
     this.createSaver,
     this.createEditor,
+    this.loadSuggestion,
+    this.loadPredictions,
   });
   final SleepDraftContext context;
+  final Future<RecordingTimeSuggestion> Function()? loadSuggestion;
+  final Future<SleepTimePredictions> Function(DriftSleepDraftStore store)?
+  loadPredictions;
   final Future<DriftSleepDraftStore> Function() openStore;
   final SleepEntrySaver Function(SleepDraftStore)? createSaver;
   final SleepEntryEditor Function(SleepEntrySaver)? createEditor;
@@ -56,6 +63,10 @@ class _SleepEntryState extends State<SleepEntry> {
         _controller = SleepFormController(
           context: widget.context,
           store: store,
+          loadSuggestion: widget.loadSuggestion,
+          loadPredictions: widget.loadPredictions == null
+              ? null
+              : () => widget.loadPredictions!(store),
           entrySaver: saver,
           entryEditor: saver == null ? null : widget.createEditor?.call(saver),
         );

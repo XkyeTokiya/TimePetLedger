@@ -13,7 +13,7 @@ import '../recording_form_controller.dart';
 import '../sleep_time_input.dart';
 import '../summary_formatting.dart';
 import 'activity_sheets.dart';
-import 'activity_time_sheet.dart';
+import '../recording_time_picker.dart';
 
 /// 活动记录页：节奏 → 适用子选项 → 事项 → 时间。
 ///
@@ -117,12 +117,25 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
     }
   }
 
-  Future<void> _time() async {
-    final result = await showActivityTimeSheet(
+  Future<void> _time({bool isStart = true, bool isDate = false}) async {
+    final picker = isDate ? showRecordingDatePicker : showRecordingTimePicker;
+    final result = await picker(
+      context,
+      value: isStart ? model.time.startedAt : model.time.endedAt,
+      date: model.context.date,
+    );
+    if (!mounted || result == null) return;
+    model.setTime(
+      start: isStart ? result : model.time.startedAt,
+      end: isStart ? model.time.endedAt : result,
+    );
+  }
+
+  Future<void> _duration() async {
+    final result = await showRecordingDurationPicker(
       context,
       startedAt: model.time.startedAt,
       endedAt: model.time.endedAt,
-      date: model.context.date,
     );
     if (!mounted || result == null) return;
     model.setTime(start: result.start, end: result.end);
@@ -691,20 +704,37 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
                     ? () => model.chooseCandidate(candidate)
                     : null,
                 child: Text(
-                  activityTimeSummary(candidate.startedAt, candidate.endedAt),
+                  '${formatRecordingTime(candidate.startedAt)} → ${formatRecordingTime(candidate.endedAt)}',
                 ),
               ),
             ),
         ],
         const SizedBox(height: 16),
-        _endpoint('开始', start, 'activity-start', () => _time()),
-        _endpoint('结束', end, 'activity-end', () => _time()),
+        _endpoint(
+          '开始',
+          start,
+          'activity-start',
+          () => _time(),
+          () => _time(isDate: true),
+        ),
+        _endpoint(
+          '结束',
+          end,
+          'activity-end',
+          () => _time(isStart: false),
+          () => _time(isStart: false, isDate: true),
+        ),
         const SizedBox(height: 16),
         Center(
-          child: Text(
-            duration == null ? '选择两端后显示时长' : '共 $duration',
+          child: TextButton(
             key: const ValueKey('activity-time-summary'),
-            style: _hint,
+            onPressed: model.editable && (start != null || end != null)
+                ? _duration
+                : null,
+            child: Text(
+              duration == null ? '调整时长' : '共 $duration',
+              style: _hint,
+            ),
           ),
         ),
         if (showErrors && model.timeError != null) ...[
@@ -730,51 +760,68 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
     );
   }
 
-  Widget _endpoint(String name, int? value, String key, VoidCallback onTap) =>
-      Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: HomePalette.hairline)),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _endpoint(
+    String name,
+    int? value,
+    String key,
+    VoidCallback onTap,
+    VoidCallback onDate,
+  ) => Container(
+    decoration: const BoxDecoration(
+      border: Border(top: BorderSide(color: HomePalette.hairline)),
+    ),
+    padding: const EdgeInsets.symmetric(vertical: 10),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(name, style: _label),
+        Row(
           children: [
-            Text(name, style: _label),
-            Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    key: ValueKey('$key-row'),
-                    onTap: model.editable ? onTap : null,
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: 52),
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        value == null
-                            ? '选时间'
-                            : formatRecordingTime(value).split(' ').last,
-                        style: const TextStyle(
-                          fontFamily: homeSerifFamily,
-                          fontSize: 32,
-                          height: 1.2,
-                          fontWeight: FontWeight.w600,
-                          color: HomePalette.ink,
-                        ),
-                      ),
+            Expanded(
+              child: InkWell(
+                key: ValueKey('$key-time'),
+                onTap: model.editable ? onTap : null,
+                child: Container(
+                  constraints: const BoxConstraints(minHeight: 52),
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value == null
+                        ? '选时间'
+                        : formatRecordingTime(value).split(' ').last,
+                    style: const TextStyle(
+                      fontFamily: homeSerifFamily,
+                      fontSize: 32,
+                      height: 1.2,
+                      fontWeight: FontWeight.w600,
+                      color: HomePalette.ink,
                     ),
                   ),
                 ),
-                if (value != null)
-                  Text(
-                    '${DateTime.fromMillisecondsSinceEpoch(value).month}月'
-                    '${DateTime.fromMillisecondsSinceEpoch(value).day}日',
-                    style: _hint,
-                  ),
-              ],
+              ),
+            ),
+            InkWell(
+              key: ValueKey('$key-date'),
+              onTap: model.editable ? onDate : null,
+              child: Container(
+                constraints: const BoxConstraints(minHeight: 44),
+                alignment: Alignment.centerRight,
+                child: Text(
+                  value == null ? '选日期' : _endpointDate(value),
+                  style: _hint,
+                ),
+              ),
             ),
           ],
         ),
-      );
+      ],
+    ),
+  );
+
+  String _endpointDate(int value) {
+    final date = DateTime.fromMillisecondsSinceEpoch(value);
+    final year = date.year == model.context.date.year ? '' : '${date.year}年';
+    return '$year${date.month}月${date.day}日';
+  }
 
   String _activityQuestion() => switch (model.rhythmState) {
     RhythmState.progress => '这段推进了什么？',

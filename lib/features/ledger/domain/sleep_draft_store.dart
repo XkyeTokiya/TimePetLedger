@@ -2,6 +2,7 @@ import '../../../core/identity/entity_id.dart';
 import '../../../core/time/civil_date.dart';
 import '../../../core/time/time_contract.dart';
 import 'sleep_type.dart';
+import 'sleep_prediction.dart';
 import 'time_precision.dart';
 
 /// 输入上下文，不是 SleepSession 的生命周期状态。
@@ -30,6 +31,7 @@ final class SleepDraft {
     this.endedAtInput,
     this.note,
     this.noteProvided = false,
+    this.predictionOrigin,
   });
 
   final SleepDraftContext context;
@@ -49,6 +51,7 @@ final class SleepDraft {
   /// entry existed. An omitted edit must preserve the current formal note.
   final String? note;
   final bool noteProvided;
+  final SleepPredictionOrigin? predictionOrigin;
 }
 
 abstract interface class SleepDraftStore {

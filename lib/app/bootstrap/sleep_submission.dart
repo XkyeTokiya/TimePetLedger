@@ -5,6 +5,8 @@ import '../time/device_recording_date.dart';
 import '../../features/ledger/application/sleep_ledger_loader.dart';
 import '../../features/ledger/data/drift_ledger_repository.dart';
 import '../../features/ledger/domain/sleep_draft_store.dart';
+import '../../features/ledger/domain/sleep_learning_store.dart';
+import '../time/device_sleep_prediction_calendar.dart';
 import 'recording_submission.dart' show newLocalTimeBlockId;
 
 SleepEntrySaver createSleepEntrySaver({
@@ -19,6 +21,8 @@ SleepEntrySaver createSleepEntrySaver({
   // Reuse the existing app-local UUID v4 generator for this independent fact.
   newId: newLocalTimeBlockId,
   now: () => clock().millisecondsSinceEpoch,
+  learning: drafts is SleepLearningStore ? drafts as SleepLearningStore : null,
+  offsetMinutes: const DeviceSleepPredictionCalendar().offsetMinutes,
 );
 
 SleepEntryEditor createSleepEntryEditor(SleepEntrySaver saver) =>

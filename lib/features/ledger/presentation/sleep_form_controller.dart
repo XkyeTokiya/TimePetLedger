@@ -3,10 +3,13 @@ import 'package:flutter/foundation.dart';
 import '../application/sleep_entry_saver.dart';
 import '../application/sleep_entry_editor.dart';
 import '../application/sleep_ledger_loader.dart';
+import '../application/recording_time_suggestion.dart';
+import '../application/sleep_time_prediction_loader.dart';
 import '../domain/ledger_conflicts.dart';
 import '../domain/sleep_draft_store.dart';
 import '../domain/sleep_session.dart';
 import '../domain/sleep_type.dart';
+import '../domain/sleep_prediction.dart';
 import '../domain/time_precision.dart';
 import 'sleep_time_input.dart';
 
@@ -18,6 +21,8 @@ class SleepFormController extends ChangeNotifier {
     this.original,
     this.entrySaver,
     this.entryEditor,
+    this.loadSuggestion,
+    this.loadPredictions,
   }) {
     if (context.isEditing &&
             entryEditor == null &&
@@ -30,6 +35,11 @@ class SleepFormController extends ChangeNotifier {
 
   final SleepDraftContext context;
   final SleepDraftStore store;
+  final Future<RecordingTimeSuggestion> Function()? loadSuggestion;
+  final Future<SleepTimePredictions> Function()? loadPredictions;
+  SleepTimePredictions? _predictions;
+  SleepPredictionOrigin? _predictionOrigin;
+  bool _timeManuallyChanged = false;
   SleepSession? original;
   final SleepEntryEditor? entryEditor;
   SleepDeleteCommitted? deleted;
@@ -69,6 +79,7 @@ class SleepFormController extends ChangeNotifier {
     // A late/repeated restore must never overwrite the user's current input.
     if (_initialized || _initializing || _disposed) return;
     _initializing = true;
+    var initializedTime = false;
     loading = true;
     loadError = null;
     missingOriginal = false;
@@ -90,6 +101,7 @@ class SleepFormController extends ChangeNotifier {
       startPrecision = saved?.startPrecision;
       endPrecision = saved?.endPrecision;
       type = saved?.type;
+      _predictionOrigin = saved?.predictionOrigin;
       if (saved == null) {
         startedAt = original?.startedAt;
         endedAt = original?.endedAt;
@@ -113,13 +125,42 @@ class SleepFormController extends ChangeNotifier {
         }
         if (_disposed) return;
       }
+      if (!context.isEditing && committed == null && loadPredictions != null) {
+        _predictions = await loadPredictions!();
+        if (_disposed) return;
+        _applyPrediction(_predictions!.forType(type ?? SleepType.mainSleep));
+        initializedTime = true;
+      } else if (!context.isEditing &&
+          committed == null &&
+          loadSuggestion != null) {
+        final suggestion = await loadSuggestion!();
+        if (_disposed) return;
+        if (suggestion case DirectTimeSuggestion(:final input)) {
+          startedAt = input.startedAt;
+          endedAt = input.endedAt;
+          startedAtInput = formatSleepTime(startedAt);
+          endedAtInput = formatSleepTime(endedAt);
+          startPrecision = input.startPrecision;
+          endPrecision = input.endPrecision;
+          initializedTime = true;
+        } else if (suggestion is ManualTimeEntry) {
+          startedAt = null;
+          endedAt = null;
+          startedAtInput = '';
+          endedAtInput = '';
+          startPrecision = TimePrecision.approximate;
+          endPrecision = TimePrecision.approximate;
+          initializedTime = restored;
+        }
+      }
       _initialized = true;
     } catch (_) {
-      loadError = context.isEditing ? '无法读取睡眠记录或草稿，请重试。' : '无法读取睡眠草稿，请重试。';
+      loadError = context.isEditing ? '无法读取睡眠记录或草稿，请重试。' : '无法读取睡眠草稿或时间建议，请重试。';
     } finally {
       _initializing = false;
       loading = false;
       _emit();
+      if (!_disposed && initializedTime && loadError == null) _persist();
     }
   }
 
@@ -137,6 +178,7 @@ class SleepFormController extends ChangeNotifier {
   void setStartedAtInput(String value) {
     if (!editable) return;
     startedAtInput = value;
+    _timeManuallyChanged = true;
     startedAt = parseSleepTime(value);
     _persist();
   }
@@ -144,14 +186,39 @@ class SleepFormController extends ChangeNotifier {
   void setEndedAtInput(String value) {
     if (!editable) return;
     endedAtInput = value;
+    _timeManuallyChanged = true;
     endedAt = parseSleepTime(value);
+    _persist();
+  }
+
+  /// 组件直接应用绝对时间，显示到分钟不舍入未改动的事实边界。
+  void setTime({required int? start, required int? end}) {
+    if (!editable) return;
+    _timeManuallyChanged = true;
+    startedAt = start;
+    endedAt = end;
+    startedAtInput = formatSleepTime(start);
+    endedAtInput = formatSleepTime(end);
     _persist();
   }
 
   void setType(SleepType value) {
     if (!editable) return;
     type = value;
+    if (!_timeManuallyChanged && _predictions != null) {
+      _applyPrediction(_predictions!.forType(value));
+    }
     _persist();
+  }
+
+  void _applyPrediction(SleepPredictionOrigin prediction) {
+    _predictionOrigin = prediction;
+    startedAt = prediction.startedAt;
+    endedAt = prediction.endedAt;
+    startedAtInput = formatSleepTime(startedAt);
+    endedAtInput = formatSleepTime(endedAt);
+    startPrecision = TimePrecision.approximate;
+    endPrecision = TimePrecision.approximate;
   }
 
   void setNote(String value) {
@@ -195,6 +262,7 @@ class SleepFormController extends ChangeNotifier {
     endedAtInput: endedAtInput,
     note: note,
     noteProvided: _noteProvided,
+    predictionOrigin: _predictionOrigin,
   );
 
   void _persist() {

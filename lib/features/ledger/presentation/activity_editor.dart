@@ -13,7 +13,7 @@ import '../domain/recording_draft_store.dart';
 import '../domain/rhythm_details.dart';
 import '../domain/rhythm_state.dart';
 import '../domain/time_precision.dart';
-import 'activity_time_sheet.dart';
+import 'recording_time_picker.dart';
 import 'recording_form_controller.dart';
 import 'sleep_time_input.dart';
 import 'summary_formatting.dart';
@@ -113,12 +113,18 @@ class _ActivityEditorState extends State<ActivityEditor> {
     if (mounted) focus?.requestFocus();
   }
 
-  Future<void> editTime() async {
-    FocusScope.of(context).unfocus();
-    final value = await showActivityTimeSheet(context, model.time);
+  Future<void> editTime({bool isStart = true, bool isDate = false}) async {
+    final picker = isDate ? showRecordingDatePicker : showRecordingTimePicker;
+    final value = await picker(
+      context,
+      value: isStart ? model.time.startedAt : model.time.endedAt,
+      date: model.context.date,
+    );
     if (!mounted || value == null) return;
-    model.setTime(start: value.startedAt, end: value.endedAt);
-    model.setPrecision(start: value.startPrecision, end: value.endPrecision);
+    model.setTime(
+      start: isStart ? value : model.time.startedAt,
+      end: isStart ? model.time.endedAt : value,
+    );
   }
 
   Future<void> save() async {
@@ -341,10 +347,6 @@ class _ActivityEditorState extends State<ActivityEditor> {
     final value = model.time;
     final start = value.startedAt;
     final end = value.endedAt;
-    final d = start == null ? null : DateTime.fromMillisecondsSinceEpoch(start);
-    final date = d == null
-        ? '${model.context.date.month}月${model.context.date.day}日'
-        : '${d.month}月${d.day}日';
     final duration = start != null && end != null && end > start
         ? formatDerivedDuration(
             DerivedDuration(
@@ -359,52 +361,23 @@ class _ActivityEditorState extends State<ActivityEditor> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         line(),
-        InkWell(
-          key: const ValueKey('activity-time-summary'),
-          onTap: model.editable ? editTime : null,
-          child: Padding(
-            padding: EdgeInsets.only(
-              top: 17,
-              bottom: model.rhythmState == null ? 17 : 9,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(date, style: text(15, color: colors.onSurfaceVariant)),
-                const SizedBox(height: 4),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final label = activityInterval(value);
-                    final interval = Text(
-                      label,
-                      style: text(26, weight: FontWeight.w500),
-                    );
-                    if (constraints.maxWidth < 310 ||
-                        MediaQuery.textScalerOf(context).scale(1) > 1.2 ||
-                        label.length > 19) {
-                      return Wrap(
-                        spacing: 12,
-                        crossAxisAlignment: WrapCrossAlignment.center,
-                        children: [
-                          interval,
-                          Text(duration, style: text(18)),
-                        ],
-                      );
-                    }
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Expanded(child: interval),
-                        Text(duration, style: text(18)),
-                      ],
-                    );
-                  },
-                ),
-              ],
+        for (final isStart in [true, false])
+          RecordingEndpointFields(
+            label: isStart ? '开始' : '结束',
+            value: isStart ? start : end,
+            keyPrefix: isStart ? 'activity-start' : 'activity-end',
+            enabled: model.editable,
+            onDate: () => editTime(isStart: isStart, isDate: true),
+            onTime: () => editTime(isStart: isStart),
+            precision: isStart
+                ? model.time.startPrecision
+                : model.time.endPrecision,
+            onPrecision: (precision) => model.setPrecision(
+              start: isStart ? precision : null,
+              end: isStart ? null : precision,
             ),
           ),
-        ),
+        if (duration.isNotEmpty) Text(duration, style: text(18)),
         line(),
         if (model.candidates.isNotEmpty) ...[
           const SizedBox(height: 8),

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/widgets/editor_body.dart';
 import '../domain/projection/derived_duration.dart';
 import 'summary_formatting.dart';
-import 'editor_time_page.dart';
+import 'recording_time_picker.dart';
 import 'recording_optional_section.dart';
 
 import '../domain/ledger_conflicts.dart';
@@ -22,35 +22,29 @@ class SleepForm extends StatefulWidget {
 
 class _SleepFormState extends State<SleepForm> {
   SleepFormController get model => widget.controller;
-  final start = TextEditingController();
-  final end = TextEditingController();
   final note = TextEditingController();
   bool allowPop = false;
   bool exiting = false;
   bool showErrors = false;
 
-  Future<void> _times() async {
-    FocusManager.instance.primaryFocus?.unfocus();
-    final result = await Navigator.of(context).push<EditorTimes>(
-      MaterialPageRoute(
-        builder: (_) => EditorTimePage(
-          date: model.context.date,
-          sleep: true,
-          initial: (
-            start: start.text,
-            end: end.text,
-            startPrecision: model.startPrecision,
-            endPrecision: model.endPrecision,
-          ),
-        ),
-      ),
+  Future<void> _time(bool isStart, {bool isDate = false}) async {
+    final picker = isDate ? showRecordingDatePicker : showRecordingTimePicker;
+    final value = await picker(
+      context,
+      value: isStart ? model.startedAt : model.endedAt,
+      date: model.context.date,
     );
-    if (!mounted || result == null) return;
-    start.text = result.start;
-    end.text = result.end;
-    model.setStartedAtInput(result.start);
-    model.setEndedAtInput(result.end);
-    model.setPrecision(start: result.startPrecision, end: result.endPrecision);
+    if (!mounted || value == null) return;
+    model.setTime(
+      start: isStart ? value : model.startedAt,
+      end: isStart ? model.endedAt : value,
+    );
+    if (model.startPrecision == null || model.endPrecision == null) {
+      model.setPrecision(
+        start: model.startPrecision ?? TimePrecision.approximate,
+        end: model.endPrecision ?? TimePrecision.approximate,
+      );
+    }
   }
 
   @override
@@ -63,8 +57,6 @@ class _SleepFormState extends State<SleepForm> {
   Future<void> _initialize() async {
     await model.initialize();
     if (!mounted) return;
-    start.text = model.startedAtInput;
-    end.text = model.endedAtInput;
     note.text = model.note;
     setState(() {});
   }
@@ -76,8 +68,6 @@ class _SleepFormState extends State<SleepForm> {
   @override
   void dispose() {
     model.removeListener(_changed);
-    start.dispose();
-    end.dispose();
     note.dispose();
     super.dispose();
   }
@@ -251,44 +241,50 @@ class _SleepFormState extends State<SleepForm> {
                   for (final isStart in [true, false]) ...[
                     const SizedBox(height: 16),
                     Card(
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.all(16),
-                        onTap: model.editable ? _times : null,
-                        title: Text(
-                          '${isStart ? '入睡' : '醒来'}${parseSleepTime((isStart ? start : end).text) == null ? '' : ' · ${(isStart ? start : end).text.split(' ').first}'}',
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: RecordingEndpointFields(
+                          label: isStart ? '入睡' : '醒来',
+                          value: isStart ? model.startedAt : model.endedAt,
+                          keyPrefix: isStart ? 'sleep-start' : 'sleep-end',
+                          enabled: model.editable,
+                          onDate: () => _time(isStart, isDate: true),
+                          onTime: () => _time(isStart),
                         ),
-                        subtitle: Text(
-                          (isStart ? start : end).text.isEmpty
-                              ? '选择${isStart ? '入睡' : '醒来'}时间'
-                              : parseSleepTime((isStart ? start : end).text) !=
-                                    null
-                              ? (isStart ? start : end).text.split(' ').last
-                              : (isStart ? start : end).text,
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(
-                                fontSize: 32,
-                                color: isStart
-                                    ? Theme.of(context).colorScheme.secondary
-                                    : null,
-                              ),
-                        ),
-                        trailing: const Icon(Icons.chevron_right),
                       ),
                     ),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        for (final precision in TimePrecision.values)
+                          ChoiceChip(
+                            label: Text(
+                              '${isStart ? '入睡' : '醒来'}${precision == TimePrecision.exact ? '准确' : '大约'}',
+                            ),
+                            selected:
+                                (isStart
+                                    ? model.startPrecision
+                                    : model.endPrecision) ==
+                                precision,
+                            onSelected: model.editable
+                                ? (_) => model.setPrecision(
+                                    start: isStart ? precision : null,
+                                    end: isStart ? null : precision,
+                                  )
+                                : null,
+                          ),
+                      ],
+                    ),
                   ],
-                  if (parseSleepTime(start.text) != null &&
-                      parseSleepTime(end.text) != null &&
-                      parseSleepTime(end.text)! > parseSleepTime(start.text)!)
+                  if (model.startedAt != null &&
+                      model.endedAt != null &&
+                      model.endedAt! > model.startedAt!)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       child: Text(
-                        '完整时长  ${formatDerivedDuration(DerivedDuration(milliseconds: parseSleepTime(end.text)! - parseSleepTime(start.text)!, hasApproximation: model.startPrecision == TimePrecision.approximate || model.endPrecision == TimePrecision.approximate))}',
+                        '完整时长  ${formatDerivedDuration(DerivedDuration(milliseconds: model.endedAt! - model.startedAt!, hasApproximation: model.startPrecision == TimePrecision.approximate || model.endPrecision == TimePrecision.approximate))}',
                       ),
                     ),
-                  OutlinedButton(
-                    onPressed: model.editable ? _times : null,
-                    child: const Text('调整入睡与醒来'),
-                  ),
                   if (showErrors && model.type == null) const Text('请选择睡眠类型。'),
                   if (showErrors &&
                       (model.startPrecision == null ||

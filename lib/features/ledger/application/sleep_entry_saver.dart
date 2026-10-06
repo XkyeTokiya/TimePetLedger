@@ -5,6 +5,8 @@ import '../domain/ledger_conflicts.dart';
 import '../domain/ledger_repository.dart';
 import '../domain/sleep_draft_store.dart';
 import '../domain/sleep_session.dart';
+import '../domain/sleep_learning_store.dart';
+import '../domain/sleep_prediction.dart';
 import 'sleep_ledger_loader.dart';
 
 typedef SleepLedgerRefresh = Future<SleepLedger> Function({
@@ -49,12 +51,16 @@ final class SleepEntrySaver {
     required this.refresh,
     required this.newId,
     required this.now,
+    this.learning,
+    this.offsetMinutes,
   });
   final LedgerRepository repository;
   final SleepDraftStore drafts;
   final SleepLedgerRefresh refresh;
   final EntityId Function() newId;
   final InstantMilliseconds Function() now;
+  final SleepLearningStore? learning;
+  final int Function(int instant)? offsetMinutes;
 
   /// Detect a residual draft already represented by the same complete fact.
   /// This recovery read never replaces the create transaction's conflict check.
@@ -128,7 +134,25 @@ final class SleepEntrySaver {
     var cleared = draftCleared;
     if (!cleared) {
       try {
-        await drafts.clear(context);
+        if (learning != null) {
+          final draft = await drafts.read(context);
+          final origin = draft?.predictionOrigin;
+          await learning!.completeSleepDraft(
+            context: context,
+            feedback: origin == null || offsetMinutes == null
+                ? null
+                : SleepPredictionFeedback(
+                    sleepId: sleepSession.id,
+                    origin: origin,
+                    startedAt: sleepSession.startedAt,
+                    endedAt: sleepSession.endedAt,
+                    startOffsetMinutes: offsetMinutes!(sleepSession.startedAt),
+                    endOffsetMinutes: offsetMinutes!(sleepSession.endedAt),
+                  ),
+          );
+        } else {
+          await drafts.clear(context);
+        }
         cleared = true;
       } catch (_) {
         // The draft store is independent of the committed formal transaction.

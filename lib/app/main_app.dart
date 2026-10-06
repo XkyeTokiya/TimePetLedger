@@ -275,16 +275,10 @@ class _RecordingHomeState extends State<_RecordingHome>
     context: RecordingDraftContext.newEntry(date: date),
     store: widget.drafts,
     entrySaver: widget.entrySaver,
-    loadSuggestion: () async {
-      final ledger = await widget.ledger.load(
-        date: date,
-        now: widget.now().millisecondsSinceEpoch,
-      );
-      return suggestRecordingTime(
-        relation: ledger.context.relation,
-        coverage: ledger.coverage,
-      );
-    },
+    loadSuggestion: () => widget.ledger.loadTimeSuggestion(
+      date: date,
+      now: widget.now().millisecondsSinceEpoch,
+    ),
   );
 
   Future<void> _pushSleep(CivilDate date) async {
@@ -422,17 +416,11 @@ class _RecordingHomeState extends State<_RecordingHome>
             ),
             store: widget.drafts,
             entrySaver: widget.entrySaver,
-            loadSuggestion: () async {
-              final ledger = await widget.ledger.load(
-                date: date,
-                now: widget.now().millisecondsSinceEpoch,
-              );
-              return suggestRecordingTime(
-                relation: ledger.context.relation,
-                coverage: ledger.coverage,
-                explicitGap: gap,
-              );
-            },
+            loadSuggestion: () => widget.ledger.loadTimeSuggestion(
+              date: date,
+              now: widget.now().millisecondsSinceEpoch,
+              explicitGap: gap,
+            ),
           ),
         ),
       );

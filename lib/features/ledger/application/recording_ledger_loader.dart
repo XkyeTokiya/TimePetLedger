@@ -4,6 +4,7 @@ import '../domain/ledger_repository.dart';
 import '../domain/projection/ledger_coverage.dart';
 import '../domain/projection/ledger_segment.dart';
 import '../domain/projection/reconciliation_window.dart';
+import 'recording_time_suggestion.dart';
 
 /// 一次加载使用的日期上下文；设备适配在 I/O 前同步解析，不缓存时区。
 final class RecordingDateContext {
@@ -56,6 +57,28 @@ final class RecordingLedgerLoader {
 
   final LedgerRepository repository;
   final RecordingDateResolver resolveDate;
+
+  Future<RecordingTimeSuggestion> loadTimeSuggestion({
+    required CivilDate date,
+    required InstantMilliseconds now,
+    UnresolvedSpan? explicitGap,
+    bool preferClosedGaps = false,
+  }) async {
+    final context = resolveDate(date: date, now: now);
+    final facts = await repository.readRecordingContext(
+      startedAt: context.dayStartedAt,
+      endedAt: context.nextDayStartedAt,
+    );
+    return suggestRecordingTimeFromFacts(
+      relation: context.relation,
+      now: now,
+      dayStartedAt: context.dayStartedAt,
+      nextDayStartedAt: context.nextDayStartedAt,
+      facts: facts,
+      explicitGap: explicitGap,
+      preferClosedGaps: preferClosedGaps,
+    );
+  }
 
   /// 每次重新读取同一事务的完整相交事实，不混入草稿或过滤 Goal / 节奏。
   /// 调用方每次显式提供 now（包括保存后刷新）。失败原样抛出，不返回

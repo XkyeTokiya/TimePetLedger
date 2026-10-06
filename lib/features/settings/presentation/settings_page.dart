@@ -1,3 +1,6 @@
+import '../../ledger/presentation/recording_time_picker.dart'
+    show showLedgerClockPicker;
+
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/home_theme.dart';
@@ -331,7 +334,6 @@ class _SettingsPageState extends State<SettingsPage> {
             minutes: prefs.sleepReminderMinutes ?? defaultSleepReminderMinutes,
             enabled: prefs.reminders != false && !busy,
             onTap: () => _pickReminderTime(
-              key: 'settings-sleep-reminder',
               current:
                   prefs.sleepReminderMinutes ?? defaultSleepReminderMinutes,
               onPicked: (minutes) => _savePreference(
@@ -346,7 +348,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 prefs.reviewReminderMinutes ?? defaultReviewReminderMinutes,
             enabled: prefs.reminders != false && !busy,
             onTap: () => _pickReminderTime(
-              key: 'settings-review-reminder',
               current:
                   prefs.reviewReminderMinutes ?? defaultReviewReminderMinutes,
               onPicked: (minutes) => _savePreference(
@@ -520,16 +521,14 @@ class _SettingsPageState extends State<SettingsPage> {
   );
 
   Future<void> _pickReminderTime({
-    required String key,
     required int current,
     required void Function(int minutes) onPicked,
   }) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(hour: current ~/ 60, minute: current % 60),
-      helpText: '选择提醒时点',
+    final picked = await showLedgerClockPicker(
+      context,
+      initial: TimeOfDay(hour: current ~/ 60, minute: current % 60),
     );
-    if (picked == null) return;
+    if (!mounted || picked == null) return;
     onPicked(picked.hour * 60 + picked.minute);
   }
 

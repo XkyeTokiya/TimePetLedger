@@ -19,6 +19,19 @@ abstract interface class LedgerRepository {
     required InstantMilliseconds endedAt,
   });
 
+  /// 窗口内完整事实及两侧最近的真实记录，跨自然日寻找边界。
+  /// 空窗口可用于查询时点邻居；不把午夜或查询窗口端点当成事实。
+  Future<List<LedgerFactInterval>> readRecordingContext({
+    required InstantMilliseconds startedAt,
+    required InstantMilliseconds endedAt,
+  });
+
+  /// Complete, finished sleep facts, newest first. The prediction model selects
+  /// its bounded training window after distinguishing independent/weak evidence.
+  Future<List<SleepSession>> readSleepHistory({
+    required InstantMilliseconds now,
+  });
+
   /// 同一事务读取 W 的事实与醒来日期的完整睡眠候选。
   /// 日边界由设备日期适配显式提供，候选 endedAt ∈ [dayStart, nextDay)。
   /// W 必须位于该日内，可为空；空 W 仍查询摘要并暴露读取失败。
