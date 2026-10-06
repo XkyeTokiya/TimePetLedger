@@ -109,6 +109,20 @@ ON CONFLICT(context_key) DO UPDATE SET
   Future<void> close() =>
       _closing ??= _run(ReviewDraftOperation.close, _database.close);
 
+  /// 高级设置数据概况：现存草稿数（Q-034）。
+  Future<int> countAll() => _run(ReviewDraftOperation.read, () async {
+    final row = await _database
+        .customSelect('SELECT COUNT(*) AS c FROM review_drafts')
+        .getSingle();
+    return row.read<int>('c');
+  });
+
+  /// 高级设置清空：删除全部草稿，不影响正式事实。
+  Future<void> clearAll() => _run(
+    ReviewDraftOperation.clear,
+    () => _database.customStatement('DELETE FROM review_drafts'),
+  );
+
   Future<T> _run<T>(
     ReviewDraftOperation operation,
     Future<T> Function() action,

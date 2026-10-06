@@ -6,7 +6,7 @@ import '../../features/ledger/application/sleep_entry_saver.dart';
 import '../../features/ledger/application/sleep_entry_editor.dart';
 import '../../features/ledger/data/drift_sleep_draft_store.dart';
 import '../../features/ledger/domain/sleep_draft_store.dart';
-import '../../features/ledger/presentation/sleep_form.dart';
+import '../../features/ledger/presentation/sleep/sleep_recording_page.dart';
 import '../../features/ledger/presentation/sleep_form_controller.dart';
 
 /// App-owned route lifetime: open a dedicated store, drain writes, then close.
@@ -99,7 +99,7 @@ class _SleepEntryState extends State<SleepEntry> {
   @override
   Widget build(BuildContext context) {
     if (_controller case final controller?) {
-      return SleepForm(controller: controller);
+      return SleepRecordingPage(controller: controller);
     }
     return Scaffold(
       appBar: AppBar(title: const Text('记录睡眠')),

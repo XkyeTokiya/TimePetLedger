@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'theme/time_ledger_theme.dart';
-import 'navigation/ledger_shell.dart';
 import '../features/ledger/presentation/day_date_selection.dart';
 import '../features/ledger/presentation/day_read_scroll.dart';
-import '../features/ledger/presentation/sleep_summary_view.dart';
 import '../features/ledger/domain/sleep_session.dart';
 
 import '../features/goals/domain/goal_repository.dart';
@@ -14,8 +12,12 @@ import '../features/review/domain/review_draft_store.dart';
 import '../features/review/presentation/review_context_page.dart';
 
 import '../features/ledger/application/day_ledger_loader.dart';
-import '../features/ledger/presentation/day_ledger_page.dart';
-import '../features/ledger/presentation/day_summary_page.dart';
+import '../features/ledger/presentation/day_ledger_controller.dart';
+import '../features/ledger/presentation/home/home_review_card.dart';
+import '../features/ledger/presentation/home/home_shell.dart';
+import '../features/ledger/presentation/home/home_summary_tab.dart';
+import '../features/ledger/presentation/home/home_timeline_tab.dart';
+import '../features/ledger/domain/projection/ledger_coverage.dart';
 import '../features/ledger/domain/projection/ledger_segment.dart';
 
 import 'time/device_recording_date.dart';
@@ -29,7 +31,7 @@ import '../features/ledger/application/recording_time_suggestion.dart';
 import '../features/ledger/application/sleep_ledger_loader.dart';
 import '../features/ledger/domain/recording_draft_store.dart';
 import '../features/ledger/domain/sleep_draft_store.dart';
-import '../features/ledger/presentation/recording_form.dart';
+import '../features/ledger/presentation/activity/activity_recording_entry.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({
@@ -47,9 +49,11 @@ class MainApp extends StatefulWidget {
     this.reviewDrafts,
     this.reviewSaver,
     this.goalEntry,
+    this.settingsEntry,
     this.goals,
   });
   final Widget Function()? goalEntry;
+  final Widget Function()? settingsEntry;
   final GoalRepository? goals;
   final DayLedgerLoader? dayLedger;
   final ReviewContextLoader? reviewContext;
@@ -77,6 +81,7 @@ class _MainAppState extends State<MainApp> {
     home: _RecordingHome(
       goals: widget.goals,
       goalEntry: widget.goalEntry,
+      settingsEntry: widget.settingsEntry,
       dayLedger: widget.dayLedger,
       reviewContext: widget.reviewContext,
       reviewDrafts: widget.reviewDrafts,
@@ -110,9 +115,11 @@ class _RecordingHome extends StatefulWidget {
     required this.reviewSaver,
     required this.dayRoutes,
     required this.goalEntry,
+    required this.settingsEntry,
     required this.goals,
   });
   final Widget Function()? goalEntry;
+  final Widget Function()? settingsEntry;
   final GoalRepository? goals;
   final DayLedgerLoader? dayLedger;
   final ReviewContextLoader? reviewContext;
@@ -134,9 +141,8 @@ class _RecordingHome extends StatefulWidget {
 class _RecordingHomeState extends State<_RecordingHome>
     with WidgetsBindingObserver, RouteAware {
   final selection = DayDateSelection();
-  final ledgerPageKey = GlobalKey<DayLedgerPageState>();
+  final homeShellKey = GlobalKey<HomeShellState>();
   final scrollSession = DayReadScrollSession();
-  bool reviewSelected = false;
   bool opening = false;
   bool ledgerInteraction = false;
   bool reviewInteraction = false;
@@ -276,7 +282,7 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  Widget _activity(CivilDate date) => RecordingForm(
+  Widget _activity(CivilDate date) => ActivityRecordingEntry(
     goals: widget.goals,
     context: RecordingDraftContext.newEntry(date: date),
     store: widget.drafts,
@@ -342,27 +348,33 @@ class _RecordingHomeState extends State<_RecordingHome>
     ),
   );
 
-  Future<void> _create() async {
+  Future<void> _recordActivity() async {
     if (busy) return;
     final date = selectedDate;
     setState(() => opening = true);
     try {
-      final choice = await _choices('记录一笔', [
-        (text: '记录活动', icon: Icons.article_outlined),
-        (text: '记录睡眠', icon: Icons.bedtime_outlined),
-      ]);
-      if (!mounted) return;
-      if (choice == '记录活动') {
-        final result = await Navigator.of(context).push<RecordingLedger>(
-          MaterialPageRoute(builder: (_) => _activity(date)),
-        );
-        if (mounted && result != null) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('已保存到账本。')));
-        }
-      } else if (choice == '记录睡眠') {
-        await _pushSleep(date);
+      final result = await Navigator.of(context).push<RecordingLedger>(
+        MaterialPageRoute(builder: (_) => _activity(date)),
+      );
+      if (mounted && result != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('已保存到账本。')));
       }
+    } finally {
+      if (mounted) {
+        setState(() => opening = false);
+        selection.refresh();
+        await _checkSleepOnReturn();
+      }
+    }
+  }
+
+  Future<void> _recordSleep() async {
+    if (busy) return;
+    final date = selectedDate;
+    setState(() => opening = true);
+    try {
+      await _pushSleep(date);
     } finally {
       if (mounted) {
         setState(() => opening = false);
@@ -377,35 +389,24 @@ class _RecordingHomeState extends State<_RecordingHome>
     setState(() => opening = true);
     try {
       final choice = await _choices('更多', [
-        if (!reviewSelected) (text: '刷新账本', icon: Icons.refresh),
-        if (!reviewSelected) (text: '时间分布说明', icon: Icons.info_outline),
-        if (widget.dayLedger != null)
-          (text: '当日摘要', icon: Icons.summarize_outlined),
+        (text: '刷新账本', icon: Icons.refresh),
+        (text: '时间分布说明', icon: Icons.info_outline),
         if (widget.goalEntry != null) (text: '目标管理', icon: Icons.flag_outlined),
+        if (widget.settingsEntry != null)
+          (text: '设置', icon: Icons.settings_outlined),
       ]);
       if (!mounted) return;
       if (choice == '刷新账本') {
-        ledgerPageKey.currentState?.refreshFromMenu();
+        homeShellKey.currentState?.refreshFromMenu();
       } else if (choice == '时间分布说明') {
-        ledgerPageKey.currentState?.showDistribution();
-      } else if (choice == '当日摘要') {
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute(
-            builder: (_) => DaySummaryPage(
-              loader: widget.dayLedger!,
-              now: () => widget.now().millisecondsSinceEpoch,
-              dateOfInstant: deviceDateOfInstant,
-              routeObserver: widget.dayRoutes,
-              selection: selection,
-              reviewEntry: widget.reviewContext == null
-                  ? null
-                  : (date) => _reviewPage(date),
-            ),
-          ),
-        );
+        homeShellKey.currentState?.showDistribution();
       } else if (choice == '目标管理') {
         await Navigator.of(context)
             .push<void>(MaterialPageRoute(builder: (_) => widget.goalEntry!()));
+      } else if (choice == '设置') {
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(builder: (_) => widget.settingsEntry!()),
+        );
       }
     } finally {
       if (mounted) {
@@ -416,7 +417,7 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  Widget _reviewPage(CivilDate date, {bool embedded = false}) =>
+  Widget _reviewPage(CivilDate date, {required bool active}) =>
       ReviewContextPage(
         loader: widget.reviewContext!,
         drafts: widget.reviewDrafts,
@@ -427,60 +428,166 @@ class _RecordingHomeState extends State<_RecordingHome>
         routeObserver: widget.dayRoutes,
         initialDate: date,
         selection: selection,
-        embedded: embedded,
-        active: !embedded || reviewSelected,
-        scrollSession: embedded ? scrollSession : null,
-        onInteraction: embedded
-            ? (value) => _interaction(value, review: true)
-            : null,
+        embedded: true,
+        active: active,
+        scrollSession: scrollSession,
+        onInteraction: (value) => _interaction(value, review: true),
       );
 
-  Widget _ledgerPage() => DayLedgerPage(
-    key: ledgerPageKey,
-    loader: widget.dayLedger!,
-    now: () => widget.now().millisecondsSinceEpoch,
-    dateOfInstant: deviceDateOfInstant,
-    routeObserver: widget.dayRoutes,
-    selection: selection,
-    embedded: true,
-    active: !reviewSelected,
-    scrollSession: scrollSession,
-    onInteraction: (value) => _interaction(value, review: false),
-    completeSleep: (date, summary) => SleepSummaryView(
-      summary: summary,
-      onEdit: busy ? null : (sleep) => _editCompleteSleep(date, sleep),
-    ),
-    recordingEditor: widget.entryEditor,
-    factEntry: (date, segment) => switch (segment) {
-      TimeBlockSegment(:final source) => RecordingForm(
-        goals: widget.goals,
-        context: RecordingDraftContext.edit(date: date, timeBlockId: source.id),
-        store: widget.drafts,
-        entryEditor: widget.entryEditor,
-        loadSuggestion: () async => const ManualTimeEntry(),
-      ),
-      SleepSessionSegment(:final source) => widget.sleepEntry(
-        SleepDraftContext.edit(date: date, sleepSessionId: source.id),
-      ),
-    },
-    gapEntry: (draftContext, gap) => RecordingForm(
-      goals: widget.goals,
-      context: draftContext,
-      store: widget.drafts,
-      entrySaver: widget.entrySaver,
-      loadSuggestion: () async {
-        final ledger = await widget.ledger.load(
-          date: draftContext.date,
-          now: widget.now().millisecondsSinceEpoch,
-        );
-        return suggestRecordingTime(
-          relation: ledger.context.relation,
-          coverage: ledger.coverage,
-          explicitGap: gap,
-        );
-      },
-    ),
-  );
+  Widget _ledgerTimeline(DayLedgerController controller, bool active) =>
+      ListenableBuilder(
+        listenable: controller,
+        builder: (context, _) => HomeTimelineTab(
+          view: controller.view,
+          scrollSession: scrollSession,
+          // While an editor or modal is on top the list is not the active
+          // reading surface; on return it restores the saved anchor.
+          active: active && !busy,
+          placeholder: switch (controller.status) {
+            DayLedgerStatus.failed => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('账本读取失败。'),
+                TextButton(
+                  onPressed: busy ? null : controller.refresh,
+                  child: const Text('重试读取'),
+                ),
+              ],
+            ),
+            DayLedgerStatus.empty => const Text('这一天还没有记录。'),
+            _ => const Center(child: CircularProgressIndicator()),
+          },
+          onEditFact: busy ? null : _openFact,
+          onDeleteTimeBlock: busy ? null : _deleteTimeBlock,
+          onFillGap: busy ? null : _openGap,
+          bottomInset: widget.reviewContext == null ? 0 : 88,
+        ),
+      );
+
+  Future<void> _openGap(CivilDate date, UnresolvedSpan gap) async {
+    if (busy) return;
+    setState(() => opening = true);
+    try {
+      final committed = await Navigator.of(context).push<RecordingLedger>(
+        MaterialPageRoute<RecordingLedger>(
+          builder: (_) => ActivityRecordingEntry(
+            goals: widget.goals,
+            context: RecordingDraftContext.gap(
+              date: date,
+              startedAt: gap.startedAt,
+              endedAt: gap.endedAt,
+            ),
+            store: widget.drafts,
+            entrySaver: widget.entrySaver,
+            loadSuggestion: () async {
+              final ledger = await widget.ledger.load(
+                date: date,
+                now: widget.now().millisecondsSinceEpoch,
+              );
+              return suggestRecordingTime(
+                relation: ledger.context.relation,
+                coverage: ledger.coverage,
+                explicitGap: gap,
+              );
+            },
+          ),
+        ),
+      );
+      if (mounted && committed != null) _snack('已保存到账本。');
+    } finally {
+      if (mounted) {
+        setState(() => opening = false);
+        selection.refresh();
+        await _checkSleepOnReturn();
+      }
+    }
+  }
+
+  Future<void> _openFact(CivilDate date, LedgerSegment segment) async {
+    if (busy) return;
+    setState(() => opening = true);
+    try {
+      final committed = await Navigator.of(context).push<Object>(
+        MaterialPageRoute<Object>(
+          builder: (_) => switch (segment) {
+            TimeBlockSegment(:final source) => ActivityRecordingEntry(
+              goals: widget.goals,
+              context: RecordingDraftContext.edit(
+                date: date,
+                timeBlockId: source.id,
+              ),
+              store: widget.drafts,
+              entryEditor: widget.entryEditor,
+              loadSuggestion: () async => const ManualTimeEntry(),
+            ),
+            SleepSessionSegment(:final source) => widget.sleepEntry(
+              SleepDraftContext.edit(date: date, sleepSessionId: source.id),
+            ),
+          },
+        ),
+      );
+      if (mounted && committed != null) _snack('记录更改已应用。');
+    } finally {
+      if (mounted) {
+        setState(() => opening = false);
+        selection.refresh();
+        await _checkSleepOnReturn();
+      }
+    }
+  }
+
+  Future<void> _deleteTimeBlock(TimeBlockSegment segment) async {
+    if (busy) return;
+    setState(() => opening = true);
+    try {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('删除时间记录'),
+          content: const Text('删除完整记录时，依附的节奏解释也会删除。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('取消'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('删除记录'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+      final draftContext = RecordingDraftContext.edit(
+        date: selectedDate,
+        timeBlockId: segment.reference.id,
+      );
+      final result = await widget.entryEditor.delete(draftContext);
+      if (!mounted) return;
+      if (result is RecordingDeleteFailed) {
+        _snack('删除失败，记录未改变，请重试。');
+      } else if (result is RecordingDeleteCommitted) {
+        if (!result.complete) {
+          await widget.entryEditor.finishDelete(
+            context: draftContext,
+            draftCleared: result.draftCleared,
+          );
+          if (!mounted) return;
+        }
+        _snack('记录已删除。');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => opening = false);
+        selection.refresh();
+        await _checkSleepOnReturn();
+      }
+    }
+  }
+
+  void _snack(String message) =>
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
 
   Future<void> _editCompleteSleep(CivilDate date, SleepSession sleep) async {
     if (busy) return;
@@ -502,11 +609,6 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  void _destination(bool review) {
-    if (busy || reviewSelected == review) return;
-    setState(() => reviewSelected = review);
-  }
-
   @override
   void dispose() {
     widget.dayRoutes.unsubscribe(this);
@@ -516,26 +618,26 @@ class _RecordingHomeState extends State<_RecordingHome>
   }
 
   @override
-  Widget build(BuildContext context) => PopScope(
-    canPop: !reviewSelected,
-    onPopInvokedWithResult: (didPop, result) {
-      if (!didPop) _destination(false);
-    },
-    child: LedgerShell(
-      reviewSelected: reviewSelected,
+  Widget build(BuildContext context) {
+    final dayLedger = widget.dayLedger;
+    if (dayLedger == null) {
+      return const Scaffold(body: Center(child: Text('日账本入口尚未配置。')));
+    }
+    return HomeShell(
+      key: homeShellKey,
+      selection: selection,
+      ledgerLoader: dayLedger,
+      now: () => widget.now().millisecondsSinceEpoch,
+      dateOfInstant: deviceDateOfInstant,
       busy: busy,
-      onLedger: () => _destination(false),
-      onReview: widget.reviewContext == null ? null : () => _destination(true),
-      onCreate: _create,
-      onMore: _more,
-      body: Column(
-        children: [
-          if (firstSleepError != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+      banner: firstSleepError == null
+          ? null
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(firstSleepError!),
+                  Text(firstSleepError!, style: const TextStyle(fontSize: 13)),
                   TextButton(
                     onPressed: busy ? null : _checkFirstSleep,
                     child: const Text('重试主睡眠检查'),
@@ -543,26 +645,36 @@ class _RecordingHomeState extends State<_RecordingHome>
                 ],
               ),
             ),
-          Expanded(
-            child: IndexedStack(
-              index: reviewSelected ? 1 : 0,
-              children: [
-                if (widget.dayLedger == null)
-                  const Center(child: Text('日账本入口尚未配置。'))
-                else
-                  Offstage(offstage: reviewSelected, child: _ledgerPage()),
-                if (widget.reviewContext == null)
-                  const SizedBox.shrink()
-                else
-                  Offstage(
-                    offstage: !reviewSelected,
-                    child: _reviewPage(selectedDate, embedded: true),
-                  ),
-              ],
-            ),
-          ),
-        ],
+      onMenu: _more,
+      onRecordActivity: _recordActivity,
+      onRecordSleep: _recordSleep,
+      reviewEnabled: widget.reviewContext != null,
+      floatingCard: widget.reviewContext == null
+          ? null
+          : (controller) {
+              final view = controller.view;
+              if (view == null) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                child: HomeReviewCard(
+                  loader: widget.reviewContext!,
+                  date: view.date,
+                  now: () => widget.now().millisecondsSinceEpoch,
+                  onOpen: busy
+                      ? null
+                      : () => homeShellKey.currentState?.openReviewTab(),
+                ),
+              );
+            },
+      timeline: _ledgerTimeline,
+      summary: (controller, _) => HomeSummaryTab(
+        controller: controller,
+        onEditSleep: busy
+            ? null
+            : (sleep) => _editCompleteSleep(selectedDate, sleep),
+        onRetry: controller.refresh,
       ),
-    ),
-  );
+      review: (active) => _reviewPage(selectedDate, active: active),
+    );
+  }
 }

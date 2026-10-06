@@ -7,10 +7,15 @@ import '../../core/persistence/database_connection.dart';
 import '../main_app.dart';
 import '../theme/time_ledger_theme.dart';
 import '../../features/goals/data/drift_goal_repository.dart';
-import '../../features/goals/presentation/goals_page.dart';
+import '../../features/goals/data/drift_goal_history_reader.dart';
+import '../../features/goals/presentation/goal_management_page.dart';
+import '../../features/settings/data/drift_app_preferences_store.dart';
+import '../../features/settings/data/drift_data_maintenance.dart';
+import '../../features/settings/presentation/settings_page.dart';
 import '../../features/ledger/data/drift_recording_draft_store.dart';
 import '../../features/ledger/application/recording_entry_editor.dart';
 import 'recording_drafts.dart';
+import 'app_preferences.dart';
 import 'sleep_drafts.dart';
 import 'sleep_entry.dart';
 import 'sleep_ledger.dart';
@@ -41,14 +46,20 @@ class AppBootstrap extends StatefulWidget {
     this.openSleepDrafts = openSleepDraftStore,
     this.openSleepOpenings = openSleepOpeningStore,
     this.openReviewDrafts = openReviewDraftStore,
+    this.openPreferences = openAppPreferencesStore,
     this.now = DateTime.now,
+    this.seed,
   });
+
+  /// 仅开发用：数据库首次打开后写入演示数据（幂等，由实现自行保证）。
+  final Future<void> Function(AppDatabase database)? seed;
 
   final Future<AppDatabase> Function() openDatabase;
   final Future<DriftRecordingDraftStore> Function() openDrafts;
   final Future<DriftSleepDraftStore> Function() openSleepDrafts;
   final Future<DriftSleepOpeningStore> Function() openSleepOpenings;
   final Future<DriftReviewDraftStore> Function() openReviewDrafts;
+  final Future<DriftAppPreferencesStore> Function() openPreferences;
   final DateTime Function() now;
 
   @override
@@ -61,9 +72,43 @@ class _AppBootstrapState extends State<AppBootstrap> {
   DriftRecordingDraftStore? _drafts;
   Future<DriftSleepOpeningStore>? _openingSleepState;
   DriftSleepOpeningStore? _sleepState;
+  late final _preferences = AppPreferencesSession(
+    openStore: widget.openPreferences,
+  );
   late final _reviewDrafts = ReviewDraftSession(
     openStore: widget.openReviewDrafts,
   );
+
+  /// 数据概况用：三类草稿的现存数量之和。
+  Future<int> _openDrafts() async {
+    final drafts = _drafts;
+    if (drafts == null) return 0;
+    final sleep = await widget.openSleepDrafts();
+    final review = await widget.openReviewDrafts();
+    try {
+      return await drafts.countAll() +
+          await sleep.countAll() +
+          await review.countAll();
+    } finally {
+      await sleep.close();
+      await review.close();
+    }
+  }
+
+  /// 数据清空用：清除三类草稿；草稿连接用完即关。
+  Future<void> _clearDrafts() async {
+    final drafts = _drafts;
+    final sleep = await widget.openSleepDrafts();
+    final review = await widget.openReviewDrafts();
+    try {
+      await drafts?.clearAll();
+      await sleep.clearAll();
+      await review.clearAll();
+    } finally {
+      await sleep.close();
+      await review.close();
+    }
+  }
 
   Future<bool> _claimSleepOpening(CivilDate date) async {
     if (!mounted) throw StateError('App has closed.');
@@ -102,6 +147,13 @@ class _AppBootstrapState extends State<AppBootstrap> {
         await drafts.close();
         await database.close();
       } else {
+        final seed = widget.seed;
+        if (seed != null) await seed(database);
+        if (!mounted) {
+          await drafts.close();
+          await database.close();
+          return;
+        }
         _database = database;
         _drafts = drafts;
       }
@@ -121,6 +173,18 @@ class _AppBootstrapState extends State<AppBootstrap> {
             stack: stack,
             library: 'app bootstrap',
             context: ErrorDescription('while closing review drafts'),
+          ),
+        );
+      }),
+    );
+    unawaited(
+      _preferences.close().catchError((Object error, StackTrace stack) {
+        FlutterError.reportError(
+          FlutterErrorDetails(
+            exception: error,
+            stack: stack,
+            library: 'app bootstrap',
+            context: ErrorDescription('while closing preferences'),
           ),
         );
       }),
@@ -205,9 +269,22 @@ class _AppBootstrapState extends State<AppBootstrap> {
         final reviewLoader = createReviewContextLoader(_database!);
         return MainApp(
           goals: DriftGoalRepository(_database!),
-          goalEntry: () => GoalsPage(
+          goalEntry: () => GoalManagementPage(
             repository: DriftGoalRepository(_database!),
+            history: DriftGoalHistoryReader(_database!),
             newId: newLocalTimeBlockId,
+            now: () => widget.now().millisecondsSinceEpoch,
+            preferences: _preferences,
+          ),
+          settingsEntry: () => SettingsPage(
+            preferences: _preferences,
+            maintenance: DriftDataMaintenance(
+              _database!,
+              draftCount: _openDrafts,
+              clearDrafts: _clearDrafts,
+            ),
+            newGoalId: newLocalTimeBlockId,
+            newFactId: newLocalTimeBlockId,
             now: () => widget.now().millisecondsSinceEpoch,
           ),
           dayLedger: createDayLedgerLoader(_database!),
