@@ -224,8 +224,9 @@ void mainValues(SleepSession sleep, {int endMinute = 40}) {
 
 Future<void> phase0(WidgetTester tester) async {
   final app = await openApp(tester);
-  expect(find.text('确认主睡眠'), findsOneWidget);
-  await tap(tester, '确认睡眠起止');
+  // 首次打开不再弹确认框，改由首页建议区域提示（Q-029）。
+  expect(find.byKey(const ValueKey('home-suggestion')), findsOneWidget);
+  await tap(tester, '记录睡眠');
   await tap(tester, '主睡眠');
   await enter(tester, 'sleep-start', '2026-09-28 23:50');
   await enter(tester, 'sleep-end', '2026-09-29 07:');
@@ -498,8 +499,7 @@ Future<void> phase7(WidgetTester tester) async {
   await tester.pumpWidget(const SizedBox.shrink());
   await tester.pumpAndSettle();
   final next = await openApp(tester, day: 31); // Calendar rolls to October 1.
-  expect(find.text('确认主睡眠'), findsOneWidget);
-  await tap(tester, '继续账本');
+  expect(find.byKey(const ValueKey('home-suggestion')), findsOneWidget);
   expect(find.text('尚未记录主睡眠'), findsOneWidget);
   await clearSchemaRows(next.database);
   await next.noOtherFacts();

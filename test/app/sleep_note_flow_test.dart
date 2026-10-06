@@ -16,7 +16,7 @@ void main() {
     tester,
   ) async {
     final app = await setup(tester);
-    await tapText(tester, '确认睡眠起止');
+    await tapText(tester, '记录睡眠');
     await fill(tester, '2026-09-28 23:50', '2026-09-29 07:40');
     expect(noteInput(tester), isEmpty);
     await tapText(tester, '确认并保存到账本');
@@ -38,7 +38,7 @@ void main() {
       final app = await setup(tester);
       const raw = '  第一行\n  第二行😀  ';
       const edited = '  更正说明\n第二段  ';
-      await tapText(tester, '确认睡眠起止');
+      await tapText(tester, '记录睡眠');
       await fill(tester, '2026-09-28 23:50', '2026-09-29 07:40');
       await enter(tester, 'sleep-note', raw);
       await tapText(tester, '保留草稿并返回');
@@ -113,7 +113,7 @@ void main() {
     (tester) async {
       final app = await setup(tester);
       final overlong = '😀' * 2001;
-      await tapText(tester, '确认睡眠起止');
+      await tapText(tester, '记录睡眠');
       await fill(tester, '2026-09-28 23:50', '2026-09-29 07:40');
       await enter(tester, 'sleep-note', overlong);
       expect(find.text('备注最多 2000 个字符。'), findsOneWidget);

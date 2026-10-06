@@ -231,7 +231,7 @@ void main() {
       int at(int day, int hour, [int m = 0]) =>
           DateTime(2026, 9, day, hour, m).millisecondsSinceEpoch;
       final app = await LedgerApp.open(tester, DateTime(2026, 9, 29, 12));
-      await tap(tester, '确认睡眠起止');
+      await tap(tester, '记录睡眠');
       await fill(
         tester,
         '2026-09-28 23:50',
@@ -421,7 +421,7 @@ void main() {
     (tester) async {
       int at(int h) => DateTime(2026, 9, 29, h).millisecondsSinceEpoch;
       final app = await LedgerApp.open(tester, DateTime(2026, 9, 29, 12));
-      await tap(tester, '确认睡眠起止');
+      await tap(tester, '记录睡眠');
       await fill(tester, '2026-09-28 23:50', '2026-09-29 08:00');
       await tap(tester, '确认并保存到账本');
       await tap(tester, '打开日账本');
@@ -540,8 +540,7 @@ void main() {
           tester,
           DateTime(2026, month, day + 1, 12),
         );
-        // Keep the first-open prompt out of the timeline route without writing sleep.
-        await tap(tester, '继续账本');
+        // 首次打开不再弹确认框，时间线直接可达（Q-029）。
         await tap(tester, '打开日账本');
         await chooseDate(tester, start);
         expectLedger(

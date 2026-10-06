@@ -190,7 +190,8 @@ Future<LocalSleepApp> setup(WidgetTester tester) async {
   });
   await tester.pumpWidget(app.build());
   await tester.pumpAndSettle();
-  expect(find.text('确认主睡眠'), findsOneWidget);
+  // 首次打开不再弹确认框，改由首页建议区域提示（Q-029）。
+  expect(find.byKey(const ValueKey('home-suggestion')), findsOneWidget);
   return app;
 }
 
@@ -249,7 +250,7 @@ void main() {
     'first real entry persists a draft, submits cross-day/multiple main sleeps and nap, edits and deletes with independent approximation',
     (tester) async {
       final app = await setup(tester);
-      await tapText(tester, '确认睡眠起止');
+      await tapText(tester, '记录睡眠');
       await fill(
         tester,
         '2026-09-28 23:50',
@@ -366,7 +367,7 @@ void main() {
     'midnight wake saved via entry remains in complete summary with zero day contribution and is editable',
     (tester) async {
       final app = await setup(tester);
-      await tapText(tester, '确认睡眠起止');
+      await tapText(tester, '记录睡眠');
       await fill(
         tester,
         '2026-09-28 23:00',
@@ -410,7 +411,7 @@ void main() {
     'facts changed after drafting reject both conflicts; manual correction survives real rollback and editing conflicts',
     (tester) async {
       final app = await setup(tester);
-      await tapText(tester, '确认睡眠起止');
+      await tapText(tester, '记录睡眠');
       await fill(
         tester,
         '2026-09-29 10:00',
@@ -508,7 +509,7 @@ void main() {
     'committed create/edit/delete with real cleanup and read failures only retries cleanup and reads',
     (tester) async {
       final app = await setup(tester);
-      await tapText(tester, '确认睡眠起止');
+      await tapText(tester, '记录睡眠');
       await fill(
         tester,
         '2026-09-28 23:50',

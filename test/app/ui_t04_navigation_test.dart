@@ -186,10 +186,6 @@ void main() {
       await tapRootAction(t, '查看记录');
       await settleNative(t);
       expect(dateLabel('2026-10-03'), findsOneWidget);
-      if (find.text('继续账本').evaluate().isNotEmpty) {
-        await t.tap(find.text('继续账本'));
-        await settleNative(t);
-      }
       await today(t);
       await settleNative(t);
       expect(dateLabel('2026-10-04'), findsOneWidget);
@@ -307,9 +303,7 @@ void main() {
           final barTop = t
               .getTopLeft(find.byKey(const ValueKey('home-record-activity')))
               .dy;
-          final bodyBottom = t
-              .getBottomLeft(find.byType(HomeTimelineTab))
-              .dy;
+          final bodyBottom = t.getBottomLeft(find.byType(HomeTimelineTab)).dy;
           expect(bodyBottom, lessThan(barTop));
           expect(
             t

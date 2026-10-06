@@ -286,12 +286,6 @@ void main() {
       ),
     );
     await t.pumpAndSettle();
-    // No main sleep recorded today, so the first-sleep confirmation appears
-    // first; decline it to reach the ledger.
-    if (find.text('继续账本').evaluate().isNotEmpty) {
-      await t.tap(find.text('继续账本'));
-      await t.pumpAndSettle();
-    }
 
     // The row states the fact; the residue text is not a heading.
     expect(find.text('想不起来'), findsOneWidget);
@@ -319,9 +313,9 @@ void main() {
     await t.pumpAndSettle();
 
     final saved = (await t.runAsync(
-      () => DriftLedgerRepository(db).readTimeBlock(
-        '00000000-0000-4000-8000-0000000000f1',
-      ),
+      () =>
+          DriftLedgerRepository(db)
+              .readTimeBlock('00000000-0000-4000-8000-0000000000f1'),
     ))!;
     expect(saved.timeBlock.knowledgeState, BlockKnowledgeState.known);
     expect(saved.timeBlock.title, '设计首页');

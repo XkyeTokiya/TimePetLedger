@@ -63,10 +63,6 @@ Future<AppHandles> openTestApp(WidgetTester tester) async {
   );
   await tester.pumpAndSettle();
   expect(find.text('时间账本'), findsOneWidget);
-  if (find.text('继续账本').evaluate().isNotEmpty) {
-    await tester.tap(find.text('继续账本'));
-    await tester.pumpAndSettle();
-  }
   await tester.enterText(find.byType(TextField).first, '2026-09-28');
   await tester.pumpAndSettle();
   return (
