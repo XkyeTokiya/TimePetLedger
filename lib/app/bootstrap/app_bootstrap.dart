@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/persistence/app_database.dart';
 import '../../core/persistence/database_connection.dart';
 import '../main_app.dart';
-import '../theme/time_ledger_theme.dart';
+import '../theme/home_theme.dart';
 import '../../features/goals/data/drift_goal_repository.dart';
 import '../../features/goals/data/drift_goal_history_reader.dart';
 import '../../features/goals/presentation/goal_management_page.dart';
@@ -244,7 +244,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return MaterialApp(
-            theme: timeLedgerTheme,
+            theme: homeTheme,
             home: const Scaffold(
               body: Center(child: Text('无法打开本地存储，请重新启动应用。')),
             ),
@@ -252,7 +252,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
         }
         if (snapshot.connectionState != ConnectionState.done) {
           return MaterialApp(
-            theme: timeLedgerTheme,
+            theme: homeTheme,
             home: const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             ),

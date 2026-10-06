@@ -190,7 +190,37 @@ class HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
                                         20,
                                         6,
                                       ),
-                                      child: HomeCoverageLine(view: view),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          HomeCoverageLine(view: view),
+                                          const SizedBox(height: 2),
+                                          Row(
+                                            children: [
+                                              TextButton(
+                                                key: const ValueKey(
+                                                  'home-distribution',
+                                                ),
+                                                onPressed: widget.busy
+                                                    ? null
+                                                    : showDistribution,
+                                                child: const Text('时间分布说明'),
+                                              ),
+                                              const Spacer(),
+                                              TextButton(
+                                                key: const ValueKey(
+                                                  'home-refresh',
+                                                ),
+                                                onPressed: widget.busy
+                                                    ? null
+                                                    : refreshFromMenu,
+                                                child: const Text('刷新账本'),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                 ],
                               );

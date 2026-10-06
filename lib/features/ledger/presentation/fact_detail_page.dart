@@ -19,6 +19,10 @@ enum LedgerDetailAction { edit, delete }
 /// 记录详情页：只读已提交的完整源事实，版式按记录详情与删除第一轮原型
 /// （assets/record-detail-round-one）。它不持有写入合同，编辑与删除仍由宿主
 /// 的既有编辑器 / 删除服务执行；本页只负责阅读、确认与返回意图。
+///
+/// 编辑由本页自行压入编辑器路由（[onEdit]），详情页始终留在返回栈中：
+/// 取消或保留草稿后回到原详情；只有真正提交了变更才连同详情一起退出，
+/// 回到时间线。删除仍以 [LedgerDetailAction.delete] 交回宿主执行。
 Future<LedgerDetailAction?> showFactDetail(
   BuildContext context, {
   required LedgerSegment segment,
@@ -27,6 +31,7 @@ Future<LedgerDetailAction?> showFactDetail(
   required bool canDelete,
   bool hasDraft = false,
   VoidCallback? onDiscardDraft,
+  Future<bool> Function()? onEdit,
 }) => Navigator.of(context).push<LedgerDetailAction>(
   MaterialPageRoute<LedgerDetailAction>(
     builder: (_) => FactDetailPage(
@@ -36,6 +41,7 @@ Future<LedgerDetailAction?> showFactDetail(
       canDelete: canDelete,
       hasDraft: hasDraft,
       onDiscardDraft: onDiscardDraft,
+      onEdit: onEdit,
     ),
   ),
 );
@@ -49,6 +55,7 @@ class FactDetailPage extends StatefulWidget {
     required this.canDelete,
     this.hasDraft = false,
     this.onDiscardDraft,
+    this.onEdit,
   });
 
   final LedgerSegment segment;
@@ -58,12 +65,30 @@ class FactDetailPage extends StatefulWidget {
   final bool hasDraft;
   final VoidCallback? onDiscardDraft;
 
+  /// 压入编辑器并在返回时告知是否提交了正式变更；详情页保持挂载。
+  final Future<bool> Function()? onEdit;
+
   @override
   State<FactDetailPage> createState() => _FactDetailPageState();
 }
 
 class _FactDetailPageState extends State<FactDetailPage> {
   bool confirming = false;
+  bool editing = false;
+
+  Future<void> _edit() async {
+    final onEdit = widget.onEdit;
+    if (onEdit == null || editing) return;
+    setState(() => editing = true);
+    try {
+      final changed = await onEdit();
+      if (!mounted) return;
+      // 取消或保留草稿没有提交变更：留在原详情继续阅读。
+      if (changed) Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => editing = false);
+    }
+  }
 
   LedgerSegment get segment => widget.segment;
 
@@ -127,7 +152,11 @@ class _FactDetailPageState extends State<FactDetailPage> {
     final children = <Widget>[
       Text(_eyebrow, style: _eyebrowStyle),
       const SizedBox(height: 6),
-      SelectableText(_title, style: _heading),
+      Semantics(
+        header: true,
+        label: _title,
+        child: SelectableText(_title, style: _heading),
+      ),
       const SizedBox(height: 16),
       _durationBlock(),
       _intervalBlock(),
@@ -209,27 +238,29 @@ class _FactDetailPageState extends State<FactDetailPage> {
     decoration: const BoxDecoration(
       border: Border(bottom: BorderSide(color: HomePalette.hairline)),
     ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          segment is SleepSessionSegment ? '这次睡眠' : '这段时间',
-          style: _labelStyle,
-        ),
-        const SizedBox(height: 6),
-        Text(
-          formatDerivedDuration(
-            DerivedDuration(
-              milliseconds: sourceEnd - sourceStart,
-              hasApproximation:
-                  sourceStartPrecision == TimePrecision.approximate ||
-                  sourceEndPrecision == TimePrecision.approximate,
-            ),
+    child: MergeSemantics(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            segment is SleepSessionSegment ? '这次睡眠' : '这段时间',
+            style: _labelStyle,
           ),
-          key: const ValueKey('fact-detail-duration'),
-          style: _durationStyle,
-        ),
-      ],
+          const SizedBox(height: 6),
+          Text(
+            formatDerivedDuration(
+              DerivedDuration(
+                milliseconds: sourceEnd - sourceStart,
+                hasApproximation:
+                    sourceStartPrecision == TimePrecision.approximate ||
+                    sourceEndPrecision == TimePrecision.approximate,
+              ),
+            ),
+            key: const ValueKey('fact-detail-duration'),
+            style: _durationStyle,
+          ),
+        ],
+      ),
     ),
   );
 
@@ -263,32 +294,36 @@ class _FactDetailPageState extends State<FactDetailPage> {
     );
   }
 
-  Widget _timeLine(String label, int instant) => Row(
-    crossAxisAlignment: CrossAxisAlignment.baseline,
-    textBaseline: TextBaseline.alphabetic,
-    children: [
-      SizedBox(width: 44, child: Text(label, style: _labelStyle)),
-      Expanded(
-        child: SelectableText(
-          '${_dateText(instant)} ${_clock(instant)}',
-          style: _valueStyle,
+  Widget _timeLine(String label, int instant) => MergeSemantics(
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        SizedBox(width: 44, child: Text(label, style: _labelStyle)),
+        Expanded(
+          child: SelectableText(
+            '${_dateText(instant)} ${_clock(instant)}',
+            style: _valueStyle,
+          ),
         ),
-      ),
-    ],
+      ],
+    ),
   );
 
-  Widget _field(String label, String text) => Container(
-    padding: const EdgeInsets.symmetric(vertical: 18),
-    decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: HomePalette.hairline)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: _labelStyle),
-        const SizedBox(height: 6),
-        SelectableText(text, style: _noteStyle),
-      ],
+  Widget _field(String label, String text) => MergeSemantics(
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: _labelStyle),
+          const SizedBox(height: 6),
+          SelectableText(text, style: _noteStyle),
+        ],
+      ),
     ),
   );
 
@@ -336,7 +371,15 @@ class _FactDetailPageState extends State<FactDetailPage> {
           flex: widget.canDelete ? 6 : 1,
           child: FilledButton(
             key: const ValueKey('fact-detail-edit'),
-            onPressed: () => Navigator.pop(context, LedgerDetailAction.edit),
+            onPressed: editing
+                ? null
+                : () {
+                    if (widget.onEdit != null) {
+                      _edit();
+                    } else {
+                      Navigator.pop(context, LedgerDetailAction.edit);
+                    }
+                  },
             child: Text(widget.hasDraft ? '继续修改' : '编辑完整记录'),
           ),
         ),

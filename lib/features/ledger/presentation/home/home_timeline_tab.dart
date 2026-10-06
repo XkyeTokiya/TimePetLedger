@@ -53,7 +53,10 @@ class HomeTimelineTab extends StatelessWidget {
   /// Shared read-position memory, so returning from an editor keeps the place.
   final DayReadScrollSession? scrollSession;
   final bool active;
-  final void Function(CivilDate date, LedgerSegment segment)? onEditFact;
+
+  /// 打开编辑器修改这条记录；返回是否提交了正式变更，供详情页决定去留。
+  final Future<bool> Function(CivilDate date, LedgerSegment segment)?
+  onEditFact;
   final ValueChanged<TimeBlockSegment>? onDeleteTimeBlock;
   final void Function(CivilDate date, UnresolvedSpan gap)? onFillGap;
 
@@ -145,7 +148,7 @@ class _FactRow extends StatelessWidget {
   final LedgerSegment segment;
   final int dayEndedAt;
   final GoalSummary? goal;
-  final ValueChanged<LedgerSegment>? onEdit;
+  final Future<bool> Function(LedgerSegment segment)? onEdit;
   final ValueChanged<TimeBlockSegment>? onDelete;
 
   @override
@@ -223,17 +226,18 @@ class _FactRow extends StatelessWidget {
 
   Future<void> _open(BuildContext context) async {
     final seg = segment;
+    final onEdit = this.onEdit;
     final action = await showFactDetail(
       context,
       segment: seg,
       goal: goal,
       canEdit: onEdit != null,
       canDelete: onDelete != null && seg is! SleepSessionSegment,
+      // 编辑压栈在详情之上：取消 / 保留草稿回详情，提交后才离开详情。
+      onEdit: onEdit == null ? null : () => onEdit(seg),
     );
     if (!context.mounted) return;
     switch (action) {
-      case LedgerDetailAction.edit:
-        onEdit?.call(seg);
       case LedgerDetailAction.delete:
         if (seg is TimeBlockSegment) {
           onDelete?.call(seg);
@@ -241,6 +245,7 @@ class _FactRow extends StatelessWidget {
           onEdit?.call(seg);
         }
       case null:
+      case LedgerDetailAction.edit:
         break;
     }
   }

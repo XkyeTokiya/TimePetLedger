@@ -789,10 +789,6 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
       ),
     );
     if (value == null || !mounted) return;
-    if (value.trim().isEmpty) {
-      setState(() => error = '先给目标起个名字。');
-      return;
-    }
     await _write(() async {
       final Goal result;
       if (goal == null) {
@@ -1154,6 +1150,8 @@ class _DayInvestment {
 
 /// Owns its name field so the controller is disposed with the route, not the
 /// dialog call, avoiding use of a disposed controller during the exit animation.
+///
+/// 名称校验留在表单内：空名时不关闭弹窗，错误紧邻字段显示，保留输入与焦点。
 class _GoalNameDialog extends StatefulWidget {
   const _GoalNameDialog({required this.goal, required this.onSave});
   final Goal? goal;
@@ -1167,11 +1165,20 @@ class _GoalNameDialogState extends State<_GoalNameDialog> {
   late final TextEditingController name = TextEditingController(
     text: widget.goal?.name ?? '',
   );
+  String? error;
 
   @override
   void dispose() {
     name.dispose();
     super.dispose();
+  }
+
+  void _submit() {
+    if (name.text.trim().isEmpty) {
+      setState(() => error = '先给目标起个名字。');
+      return;
+    }
+    widget.onSave(name.text);
   }
 
   @override
@@ -1183,7 +1190,16 @@ class _GoalNameDialogState extends State<_GoalNameDialog> {
       autofocus: true,
       minLines: 3,
       maxLines: 5,
-      decoration: const InputDecoration(labelText: '目标名称', hintText: '比如：毕业设计'),
+      textInputAction: TextInputAction.done,
+      onSubmitted: (_) => _submit(),
+      onChanged: (_) {
+        if (error != null) setState(() => error = null);
+      },
+      decoration: InputDecoration(
+        labelText: '目标名称',
+        hintText: '比如：毕业设计',
+        errorText: error,
+      ),
     ),
     actions: [
       TextButton(
@@ -1192,7 +1208,7 @@ class _GoalNameDialogState extends State<_GoalNameDialog> {
       ),
       FilledButton(
         key: const ValueKey('goal-save-name'),
-        onPressed: () => widget.onSave(name.text),
+        onPressed: _submit,
         child: const Text('保存目标'),
       ),
     ],

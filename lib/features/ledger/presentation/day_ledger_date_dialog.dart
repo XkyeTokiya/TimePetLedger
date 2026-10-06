@@ -84,12 +84,10 @@ class _DateDialogState extends State<_DateDialog> {
   late bool manual =
       widget.manual || widget.date.year < 1 || widget.date.year > 9999;
   late final text = TextEditingController(text: ledgerDateText(widget.date));
-  final calendarScroll = ScrollController();
   bool invalid = false;
   @override
   void dispose() {
     text.dispose();
-    calendarScroll.dispose();
     super.dispose();
   }
 
@@ -128,8 +126,8 @@ class _DateDialogState extends State<_DateDialog> {
     insetPadding: const EdgeInsets.all(16),
     scrollable: true,
     title: const Text('选择账本日期'),
-    content: SizedBox(
-      width: 368,
+    content: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 368),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -178,29 +176,12 @@ class _DateDialogState extends State<_DateDialog> {
                 ),
               ],
             ),
-            // 七列的 48px 日期入口在窄屏可水平滚动，字体不被缩小。
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (MediaQuery.sizeOf(context).width < 416)
-                  Text(
-                    '左右滑动查看整周',
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(fontSize: 13),
-                  ),
-                Scrollbar(
-                  controller: calendarScroll,
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
-                    controller: calendarScroll,
-                    scrollDirection: Axis.horizontal,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: SizedBox(width: 336, child: _calendar()),
-                    ),
-                  ),
-                ),
-              ],
+            // 七列在窄屏也完整可见：按可用宽度分配单元格，不再横向滚动。
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final cell = (constraints.maxWidth / 7).floorToDouble();
+                return SizedBox(width: cell * 7, child: _calendar(cell));
+              },
             ),
             const SizedBox(height: 8),
             Text('已选 ${ledgerDateText(selected)}'),
@@ -226,7 +207,7 @@ class _DateDialogState extends State<_DateDialog> {
     ],
   );
 
-  Widget _calendar() {
+  Widget _calendar(double cell) {
     final weekday = DateTime.utc(month.year, month.month, 1).weekday - 1;
     final count = DateTime.utc(month.year, month.month + 1, 0).day;
     return Column(
@@ -234,26 +215,30 @@ class _DateDialogState extends State<_DateDialog> {
         Row(
           children: [
             for (final day in ['一', '二', '三', '四', '五', '六', '日'])
-              SizedBox(width: 48, height: 48, child: Center(child: Text(day))),
+              SizedBox(
+                width: cell,
+                height: cell,
+                child: Center(child: Text(day)),
+              ),
           ],
         ),
         for (var week = 0; week < (weekday + count + 6) ~/ 7; week++)
           Row(
             children: [
               for (var column = 0; column < 7; column++)
-                _day(week * 7 + column - weekday + 1, count),
+                _day(week * 7 + column - weekday + 1, count, cell),
             ],
           ),
       ],
     );
   }
 
-  Widget _day(int day, int count) {
-    if (day < 1 || day > count) return const SizedBox(width: 48, height: 48);
+  Widget _day(int day, int count, double cell) {
+    if (day < 1 || day > count) return SizedBox(width: cell, height: cell);
     final date = CivilDate(year: month.year, month: month.month, day: day);
     return SizedBox(
-      width: 48,
-      height: 48,
+      width: cell,
+      height: cell,
       child: Semantics(
         label: ledgerDateText(date),
         selected: date == selected,

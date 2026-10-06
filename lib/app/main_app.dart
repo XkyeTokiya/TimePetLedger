@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'theme/time_ledger_theme.dart';
+import 'theme/home_theme.dart';
 import '../features/ledger/presentation/day_date_selection.dart';
 import '../features/ledger/presentation/day_read_scroll.dart';
 import '../features/ledger/domain/sleep_session.dart';
@@ -13,6 +13,7 @@ import '../features/review/presentation/review_context_page.dart';
 
 import '../features/ledger/application/day_ledger_loader.dart';
 import '../features/ledger/presentation/day_ledger_controller.dart';
+import '../features/ledger/presentation/home/home_menu_page.dart';
 import '../features/ledger/presentation/home/home_review_card.dart';
 import '../features/ledger/presentation/home/home_shell.dart';
 import '../features/ledger/presentation/home/home_summary_tab.dart';
@@ -76,7 +77,7 @@ class _MainAppState extends State<MainApp> {
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Time Pet Ledger',
-    theme: timeLedgerTheme,
+    theme: homeTheme,
     navigatorObservers: [_dayRoutes],
     home: _RecordingHome(
       goals: widget.goals,
@@ -312,42 +313,6 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  Future<String?> _choices(
-    String title,
-    List<({String text, IconData icon})> choices,
-  ) => showModalBottomSheet<String>(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-    ),
-    builder: (sheetContext) => SafeArea(
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 16),
-              for (final choice in choices)
-                ListTile(
-                  leading: Icon(choice.icon),
-                  title: Text(choice.text),
-                  onTap: () => Navigator.pop(sheetContext, choice.text),
-                ),
-              TextButton(
-                onPressed: () => Navigator.pop(sheetContext),
-                child: const Text('取消'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  );
-
   Future<void> _recordActivity() async {
     if (busy) return;
     final date = selectedDate;
@@ -384,30 +349,29 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  Future<void> _more() async {
+  /// 菜单入口：进入独立「菜单」整页（只有我的目标 / 设置）。
+  ///
+  /// 账本自身的刷新与时间分布说明不再占用菜单，改由首页正文承接。
+  Future<void> _menu() async {
     if (busy) return;
     setState(() => opening = true);
     try {
-      final choice = await _choices('更多', [
-        (text: '刷新账本', icon: Icons.refresh),
-        (text: '时间分布说明', icon: Icons.info_outline),
-        if (widget.goalEntry != null) (text: '目标管理', icon: Icons.flag_outlined),
-        if (widget.settingsEntry != null)
-          (text: '设置', icon: Icons.settings_outlined),
-      ]);
-      if (!mounted) return;
-      if (choice == '刷新账本') {
-        homeShellKey.currentState?.refreshFromMenu();
-      } else if (choice == '时间分布说明') {
-        homeShellKey.currentState?.showDistribution();
-      } else if (choice == '目标管理') {
-        await Navigator.of(context)
-            .push<void>(MaterialPageRoute(builder: (_) => widget.goalEntry!()));
-      } else if (choice == '设置') {
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute(builder: (_) => widget.settingsEntry!()),
-        );
-      }
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => HomeMenuPage(
+            onGoals: widget.goalEntry == null
+                ? null
+                : () => Navigator.of(context).push<void>(
+                    MaterialPageRoute(builder: (_) => widget.goalEntry!()),
+                  ),
+            onSettings: widget.settingsEntry == null
+                ? null
+                : () => Navigator.of(context).push<void>(
+                    MaterialPageRoute(builder: (_) => widget.settingsEntry!()),
+                  ),
+          ),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => opening = false);
@@ -503,11 +467,13 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  Future<void> _openFact(CivilDate date, LedgerSegment segment) async {
-    if (busy) return;
+  /// 从详情压入编辑器；返回是否提交了正式变更，供详情页决定是否离开。
+  Future<bool> _openFact(CivilDate date, LedgerSegment segment) async {
+    if (busy) return false;
     setState(() => opening = true);
+    var committed = false;
     try {
-      final committed = await Navigator.of(context).push<Object>(
+      final result = await Navigator.of(context).push<Object>(
         MaterialPageRoute<Object>(
           builder: (_) => switch (segment) {
             TimeBlockSegment(:final source) => ActivityRecordingEntry(
@@ -526,7 +492,10 @@ class _RecordingHomeState extends State<_RecordingHome>
           },
         ),
       );
-      if (mounted && committed != null) _snack('记录更改已应用。');
+      if (result != null) {
+        committed = true;
+        if (mounted) _snack('记录更改已应用。');
+      }
     } finally {
       if (mounted) {
         setState(() => opening = false);
@@ -534,6 +503,7 @@ class _RecordingHomeState extends State<_RecordingHome>
         await _checkSleepOnReturn();
       }
     }
+    return committed;
   }
 
   Future<void> _deleteTimeBlock(TimeBlockSegment segment) async {
@@ -645,7 +615,7 @@ class _RecordingHomeState extends State<_RecordingHome>
                 ],
               ),
             ),
-      onMenu: _more,
+      onMenu: _menu,
       onRecordActivity: _recordActivity,
       onRecordSleep: _recordSleep,
       reviewEnabled: widget.reviewContext != null,
