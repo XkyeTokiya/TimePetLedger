@@ -1,0 +1,9 @@
+- button "Back" [active]
+- heading "更正记录" [level=2]
+- button "这笔关联的目标 暂不关联"
+- group "这段时间， 节奏怎么样？ 可以不选，直接继续。":
+  - button "推进 事情向前走了一点"
+  - button "卡住 想往前，但遇到了阻力"
+  - button "休息 让自己缓一缓"
+- button "放弃草稿"
+- button "继续"

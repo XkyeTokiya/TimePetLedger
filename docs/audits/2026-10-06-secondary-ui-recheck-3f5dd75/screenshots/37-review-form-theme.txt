@@ -1,0 +1,12 @@
+- button "Back" [active]
+- heading "填写复盘" [level=2]
+- button "更多"
+- group "复盘 · 2026-10-06":
+  - button "修改日期"
+- generic: 10月7日，先做什么？
+- textbox "明天第一步"
+- button "再写几句 ＋"
+- button "选择下一步目标"
+- button "查看当日事实"
+- generic: 尚未正式保存
+- button "保存复盘"

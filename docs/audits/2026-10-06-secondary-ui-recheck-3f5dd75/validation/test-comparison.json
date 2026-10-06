@@ -1,0 +1,1104 @@
+{
+  "head": "3f5dd75",
+  "baseline": "38f8ffe",
+  "current": {
+    "totalEvents": 917,
+    "visibleTests": 782,
+    "passed": 665,
+    "failed": 108,
+    "skipped": 9,
+    "failures": [
+      {
+        "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+        "name": "Q-021：每类有记录的微小时长不同于缺失，近似提示独立",
+        "result": "failure"
+      },
+      {
+        "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+        "name": "Q-017：复用最终分钟四舍五入，半分钟边界不使用截断",
+        "result": "failure"
+      },
+      {
+        "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+        "name": "多个小值先由投影汇总后格式化，不累加单条舍入分钟",
+        "result": "failure"
+      },
+      {
+        "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+        "name": "覆盖及 Gap 的真零是数值零，正时长舍入零仍显示微小时长",
+        "result": "failure"
+      },
+      {
+        "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+        "name": "真实混合投影：精度、存在性和全局/目标范围不相互污染",
+        "result": "failure"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "widget distinguishes committed clear failure and only finishes cleanup/read",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "widget distinguishes committed refresh failure and only finishes cleanup/read",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "selected figure uses all projected facts and gaps, Unknown is a subset",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "update post-commit cleanup/other-day read failure locks mutations and retry does not repeat them",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "one millisecond remains fractional; empty today/future is neutral and not Gap",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "multiple complete main sleeps and nap stay separate from window coverage",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "same-name archived Goals remain separate; four subsets and global rhythm use independent contributions",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "widget distinguishes committed both failure and only finishes cleanup/read",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 320.0, text scale 1.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "empty and unannotated-only Goals preserve missing labels and positive subminute recovery",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "widget blocks a second click and back while submitting; write failure leaves editable draft",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "missing groups and exact/approximate subminute totals use existing formatting",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "delete post-commit cleanup/other-day read failure locks mutations and retry does not repeat them",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "midnight wake and future date have full sleep even with zero window contribution",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "full coverage with approximate interior keeps zero Gap exact",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 320.0, text scale 1.5",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "widget lists both conflict identities and full intervals and permits manual correction",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "correcting wake date removes old summary and refreshes new date without losing original identity",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "approximation is independent for accounted Unknown and remaining Gap",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 320.0, text scale 2.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "cancel deletion leaves fact and draft; formal failure is editable and preserves both",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "positive subminute values and final-sum rounding do not become missing or force display equality",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 360.0, text scale 1.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 360.0, text scale 1.5",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "folds retain raw fields, no formal writes, restore and state switches",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 360.0, text scale 2.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 412.0, text scale 1.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 412.0, text scale 1.5",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 412.0, text scale 2.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "neutral validation, submit reveals collapsed error; independent time and picker cancellation",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "same names select by id; Unknown retains title and approximate Goal time; draft leaves and resumes",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "approximate wake affects only its retained slice end and complete duration",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "distinct read, draft, formal, conflict, missing-source and committed states",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mobile date/time and goal modals at all font sizes, cancel and selected civil minute",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "sleep-only today suggests tail; mixed precision survives draft, save, edit and delete",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "app entry needs no Goal, closes/reopens real draft storage and leaves formal data unchanged",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "assembled app saves one cross-day fact, clears file draft and updates summaries/coverage for both days and nap",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "summary displays every complete main sleep and nap, including sub-minute duration without calling it missing",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing record is reachable for edit after opening the app",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "first real entry persists a draft, submits cross-day/multiple main sleeps and nap, edits and deletes with independent approximation",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "optional note can be omitted or blank for both sleep types",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrap opens day ledger, follows today and excludes preserved draft",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "historical candidate requires choice; invalid and sleep conflict can be corrected",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrapped new Unknown is saved and home shows refreshed coverage",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "combined time conflict keeps both formal objects; manual correction saves both",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrap owns one connection across rebuilds and closes it",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "raw multiline note restores, failed note-only edit retains input and explicit clearing saves null",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "midnight wake saved via entry remains in complete summary with zero day contribution and is editable",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real facts render as one day timeline and re-slice across dates without writes or duplicates",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "duplicate add preserves explicit intent and reports correct relation failure",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "2001 code points remain in draft; trimmed 2000 emoji save without UTF16 clipping",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "facts changed after drafting reject both conflicts; manual correction survives real rollback and editing conflicts",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "empty ordinary entry stays manual but explicit full-day Gap prefills approximate and saves untitled Unknown only after confirmation",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "missing edit preserves explicit intent and reports correct relation failure",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real bootstrap ordinary selection reopens both files, saves by id, legacy home edit clears",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrap ordinary/home routes save optional hint and edit/remove through the real repository",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "committed create/edit/delete with real cleanup and read failures only retries cleanup and reads",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrap Gap/timeline routes save optional hint and edit/remove through the real repository",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrap Gap prefills unchanged approximate times, timeline source edit retains archived Goal and clears",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrap opens summary, follows today and excludes preserved draft",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "same names use distinct ids, current metadata reloads and absent annotations/sleep carry no implied rhythm",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "empty historical Gap prefills full calendar day; future date exposes no Gap action",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "actual bootstrap restores edit draft, retains archived Goal, saves moved date and no-op without changing identity or creation time",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "Gap partial known draft survives leaving and file reopen, existing precision wins, ordinary draft remains separate, save leaves remainder",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "both day slices edit the complete annotation, clear hint/remove and delete reread without rewriting reviews",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real summary save-return, historical ledger read/edit, move to new day and delete leave original facts intact",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "confirmed home sample, details and mobile text matrix",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "long Unicode Goal and multiline continuation stay readable on narrow scaled timeline without truncating stored text",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "V01 real Gap save and V06 atomic conflict retains input",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "stale Gap conflicts atomically with new sleep, retains input and draft until manual correction succeeds",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real mixed summary to raw draft, Unicode limit and changed Goal failure, full-field create/edit/move/delete preserve facts",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 320.0 / 1.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real Goal read failure hides stale timeline; retry reads current metadata without any formal write",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 320.0 / 1.5",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "one real app resolves cross-day sleep, partial known and Unknown while leaving gaps, then edits/deletes and reopens only persisted facts",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "actual fact correction refreshes ledger, summary and review context while archived original Goal and review text keep their source",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 320.0 / 2.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "committed annotation refresh failure retries reads only, including independent full-day Goal failure",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 360.0 / 1.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 360.0 / 1.5",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "summary entry allows failed facts, rejects invalid dates and pins displayed today across midnight with one route",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 360.0 / 2.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "current Gap conflict remains unresolved until manual adjacent correction; committed read retry never inserts twice; refreshed now and future contexts stay distinct",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 412.0 / 1.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "first confirmation can continue ledger; reopening same file/date suppresses; next day resumes once",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real file app UI mutations keep historical mixed summaries derived from current facts",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 412.0 / 1.5",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "cross-day TimeBlock edits one complete identity from both days; hidden fields survive both knowledge transitions and move; delete removes annotation only",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "committed leap-day review with simultaneous cleanup/read faults recovers through full bootstrap reopen and retries only finish before edit/delete",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 412.0 / 2.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "ledger entry allows failed facts, rejects invalid dates and pins displayed today across midnight with one route",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "post-update clear/read failure feedback freezes input and retries only finalization",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "current-day UI save retry and summary route return refresh without repeated writes or stale snapshot",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "confirmation restores incomplete nap draft unchanged; leaving and manual reentry do not prompt again",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "recorded main sleep skips; deletion then resume uses current absence without prompting",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "cross-day SleepSession enters complete editor from both slices; moving wake date and deleting refresh all revisited projections",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "independent SQLite writer wins selected date, restored failed draft stays distinct; write retry and deleted stale source never retarget a replacement",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "stale TimeBlock save conflicts atomically, retains draft and rejects missing source; missing Sleep slice cannot recreate saved draft",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "returning from an open form on the next device date checks the new day",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "app edits complete fact from either day, reopens file draft, migrates wake summary, preserves note and deletes with refreshed Gap",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "file-backed bootstrap closes the optional Goal/rhythm/lifecycle loop and preserves old fields",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "shared fixed/follow date, modal cancel, native root back, formal saved date and drafts",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real annotation SQL failure rolls back create and combined edit; UI retries retained drafts",
+        "result": "error"
+      }
+    ]
+  },
+  "baselineResults": {
+    "totalEvents": 917,
+    "visibleTests": 782,
+    "passed": 665,
+    "failed": 108,
+    "skipped": 9,
+    "failures": [
+      {
+        "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+        "name": "Q-021：每类有记录的微小时长不同于缺失，近似提示独立",
+        "result": "failure"
+      },
+      {
+        "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+        "name": "Q-017：复用最终分钟四舍五入，半分钟边界不使用截断",
+        "result": "failure"
+      },
+      {
+        "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+        "name": "多个小值先由投影汇总后格式化，不累加单条舍入分钟",
+        "result": "failure"
+      },
+      {
+        "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+        "name": "覆盖及 Gap 的真零是数值零，正时长舍入零仍显示微小时长",
+        "result": "failure"
+      },
+      {
+        "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+        "name": "真实混合投影：精度、存在性和全局/目标范围不相互污染",
+        "result": "failure"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "widget distinguishes committed clear failure and only finishes cleanup/read",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "widget distinguishes committed refresh failure and only finishes cleanup/read",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "widget distinguishes committed both failure and only finishes cleanup/read",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "update post-commit cleanup/other-day read failure locks mutations and retry does not repeat them",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "widget blocks a second click and back while submitting; write failure leaves editable draft",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "widget lists both conflict identities and full intervals and permits manual correction",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "delete post-commit cleanup/other-day read failure locks mutations and retry does not repeat them",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "cancel deletion leaves fact and draft; formal failure is editable and preserves both",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "multiple complete main sleeps and nap stay separate from window coverage",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "missing groups and exact/approximate subminute totals use existing formatting",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "same-name archived Goals remain separate; four subsets and global rhythm use independent contributions",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "midnight wake and future date have full sleep even with zero window contribution",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "correcting wake date removes old summary and refreshes new date without losing original identity",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "empty and unannotated-only Goals preserve missing labels and positive subminute recovery",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "selected figure uses all projected facts and gaps, Unknown is a subset",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "folds retain raw fields, no formal writes, restore and state switches",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "one millisecond remains fractional; empty today/future is neutral and not Gap",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "full coverage with approximate interior keeps zero Gap exact",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 320.0, text scale 1.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "approximation is independent for accounted Unknown and remaining Gap",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "positive subminute values and final-sum rounding do not become missing or force display equality",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 320.0, text scale 1.5",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 320.0, text scale 2.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 360.0, text scale 1.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 360.0, text scale 1.5",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "neutral validation, submit reveals collapsed error; independent time and picker cancellation",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 360.0, text scale 2.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 412.0, text scale 1.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 412.0, text scale 1.5",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "same names select by id; Unknown retains title and approximate Goal time; draft leaves and resumes",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mixed and long timeline at width 412.0, text scale 2.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "approximate wake affects only its retained slice end and complete duration",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "distinct read, draft, formal, conflict, missing-source and committed states",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "mobile date/time and goal modals at all font sizes, cancel and selected civil minute",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "combined time conflict keeps both formal objects; manual correction saves both",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "duplicate add preserves explicit intent and reports correct relation failure",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "missing edit preserves explicit intent and reports correct relation failure",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "assembled app saves one cross-day fact, clears file draft and updates summaries/coverage for both days and nap",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "summary displays every complete main sleep and nap, including sub-minute duration without calling it missing",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "first confirmation can continue ledger; reopening same file/date suppresses; next day resumes once",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "shared fixed/follow date, modal cancel, native root back, formal saved date and drafts",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "optional note can be omitted or blank for both sleep types",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "first real entry persists a draft, submits cross-day/multiple main sleeps and nap, edits and deletes with independent approximation",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "app entry needs no Goal, closes/reopens real draft storage and leaves formal data unchanged",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 320.0 / 1.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "app edits complete fact from either day, reopens file draft, migrates wake summary, preserves note and deletes with refreshed Gap",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "confirmation restores incomplete nap draft unchanged; leaving and manual reentry do not prompt again",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 320.0 / 1.5",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 320.0 / 2.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "raw multiline note restores, failed note-only edit retains input and explicit clearing saves null",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "recorded main sleep skips; deletion then resume uses current absence without prompting",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 360.0 / 1.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "midnight wake saved via entry remains in complete summary with zero day contribution and is editable",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 360.0 / 1.5",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 360.0 / 2.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real summary save-return, historical ledger read/edit, move to new day and delete leave original facts intact",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 412.0 / 1.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "2001 code points remain in draft; trimmed 2000 emoji save without UTF16 clipping",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 412.0 / 1.5",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "facts changed after drafting reject both conflicts; manual correction survives real rollback and editing conflicts",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing form and time dialog at 412.0 / 2.0",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "committed create/edit/delete with real cleanup and read failures only retries cleanup and reads",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "returning from an open form on the next device date checks the new day",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "actual fact correction refreshes ledger, summary and review context while archived original Goal and review text keep their source",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "actual bootstrap restores edit draft, retains archived Goal, saves moved date and no-op without changing identity or creation time",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "summary entry allows failed facts, rejects invalid dates and pins displayed today across midnight with one route",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrap ordinary/home routes save optional hint and edit/remove through the real repository",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real bootstrap ordinary selection reopens both files, saves by id, legacy home edit clears",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrap Gap/timeline routes save optional hint and edit/remove through the real repository",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "ledger entry allows failed facts, rejects invalid dates and pins displayed today across midnight with one route",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrap Gap prefills unchanged approximate times, timeline source edit retains archived Goal and clears",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "confirmed home sample, details and mobile text matrix",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "V01 real Gap save and V06 atomic conflict retains input",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real mixed summary to raw draft, Unicode limit and changed Goal failure, full-field create/edit/move/delete preserve facts",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "post-update clear/read failure feedback freezes input and retries only finalization",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "empty ordinary entry stays manual but explicit full-day Gap prefills approximate and saves untitled Unknown only after confirmation",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real facts render as one day timeline and re-slice across dates without writes or duplicates",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "committed leap-day review with simultaneous cleanup/read faults recovers through full bootstrap reopen and retries only finish before edit/delete",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "file-backed bootstrap closes the optional Goal/rhythm/lifecycle loop and preserves old fields",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrap opens summary, follows today and excludes preserved draft",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "empty historical Gap prefills full calendar day; future date exposes no Gap action",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "same names use distinct ids, current metadata reloads and absent annotations/sleep carry no implied rhythm",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "one real app resolves cross-day sleep, partial known and Unknown while leaving gaps, then edits/deletes and reopens only persisted facts",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrap opens day ledger, follows today and excludes preserved draft",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "independent SQLite writer wins selected date, restored failed draft stays distinct; write retry and deleted stale source never retarget a replacement",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "Gap partial known draft survives leaving and file reopen, existing precision wins, ordinary draft remains separate, save leaves remainder",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real annotation SQL failure rolls back create and combined edit; UI retries retained drafts",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "current Gap conflict remains unresolved until manual adjacent correction; committed read retry never inserts twice; refreshed now and future contexts stay distinct",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "both day slices edit the complete annotation, clear hint/remove and delete reread without rewriting reviews",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "sleep-only today suggests tail; mixed precision survives draft, save, edit and delete",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "existing record is reachable for edit after opening the app",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "long Unicode Goal and multiline continuation stay readable on narrow scaled timeline without truncating stored text",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "stale Gap conflicts atomically with new sleep, retains input and draft until manual correction succeeds",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "cross-day TimeBlock edits one complete identity from both days; hidden fields survive both knowledge transitions and move; delete removes annotation only",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real file app UI mutations keep historical mixed summaries derived from current facts",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "real Goal read failure hides stale timeline; retry reads current metadata without any formal write",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrapped new Unknown is saved and home shows refreshed coverage",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "current-day UI save retry and summary route return refresh without repeated writes or stale snapshot",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "historical candidate requires choice; invalid and sleep conflict can be corrected",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "committed annotation refresh failure retries reads only, including independent full-day Goal failure",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "bootstrap owns one connection across rebuilds and closes it",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "cross-day SleepSession enters complete editor from both slices; moving wake date and deleting refresh all revisited projections",
+        "result": "error"
+      },
+      {
+        "file": "package:flutter_test/src/widget_tester.dart",
+        "name": "stale TimeBlock save conflicts atomically, retains draft and rejects missing source; missing Sleep slice cannot recreate saved draft",
+        "result": "error"
+      }
+    ]
+  },
+  "addedFailures": [],
+  "resolvedFailures": []
+}

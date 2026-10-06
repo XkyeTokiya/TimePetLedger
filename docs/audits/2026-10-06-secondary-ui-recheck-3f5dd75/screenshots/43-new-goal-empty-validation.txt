@@ -1,0 +1,8 @@
+- alertdialog:
+  - generic "Alert":
+    - generic: 想把时间投入什么？
+    - textbox "目标名称":
+      - /placeholder: 比如：毕业设计
+    - generic: 先给目标起个名字。
+    - button "取消"
+    - button "保存目标" [active]

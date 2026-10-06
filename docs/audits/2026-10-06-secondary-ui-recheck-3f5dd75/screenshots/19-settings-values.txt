@@ -1,0 +1,6 @@
+- button "Back" [active]
+- heading "设置" [level=2]
+- button "界面设置 目标热力图 · 未设置"
+- button "记录与提醒 未设置 · 首页提醒已开启"
+- button "高级设置 测试数据与数据清空"
+- button "关于 日账本 · 版本信息"

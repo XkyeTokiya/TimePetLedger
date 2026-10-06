@@ -1,0 +1,12 @@
+- button "Back Back" [active]:
+  - text: Back
+  - generic: Back
+- heading "记录详情" [level=2]
+- generic: 睡眠记录
+- banner "主睡眠":
+  - textbox [disabled]
+- generic: 这次睡眠 7 小时 40 分钟
+- group "完整睡眠区间 10月6日时间线计入 7 小时 20 分钟":
+  - textbox "入睡" [disabled]
+  - textbox "醒来" [disabled]
+- button "编辑完整记录"

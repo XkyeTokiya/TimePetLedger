@@ -1,0 +1,46 @@
+- button "更多 更多":
+  - text: 更多
+  - generic: 更多
+- generic: 日账本
+- button "选择日期"
+- button "10月6日 周二 · 今天"
+- generic: 已交代
+- generic: 7 小时 50 分钟
+- generic: /
+- generic: 尚未记录
+- generic: 14 小时 55 分钟
+- button "时间分布说明"
+- button "刷新账本"
+- tablist:
+  - tab "时间线"
+  - tab "摘要"
+  - tab "复盘" [active] [selected]
+- button "前一天"
+- button "日期：2026-10-06"
+- button "后一天"
+- generic: 今天 · 跟随今天
+- button "手动输入日期"
+- button "今天"
+- button "刷新复盘上下文"
+- generic: 这一天尚无复盘。
+- button "填写复盘"
+- generic: 当天事实上下文：2026-10-06
+- generic: 已交代：7 小时 50 分钟
+- generic: 其中未知：0 分钟
+- generic: 未知已包含在已交代时间中。
+- generic: 尚未记录：14 小时 57 分钟
+- generic: 睡眠背景（按醒来日期汇总完整记录）
+- generic: 主睡眠
+- generic: 7 小时 40 分钟
+- generic: 2026-10-05 23:40 → 2026-10-06 07:20 · 完整时长 7 小时 40 分钟
+- generic: 小睡
+- generic: 尚未记录小睡
+- generic: 目标时间（账本窗口）
+- generic: 这段时间还没有目标相关记录
+- generic: 全局节奏（账本窗口）
+- generic: 全局推进：未记录推进
+- generic: 全局卡住：未记录卡住
+- generic: 全局恢复：未记录恢复
+- generic: 全局节奏包含无目标的记录；目标内恢复已包含在全局恢复中。
+- button "记录睡眠"
+- button "记录一笔"

@@ -1,0 +1,7 @@
+- alertdialog:
+  - generic "Alert":
+    - generic [active]: 删除这段睡眠？
+    - generic: 2026-10-05 23:40 → 2026-10-06 07:20
+    - generic: 会删除整段跨夜睡眠，包括其他日期里显示的部分。相关日期的时间线会随之更新。
+    - button "保留记录"
+    - button "确认删除"

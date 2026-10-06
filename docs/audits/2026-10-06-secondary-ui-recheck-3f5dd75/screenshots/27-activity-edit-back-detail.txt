@@ -1,0 +1,13 @@
+- button "Back Back" [active]:
+  - text: Back
+  - generic: Back
+- heading "记录详情" [level=2]
+- generic: 时间记录
+- banner "早餐":
+  - textbox [disabled]
+- generic: 这段时间 30 分钟
+- group "时间区间":
+  - textbox "开始" [disabled]
+  - textbox "结束" [disabled]
+- button "删除"
+- button "编辑完整记录"

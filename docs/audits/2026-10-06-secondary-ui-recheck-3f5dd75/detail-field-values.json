@@ -1,0 +1,20 @@
+[
+  {
+    "disabled": true,
+    "label": null,
+    "tag": "TEXTAREA",
+    "value": ""
+  },
+  {
+    "disabled": true,
+    "label": "开始",
+    "tag": "TEXTAREA",
+    "value": ""
+  },
+  {
+    "disabled": true,
+    "label": "结束",
+    "tag": "TEXTAREA",
+    "value": ""
+  }
+]

@@ -1,0 +1,7 @@
+- button "Back" [active]
+- heading "高级设置" [level=2]
+- generic: 活动记录 5条 睡眠记录 2条 目标 1个 每日复盘 1条 未保存草稿 0条
+- generic: 添加测试数据
+- generic: 已有数据，暂时不能添加测试数据。
+- button "清空当前数据"
+- generic: 清空记录、目标、复盘和草稿，保留设置。

@@ -1,0 +1,9 @@
+- button "Back"
+- heading "删除记录" [level=2]
+- generic: 时间记录
+- generic: 删除这条记录？
+- textbox [disabled]
+- generic: 10月6日 07:20 至 10月6日 07:50
+- generic: 删除后，这段时间会重新显示为尚未记录。
+- button "保留记录"
+- button "确认删除"

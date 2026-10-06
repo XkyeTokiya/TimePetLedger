@@ -1,0 +1,612 @@
+{
+  "head": "3f5dd75",
+  "baseline": "38f8ffe",
+  "date": "2026-10-06",
+  "rows": [
+    {
+      "id": "UI-01",
+      "priority": "P1",
+      "status": "通过",
+      "title": "统一弹层与页面主题",
+      "finding": "根 MaterialApp 使用 homeTheme；目标校验、睡眠时段、日期/时分、确认弹窗与复盘均为浅色纸面。",
+      "steps": [
+        2,
+        16,
+        24,
+        32,
+        33,
+        34,
+        37,
+        44
+      ],
+      "code": "lib/app/main_app.dart:78"
+    },
+    {
+      "id": "UI-02",
+      "priority": "P1",
+      "status": "部分完成",
+      "title": "时间分布说明响应",
+      "finding": "390×844 可打开说明并关闭；844×390 下说明与刷新入口全部消失。高度小于 520 的 tight 分支将两者一起隐藏。",
+      "steps": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "code": "lib/features/ledger/presentation/home/home_shell.dart:153"
+    },
+    {
+      "id": "UI-03",
+      "priority": "P1",
+      "status": "通过",
+      "title": "新建目标校验留在表单",
+      "finding": "空名称点击保存后，表单仍在，显示红色“先给目标起个名字”；没有创建目标。",
+      "steps": [
+        42,
+        44
+      ],
+      "code": "lib/features/goals/presentation/goal_management_page.dart:1224"
+    },
+    {
+      "id": "UI-04",
+      "priority": "P1",
+      "status": "通过",
+      "title": "编辑返回保留详情上下文",
+      "finding": "活动与睡眠从详情进入编辑，直接返回后均保留原详情；本次未提交实际修改。",
+      "steps": [
+        25,
+        26,
+        27,
+        29,
+        30,
+        35
+      ],
+      "code": "lib/features/ledger/presentation/fact_detail_page.dart:79"
+    },
+    {
+      "id": "UI-05",
+      "priority": "P2",
+      "status": "通过",
+      "title": "明确目标历史行职责",
+      "finding": "历史行呈阅读内容，提供标题/日期/区间/时长语义，没有按钮角色；不新增详情导航。",
+      "steps": [
+        14,
+        45
+      ],
+      "code": "lib/features/goals/presentation/goal_management_page.dart:731"
+    },
+    {
+      "id": "UI-06",
+      "priority": "P1",
+      "status": "部分完成",
+      "title": "窄屏日历完整一周",
+      "finding": "390px 稳定状态显示七列；320px 周日列在初始画面被裁切，仍需横向滚动。源码固定 336px 七格，不满足全部窄屏完整可见。",
+      "steps": [
+        10,
+        41
+      ],
+      "code": "lib/features/ledger/presentation/day_ledger_date_dialog.dart:184"
+    },
+    {
+      "id": "UI-07",
+      "priority": "P1",
+      "status": "部分完成",
+      "title": "详情辅助功能语义",
+      "finding": "标题与时长已进入辅助树；开始/结束及入睡/醒来仍是 disabled textbox，只暴露标签，没有实际日期时间值。只读 DOM 查询中对应 textarea.value 为空。",
+      "steps": [
+        25,
+        27,
+        29,
+        35
+      ],
+      "code": "lib/features/ledger/presentation/fact_detail_page.dart:302"
+    },
+    {
+      "id": "UI-08",
+      "priority": "P2",
+      "status": "部分完成",
+      "title": "统一删除/归档/清空确认",
+      "finding": "主题、主要对象和结果文案改善；睡眠显示完整跨夜区间。活动删除仍为整页，睡眠/目标/清空为弹窗；有引用目标的“删除”最终仍展示归档确认，入口职责未完全统一。所有确认均取消。",
+      "steps": [
+        16,
+        17,
+        24,
+        28,
+        31
+      ],
+      "code": "lib/features/ledger/presentation/sleep/sleep_recording_page.dart:121"
+    },
+    {
+      "id": "UI-09",
+      "priority": "P2",
+      "status": "通过",
+      "title": "设置去除重复标题",
+      "finding": "设置首页和界面设置不再重复展示同名大标题；关于正文保留产品名。",
+      "steps": [
+        19,
+        20,
+        21
+      ],
+      "code": "lib/features/settings/presentation/settings_page.dart:208"
+    },
+    {
+      "id": "UI-10",
+      "priority": "P2",
+      "status": "通过",
+      "title": "展示当前/未设置状态",
+      "finding": "设置摘要和热力图选项明确显示“未设置”，不暗中选择默认值。本次没有改变持久化偏好，已设值分支仅按源码核对。",
+      "steps": [
+        19,
+        20
+      ],
+      "code": "lib/features/settings/presentation/settings_page.dart"
+    },
+    {
+      "id": "UI-11",
+      "priority": "P2",
+      "status": "通过",
+      "title": "复盘统一主题",
+      "finding": "复盘入口、表单、更多菜单和放弃确认均采用浅色主题；内容布局本身仍较密集，未视为本条范围内新增要求。",
+      "steps": [
+        36,
+        37,
+        38,
+        39
+      ],
+      "code": "lib/features/review/presentation/review_form.dart"
+    },
+    {
+      "id": "UI-12",
+      "priority": "P2",
+      "status": "部分完成",
+      "title": "日期时间中文化",
+      "finding": "日期和时分选择器正文/按钮已中文；Back、Dismiss 与 Popup menu 等系统辅助名称仍为英文。原报告已承认 Back 边界，不能标为全面中文化。时分滚轮在辅助树中仅是数字 generic，键盘与真实读屏仍待测。",
+      "steps": [
+        12,
+        27,
+        32,
+        33,
+        34
+      ],
+      "code": "lib/features/ledger/presentation/sleep/sleep_recording_page.dart"
+    },
+    {
+      "id": "UI-13",
+      "priority": "P2",
+      "status": "部分完成",
+      "title": "图表时长标尺与色阶",
+      "finding": "柱状图增加小时单位、顶部刻度和各日读数；热力图增加“少/多”色块及未来/无投入解释，但缺少色阶对应时长范围。源码分档为 <1h、<2h、<4h、≥4h，图例未说明。",
+      "steps": [
+        14,
+        15,
+        45
+      ],
+      "code": "lib/features/goals/presentation/goal_management_page.dart:594"
+    },
+    {
+      "id": "UI-14",
+      "priority": "P2",
+      "status": "通过",
+      "title": "演示目标创建日期",
+      "finding": "新端口自动演示数据中的目标显示创建于10月4日，与 10月6日测试日的前两天一致。旧数据库已存在的演示事实不会因源码调整自动重写。",
+      "steps": [
+        14,
+        45
+      ],
+      "code": "lib/dev/seed_demo_data.dart:37"
+    },
+    {
+      "id": "UI-15",
+      "priority": "P2",
+      "status": "通过（当前版本）",
+      "title": "关于页显示应用版本",
+      "finding": "页面显示 0.1.0 · 构建 1，与 pubspec.yaml 的 0.1.0+1 一致；通过装配注入常量，没有自动读取构建元数据，后续升版需同步常量。",
+      "steps": [
+        21,
+        22
+      ],
+      "code": "lib/app/app_version.dart:5"
+    },
+    {
+      "id": "UI-16",
+      "priority": "P2",
+      "status": "通过",
+      "title": "桌面二级页最大宽度",
+      "finding": "1440×900 的关于页和目标详情正文居中收窄；目标/设置/详情源码均设置 maxWidth 640。390px 保持流式布局。",
+      "steps": [
+        22,
+        45
+      ],
+      "code": "lib/features/goals/presentation/goal_management_page.dart:971"
+    },
+    {
+      "id": "UI-17",
+      "priority": "P2",
+      "status": "通过",
+      "title": "复盘放弃草稿确认",
+      "finding": "选择放弃此复盘草稿后先出现确认；点击继续填写可返回表单，没有执行丢弃。",
+      "steps": [
+        37,
+        38,
+        39
+      ],
+      "code": "lib/features/review/presentation/review_form.dart:149"
+    },
+    {
+      "id": "菜单",
+      "priority": "P1",
+      "status": "通过",
+      "title": "独立菜单页",
+      "finding": "独立页面仅有“我的目标 / 设置”；目标和设置采用替换菜单页方式，返回回到首页。",
+      "steps": [
+        5,
+        12,
+        18,
+        19
+      ],
+      "code": "lib/features/ledger/presentation/home/home_menu_page.dart:27"
+    }
+  ],
+  "steps": [
+    {
+      "step": 1,
+      "title": "首页 390px",
+      "health": "通过",
+      "note": "说明与刷新入口可见。",
+      "screenshot": "screenshots/01-home-390.jpg",
+      "accepted": true
+    },
+    {
+      "step": 2,
+      "title": "打开时间分布说明",
+      "health": "通过",
+      "note": "浅色弹窗且内容完整。",
+      "screenshot": "screenshots/02-distribution-open.jpg",
+      "accepted": true
+    },
+    {
+      "step": 3,
+      "title": "关闭说明 / 刷新",
+      "health": "通过",
+      "note": "回到首页，刷新响应。",
+      "screenshot": "screenshots/03-distribution-close.jpg",
+      "accepted": true
+    },
+    {
+      "step": 4,
+      "title": "首页 844×390",
+      "health": "有问题",
+      "note": "说明与刷新入口消失。",
+      "screenshot": "screenshots/04-home-landscape-actions-hidden.jpg",
+      "accepted": true
+    },
+    {
+      "step": 5,
+      "title": "独立菜单页",
+      "health": "通过",
+      "note": "仅目标与设置。",
+      "screenshot": "screenshots/05-menu-page.jpg",
+      "accepted": true
+    },
+    {
+      "step": 6,
+      "title": "目标页首次读取",
+      "health": "拒收",
+      "note": "调试服务器中断时读取失败；步骤13重新验证。",
+      "screenshot": "screenshots/06-goals-list.jpg",
+      "accepted": false
+    },
+    {
+      "step": 7,
+      "title": "首次新建目标",
+      "health": "拒收",
+      "note": "背景仍是读取失败，不作最终主题证据；步骤42替代。",
+      "screenshot": "screenshots/07-goal-new-dialog.jpg",
+      "accepted": false
+    },
+    {
+      "step": 8,
+      "title": "首次空名称校验",
+      "health": "拒收",
+      "note": "背景受环境失败影响；步骤44替代。",
+      "screenshot": "screenshots/08-goal-empty-validation-stays.jpg",
+      "accepted": false
+    },
+    {
+      "step": 9,
+      "title": "恢复后的首页",
+      "health": "通过",
+      "note": "新端口恢复，可正常加载演示数据。",
+      "screenshot": "screenshots/09-recovered-home.jpg",
+      "accepted": true
+    },
+    {
+      "step": 10,
+      "title": "日历 320px",
+      "health": "有问题",
+      "note": "周日列被裁切，需要横向滚动。",
+      "screenshot": "screenshots/10-calendar-320.jpg",
+      "accepted": true
+    },
+    {
+      "step": 11,
+      "title": "日历切至 390px",
+      "health": "拒收",
+      "note": "视口切换尚未稳定；步骤41替代。",
+      "screenshot": "screenshots/11-calendar-390.jpg",
+      "accepted": false
+    },
+    {
+      "step": 12,
+      "title": "恢复后的菜单",
+      "health": "通过",
+      "note": "独立菜单正常。",
+      "screenshot": "screenshots/12-menu-recovered.jpg",
+      "accepted": true
+    },
+    {
+      "step": 13,
+      "title": "目标列表加载",
+      "health": "通过",
+      "note": "演示目标读取成功。",
+      "screenshot": "screenshots/13-goals-loaded.jpg",
+      "accepted": true
+    },
+    {
+      "step": 14,
+      "title": "目标柱状图 / 日期 / 历史",
+      "health": "基本通过",
+      "note": "日期正确、小时标尺可读、历史行供阅读。",
+      "screenshot": "screenshots/14-goal-bar-date-history.jpg",
+      "accepted": true
+    },
+    {
+      "step": 15,
+      "title": "目标热力图图例",
+      "health": "有问题",
+      "note": "少/多色块没有时长范围。",
+      "screenshot": "screenshots/15-goal-heat-legend.jpg",
+      "accepted": true
+    },
+    {
+      "step": 16,
+      "title": "目标归档确认",
+      "health": "通过",
+      "note": "对象与保留历史说明清楚。",
+      "screenshot": "screenshots/16-goal-archive-confirm.jpg",
+      "accepted": true
+    },
+    {
+      "step": 17,
+      "title": "有引用目标删除确认",
+      "health": "部分完成",
+      "note": "实际结果为归档，入口仍叫删除。",
+      "screenshot": "screenshots/17-goal-delete-confirm.jpg",
+      "accepted": true
+    },
+    {
+      "step": 18,
+      "title": "目标列表返回首页",
+      "health": "通过",
+      "note": "不会重新返回菜单。",
+      "screenshot": "screenshots/18-goals-back-home.jpg",
+      "accepted": true
+    },
+    {
+      "step": 19,
+      "title": "设置首页",
+      "health": "通过",
+      "note": "单层标题和当前值摘要。",
+      "screenshot": "screenshots/19-settings-values.jpg",
+      "accepted": true
+    },
+    {
+      "step": 20,
+      "title": "界面设置未设置状态",
+      "health": "通过",
+      "note": "明确未设置，不自动选中。",
+      "screenshot": "screenshots/20-interface-unset.jpg",
+      "accepted": true
+    },
+    {
+      "step": 21,
+      "title": "关于版本",
+      "health": "通过",
+      "note": "0.1.0 · 构建1。",
+      "screenshot": "screenshots/21-about-version.jpg",
+      "accepted": true
+    },
+    {
+      "step": 22,
+      "title": "关于桌面布局",
+      "health": "通过",
+      "note": "正文居中收窄。",
+      "screenshot": "screenshots/22-about-desktop.jpg",
+      "accepted": true
+    },
+    {
+      "step": 23,
+      "title": "高级设置数量",
+      "health": "通过",
+      "note": "对象计数与清空入口清楚。",
+      "screenshot": "screenshots/23-advanced-counts.jpg",
+      "accepted": true
+    },
+    {
+      "step": 24,
+      "title": "清空确认",
+      "health": "通过",
+      "note": "删除范围与保留设置说明清楚；已取消。",
+      "screenshot": "screenshots/24-clear-confirm.jpg",
+      "accepted": true
+    },
+    {
+      "step": 25,
+      "title": "活动详情语义",
+      "health": "有问题",
+      "note": "可见区间值未进入辅助树。",
+      "screenshot": "screenshots/25-activity-detail-semantics.jpg",
+      "accepted": true
+    },
+    {
+      "step": 26,
+      "title": "活动编辑器",
+      "health": "通过",
+      "note": "浅色主题，保留草稿返回。",
+      "screenshot": "screenshots/26-activity-edit.jpg",
+      "accepted": true
+    },
+    {
+      "step": 27,
+      "title": "活动编辑返回详情",
+      "health": "通过",
+      "note": "原详情留在返回栈。",
+      "screenshot": "screenshots/27-activity-edit-back-detail.jpg",
+      "accepted": true
+    },
+    {
+      "step": 28,
+      "title": "活动删除确认",
+      "health": "部分完成",
+      "note": "整页确认，与其他弹窗形态不同；已取消。",
+      "screenshot": "screenshots/28-activity-delete-confirm.jpg",
+      "accepted": true
+    },
+    {
+      "step": 29,
+      "title": "睡眠详情语义",
+      "health": "有问题",
+      "note": "入睡/醒来值未进入辅助树。",
+      "screenshot": "screenshots/29-sleep-detail-semantics.jpg",
+      "accepted": true
+    },
+    {
+      "step": 30,
+      "title": "睡眠编辑器",
+      "health": "通过",
+      "note": "完整原区间与保存边界清楚。",
+      "screenshot": "screenshots/30-sleep-editor.jpg",
+      "accepted": true
+    },
+    {
+      "step": 31,
+      "title": "睡眠删除确认",
+      "health": "通过",
+      "note": "完整跨夜区间和跨日影响说明；已取消。",
+      "screenshot": "screenshots/31-sleep-delete-confirm.jpg",
+      "accepted": true
+    },
+    {
+      "step": 32,
+      "title": "睡眠日期时间弹层",
+      "health": "基本通过",
+      "note": "正文中文，Dismiss辅助名仍英文。",
+      "screenshot": "screenshots/32-sleep-time-sheet.jpg",
+      "accepted": true
+    },
+    {
+      "step": 33,
+      "title": "中文时分选择器",
+      "health": "部分完成",
+      "note": "正文已中文，滚轮数字的可操作语义待补。",
+      "screenshot": "screenshots/33-chinese-time-picker.jpg",
+      "accepted": true
+    },
+    {
+      "step": 34,
+      "title": "中文日期选择器",
+      "health": "通过",
+      "note": "月份、星期与动作中文。",
+      "screenshot": "screenshots/34-chinese-date-picker.jpg",
+      "accepted": true
+    },
+    {
+      "step": 35,
+      "title": "睡眠编辑返回详情",
+      "health": "通过",
+      "note": "保留原详情。",
+      "screenshot": "screenshots/35-sleep-back-detail.jpg",
+      "accepted": true
+    },
+    {
+      "step": 36,
+      "title": "复盘首页",
+      "health": "通过",
+      "note": "浅色主题，事实说明仍密集。",
+      "screenshot": "screenshots/36-review-home.jpg",
+      "accepted": true
+    },
+    {
+      "step": 37,
+      "title": "复盘表单",
+      "health": "通过",
+      "note": "主题一致；未正式保存。",
+      "screenshot": "screenshots/37-review-form-theme.jpg",
+      "accepted": true
+    },
+    {
+      "step": 38,
+      "title": "复盘更多菜单",
+      "health": "通过",
+      "note": "保留/放弃草稿两个动作明确。",
+      "screenshot": "screenshots/38-review-more.jpg",
+      "accepted": true
+    },
+    {
+      "step": 39,
+      "title": "复盘放弃确认",
+      "health": "通过",
+      "note": "继续填写可取消放弃。",
+      "screenshot": "screenshots/39-review-discard-confirm.jpg",
+      "accepted": true
+    },
+    {
+      "step": 40,
+      "title": "复盘返回首页",
+      "health": "通过",
+      "note": "退出表单正常。",
+      "screenshot": "screenshots/40-review-return-home.jpg",
+      "accepted": true
+    },
+    {
+      "step": 41,
+      "title": "390px 日历稳定状态",
+      "health": "通过",
+      "note": "完整七列可见。",
+      "screenshot": "screenshots/41-calendar-390-stable.jpg",
+      "accepted": true
+    },
+    {
+      "step": 42,
+      "title": "新目标稳定状态",
+      "health": "通过",
+      "note": "轻色表单保持主题。",
+      "screenshot": "screenshots/42-new-goal-stable.jpg",
+      "accepted": true
+    },
+    {
+      "step": 43,
+      "title": "空名称即时校验",
+      "health": "拒收",
+      "note": "动画中的错误文字透明度未稳定；步骤44替代。",
+      "screenshot": "screenshots/43-new-goal-empty-validation.jpg",
+      "accepted": false
+    },
+    {
+      "step": 44,
+      "title": "空名称校验稳定状态",
+      "health": "通过",
+      "note": "表单保留且错误文字红色可读。",
+      "screenshot": "screenshots/44-new-goal-error-stable.jpg",
+      "accepted": true
+    },
+    {
+      "step": 45,
+      "title": "目标桌面布局",
+      "health": "通过",
+      "note": "图表和历史正文约640px居中。",
+      "screenshot": "screenshots/45-goal-desktop-width.jpg",
+      "accepted": true
+    }
+  ]
+}

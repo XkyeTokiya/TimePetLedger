@@ -1,0 +1,9 @@
+- button "Back" [active]
+- heading "目标" [level=2]
+- generic: 我的目标
+- generic: 点名称看投入，点书签设为常用。
+- button "当前"
+- button "已归档"
+- group "毕业设计":
+  - button "设常用"
+- button "新建目标"

@@ -1,0 +1,5 @@
+- button "Back" [active]
+- heading "关于" [level=2]
+- generic: 把一天慢慢记清楚。
+- generic: 应用名称 Time Pet Ledger
+- generic: 版本 0.1.0 · 构建 1

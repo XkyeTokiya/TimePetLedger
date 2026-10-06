@@ -1,0 +1,13 @@
+- button "Back"
+- heading "编辑睡眠" [level=2]
+- generic: 几点睡， 几点醒？
+- button "主睡眠"
+- button "小睡"
+- button "入睡 10月5日 23:40"
+- button "醒来 10月6日 07:20"
+- generic: 这次睡眠 7 小时 40 分钟
+- button "补充备注"
+- generic: 保存后才会更新这条睡眠。
+- button "放弃草稿"
+- button "删除睡眠"
+- button "保存修改"

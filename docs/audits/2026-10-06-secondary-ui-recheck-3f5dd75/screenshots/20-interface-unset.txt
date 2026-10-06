@@ -1,0 +1,5 @@
+- button "Back"
+- heading "界面设置" [level=2]
+- generic: 目标热力图 未设置
+- button "本周 查看本自然周的投入"
+- button "本月 查看本自然月的投入"

@@ -1,0 +1,6 @@
+- alertdialog:
+  - generic "Alert":
+    - generic [active]: 清空当前数据？
+    - generic: 会清空记录、睡眠、目标、复盘和未保存草稿，并清除常用目标选择。界面、记录方式和提醒设置会保留。
+    - button "取消"
+    - button "确认清空"

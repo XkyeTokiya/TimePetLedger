@@ -1,0 +1,15 @@
+- alertdialog:
+  - generic "Alert":
+    - generic [active]: 选择时分
+    - generic: 小时
+    - generic: 分钟
+    - generic: "21"
+    - generic: "22"
+    - generic: "23"
+    - generic: "38"
+    - generic: "39"
+    - generic: "40"
+    - generic: "41"
+    - generic: "42"
+    - button "取消"
+    - button "确定"

@@ -1,0 +1,6 @@
+- alertdialog:
+  - generic "Alert":
+    - generic [active]: 放弃这份复盘草稿？
+    - generic: 未保存的内容将被清除。
+    - button "继续填写"
+    - button "放弃草稿"

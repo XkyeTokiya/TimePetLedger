@@ -1,0 +1,13 @@
+- generic "Dialog":
+  - button "Dismiss"
+  - generic: 这次睡眠是什么时候？
+  - generic: 两端各自独立。
+  - generic: 入睡
+  - button "2026年10月5日"
+  - button "23:40"
+  - generic: 醒来
+  - button "2026年10月6日"
+  - button "07:20"
+  - button "直接输入日期时间"
+  - generic: 共 7 小时 40 分钟
+  - button "确认"

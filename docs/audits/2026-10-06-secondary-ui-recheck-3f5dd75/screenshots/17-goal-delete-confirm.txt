@@ -1,0 +1,8 @@
+- alertdialog:
+  - generic "Alert":
+    - generic [active]: 归档这个目标？
+    - generic: 毕业设计
+    - generic: 归档后，新记录就不再关联它。以前的记录会保留。
+    - generic: 它已有记录，会按归档处理。
+    - button "保留目标"
+    - button "确认归档"
