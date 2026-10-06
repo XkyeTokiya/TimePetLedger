@@ -1,0 +1,19 @@
+Browser tab: 1, Title: "Time Pet Ledger", URL: "http://127.0.0.1:8766/".
+0 AXWebArea Time Pet Ledger, URL: 127.0.0.1:8766/
+	1 container
+		2 container flt-semantic-node-1422
+			3 container flt-semantic-node-1436
+				4 button Back, ID: flt-semantic-node-1437
+				5 heading 记录详情, Value: 2, ID: flt-semantic-node-1438
+					6 text 记录详情
+			7 container flt-semantic-node-1435
+				8 text 时间记录
+				9 text 这段时间 2 小时
+				10 container Description: 时间区间 开始 结束, ID: flt-semantic-node-1429
+				11 text entry area (disabled) 目标
+				12 text entry area (disabled) 节奏
+				13 text entry area (disabled) 接续点
+			14 button 删除, ID: flt-semantic-node-1439
+			15 button 编辑完整记录, ID: flt-semantic-node-1440
+
+The focused UI element is 4 button Back, ID: flt-semantic-node-1437

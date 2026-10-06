@@ -1,0 +1,2809 @@
+{
+  "title": "Time Pet Ledger 二级界面 Web 审查",
+  "date": "2026-10-06",
+  "steps": [
+    {
+      "number": 1,
+      "section": "基线与入口",
+      "action": "首页桌面基线",
+      "health": "本步骤可达",
+      "notes": "确认当前 Web 构建可运行，记录现有纸色、衬线标题与陶土色基线。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/01-home-desktop.jpg",
+      "sha256": "076372ad730a03f42ba15cb004d61908a4b391c789974369048e4bdb824a97fc",
+      "dimensions": [
+        1176,
+        1208
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 2,
+      "section": "基线与入口",
+      "action": "首页 390px",
+      "health": "本步骤可达",
+      "notes": "切换到 390×844；移动端作为二级界面的主要比较基线。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/02-home-mobile.jpg",
+      "sha256": "5cefe18258d48458a9f6404d12b2ad71dd52052f7e77634774c29ef88c0edecf",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 3,
+      "section": "基线与入口",
+      "action": "打开更多菜单",
+      "health": "需修复/调整",
+      "notes": "菜单仍为旧深色与青色，和首页风格断开。",
+      "issues": [
+        "UI-01"
+      ],
+      "accepted": true,
+      "image": "screenshots/03-more-menu.jpg",
+      "sha256": "5976b03b47fb9b5637f4cd8528bddf57494ff132e54f551ec8f2dee5fd618908",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "核心输入内容难以看清，用户可能误读时间或忽略错误；页面切换时也失去统一的视觉预期。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P1"
+    },
+    {
+      "number": 4,
+      "section": "设置",
+      "action": "进入设置首页",
+      "health": "需修复/调整",
+      "notes": "设置分组可理解；导航栏与正文重复“设置”。",
+      "issues": [
+        "UI-09"
+      ],
+      "accepted": true,
+      "image": "screenshots/04-settings-home.jpg",
+      "sha256": "37de4723ad5d8101dc6b4cb4c4274c37ec0559c53d5d00f14383179d0a65c886",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "重复标题挤占主要内容，少量设置被多层标题分割，用户需要额外判断哪些文字是页面名、分组名或选项。",
+      "recommendation": "减少重复标题，用清楚的分组和状态组织设置。",
+      "priority": "P2"
+    },
+    {
+      "number": 5,
+      "section": "设置",
+      "action": "打开界面设置",
+      "health": "需修复/调整",
+      "notes": "两个单选圆环均未显示选中；页面标题重复，当前范围不明确。",
+      "issues": [
+        "UI-09",
+        "UI-10"
+      ],
+      "accepted": true,
+      "image": "screenshots/05-settings-interface.jpg",
+      "sha256": "85682c3430e7094669bd0d28665350c7169cf24a61712c3f5e567e5ebc2e063c",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "重复标题挤占主要内容，少量设置被多层标题分割，用户需要额外判断哪些文字是页面名、分组名或选项。；用户无法确认当前选项或是否尚未设置；仅用外观表示选择，也无法向辅助技术传达选中状态。",
+      "recommendation": "减少重复标题，用清楚的分组和状态组织设置。 明确当前值或未设置状态，并暴露选中语义；不擅定未决默认值。",
+      "priority": "P2"
+    },
+    {
+      "number": 6,
+      "section": "设置",
+      "action": "返回设置",
+      "health": "本步骤可达",
+      "notes": "返回层级正常，本次未修改偏好。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/06-settings-return.jpg",
+      "sha256": "bcc4ed6d388b95b7802b84621db06a88e62315e0ea503f64a172439f187716cd",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 7,
+      "section": "设置",
+      "action": "打开记录与提醒",
+      "health": "需修复/调整",
+      "notes": "两个记录方式均未显示选中；提醒开启状态可见，提醒逻辑尚有产品未决项。",
+      "issues": [
+        "UI-09",
+        "UI-10"
+      ],
+      "accepted": true,
+      "image": "screenshots/07-settings-record-reminder.jpg",
+      "sha256": "d2a911a5f52dfc7090b38ce0abef5cbf25005e78a9c4ae9bdc0f22f8d7f11918",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "重复标题挤占主要内容，少量设置被多层标题分割，用户需要额外判断哪些文字是页面名、分组名或选项。；用户无法确认当前选项或是否尚未设置；仅用外观表示选择，也无法向辅助技术传达选中状态。",
+      "recommendation": "减少重复标题，用清楚的分组和状态组织设置。 明确当前值或未设置状态，并暴露选中语义；不擅定未决默认值。",
+      "priority": "P2"
+    },
+    {
+      "number": 8,
+      "section": "设置",
+      "action": "返回设置",
+      "health": "本步骤可达",
+      "notes": "返回层级正常，未切换记录方式或提醒。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/08-settings-return.jpg",
+      "sha256": "bcc4ed6d388b95b7802b84621db06a88e62315e0ea503f64a172439f187716cd",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 9,
+      "section": "设置",
+      "action": "打开高级选项",
+      "health": "需修复/调整",
+      "notes": "事实数量与清空入口可读；界面标题重复。",
+      "issues": [
+        "UI-09"
+      ],
+      "accepted": true,
+      "image": "screenshots/09-settings-advanced.jpg",
+      "sha256": "3a58eb5ae892532f134d6c7d45e464e13bda86d3d3d18e05d1483f8db65be290",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "重复标题挤占主要内容，少量设置被多层标题分割，用户需要额外判断哪些文字是页面名、分组名或选项。",
+      "recommendation": "减少重复标题，用清楚的分组和状态组织设置。",
+      "priority": "P2"
+    },
+    {
+      "number": 10,
+      "section": "设置",
+      "action": "打开清空确认",
+      "health": "需修复/调整",
+      "notes": "确认内容说明范围，但使用旧深色、青色主按钮，破坏性操作层级弱。",
+      "issues": [
+        "UI-08"
+      ],
+      "accepted": true,
+      "image": "screenshots/10-settings-clear-confirm.jpg",
+      "sha256": "decdf9de25dc9255c2bc1a56cbb9102b3e95bff07d92b4bdda5b6dd1d27f4e69",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户需要在不同位置学习不同确认方式；睡眠缺少具体区间，目标删除与归档的结果也容易混淆。",
+      "recommendation": "统一确认形态，明确对象、具体日期/区间及最终操作结果。",
+      "priority": "P2"
+    },
+    {
+      "number": 11,
+      "section": "设置",
+      "action": "取消清空",
+      "health": "本步骤可达",
+      "notes": "取消后回到高级选项，未执行清空。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/11-clear-cancelled.jpg",
+      "sha256": "3a58eb5ae892532f134d6c7d45e464e13bda86d3d3d18e05d1483f8db65be290",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 12,
+      "section": "设置",
+      "action": "返回设置",
+      "health": "本步骤可达",
+      "notes": "设置分组仍可访问。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/12-settings-return.jpg",
+      "sha256": "a61f088f11a3a50e0be9194208e9c87a38e0ddd5a3e11722630d33e43622b5a0",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 13,
+      "section": "设置",
+      "action": "打开关于",
+      "health": "需修复/调整",
+      "notes": "版本为“—”；导航、正文和产品标题层级显得重复。",
+      "issues": [
+        "UI-09",
+        "UI-15"
+      ],
+      "accepted": true,
+      "image": "screenshots/13-settings-about.jpg",
+      "sha256": "2b61d7126abeb76f02e3d75e91fd74ea1ebec510beddca8502599ae62e1a4621",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "重复标题挤占主要内容，少量设置被多层标题分割，用户需要额外判断哪些文字是页面名、分组名或选项。；关于页不能提供实际版本，用户反馈问题或核对安装版本时缺少必要信息。",
+      "recommendation": "减少重复标题，用清楚的分组和状态组织设置。 从现有版本来源向关于页传入版本信息。",
+      "priority": "P2"
+    },
+    {
+      "number": 14,
+      "section": "设置",
+      "action": "关于返回",
+      "health": "本步骤可达",
+      "notes": "正常回到设置。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/14-about-return.jpg",
+      "sha256": "bcc4ed6d388b95b7802b84621db06a88e62315e0ea503f64a172439f187716cd",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 15,
+      "section": "设置",
+      "action": "设置返回首页",
+      "health": "本步骤可达",
+      "notes": "正常返回首页。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/15-home-return.jpg",
+      "sha256": "4ca85224479dfd4e6678d2cfdb17f71d5f2655d221b6e6f9e19237d32da996da",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 16,
+      "section": "目标管理",
+      "action": "更多→目标管理",
+      "health": "需调整",
+      "notes": "再次记录更多菜单的旧样式。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/16-more-goals-entry.jpg",
+      "sha256": "686d5130a5d10f135dc37ab935d2f24df2c7fd29fbd8aeadaeebee1d4c20872b",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "该步骤重复出现已经记录的视觉一致性问题。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P2（重复观察）"
+    },
+    {
+      "number": 17,
+      "section": "目标管理",
+      "action": "当前目标列表",
+      "health": "本步骤可达",
+      "notes": "目标名称突出，底部新建入口明确；与弹层样式不一致。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/17-goals-list.jpg",
+      "sha256": "1100c47b08defbff289bfda0c1911d9a93aa358012531aad951e323d00efa976",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 18,
+      "section": "目标管理",
+      "action": "切换已归档",
+      "health": "部分覆盖",
+      "notes": "空状态可见；没有归档目标，恢复操作无法在现有夹具中检查。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/18-goals-archived-empty.jpg",
+      "sha256": "b9558ed864c80ded6fba65f324a620e24fa051d46b7e2895e8f4a22d2b71bb84",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "可以检查空状态，但没有归档目标，无法覆盖恢复操作。",
+      "recommendation": "后续在明确的测试数据范围内补充归档目标后，再检查恢复流程。",
+      "priority": "覆盖受限"
+    },
+    {
+      "number": 19,
+      "section": "目标管理",
+      "action": "打开新建目标",
+      "health": "需修复/调整",
+      "notes": "弹窗是旧深色，输入区域和主页面风格不一致。",
+      "issues": [
+        "UI-01",
+        "UI-03"
+      ],
+      "accepted": true,
+      "image": "screenshots/19-goal-create.jpg",
+      "sha256": "2ff8ab31115ec98ab787807114eec00c59cca4cc4a5f7131c7aaecc04e65f680",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "核心输入内容难以看清，用户可能误读时间或忽略错误；页面切换时也失去统一的视觉预期。；用户失去填写上下文，必须重新打开表单；错误与字段分离，也容易被误认为整个列表出错。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。 在原表单校验，保留输入和焦点，错误放在名称字段附近。",
+      "priority": "P1"
+    },
+    {
+      "number": 20,
+      "section": "目标管理",
+      "action": "空名称点击保存",
+      "health": "需修复/调整",
+      "notes": "弹窗直接关闭，错误落在目标列表，失去原输入上下文。",
+      "issues": [
+        "UI-03"
+      ],
+      "accepted": true,
+      "image": "screenshots/20-goal-create-validation.jpg",
+      "sha256": "d2aa6504a60296934f1bfdf06e8606dcdc30134d60e7b222d374455a731a32d3",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户失去填写上下文，必须重新打开表单；错误与字段分离，也容易被误认为整个列表出错。",
+      "recommendation": "在原表单校验，保留输入和焦点，错误放在名称字段附近。",
+      "priority": "P1"
+    },
+    {
+      "number": 21,
+      "section": "目标管理",
+      "action": "切回当前目标",
+      "health": "需修复/调整",
+      "notes": "新建错误仍留在列表；应在表单内处理错误和重试。",
+      "issues": [
+        "UI-03"
+      ],
+      "accepted": true,
+      "image": "screenshots/21-goal-current-return.jpg",
+      "sha256": "95313ca20e43ae82bddd1826619d2d1209cf60cb81b197ec647795b5011b54df",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户失去填写上下文，必须重新打开表单；错误与字段分离，也容易被误认为整个列表出错。",
+      "recommendation": "在原表单校验，保留输入和焦点，错误放在名称字段附近。",
+      "priority": "P1"
+    },
+    {
+      "number": 22,
+      "section": "目标管理",
+      "action": "打开目标柱状图",
+      "health": "需修复/调整",
+      "notes": "当前目标与时长可读；创建日期显示 1970 年，图表需要更完整时长标尺。",
+      "issues": [
+        "UI-13",
+        "UI-14"
+      ],
+      "accepted": true,
+      "image": "screenshots/22-goal-detail-bars.jpg",
+      "sha256": "6df32d0ca8371971abfa908f3029b9f5d51267a1bbd73cf7c31990ec1a240d61",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户能看到分布，却难以从颜色读出时长；无法理解空格差异时，可能把未来日期与过去无投入混为一谈。；演示数据的年代与当前记录明显不符，容易让用户怀疑数据可靠性；目前证据指向夹具时间，不是生产数据迁移错误。",
+      "recommendation": "补足时长标尺、色阶、所选日读数与未来空白说明。 在演示数据生成范围内修正夹具日期。",
+      "priority": "P2"
+    },
+    {
+      "number": 23,
+      "section": "目标管理",
+      "action": "切换热力图",
+      "health": "需修复/调整",
+      "notes": "周分布可见；颜色与时长映射不够明确。",
+      "issues": [
+        "UI-13",
+        "UI-14"
+      ],
+      "accepted": true,
+      "image": "screenshots/23-goal-detail-heatmap.jpg",
+      "sha256": "36aa24604d3d7b5f15731a88b2c242bcce3ec971321c76616460c566f5d940ab",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户能看到分布，却难以从颜色读出时长；无法理解空格差异时，可能把未来日期与过去无投入混为一谈。；演示数据的年代与当前记录明显不符，容易让用户怀疑数据可靠性；目前证据指向夹具时间，不是生产数据迁移错误。",
+      "recommendation": "补足时长标尺、色阶、所选日读数与未来空白说明。 在演示数据生成范围内修正夹具日期。",
+      "priority": "P2"
+    },
+    {
+      "number": 24,
+      "section": "目标管理",
+      "action": "打开热力图设置",
+      "health": "需修复/调整",
+      "notes": "深色弹层配深色标题，标题难读；本周、本月状态表达弱。",
+      "issues": [
+        "UI-01"
+      ],
+      "accepted": true,
+      "image": "screenshots/24-goal-heatmap-settings.jpg",
+      "sha256": "2dc5bdfbc7e83ade6fabe96609ab5cddf859b46050709bfec4b2f8f6d3f95fda",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "核心输入内容难以看清，用户可能误读时间或忽略错误；页面切换时也失去统一的视觉预期。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P1"
+    },
+    {
+      "number": 25,
+      "section": "目标管理",
+      "action": "取消热力图设置（剔除过渡帧）",
+      "health": "过渡帧剔除",
+      "notes": "捕获到关闭动画，未作为视觉缺陷证据；后续稳定目标页可见于 26、27。",
+      "issues": [],
+      "accepted": false,
+      "impact": "本帧包含动画或视口变化，不能用于判断稳定界面的样式。",
+      "recommendation": "以相邻稳定截图作为证据，不把过渡状态当成界面缺陷。",
+      "priority": "证据限制"
+    },
+    {
+      "number": 26,
+      "section": "目标管理",
+      "action": "打开目标改名",
+      "health": "需调整",
+      "notes": "改名弹窗沿用旧深色；本次没有保存改名。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/26-goal-rename.jpg",
+      "sha256": "f0adbafbcf2c9b5ce376b38462218d6aedc5030fb578f8faeec96564c9cc2f26",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "该步骤重复出现已经记录的视觉一致性问题。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P2（重复观察）"
+    },
+    {
+      "number": 27,
+      "section": "目标管理",
+      "action": "取消改名",
+      "health": "本步骤可达",
+      "notes": "返回目标详情，取消正常。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/27-goal-rename-cancelled.jpg",
+      "sha256": "c73a4022e324aaa54a33238dc487ebe2a75742376e6f35e7f4ce599068e40c28",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 28,
+      "section": "目标管理",
+      "action": "打开删除目标确认",
+      "health": "需修复/调整",
+      "notes": "确认文案说明已引用目标会归档并保留记录；入口与操作效果需要更清楚表达，未执行该操作。",
+      "issues": [
+        "UI-08"
+      ],
+      "accepted": true,
+      "image": "screenshots/28-goal-delete-archive-confirm.jpg",
+      "sha256": "193a418a681752de9f22d6e7cd80c485d5ca79fa38d95cc8346e545781203486",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户需要在不同位置学习不同确认方式；睡眠缺少具体区间，目标删除与归档的结果也容易混淆。",
+      "recommendation": "统一确认形态，明确对象、具体日期/区间及最终操作结果。",
+      "priority": "P2"
+    },
+    {
+      "number": 29,
+      "section": "目标管理",
+      "action": "取消目标删除",
+      "health": "本步骤可达",
+      "notes": "目标和引用记录保持可见，未执行删除。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/29-goal-delete-cancelled.jpg",
+      "sha256": "c73a4022e324aaa54a33238dc487ebe2a75742376e6f35e7f4ce599068e40c28",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 30,
+      "section": "目标管理",
+      "action": "打开归档确认",
+      "health": "需修复/调整",
+      "notes": "归档确认仍为旧深色样式。",
+      "issues": [
+        "UI-08"
+      ],
+      "accepted": true,
+      "image": "screenshots/30-goal-archive-confirm.jpg",
+      "sha256": "ff43dd7c565e3f8f65cec052e0710dbf409e9b8df75f9cda925eed3a477afc40",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户需要在不同位置学习不同确认方式；睡眠缺少具体区间，目标删除与归档的结果也容易混淆。",
+      "recommendation": "统一确认形态，明确对象、具体日期/区间及最终操作结果。",
+      "priority": "P2"
+    },
+    {
+      "number": 31,
+      "section": "目标管理",
+      "action": "取消归档",
+      "health": "本步骤可达",
+      "notes": "目标仍处于当前目标列表。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/31-goal-archive-cancelled.jpg",
+      "sha256": "c73a4022e324aaa54a33238dc487ebe2a75742376e6f35e7f4ce599068e40c28",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 32,
+      "section": "目标管理",
+      "action": "目标详情返回列表",
+      "health": "本步骤可达",
+      "notes": "列表与详情导航正常。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/32-goals-list-return.jpg",
+      "sha256": "f863da437f39f814ded0de2fb5e91da0cd0dc29e30533b1bf5e10d70ba84c83a",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 33,
+      "section": "目标管理",
+      "action": "目标列表返回首页",
+      "health": "本步骤可达",
+      "notes": "回到原账本日期。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/33-goals-home-return.jpg",
+      "sha256": "e4180b38ada149b370e8a6a9dd4c13eeaa5ad3db7407f58e72170ad9137dc9e4",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 34,
+      "section": "活动记录",
+      "action": "打开记录一笔",
+      "health": "本步骤可达",
+      "notes": "问答引导留白与首页风格一致，节奏选择是可选解释。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/34-activity-rhythm.jpg",
+      "sha256": "bde1cd11e05926bd66e4237d820f6570de5f4d82fc9d3e93569434bbcc258778",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 35,
+      "section": "活动记录",
+      "action": "打开目标选择",
+      "health": "需修复/调整",
+      "notes": "深色底与深色标题相撞，选择弹层可读性差。",
+      "issues": [
+        "UI-01"
+      ],
+      "accepted": true,
+      "image": "screenshots/35-activity-goal-sheet.jpg",
+      "sha256": "3a0e5ddf6c5a7c27519dcd049b0c35a70f58e9d33b79ba361adf8c4d6a36a548",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "核心输入内容难以看清，用户可能误读时间或忽略错误；页面切换时也失去统一的视觉预期。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P1"
+    },
+    {
+      "number": 36,
+      "section": "活动记录",
+      "action": "取消目标选择",
+      "health": "本步骤可达",
+      "notes": "正常返回节奏步骤。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/36-activity-goal-cancelled.jpg",
+      "sha256": "0943cfb1bbd89c7637ad8cefb431770fdb739ff943899170ec77884f85ab35d9",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 37,
+      "section": "活动记录",
+      "action": "选择卡住",
+      "health": "本步骤可达",
+      "notes": "原因入口出现；选项保持解释性质，没有变成事实类型。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/37-activity-stuck-options.jpg",
+      "sha256": "b8e104b8d0a0aa856804b379655f5d788bd8d90bbc69588fd43ad9c77d4b17ed",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 38,
+      "section": "活动记录",
+      "action": "返回节奏选择",
+      "health": "本步骤可达",
+      "notes": "切回首步检查状态。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/38-activity-rhythm-return.jpg",
+      "sha256": "5e76b02b64238f2256195b4fd1598d9f7a9528c05bb493d2a52d7c8874c800d6",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 39,
+      "section": "活动记录",
+      "action": "选择恢复",
+      "health": "本步骤可达",
+      "notes": "恢复方式与感受入口可见，样式仍跟随主页面。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/39-activity-recovery-options.jpg",
+      "sha256": "dde82a8aea7d5a4b2f5dc9cafabd817f21407bf0a93520f68d6f49fece0c3031",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 40,
+      "section": "活动记录",
+      "action": "进入活动标题",
+      "health": "本步骤可达",
+      "notes": "标题输入页保持纸色风格，下一步可见。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/40-activity-title.jpg",
+      "sha256": "a52e732423b17631c76cac7f3e12e6aa610e26b24c89a8f6b568c654307b6b3c",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 41,
+      "section": "活动记录",
+      "action": "空标题尝试继续",
+      "health": "本步骤可达",
+      "notes": "错误留在当前步骤，能继续修正；这种行为应作为目标表单的参考。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/41-activity-title-validation.jpg",
+      "sha256": "b1c1a9fc543808fc668c06b262e44ea17c37dcd49462899b284d2481e8349940",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 42,
+      "section": "活动记录",
+      "action": "选择想不起来",
+      "health": "本步骤可达",
+      "notes": "Unknown 独立入口可达，没有把尚未记录的 Gap 误当成 Unknown。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/42-activity-unknown.jpg",
+      "sha256": "65deeed0ee22b6b619c63e192195880b32cb1e6b6c5b58c9325bddef3085c980",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 43,
+      "section": "活动记录",
+      "action": "进入时间步骤",
+      "health": "本步骤可达",
+      "notes": "时间区间和完成操作可见，展开编辑后主题切换突兀。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/43-activity-time-step.jpg",
+      "sha256": "0397891ceac14044f2fa8e380834ba54e34650bd49a189502d7d4b522a18eef7",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 44,
+      "section": "活动记录",
+      "action": "打开接续点与备注",
+      "health": "需修复/调整",
+      "notes": "底部弹层标题几乎融入深色背景，输入样式与引导页不一致。",
+      "issues": [
+        "UI-01"
+      ],
+      "accepted": true,
+      "image": "screenshots/44-activity-details-sheet.jpg",
+      "sha256": "c07a6e265a62177a3a90c2de26b91365b600de9b8ff1abd0f58170d4328cd52a",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "核心输入内容难以看清，用户可能误读时间或忽略错误；页面切换时也失去统一的视觉预期。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P1"
+    },
+    {
+      "number": 45,
+      "section": "活动记录",
+      "action": "取消附加信息",
+      "health": "本步骤可达",
+      "notes": "正常返回时间步骤。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/45-activity-details-cancelled.jpg",
+      "sha256": "d9c0c15187cc575abe2d97f9bbe71d51ee50a753110e32df74f7afe723ffab0f",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 46,
+      "section": "活动记录",
+      "action": "打开活动时间编辑",
+      "health": "需修复/调整",
+      "notes": "开始、结束和时长在深色底上很难辨认，核心填写环节受影响。",
+      "issues": [
+        "UI-01"
+      ],
+      "accepted": true,
+      "image": "screenshots/46-activity-time-sheet.jpg",
+      "sha256": "12a88c406aa2abec44eb1104b7507b36be24c8ace3d0d6fe0e97f76a3bc2eafb",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "核心输入内容难以看清，用户可能误读时间或忽略错误；页面切换时也失去统一的视觉预期。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P1"
+    },
+    {
+      "number": 47,
+      "section": "活动记录",
+      "action": "打开活动日期选择",
+      "health": "需修复/调整",
+      "notes": "原生日期控件英文，与中文账本日期控件不一致。",
+      "issues": [
+        "UI-12"
+      ],
+      "accepted": true,
+      "image": "screenshots/47-activity-date-picker.jpg",
+      "sha256": "35a05d39b72bffee8efa24af36ea15988ab3d74731c2396e8f8b05fae910a9be",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "同一产品的日期和时间操作需要重新学习，中文用户还要处理英文标签；辅助名称与页面语言也不一致。",
+      "recommendation": "统一中文语言、日期格式和输入方式。",
+      "priority": "P2"
+    },
+    {
+      "number": 48,
+      "section": "活动记录",
+      "action": "取消活动日期",
+      "health": "本步骤可达",
+      "notes": "返回时间编辑，未应用日期变化。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/48-activity-date-cancelled.jpg",
+      "sha256": "12a88c406aa2abec44eb1104b7507b36be24c8ace3d0d6fe0e97f76a3bc2eafb",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 49,
+      "section": "活动记录",
+      "action": "打开时间拨盘",
+      "health": "需修复/调整",
+      "notes": "时钟拨盘与中文业务页风格不同，辅助标签仍为英文。",
+      "issues": [
+        "UI-12"
+      ],
+      "accepted": true,
+      "image": "screenshots/49-activity-time-picker.jpg",
+      "sha256": "07cd94e40d8c0fc5dabe5244740251b2636d4b714c046f74c2268cce92703715",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "同一产品的日期和时间操作需要重新学习，中文用户还要处理英文标签；辅助名称与页面语言也不一致。",
+      "recommendation": "统一中文语言、日期格式和输入方式。",
+      "priority": "P2"
+    },
+    {
+      "number": 50,
+      "section": "活动记录",
+      "action": "取消时间拨盘",
+      "health": "本步骤可达",
+      "notes": "返回时间编辑。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/50-activity-picker-cancelled.jpg",
+      "sha256": "12a88c406aa2abec44eb1104b7507b36be24c8ace3d0d6fe0e97f76a3bc2eafb",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 51,
+      "section": "活动记录",
+      "action": "切换手动时间输入",
+      "health": "本步骤可达",
+      "notes": "手动输入年月日时分可达，错误处理需要与其他选择方式一致。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/51-activity-time-text.jpg",
+      "sha256": "af448a8228f653b085cfd1e222c2ff0a1fdb8d59410c7caf674ebe21eea424e1",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 52,
+      "section": "活动记录",
+      "action": "输入结束早于开始",
+      "health": "本步骤可达",
+      "notes": "设置反向时间区间，用于检查校验。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/52-activity-time-invalid-input.jpg",
+      "sha256": "9acc835ae8ed922ec0e26dbdaec8f9473072479f1cadd81c9871569656ccd647",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 53,
+      "section": "活动记录",
+      "action": "提交反向区间",
+      "health": "需修复/调整",
+      "notes": "校验存在，但错误深红字在深色背景上难辨认。",
+      "issues": [
+        "UI-01"
+      ],
+      "accepted": true,
+      "image": "screenshots/53-activity-time-validation.jpg",
+      "sha256": "c25a9f68bb62a2d4dbe6a0f6d39b19a6b98f51874e87a0dab2a0f8d5cafa9ee4",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "核心输入内容难以看清，用户可能误读时间或忽略错误；页面切换时也失去统一的视觉预期。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P1"
+    },
+    {
+      "number": 54,
+      "section": "活动记录",
+      "action": "取消错误时间编辑",
+      "health": "本步骤可达",
+      "notes": "退出当前无效编辑，未提交记录事实。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/54-activity-invalid-cancelled.jpg",
+      "sha256": "d9c0c15187cc575abe2d97f9bbe71d51ee50a753110e32df74f7afe723ffab0f",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 55,
+      "section": "活动记录",
+      "action": "打开活动更多",
+      "health": "需调整",
+      "notes": "保留草稿、放弃草稿入口可见，但菜单仍是旧深色。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/55-activity-more-menu.jpg",
+      "sha256": "226bb70ad6e93ca911c7178889f8eb9c07f72ecb944581c49548ae4582d36b9c",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "该步骤重复出现已经记录的视觉一致性问题。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P2（重复观察）"
+    },
+    {
+      "number": 56,
+      "section": "活动记录",
+      "action": "打开活动放弃确认",
+      "health": "需修复/调整",
+      "notes": "有确认步骤，明确说明将丢弃未保存内容。",
+      "issues": [
+        "UI-17"
+      ],
+      "accepted": true,
+      "image": "screenshots/56-activity-discard-confirm.jpg",
+      "sha256": "ab6a80627b8adf36503f17b1827908be8a6b77e2001a420b53e3bc24d66922cc",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "放弃复盘草稿会立即清除，没有机会取消；与活动、睡眠的放弃确认不一致。本次影响仅限审查新产生的复盘草稿。",
+      "recommendation": "明确草稿清除策略，让用户理解结果并能在清除前取消。",
+      "priority": "P2"
+    },
+    {
+      "number": 57,
+      "section": "活动记录",
+      "action": "取消活动放弃",
+      "health": "本步骤可达",
+      "notes": "返回活动编辑，草稿仍保留。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/57-activity-discard-cancelled.jpg",
+      "sha256": "b1257308fccfb4c7b4ee5f1a7c84f078ff810e609658ae0f18db48378cbe5e87",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 58,
+      "section": "活动记录",
+      "action": "活动返回首页",
+      "health": "本步骤可达",
+      "notes": "返回首页会保留本次检查产生的草稿；未提交活动事实。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/58-activity-home-return.jpg",
+      "sha256": "9ff987448705ce99fc803af60f058a662e06ab5ca4b8f153d269ae5e7bc42ea0",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 59,
+      "section": "事实详情与编辑",
+      "action": "打开活动事实详情",
+      "health": "需修复/调整",
+      "notes": "纸色详情清晰；标题、实际时间与字段值缺少完整的辅助功能语义。",
+      "issues": [
+        "UI-04",
+        "UI-07"
+      ],
+      "accepted": true,
+      "image": "screenshots/59-fact-detail-activity.jpg",
+      "sha256": "0e9e15d1f62dc1a45546a38be96e936addc6d1a93612fbd4d33e14554ed27778",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户返回后不能继续查看刚才的记录，需要重新寻找并打开；活动与睡眠均出现这一行为。；可见内容与浏览器辅助树内容不一致，辅助技术可能无法完整获取标题、区间和解释字段；真实读屏器表现仍待验证。",
+      "recommendation": "编辑退出后保留来源详情与阅读位置。 补全标题、区间和字段值的阅读语义，再用真实读屏器验证。",
+      "priority": "P1"
+    },
+    {
+      "number": 60,
+      "section": "事实详情与编辑",
+      "action": "打开活动删除确认",
+      "health": "需修复/调整",
+      "notes": "整页确认包含具体区间，信息比其他删除弹窗完整。",
+      "issues": [
+        "UI-08"
+      ],
+      "accepted": true,
+      "image": "screenshots/60-fact-delete-confirm.jpg",
+      "sha256": "c6215a122f241f2e4cd1aa7325c3c8404fa35547c265291631e8291b68fcbad6",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户需要在不同位置学习不同确认方式；睡眠缺少具体区间，目标删除与归档的结果也容易混淆。",
+      "recommendation": "统一确认形态，明确对象、具体日期/区间及最终操作结果。",
+      "priority": "P2"
+    },
+    {
+      "number": 61,
+      "section": "事实详情与编辑",
+      "action": "取消活动删除",
+      "health": "本步骤可达",
+      "notes": "正常返回原详情，未删除事实。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/61-fact-delete-cancelled.jpg",
+      "sha256": "d6870791b37631a2bf4b621ba82e73b35a36adcea8bf495a764115cff8666eaf",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 62,
+      "section": "事实详情与编辑",
+      "action": "从详情进入完整编辑",
+      "health": "需修复/调整",
+      "notes": "进入问答编辑；原详情页已从返回栈退出。",
+      "issues": [
+        "UI-04"
+      ],
+      "accepted": true,
+      "image": "screenshots/62-fact-edit-start.jpg",
+      "sha256": "a74a004a3c9f01553b1d7952547dc64a5a064adcea991c2011dae105786ea80a",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户返回后不能继续查看刚才的记录，需要重新寻找并打开；活动与睡眠均出现这一行为。",
+      "recommendation": "编辑退出后保留来源详情与阅读位置。",
+      "priority": "P1"
+    },
+    {
+      "number": 63,
+      "section": "事实详情与编辑",
+      "action": "编辑后返回",
+      "health": "需修复/调整",
+      "notes": "直接回到账本，不回到原详情页，阅读上下文中断。",
+      "issues": [
+        "UI-04"
+      ],
+      "accepted": true,
+      "image": "screenshots/63-fact-edit-return-location.jpg",
+      "sha256": "7214c3ea6fba55ca06386bfb7e643f0fcc20a51d550163817c3763ce2dfb5ef5",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户返回后不能继续查看刚才的记录，需要重新寻找并打开；活动与睡眠均出现这一行为。",
+      "recommendation": "编辑退出后保留来源详情与阅读位置。",
+      "priority": "P1"
+    },
+    {
+      "number": 64,
+      "section": "事实详情与编辑",
+      "action": "打开睡眠详情",
+      "health": "需修复/调整",
+      "notes": "完整跨日事实与当前日交集都有展示；删除入口与活动不同。",
+      "issues": [
+        "UI-04",
+        "UI-07"
+      ],
+      "accepted": true,
+      "image": "screenshots/64-fact-detail-sleep.jpg",
+      "sha256": "1b6b027cfef1ab18b7ce8d34d6a970a0fa62c66909c34260757314cb099e9dde",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户返回后不能继续查看刚才的记录，需要重新寻找并打开；活动与睡眠均出现这一行为。；可见内容与浏览器辅助树内容不一致，辅助技术可能无法完整获取标题、区间和解释字段；真实读屏器表现仍待验证。",
+      "recommendation": "编辑退出后保留来源详情与阅读位置。 补全标题、区间和字段值的阅读语义，再用真实读屏器验证。",
+      "priority": "P1"
+    },
+    {
+      "number": 65,
+      "section": "事实详情与编辑",
+      "action": "从睡眠详情进入编辑",
+      "health": "需修复/调整",
+      "notes": "睡眠编辑保留纸色风格；删除隐藏于更多菜单。",
+      "issues": [
+        "UI-04"
+      ],
+      "accepted": true,
+      "image": "screenshots/65-sleep-edit.jpg",
+      "sha256": "065b0b530013dcc7573323cdba93df5055f916c61628c555d7af256f33a7c37a",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户返回后不能继续查看刚才的记录，需要重新寻找并打开；活动与睡眠均出现这一行为。",
+      "recommendation": "编辑退出后保留来源详情与阅读位置。",
+      "priority": "P1"
+    },
+    {
+      "number": 66,
+      "section": "事实详情与编辑",
+      "action": "打开睡眠编辑更多",
+      "health": "需调整",
+      "notes": "更多菜单仍为旧深色。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/66-sleep-edit-menu.jpg",
+      "sha256": "4f8e0a5450f48bf7fb431dee9b16132fa548460c60040dfa5c4f35168b24ad31",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "该步骤重复出现已经记录的视觉一致性问题。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P2（重复观察）"
+    },
+    {
+      "number": 67,
+      "section": "事实详情与编辑",
+      "action": "打开睡眠删除确认",
+      "health": "需修复/调整",
+      "notes": "确认文案没有活动删除页那样的具体区间，且样式完全不同。",
+      "issues": [
+        "UI-08"
+      ],
+      "accepted": true,
+      "image": "screenshots/67-sleep-delete-confirm.jpg",
+      "sha256": "d715bbedaccb90d4c816b4f50bdb89f4b97f76d96f4188914c922940954818a5",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户需要在不同位置学习不同确认方式；睡眠缺少具体区间，目标删除与归档的结果也容易混淆。",
+      "recommendation": "统一确认形态，明确对象、具体日期/区间及最终操作结果。",
+      "priority": "P2"
+    },
+    {
+      "number": 68,
+      "section": "事实详情与编辑",
+      "action": "取消睡眠删除",
+      "health": "本步骤可达",
+      "notes": "返回睡眠编辑，没有删除事实。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/68-sleep-delete-cancelled.jpg",
+      "sha256": "56d5699f3a2adf36594c0f32e9100dac563f177df062b77c83f1a766100a12c9",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 69,
+      "section": "事实详情与编辑",
+      "action": "展开睡眠备注",
+      "health": "本步骤可达",
+      "notes": "备注是内联展开，纸色样式正常。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/69-sleep-note-expanded.jpg",
+      "sha256": "e74ea14c6b841af5e7fff6e309555607b026c0c73bb1056325c6a044270dab16",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 70,
+      "section": "事实详情与编辑",
+      "action": "打开睡眠时间编辑",
+      "health": "需修复/调整",
+      "notes": "时间编辑与活动复用同类深色弹层，可读性问题重复出现。",
+      "issues": [
+        "UI-01"
+      ],
+      "accepted": true,
+      "image": "screenshots/70-sleep-time-sheet.jpg",
+      "sha256": "69be0431ef0762ee6f65d5c1cd92d88dc16012388a404caf0578a02196249539",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "核心输入内容难以看清，用户可能误读时间或忽略错误；页面切换时也失去统一的视觉预期。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P1"
+    },
+    {
+      "number": 71,
+      "section": "事实详情与编辑",
+      "action": "取消睡眠时间",
+      "health": "本步骤可达",
+      "notes": "正常返回睡眠编辑。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/71-sleep-time-cancelled.jpg",
+      "sha256": "430a80f5e3f958b216b1c892084e278cb4e507e51f9d8073a9afbe5f94751a54",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 72,
+      "section": "事实详情与编辑",
+      "action": "睡眠编辑返回",
+      "health": "需修复/调整",
+      "notes": "直接回到账本，没有返回睡眠详情。",
+      "issues": [
+        "UI-04"
+      ],
+      "accepted": true,
+      "image": "screenshots/72-sleep-edit-return-location.jpg",
+      "sha256": "11791a00de5ae43b257b66082b93cb1a3dc1e24749fa32efb7a0b16cd534eb16",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户返回后不能继续查看刚才的记录，需要重新寻找并打开；活动与睡眠均出现这一行为。",
+      "recommendation": "编辑退出后保留来源详情与阅读位置。",
+      "priority": "P1"
+    },
+    {
+      "number": 73,
+      "section": "新增睡眠",
+      "action": "打开新增睡眠",
+      "health": "需修复/调整",
+      "notes": "空表单可见，主睡眠与小睡选择的状态语义需要补足。",
+      "issues": [
+        "UI-10"
+      ],
+      "accepted": true,
+      "image": "screenshots/73-sleep-new-empty.jpg",
+      "sha256": "231d9339b729e9b2b06ee2a44240ed82ef2c351668b62b791ddb56a8d0d25be4",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户无法确认当前选项或是否尚未设置；仅用外观表示选择，也无法向辅助技术传达选中状态。",
+      "recommendation": "明确当前值或未设置状态，并暴露选中语义；不擅定未决默认值。",
+      "priority": "P2"
+    },
+    {
+      "number": 74,
+      "section": "新增睡眠",
+      "action": "空睡眠尝试保存",
+      "health": "本步骤可达",
+      "notes": "错误留在当前页；未产生睡眠事实。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/74-sleep-new-validation.jpg",
+      "sha256": "7669d992f9822518e3f4a4cbab887fa8bda20b993bf5ed53b93e97a384c8c5e7",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 75,
+      "section": "新增睡眠",
+      "action": "切换小睡",
+      "health": "需修复/调整",
+      "notes": "可切换类型；选择态应同时向辅助技术暴露。",
+      "issues": [
+        "UI-10"
+      ],
+      "accepted": true,
+      "image": "screenshots/75-sleep-nap-selected.jpg",
+      "sha256": "8fcf97d1e085a14b6798e8f7bc5ebacc2561122f55c373728f8a2e2f36fde45f",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户无法确认当前选项或是否尚未设置；仅用外观表示选择，也无法向辅助技术传达选中状态。",
+      "recommendation": "明确当前值或未设置状态，并暴露选中语义；不擅定未决默认值。",
+      "priority": "P2"
+    },
+    {
+      "number": 76,
+      "section": "新增睡眠",
+      "action": "打开空睡眠时间编辑",
+      "health": "需修复/调整",
+      "notes": "深色弹层中未设置时间的提示对比度不足。",
+      "issues": [
+        "UI-01"
+      ],
+      "accepted": true,
+      "image": "screenshots/76-sleep-empty-time-sheet.jpg",
+      "sha256": "1dd6338fcb234cd14d3032f9128c42a6ab22b6d583a44b254fecef1b70c8c906",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "核心输入内容难以看清，用户可能误读时间或忽略错误；页面切换时也失去统一的视觉预期。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P1"
+    },
+    {
+      "number": 77,
+      "section": "新增睡眠",
+      "action": "取消空睡眠时间",
+      "health": "本步骤可达",
+      "notes": "回到睡眠表单。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/77-sleep-empty-time-cancelled.jpg",
+      "sha256": "954115a7b40b688a7acaf78475def95d48fafa162a89fe5e5ec611b9880753bc",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 78,
+      "section": "新增睡眠",
+      "action": "打开新增睡眠更多",
+      "health": "本步骤可达",
+      "notes": "保留与放弃草稿入口可达。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/78-sleep-new-menu.jpg",
+      "sha256": "3873859b8a707515b01fb7845843c3a7405cd01713f109dc5bbd28ec89f57cd3",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 79,
+      "section": "新增睡眠",
+      "action": "打开睡眠放弃确认",
+      "health": "需修复/调整",
+      "notes": "有明确确认步骤。",
+      "issues": [
+        "UI-17"
+      ],
+      "accepted": true,
+      "image": "screenshots/79-sleep-discard-confirm.jpg",
+      "sha256": "55d7533925083861392ba4c9bcf8d2f324574fc1a1798a07b21d564f0efc0164",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "放弃复盘草稿会立即清除，没有机会取消；与活动、睡眠的放弃确认不一致。本次影响仅限审查新产生的复盘草稿。",
+      "recommendation": "明确草稿清除策略，让用户理解结果并能在清除前取消。",
+      "priority": "P2"
+    },
+    {
+      "number": 80,
+      "section": "新增睡眠",
+      "action": "取消睡眠放弃",
+      "health": "本步骤可达",
+      "notes": "保留本次产生的睡眠草稿。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/80-sleep-discard-cancelled.jpg",
+      "sha256": "954115a7b40b688a7acaf78475def95d48fafa162a89fe5e5ec611b9880753bc",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 81,
+      "section": "新增睡眠",
+      "action": "新增睡眠返回",
+      "health": "本步骤可达",
+      "notes": "返回账本，未提交睡眠事实。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/81-sleep-home-return.jpg",
+      "sha256": "d7979de4951e827a3e095f0fc2ca915a7220e3e1390fdcd6c22e16f29cd063b8",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 82,
+      "section": "日期与空段补记",
+      "action": "打开账本日期（390px）",
+      "health": "需修复/调整",
+      "notes": "需横向滚动才能看到完整一周，右侧日期被裁出当前视野。",
+      "issues": [
+        "UI-06",
+        "UI-12"
+      ],
+      "accepted": true,
+      "image": "screenshots/82-ledger-date-calendar.jpg",
+      "sha256": "645bd3b57553b12048a9d1a20a70de6b26a30eb621f23b6a03c5bc9d46b2d585",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户不能一眼比较同一周的日期，需要额外横向滚动；周末日期容易被忽略，窄屏选日操作更费力。；同一产品的日期和时间操作需要重新学习，中文用户还要处理英文标签；辅助名称与页面语言也不一致。",
+      "recommendation": "重新分配日历宽度与边距，验证七列可见及触控面积。 统一中文语言、日期格式和输入方式。",
+      "priority": "P1"
+    },
+    {
+      "number": 83,
+      "section": "日期与空段补记",
+      "action": "切换手动账本日期",
+      "health": "需修复/调整",
+      "notes": "中文手动日期入口可达。",
+      "issues": [
+        "UI-12"
+      ],
+      "accepted": true,
+      "image": "screenshots/83-ledger-date-text.jpg",
+      "sha256": "8f9cabdf49d1f3fad021f55600cbd456bd57f547c3a26ec123bdca05516ca62c",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "同一产品的日期和时间操作需要重新学习，中文用户还要处理英文标签；辅助名称与页面语言也不一致。",
+      "recommendation": "统一中文语言、日期格式和输入方式。",
+      "priority": "P2"
+    },
+    {
+      "number": 84,
+      "section": "日期与空段补记",
+      "action": "输入昨天日期",
+      "health": "本步骤可达",
+      "notes": "选择 2026-10-05，检查有历史事实和复盘的状态。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/84-ledger-date-yesterday-input.jpg",
+      "sha256": "a7f72d307de2d0710b93795b1629aca8c1e0f161772ee9f2aabff357ff2f8884",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 85,
+      "section": "日期与空段补记",
+      "action": "显示历史时间线",
+      "health": "本步骤可达",
+      "notes": "日期切换成功；已记录事实与未处理空段清楚分开。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/85-history-timeline.jpg",
+      "sha256": "f5a46122b1d168df937659c96e47f1b3eab4193e1980f8a6dd4201201f23c992",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 86,
+      "section": "日期与空段补记",
+      "action": "打开 Unknown 详情",
+      "health": "需修复/调整",
+      "notes": "已交代事实展示正确；实际区间等值在辅助树中缺失。",
+      "issues": [
+        "UI-07"
+      ],
+      "accepted": true,
+      "image": "screenshots/86-fact-detail-unknown.jpg",
+      "sha256": "08f224f35a3a55ba10736423e951a2864644b7169141b15f7a2ec420ce380bce",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "可见内容与浏览器辅助树内容不一致，辅助技术可能无法完整获取标题、区间和解释字段；真实读屏器表现仍待验证。",
+      "recommendation": "补全标题、区间和字段值的阅读语义，再用真实读屏器验证。",
+      "priority": "P1"
+    },
+    {
+      "number": 87,
+      "section": "日期与空段补记",
+      "action": "Unknown 返回",
+      "health": "本步骤可达",
+      "notes": "回到原历史日期。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/87-unknown-home-return.jpg",
+      "sha256": "c84f50724395d7545e216402c0abbb6333eb31006278c9b80b31f0e3fb997ceb",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 88,
+      "section": "日期与空段补记",
+      "action": "点击 Gap 补记",
+      "health": "本步骤可达",
+      "notes": "补记入口直接进入记录引导，保留所选空段上下文。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/88-gap-recording-start.jpg",
+      "sha256": "0943cfb1bbd89c7637ad8cefb431770fdb739ff943899170ec77884f85ab35d9",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 89,
+      "section": "日期与空段补记",
+      "action": "Gap 补记标题步",
+      "health": "本步骤可达",
+      "notes": "标题输入和 Unknown 选项可达。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/89-gap-title-step.jpg",
+      "sha256": "b1e202280d4a74d89aaa1bdc846ca87b57b2fd96a57423abe591a3ee00164450",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 90,
+      "section": "日期与空段补记",
+      "action": "Gap 选择想不起来",
+      "health": "本步骤可达",
+      "notes": "明确选择 Unknown 后继续，未自动把 Gap 持久化为事实。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/90-gap-unknown-selected.jpg",
+      "sha256": "b654749f17ab69e609c9d49ab6fd0381ce0a64e95b2cb1ac9fb52f2f407a45f8",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 91,
+      "section": "日期与空段补记",
+      "action": "Gap 时间预填",
+      "health": "本步骤可达",
+      "notes": "时间范围对应所选空段；本次没有完成提交。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/91-gap-time-prefill.jpg",
+      "sha256": "3d278ea1753cd07dea29537361a6b344b499f7205592bf0453572522fc35bff4",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 92,
+      "section": "日期与空段补记",
+      "action": "Gap 补记返回",
+      "health": "本步骤可达",
+      "notes": "返回历史时间线，事实没有新增。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/92-gap-home-return.jpg",
+      "sha256": "26734117632160996463a725881f70d1cfe4a59d496fa2511f2f4737fa42bfc3",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 93,
+      "section": "日期与空段补记",
+      "action": "历史页打开更多",
+      "health": "需修复/调整",
+      "notes": "准备检查“时间分布说明”。",
+      "issues": [
+        "UI-02"
+      ],
+      "accepted": true,
+      "image": "screenshots/93-history-more.jpg",
+      "sha256": "24422ce16dc699f351c2e1790ba45066f933bd37cc0f058defd6bcef6d8c0264",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "菜单给出一个可操作入口，却没有结果；用户无法获得时间分布的解释，也不知道是否需要等待或重试。",
+      "recommendation": "修复说明打开链路，并验证菜单关闭后的打开、取消和返回。",
+      "priority": "P1"
+    },
+    {
+      "number": 94,
+      "section": "日期与空段补记",
+      "action": "点击时间分布说明",
+      "health": "需修复/调整",
+      "notes": "菜单关闭后仍是账本，说明没有出现；入口可复现无响应。",
+      "issues": [
+        "UI-02"
+      ],
+      "accepted": true,
+      "image": "screenshots/94-time-distribution-explanation.jpg",
+      "sha256": "e4be804a1b20cd961959a91e5bd78fe7b9ad412299c2db90cf73954636417c7a",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "菜单给出一个可操作入口，却没有结果；用户无法获得时间分布的解释，也不知道是否需要等待或重试。",
+      "recommendation": "修复说明打开链路，并验证菜单关闭后的打开、取消和返回。",
+      "priority": "P1"
+    },
+    {
+      "number": 95,
+      "section": "摘要",
+      "action": "切换摘要",
+      "health": "本步骤可达",
+      "notes": "摘要可达，颜色和字号延续首页；与日期选择共享当前日期。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/95-summary-current.jpg",
+      "sha256": "1adb69ba5e5a5c06719881c994e6212cfd527650a860f3c5b51efb51c5532f7c",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 96,
+      "section": "摘要",
+      "action": "摘要进入记录睡眠",
+      "health": "本步骤可达",
+      "notes": "入口可达，仍进入相同睡眠编辑流程。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/96-summary-sleep-entry.jpg",
+      "sha256": "f8b0aebcd8e5b7f5f149b1d4c35c7b4628d6932f5fe93f14b2b38e081b23bf36",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 97,
+      "section": "摘要",
+      "action": "睡眠返回摘要",
+      "health": "本步骤可达",
+      "notes": "回到摘要，标签上下文保留。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/97-summary-sleep-return.jpg",
+      "sha256": "cb2c95adf516db8b8b3beccd0e41eefa8c3aef04aedc68321ae65304113df988",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 98,
+      "section": "复盘",
+      "action": "切换复盘概览",
+      "health": "需修复/调整",
+      "notes": "旧式控件与纸色首页混合，重复日期控制和解释文字使层级拥挤。",
+      "issues": [
+        "UI-11"
+      ],
+      "accepted": true,
+      "image": "screenshots/98-review-overview.jpg",
+      "sha256": "7c72da12fc4a581087894ef33001835ff219e33a54500e2cf17f58b309361432",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "从首页进入复盘时视觉规则突然变化；密集的事实与附加字段削弱主要解释和明日第一步的优先级。",
+      "recommendation": "按事实概览、解释、明日第一步重排复盘，统一主页面和子控件。",
+      "priority": "P2"
+    },
+    {
+      "number": 99,
+      "section": "复盘",
+      "action": "打开复盘编辑",
+      "health": "需修复/调整",
+      "notes": "整页恢复旧深色与青色，没有延续主界面风格。",
+      "issues": [
+        "UI-11"
+      ],
+      "accepted": true,
+      "image": "screenshots/99-review-editor.jpg",
+      "sha256": "d573ef06c5d994a79b7bd115191f6e46f45008e8c8dbef0c12584ab36134669e",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "从首页进入复盘时视觉规则突然变化；密集的事实与附加字段削弱主要解释和明日第一步的优先级。",
+      "recommendation": "按事实概览、解释、明日第一步重排复盘，统一主页面和子控件。",
+      "priority": "P2"
+    },
+    {
+      "number": 100,
+      "section": "复盘",
+      "action": "展开复盘事实区",
+      "health": "需修复/调整",
+      "notes": "活动、睡眠、空段解释密集，应保持事实口径并整理信息层级。",
+      "issues": [
+        "UI-11"
+      ],
+      "accepted": true,
+      "image": "screenshots/100-review-facts-expanded.jpg",
+      "sha256": "93f9a9dcc95b6caacabbf1087301e6e8e283c312d36d87e1d905dd3f7c3eaf23",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "从首页进入复盘时视觉规则突然变化；密集的事实与附加字段削弱主要解释和明日第一步的优先级。",
+      "recommendation": "按事实概览、解释、明日第一步重排复盘，统一主页面和子控件。",
+      "priority": "P2"
+    },
+    {
+      "number": 101,
+      "section": "复盘",
+      "action": "展开复盘额外字段",
+      "health": "需修复/调整",
+      "notes": "附加字段较多，主要解释与明日第一步的优先级需要重排。",
+      "issues": [
+        "UI-11"
+      ],
+      "accepted": true,
+      "image": "screenshots/101-review-extra-fields.jpg",
+      "sha256": "2cc59fe7a28a325ed37d1e0981e423a4ca420376e77607ba624008c0518174d7",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "从首页进入复盘时视觉规则突然变化；密集的事实与附加字段削弱主要解释和明日第一步的优先级。",
+      "recommendation": "按事实概览、解释、明日第一步重排复盘，统一主页面和子控件。",
+      "priority": "P2"
+    },
+    {
+      "number": 102,
+      "section": "复盘",
+      "action": "检查明日第一步输入",
+      "health": "本步骤可达",
+      "notes": "输入可达，没有保存对已提交复盘的修改。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/102-review-input-finish.jpg",
+      "sha256": "3644ebb8332be2ac91e88f2fadd6a40f112e59c9fa90eac8d6462b5ab4f85981",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 103,
+      "section": "复盘",
+      "action": "打开复盘目标选择",
+      "health": "需修复/调整",
+      "notes": "此处为旧式对话框，与活动目标选择弹层形态不同。",
+      "issues": [
+        "UI-11"
+      ],
+      "accepted": true,
+      "image": "screenshots/103-review-goal-dialog.jpg",
+      "sha256": "25e8337f1274c97f848fd4adb28e754f7075150e0ff23480ee83b6622b5de95b",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "从首页进入复盘时视觉规则突然变化；密集的事实与附加字段削弱主要解释和明日第一步的优先级。",
+      "recommendation": "按事实概览、解释、明日第一步重排复盘，统一主页面和子控件。",
+      "priority": "P2"
+    },
+    {
+      "number": 104,
+      "section": "复盘",
+      "action": "取消复盘目标",
+      "health": "本步骤可达",
+      "notes": "返回复盘编辑。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/104-review-goal-cancelled.jpg",
+      "sha256": "00cb3e616daa8fd4d9993aad318adaba8fd446b56ee0ceae62ea00e279454d00",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 105,
+      "section": "复盘",
+      "action": "打开复盘日期输入",
+      "health": "需修复/调整",
+      "notes": "仅文本式日期编辑，与其他日期控件不一致。",
+      "issues": [
+        "UI-11",
+        "UI-12"
+      ],
+      "accepted": true,
+      "image": "screenshots/105-review-date-dialog.jpg",
+      "sha256": "4bf2b4289de53c456a4d8bcee194b58daef5b43e6bc2d00b22514cac21a96743",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "从首页进入复盘时视觉规则突然变化；密集的事实与附加字段削弱主要解释和明日第一步的优先级。；同一产品的日期和时间操作需要重新学习，中文用户还要处理英文标签；辅助名称与页面语言也不一致。",
+      "recommendation": "按事实概览、解释、明日第一步重排复盘，统一主页面和子控件。 统一中文语言、日期格式和输入方式。",
+      "priority": "P2"
+    },
+    {
+      "number": 106,
+      "section": "复盘",
+      "action": "取消复盘日期",
+      "health": "本步骤可达",
+      "notes": "原日期保留。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/106-review-date-cancelled.jpg",
+      "sha256": "2377318ac2ef902301fc3d5269ebc4889c68c900789c2ec8f72f2350bbcdd447",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 107,
+      "section": "复盘",
+      "action": "打开复盘更多",
+      "health": "本步骤可达",
+      "notes": "保留草稿与放弃草稿可见。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/107-review-more-menu.jpg",
+      "sha256": "a3bed533923d81061db952a0ab56ce982cab0e4b459ff8e5a81b73d080fa5060",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 108,
+      "section": "复盘",
+      "action": "复盘返回",
+      "health": "本步骤可达",
+      "notes": "返回复盘概览，保留本次编辑草稿。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/108-review-return.jpg",
+      "sha256": "979ae5785e1ab3f1db1059b5b33add4a648a971e1253fa75f100a006cd0e9fb3",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 109,
+      "section": "复盘",
+      "action": "重新进入复盘编辑",
+      "health": "本步骤可达",
+      "notes": "草稿可重新进入。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/109-review-reopen.jpg",
+      "sha256": "d573ef06c5d994a79b7bd115191f6e46f45008e8c8dbef0c12584ab36134669e",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 110,
+      "section": "复盘",
+      "action": "再次打开复盘更多",
+      "health": "本步骤可达",
+      "notes": "准备检查删除确认。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/110-review-more-menu.jpg",
+      "sha256": "cdac0f169f8d03d14682d05858ff601f30ca6f06f1396a0c8e19a50a57b5bd16",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 111,
+      "section": "复盘",
+      "action": "打开删除复盘确认",
+      "health": "需修复/调整",
+      "notes": "包含日期，但确认按钮仍为普通青色，与活动删除样式不同。",
+      "issues": [
+        "UI-08"
+      ],
+      "accepted": true,
+      "image": "screenshots/111-review-delete-confirm.jpg",
+      "sha256": "38d026895a4a21e39e5af89a83b32d77369ba2152d712fe7cb7c16117d36acd2",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户需要在不同位置学习不同确认方式；睡眠缺少具体区间，目标删除与归档的结果也容易混淆。",
+      "recommendation": "统一确认形态，明确对象、具体日期/区间及最终操作结果。",
+      "priority": "P2"
+    },
+    {
+      "number": 112,
+      "section": "复盘",
+      "action": "取消复盘删除",
+      "health": "本步骤可达",
+      "notes": "未删除已提交复盘。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/112-review-delete-cancelled.jpg",
+      "sha256": "7967a64062a8514b18fd8e4186e93a543198e6f914c2e43c340e8b383338c328",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 113,
+      "section": "复盘",
+      "action": "选择放弃复盘草稿",
+      "health": "需修复/调整",
+      "notes": "准备观察放弃行为。",
+      "issues": [
+        "UI-17"
+      ],
+      "accepted": true,
+      "image": "screenshots/113-review-more-discard.jpg",
+      "sha256": "cdac0f169f8d03d14682d05858ff601f30ca6f06f1396a0c8e19a50a57b5bd16",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "放弃复盘草稿会立即清除，没有机会取消；与活动、睡眠的放弃确认不一致。本次影响仅限审查新产生的复盘草稿。",
+      "recommendation": "明确草稿清除策略，让用户理解结果并能在清除前取消。",
+      "priority": "P2"
+    },
+    {
+      "number": 114,
+      "section": "复盘",
+      "action": "放弃直接返回",
+      "health": "需修复/调整",
+      "notes": "没有二次确认；本次审查生成的复盘草稿被清除，已提交复盘保留。",
+      "issues": [
+        "UI-17"
+      ],
+      "accepted": true,
+      "image": "screenshots/114-review-discard-direct-return.jpg",
+      "sha256": "979ae5785e1ab3f1db1059b5b33add4a648a971e1253fa75f100a006cd0e9fb3",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "放弃复盘草稿会立即清除，没有机会取消；与活动、睡眠的放弃确认不一致。本次影响仅限审查新产生的复盘草稿。",
+      "recommendation": "明确草稿清除策略，让用户理解结果并能在清除前取消。",
+      "priority": "P2"
+    },
+    {
+      "number": 115,
+      "section": "复盘",
+      "action": "切回历史时间线",
+      "health": "本步骤可达",
+      "notes": "时间线内容恢复；截图下方标签指示仍带切换动画，不用于样式结论。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/115-review-timeline-return.jpg",
+      "sha256": "e5316e1b89f3fb699a6e59e1409eb247f3bf496fe30f9d548706bb2028285bd4",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本帧包含动画或视口变化，不能用于判断稳定界面的样式。",
+      "recommendation": "以相邻稳定截图作为证据，不把过渡状态当成界面缺陷。",
+      "priority": "证据限制"
+    },
+    {
+      "number": 116,
+      "section": "窄屏、桌面与语义复查",
+      "action": "首页 320px",
+      "health": "本步骤可达",
+      "notes": "切换到 320×740，复查窄屏。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/116-home-320.jpg",
+      "sha256": "f3750f7ea38b0bb5ca5f46c7fe9db437bcc61308099a7213943ac9b2a0298456",
+      "dimensions": [
+        320,
+        740
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 117,
+      "section": "窄屏、桌面与语义复查",
+      "action": "账本日期 320px",
+      "health": "需修复/调整",
+      "notes": "只看到周一至周五，横向滚动条明显；不是随机渲染溢出，而是当前布局策略。",
+      "issues": [
+        "UI-06"
+      ],
+      "accepted": true,
+      "image": "screenshots/117-ledger-calendar-320.jpg",
+      "sha256": "55f8496ad474e0f78cb9486a2193cc684229fbbcbb4a5ae3622da122f7fa40b4",
+      "dimensions": [
+        320,
+        740
+      ],
+      "impact": "用户不能一眼比较同一周的日期，需要额外横向滚动；周末日期容易被忽略，窄屏选日操作更费力。",
+      "recommendation": "重新分配日历宽度与边距，验证七列可见及触控面积。",
+      "priority": "P1"
+    },
+    {
+      "number": 118,
+      "section": "窄屏、桌面与语义复查",
+      "action": "取消窄屏日期",
+      "health": "本步骤可达",
+      "notes": "正常返回账本。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/118-calendar-320-cancelled.jpg",
+      "sha256": "66877ba80301fbab45e55f9cc36a7c0417aacfce1c6b4e53aa2ca15847dfbfe6",
+      "dimensions": [
+        320,
+        740
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 119,
+      "section": "窄屏、桌面与语义复查",
+      "action": "恢复 390px（剔除过渡帧）",
+      "health": "过渡帧剔除",
+      "notes": "捕获到视口调整过渡状态，未用于缺陷判定；后续 120 为稳定状态。",
+      "issues": [],
+      "accepted": false,
+      "impact": "本帧包含动画或视口变化，不能用于判断稳定界面的样式。",
+      "recommendation": "以相邻稳定截图作为证据，不把过渡状态当成界面缺陷。",
+      "priority": "证据限制"
+    },
+    {
+      "number": 120,
+      "section": "窄屏、桌面与语义复查",
+      "action": "更多→目标复查",
+      "health": "本步骤可达",
+      "notes": "390px 稳定画面，复查图表与此前记录。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/120-more-final-goals.jpg",
+      "sha256": "c53b9a2d3eeef29b3bad11346ac4ad002a82648ecb39f5b9198b3dfcd2d5247d",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 121,
+      "section": "窄屏、桌面与语义复查",
+      "action": "重新打开目标列表",
+      "health": "本步骤可达",
+      "notes": "目标数量未变化。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/121-goals-reopen.jpg",
+      "sha256": "1100c47b08defbff289bfda0c1911d9a93aa358012531aad951e323d00efa976",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 122,
+      "section": "窄屏、桌面与语义复查",
+      "action": "重新打开柱状图",
+      "health": "需修复/调整",
+      "notes": "图表时长可读，创建日期仍显示 1970 年。",
+      "issues": [
+        "UI-14"
+      ],
+      "accepted": true,
+      "image": "screenshots/122-goal-bars-reopen.jpg",
+      "sha256": "6df32d0ca8371971abfa908f3029b9f5d51267a1bbd73cf7c31990ec1a240d61",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "演示数据的年代与当前记录明显不符，容易让用户怀疑数据可靠性；目前证据指向夹具时间，不是生产数据迁移错误。",
+      "recommendation": "在演示数据生成范围内修正夹具日期。",
+      "priority": "P2"
+    },
+    {
+      "number": 123,
+      "section": "窄屏、桌面与语义复查",
+      "action": "重新打开热力图",
+      "health": "本步骤可达",
+      "notes": "检查周分布与设置入口。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/123-goal-heat-reopen.jpg",
+      "sha256": "fd5e612ed4016b4a68f0ac5fe2d0adeb63e601e043e86c3fd42399f252a4d5d1",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "本步骤未发现独立问题；只证明当前界面或操作状态可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 124,
+      "section": "窄屏、桌面与语义复查",
+      "action": "打开热力图范围菜单",
+      "health": "需调整",
+      "notes": "旧深色弹层问题再次复现。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/124-goal-range-menu.jpg",
+      "sha256": "dc937d78a80f0a577038fc39ac3a20242e4e5e0d100f020cdc4ffe0a41de93e5",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "该步骤重复出现已经记录的视觉一致性问题。",
+      "recommendation": "统一页面与弹层的有效主题，确保标题、时间、字段值和错误提示可读。",
+      "priority": "P2（重复观察）"
+    },
+    {
+      "number": 125,
+      "section": "窄屏、桌面与语义复查",
+      "action": "切换本月热力图",
+      "health": "需修复/调整",
+      "notes": "历史空白与未来空白样式不同，但没有说明；缺少时长色阶刻度。",
+      "issues": [
+        "UI-13",
+        "UI-14"
+      ],
+      "accepted": true,
+      "image": "screenshots/125-goal-month-heatmap.jpg",
+      "sha256": "2c7ae3fdb85a3f3dbddf72e05b75c060205c10ffba17f9fc6846a6b8436cf74e",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "用户能看到分布，却难以从颜色读出时长；无法理解空格差异时，可能把未来日期与过去无投入混为一谈。；演示数据的年代与当前记录明显不符，容易让用户怀疑数据可靠性；目前证据指向夹具时间，不是生产数据迁移错误。",
+      "recommendation": "补足时长标尺、色阶、所选日读数与未来空白说明。 在演示数据生成范围内修正夹具日期。",
+      "priority": "P2"
+    },
+    {
+      "number": 126,
+      "section": "窄屏、桌面与语义复查",
+      "action": "滚动到此前记录",
+      "health": "需修复/调整",
+      "notes": "列表显示活动与时长，但行没有可操作指示。",
+      "issues": [
+        "UI-05"
+      ],
+      "accepted": true,
+      "image": "screenshots/126-goal-history-bottom.jpg",
+      "sha256": "a2a74b8abbc2d7d7bdd898f5c3dc2720bdf4ff5667eed38d888d8678ca7ffdc8",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "目标历史与完整事实阅读之间没有连接。是否将列表设为详情入口仍需在后续设计中明确，不能将此直接认定为已批准功能失效。",
+      "recommendation": "明确历史行职责；若作为入口，补充交互、语义与返回位置保持。",
+      "priority": "P2"
+    },
+    {
+      "number": 127,
+      "section": "窄屏、桌面与语义复查",
+      "action": "点击此前记录",
+      "health": "需修复/调整",
+      "notes": "点击“设计首页”没有导航；辅助树也没有对应按钮语义。",
+      "issues": [
+        "UI-05"
+      ],
+      "accepted": true,
+      "image": "screenshots/127-goal-history-tap-no-navigation.jpg",
+      "sha256": "b48606b76506bda0ba810e5d378fdb67270d23fcd6bdc353433f4a570ea0d951",
+      "dimensions": [
+        390,
+        844
+      ],
+      "impact": "目标历史与完整事实阅读之间没有连接。是否将列表设为详情入口仍需在后续设计中明确，不能将此直接认定为已批准功能失效。",
+      "recommendation": "明确历史行职责；若作为入口，补充交互、语义与返回位置保持。",
+      "priority": "P2"
+    },
+    {
+      "number": 128,
+      "section": "窄屏、桌面与语义复查",
+      "action": "目标详情桌面复查",
+      "health": "需修复/调整",
+      "notes": "默认桌面视口下月热力格与内容横向放大，缺少内容最大宽度。",
+      "issues": [
+        "UI-16"
+      ],
+      "accepted": true,
+      "image": "screenshots/128-goal-detail-desktop.jpg",
+      "sha256": "a67b20d23aed73cda7b160d84c860b981392c9df9bdf3ad518f8fcfcab09b4ff",
+      "dimensions": [
+        1176,
+        1208
+      ],
+      "impact": "大屏内容被过度拉开，图表格子与按钮随屏幕放大；字段阅读和比较距离增加。",
+      "recommendation": "限制正文与图表最大宽度，分别验证移动端和桌面。",
+      "priority": "P2"
+    },
+    {
+      "number": 129,
+      "section": "窄屏、桌面与语义复查",
+      "action": "目标列表桌面复查",
+      "health": "需修复/调整",
+      "notes": "新建按钮横跨屏幕、内容过度分散，响应布局需与移动端分别处理。",
+      "issues": [
+        "UI-16"
+      ],
+      "accepted": true,
+      "image": "screenshots/129-goals-list-desktop.jpg",
+      "sha256": "8c304a930bc201369d6ff28b6662fe636a06f9288fac42781dc5b63ce278ed82",
+      "dimensions": [
+        1176,
+        1208
+      ],
+      "impact": "大屏内容被过度拉开，图表格子与按钮随屏幕放大；字段阅读和比较距离增加。",
+      "recommendation": "限制正文与图表最大宽度，分别验证移动端和桌面。",
+      "priority": "P2"
+    },
+    {
+      "number": 130,
+      "section": "窄屏、桌面与语义复查",
+      "action": "桌面返回账本",
+      "health": "本步骤可达",
+      "notes": "未新增或删除已提交事实。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/130-home-desktop-final.jpg",
+      "sha256": "3e79d07ed829563d9f0e3284c973def0d7ca85f81e0ac76f7313039f0958b312",
+      "dimensions": [
+        1176,
+        1208
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    },
+    {
+      "number": 131,
+      "section": "窄屏、桌面与语义复查",
+      "action": "桌面详情辅助树复查",
+      "health": "需修复/调整",
+      "notes": "可见标题、08:00–10:00、毕业设计、推进与接续点，但辅助树没有这些完整值。",
+      "issues": [
+        "UI-07",
+        "UI-16"
+      ],
+      "accepted": true,
+      "image": "screenshots/131-fact-detail-accessibility.jpg",
+      "sha256": "44ab17e5e5754f011d1941b938a22127757478f6e7371cdc6dab73e8306614d1",
+      "dimensions": [
+        1176,
+        1208
+      ],
+      "impact": "可见内容与浏览器辅助树内容不一致，辅助技术可能无法完整获取标题、区间和解释字段；真实读屏器表现仍待验证。；大屏内容被过度拉开，图表格子与按钮随屏幕放大；字段阅读和比较距离增加。",
+      "recommendation": "补全标题、区间和字段值的阅读语义，再用真实读屏器验证。 限制正文与图表最大宽度，分别验证移动端和桌面。",
+      "priority": "P1"
+    },
+    {
+      "number": 132,
+      "section": "窄屏、桌面与语义复查",
+      "action": "审查结束返回账本",
+      "health": "本步骤可达",
+      "notes": "返回 10 月 5 日时间线；浏览器警告、错误日志为空，视觉与行为问题仍存在。",
+      "issues": [],
+      "accepted": true,
+      "image": "screenshots/132-home-return-complete.jpg",
+      "sha256": "3e79d07ed829563d9f0e3284c973def0d7ca85f81e0ac76f7313039f0958b312",
+      "dimensions": [
+        1176,
+        1208
+      ],
+      "impact": "当前取消或返回动作可达。",
+      "recommendation": "保留当前行为；相关样式随所属界面一起统一。",
+      "priority": "保留"
+    }
+  ],
+  "issues": [
+    {
+      "id": "UI-01",
+      "priority": "P1",
+      "title": "弹层与主页面主题断开，核心文字不可读",
+      "steps": [
+        3,
+        19,
+        24,
+        35,
+        44,
+        46,
+        53,
+        70,
+        76
+      ],
+      "observation": "首页和编辑主页面是纸色、墨色、陶土色；更多、目标选择、时间编辑和附加信息弹层却是深蓝与青色。一些标题、时间与错误字仍使用深墨/深红色，融入背景。",
+      "recommendation": "统一页面、Navigator 弹层和日期/时间控件的有效主题，先修复正文、字段值和错误提示的对比，再统一按钮、圆角与间距。不要只替换弹层背景色。",
+      "code": [
+        "lib/app/main_app.dart:77",
+        "lib/app/theme/time_ledger_theme.dart:8",
+        "lib/features/ledger/presentation/activity/activity_recording_page.dart:209",
+        "lib/features/ledger/presentation/activity/activity_sheets.dart:18",
+        "lib/features/ledger/presentation/activity/activity_time_sheet.dart:25"
+      ],
+      "impact": "核心输入内容难以看清，用户可能误读时间或忽略错误；页面切换时也失去统一的视觉预期。"
+    },
+    {
+      "id": "UI-02",
+      "priority": "P1",
+      "title": "时间分布说明入口无响应",
+      "steps": [
+        93,
+        94
+      ],
+      "observation": "在历史账本打开更多，再点击“时间分布说明”，菜单关闭，说明界面没有出现。",
+      "recommendation": "让菜单关闭后的说明动作能正常执行，并为说明打开、取消和返回补充导航验证。",
+      "code": [
+        "lib/app/main_app.dart:387",
+        "lib/features/ledger/presentation/home/home_shell.dart:95"
+      ],
+      "impact": "菜单给出一个可操作入口，却没有结果；用户无法获得时间分布的解释，也不知道是否需要等待或重试。"
+    },
+    {
+      "id": "UI-03",
+      "priority": "P1",
+      "title": "新建目标校验把用户赶出表单",
+      "steps": [
+        19,
+        20,
+        21
+      ],
+      "observation": "新建目标不填名称点击保存，弹窗先关闭，错误“先给目标起个名字”出现在列表。用户必须重新打开表单；列表切换后错误仍在。",
+      "recommendation": "在原表单完成名称校验，错误邻近字段显示并保留输入、焦点和重试入口；参考活动标题空值校验的留页行为。",
+      "code": [
+        "lib/features/goals/presentation/goal_management_page.dart:783"
+      ],
+      "impact": "用户失去填写上下文，必须重新打开表单；错误与字段分离，也容易被误认为整个列表出错。"
+    },
+    {
+      "id": "UI-04",
+      "priority": "P1",
+      "title": "记录编辑返回丢失详情阅读上下文",
+      "steps": [
+        59,
+        62,
+        63,
+        64,
+        65,
+        72
+      ],
+      "observation": "活动和睡眠均从详情进入编辑；点击返回后直接回到账本，无法继续阅读原详情。",
+      "recommendation": "保留来源详情的导航上下文，取消或保留草稿后返回原详情；保存后的返回策略需在重做时明确，不擅自改变领域事实。",
+      "code": [
+        "lib/features/ledger/presentation/home/home_timeline_tab.dart:224",
+        "lib/app/main_app.dart:506"
+      ],
+      "impact": "用户返回后不能继续查看刚才的记录，需要重新寻找并打开；活动与睡眠均出现这一行为。"
+    },
+    {
+      "id": "UI-05",
+      "priority": "P2",
+      "title": "目标此前记录没有后续操作",
+      "steps": [
+        126,
+        127
+      ],
+      "observation": "目标详情中的“设计首页”记录行点击后没有变化；行是普通容器，没有按钮语义。当前只能在这里阅读列表，不能继续查看完整记录。",
+      "recommendation": "重做时明确它是只读摘要还是详情入口；若作为入口，增加交互、语义和返回时保持图表/滚动位置。该项是体验缺口，不把尚未批准的导航功能当成既定领域要求。",
+      "code": [
+        "lib/features/goals/presentation/goal_management_page.dart:695"
+      ],
+      "impact": "目标历史与完整事实阅读之间没有连接。是否将列表设为详情入口仍需在后续设计中明确，不能将此直接认定为已批准功能失效。"
+    },
+    {
+      "id": "UI-06",
+      "priority": "P1",
+      "title": "账本日期在窄屏无法同时看到完整一周",
+      "steps": [
+        82,
+        117
+      ],
+      "observation": "390px 下右侧日期需要横向滚动；320px 下首屏仅可见周一至周五。控件有“左右滑动查看整周”说明，属于现有布局策略，日历扫描仍受阻。",
+      "recommendation": "重新分配弹窗边距或使用更宽的日期容器，让七列在目标窄屏可见，并实际验证日期触控面积、月份切换与选中态。",
+      "code": [],
+      "impact": "用户不能一眼比较同一周的日期，需要额外横向滚动；周末日期容易被忽略，窄屏选日操作更费力。"
+    },
+    {
+      "id": "UI-07",
+      "priority": "P1",
+      "title": "记录详情缺少完整辅助功能内容",
+      "steps": [
+        59,
+        64,
+        86,
+        131
+      ],
+      "observation": "桌面截图中可见“设计首页”、08:00–10:00、毕业设计、推进及接续点；本次浏览器辅助树仅有区间标签和 disabled 字段名，没有完整值。移动端其他事实详情也出现同类缺口。",
+      "recommendation": "为标题、开始/结束、时长和解释字段提供可读取的完整语义；只读字段应按阅读内容组织。再用真实读屏器与键盘验证，不能以截图宣布无障碍通过。",
+      "code": [
+        "lib/features/ledger/presentation/fact_detail_page.dart:126"
+      ],
+      "impact": "可见内容与浏览器辅助树内容不一致，辅助技术可能无法完整获取标题、区间和解释字段；真实读屏器表现仍待验证。"
+    },
+    {
+      "id": "UI-08",
+      "priority": "P2",
+      "title": "删除、归档和清空确认的形态与文案不一致",
+      "steps": [
+        10,
+        28,
+        30,
+        60,
+        67,
+        111
+      ],
+      "observation": "活动删除为纸色整页并展示区间；睡眠删除为深色通用弹窗且没有具体区间；复盘、清空采用普通青色确认。目标“删除”确认文案说明已引用目标会执行归档，入口仍易误解。",
+      "recommendation": "采用统一的确认层级、危险操作表现、对象名称/日期/区间与操作结果。保持已引用目标保留事实、转为归档的领域规则。",
+      "code": [],
+      "impact": "用户需要在不同位置学习不同确认方式；睡眠缺少具体区间，目标删除与归档的结果也容易混淆。"
+    },
+    {
+      "id": "UI-09",
+      "priority": "P2",
+      "title": "设置页重复标题，信息层级需要重排",
+      "steps": [
+        4,
+        5,
+        7,
+        9,
+        13
+      ],
+      "observation": "导航栏与正文重复同一大标题，少量设置项被多层标题和大量空白分割；关于页也出现多个相近标题。",
+      "recommendation": "保留一个明确页面标题，用小分组标题组织选项、说明和状态。沿用当前阅读风格，减少重复层级。",
+      "code": [],
+      "impact": "重复标题挤占主要内容，少量设置被多层标题分割，用户需要额外判断哪些文字是页面名、分组名或选项。"
+    },
+    {
+      "id": "UI-10",
+      "priority": "P2",
+      "title": "设置与选择控件的当前状态不清楚",
+      "steps": [
+        5,
+        7,
+        73,
+        75
+      ],
+      "observation": "界面设置和记录方式的两个圆环在当前数据状态下都未勾选，用户无法从截图判断当前值。睡眠类型在辅助树中是普通按钮，未表达 selected 状态。",
+      "recommendation": "明确展示当前值；如果没有用户选择，用可理解的未设置状态说明，不擅自决定未决默认值。选择状态同时暴露给辅助技术。",
+      "code": [
+        "lib/features/settings/presentation/settings_page.dart:398"
+      ],
+      "impact": "用户无法确认当前选项或是否尚未设置；仅用外观表示选择，也无法向辅助技术传达选中状态。"
+    },
+    {
+      "id": "UI-11",
+      "priority": "P2",
+      "title": "复盘仍是一组旧样式页面",
+      "steps": [
+        98,
+        99,
+        100,
+        101,
+        103,
+        105
+      ],
+      "observation": "复盘概览混合旧控件，编辑页整体是深色与青色。事实解释与额外字段密集，目标和日期选择又采用不同的控件形态。",
+      "recommendation": "以事实概览、解释、明日第一步组织主次，统一页面与子弹层风格；保留 continuationHint 与 TomorrowFirstStep 的职责区别。Q-027 已说明复盘尚未做细，此处记录剩余设计范围。",
+      "code": [],
+      "impact": "从首页进入复盘时视觉规则突然变化；密集的事实与附加字段削弱主要解释和明日第一步的优先级。"
+    },
+    {
+      "id": "UI-12",
+      "priority": "P2",
+      "title": "日期与时间控件的语言、输入形态不统一",
+      "steps": [
+        47,
+        49,
+        82,
+        83,
+        105
+      ],
+      "observation": "活动日期控件显示英文月份、星期；时间拨盘的辅助标签为英文；账本是中文自定义日历，复盘则只有文本日期框。返回按钮辅助名称为 Back。",
+      "recommendation": "统一中文本地化、日期格式和可切换输入方式；复用同一日期/时间交互规范，并保留端点独立精度和合法 Approximate 行为。",
+      "code": [],
+      "impact": "同一产品的日期和时间操作需要重新学习，中文用户还要处理英文标签；辅助名称与页面语言也不一致。"
+    },
+    {
+      "id": "UI-13",
+      "priority": "P2",
+      "title": "热力图和柱状图缺少足够的读数帮助",
+      "steps": [
+        22,
+        23,
+        125
+      ],
+      "observation": "柱状图只有少量刻度，热力图虽写“深浅表示时长”却没有色阶对应的时长；过去无投入与未来空白外观不同，没有说明。",
+      "recommendation": "补足时长标尺、色阶范围、所选日读数及未来空白解释；只描述事实，不加入效率评分或自动评价。Q-033 的自然周/月及当前日截断口径保持不变。",
+      "code": [],
+      "impact": "用户能看到分布，却难以从颜色读出时长；无法理解空格差异时，可能把未来日期与过去无投入混为一谈。"
+    },
+    {
+      "id": "UI-14",
+      "priority": "P2",
+      "title": "演示目标创建日期显示 1970 年",
+      "steps": [
+        22,
+        23,
+        122,
+        125
+      ],
+      "observation": "演示目标“毕业设计”创建日期为 1970 年 1 月 1 日，破坏时间账本的可信度。原因是测试数据的 createdAt 使用 now: 1，不是本次观察到的真实数据迁移问题。",
+      "recommendation": "后续在演示数据生成范围内用一致的参考日期创建夹具，避免把夹具问题归为生产事实计算错误。",
+      "code": [
+        "lib/dev/seed_demo_data.dart:36"
+      ],
+      "impact": "演示数据的年代与当前记录明显不符，容易让用户怀疑数据可靠性；目前证据指向夹具时间，不是生产数据迁移错误。"
+    },
+    {
+      "id": "UI-15",
+      "priority": "P2",
+      "title": "关于页版本没有接入",
+      "steps": [
+        13
+      ],
+      "observation": "版本显示“—”。SettingsPage 支持 versionLabel，但当前装配没有提供。",
+      "recommendation": "在既有版本信息来源与装配范围内显示应用版本，避免为一个标签顺带安装依赖。",
+      "code": [
+        "lib/features/settings/presentation/settings_page.dart:354",
+        "lib/app/bootstrap/app_bootstrap.dart:279"
+      ],
+      "impact": "关于页不能提供实际版本，用户反馈问题或核对安装版本时缺少必要信息。"
+    },
+    {
+      "id": "UI-16",
+      "priority": "P2",
+      "title": "桌面二级页面缺少宽度约束",
+      "steps": [
+        128,
+        129,
+        131
+      ],
+      "observation": "桌面目标月热力格过大，列表与新建按钮横跨屏幕；详情字段左右分散，阅读距离增大。",
+      "recommendation": "给正文、图表和表单设置合理最大宽度及对齐，保持移动端流式布局；分别验证 320、390 与桌面视口。",
+      "code": [],
+      "impact": "大屏内容被过度拉开，图表格子与按钮随屏幕放大；字段阅读和比较距离增加。"
+    },
+    {
+      "id": "UI-17",
+      "priority": "P2",
+      "title": "复盘放弃草稿没有与其他编辑器一致的确认",
+      "steps": [
+        56,
+        79,
+        113,
+        114
+      ],
+      "observation": "活动和睡眠放弃草稿会确认；复盘选择“放弃此复盘草稿”后直接清除并返回。本次清除的是审查新产生的编辑草稿，已提交复盘没有删除。",
+      "recommendation": "明确放弃草稿的统一策略及可恢复性；在当前没有撤销入口的情况下，应让用户能在清除前理解结果并取消。",
+      "code": [
+        "lib/features/review/presentation/review_form.dart:288"
+      ],
+      "impact": "放弃复盘草稿会立即清除，没有机会取消；与活动、睡眠的放弃确认不一致。本次影响仅限审查新产生的复盘草稿。"
+    }
+  ],
+  "limitations": [
+    "本次审查使用当前工作区新构建的 Flutter Web、Codex 内置浏览器与本地 http://127.0.0.1:8766；界面语言中文，系统时区 Asia/Shanghai，日期 2026-10-06。该 origin 初次打开时由现有启动逻辑自动生成演示数据。",
+    "实际覆盖 390×844、320×740 与默认桌面 1176×1208 视口。132 个编号检查状态，130 张保留截图；25、119 是过渡帧，另存 rejected 并剔除。115 的标签指示动画不用于样式结论。",
+    "没有修改应用源代码、全局偏好或已提交的活动/睡眠/目标/复盘。删除、归档、清空未确认执行。问答操作和返回产生了本地审查草稿；复盘放弃动作直接移除了本次产生的草稿。热力图本月切换仅为当前目标页内状态。",
+    "没有验证真实保存后的持久化、删除后的恢复、跨进程重开、存储故障、权限失败或真实 Android/iOS 键盘。归档目标列表为空，恢复和未引用目标删除没有现成数据可测；首睡眠提醒在当前含睡眠夹具下没有覆盖。",
+    "浏览器捕获的 warn/error 日志为空，不代表功能正确；截图和浏览器辅助树也不能替代完整对比度测量、读屏器、键盘遍历、放大字体与平台无障碍测试。",
+    "Q-029 提醒详细行为、Q-031 旧 Exact 展示、Q-032 睡眠预填等产品未决内容没有由本审查自行作答。Q-025、Q-026、Q-027、Q-030、Q-033、Q-034 的已定范围用于建议边界。"
+  ],
+  "pendingVerification": [
+    {
+      "title": "设置偏好的实际消费路径还需运行验证",
+      "note": "目标页的 heatRange 初值为 week，_load 只读取 commonGoalId；目标页范围切换只修改局部状态。活动入口仍固定装配问答页，当前发现的代码路径未见记录方式偏好消费。本次未修改全局设置，不能把这一项算作已经用浏览器复现的失效。后续应验证设置→离开→重开→实际编辑/图表的行为。",
+      "code": [
+        "lib/features/goals/presentation/goal_management_page.dart:51",
+        "lib/features/goals/presentation/goal_management_page.dart:75",
+        "lib/features/goals/presentation/goal_management_page.dart:759",
+        "lib/features/ledger/presentation/activity/activity_recording_entry.dart:16"
+      ]
+    },
+    {
+      "title": "菜单 busy 状态与说明调用的冲突",
+      "note": "_more 设置 opening=true 后调用 showDistribution；HomeShell.showDistribution 在 widget.busy 为 true 时直接返回。与步骤 94 无响应相符。刷新入口也调用带同类 guard 的 refreshFromMenu，但本次没有单独证明刷新失效，不列为已复现问题。",
+      "code": [
+        "lib/app/main_app.dart:387",
+        "lib/features/ledger/presentation/home/home_shell.dart:83"
+      ]
+    }
+  ]
+}

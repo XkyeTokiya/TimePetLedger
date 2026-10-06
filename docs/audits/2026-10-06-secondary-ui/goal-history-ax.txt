@@ -1,0 +1,54 @@
+Browser tab: 1, Title: "Time Pet Ledger", URL: "http://127.0.0.1:8766/".
+0 AXWebArea Time Pet Ledger, URL: 127.0.0.1:8766/
+	1 container
+		2 container Back 目标 归档目标 删除
+			3 container flt-semantic-node-1315
+				4 container flt-semantic-node-1326
+					5 button Back, ID: flt-semantic-node-1327
+					6 heading 目标, Value: 2, ID: flt-semantic-node-1328
+						7 text 目标
+				8 container flt-semantic-node-1325
+					9 text 当前目标
+					10 button 毕业设计, ID: flt-semantic-node-1319
+					11 text 创建于1970年1月1日
+					12 container Description: 时间投入 2小时30分钟 本月 · 已记录投入 10月1日 — 10月31日 一 二 三 四 五 六 日 深浅表示时长。今天只计已经发生的时间。 10月6日 · 截至现在：未记录相关投入, ID: flt-semantic-node-1331
+						13 button 柱状图, ID: flt-semantic-node-1332
+						14 button 热力图, ID: flt-semantic-node-1333
+						15 button 热力图设置, ID: flt-semantic-node-1344
+						16 container flt-semantic-node-1353
+							17 button 1, ID: flt-semantic-node-1366
+							18 button 2, ID: flt-semantic-node-1367
+							19 button 3, ID: flt-semantic-node-1368
+							20 button 4, ID: flt-semantic-node-1369
+							21 button 5, ID: flt-semantic-node-1346
+							22 button 6, ID: flt-semantic-node-1347
+							23 text 7
+							24 text 8
+							25 text 9
+							26 text 10
+							27 text 11
+							28 text 12
+							29 text 13
+							30 text 14
+							31 text 15
+							32 text 16
+							33 text 17
+							34 text 18
+							35 text 19
+							36 text 20
+							37 text 21
+							38 text 22
+							39 text 23
+							40 text 24
+							41 text 25
+							42 text 26
+							43 text 27
+							44 text 28
+							45 text 29
+							46 text 30
+							47 text 31
+					48 text 此前记录 2条 想不起来 10月5日 · 10:00–10:30 已交代 · 想不起来 30分钟 设计首页 10月5日 · 08:00–10:00 推进 2小时
+				49 button 归档目标, ID: flt-semantic-node-1342
+				50 button 删除, ID: flt-semantic-node-1343
+
+The focused UI element is 2 container Back 目标 归档目标 删除

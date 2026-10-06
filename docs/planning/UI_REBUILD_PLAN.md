@@ -242,6 +242,18 @@
 
 **评审重点：** 先走“记录 → 保存 → 详情 → 修改 → 返回”，再从目标历史进入记录、切换设置后回到首页。重点确认连续使用的返回位置、信息更新和输入密度；本轮交付后停止，按反馈细化，不自动进入正式开发。
 
+## 记录详情 / 目标管理 / 设置正式页面（2026-10-06 继续）
+
+**范围与状态：** 在睡眠页重构完成后，把已评审的三块原型落成正式 Flutter 页面，复用现有 domain / application / data 合同，未接入新依赖或真实平台能力。
+
+- **记录详情与删除**：`presentation/fact_detail_page.dart` 取代旧的底部详情面板，作为整页路由（返回原型）。只读已提交完整源事实；TimeBlock 显示标题、目标（含归档）、节奏、卡住原因 / 恢复与备注，Unknown 以「原文字」呈现；SleepSession 显示当日切片（如有）与完整入睡 / 醒来 / 完整时长 / 备注。底部「编辑完整记录」返回编辑意图，「删除」进入页内确认（跨夜整段删除说明），确认后返回删除意图；宿主仍用既有 `RecordingEntryEditor` / 睡眠控制器执行写入与收尾。
+- **目标管理**：`presentation/goal_management_page.dart` 承接列表（当前 / 已归档分页）、详情、新建 / 改名、归档 / 恢复 / 删除与常用目标。时间投入支持近 7 天柱状图与本周 / 本月热力图（`domain/goal_history.dart` + `data/drift_goal_history_reader.dart` 按 goalId 直读 time_blocks，含 Unknown / 休息 / 未标记），此前记录默认约 5 条并可查看全部。归档 / 删除后清除常用选择（Q-025）；本机偏好经 `settings/domain/app_preferences.dart` 落盘。
+- **设置**：`presentation/settings_page.dart` 提供界面设置（热力图范围）、记录与提醒（记录方式 / 首页提醒）、高级设置（数据概况、添加测试数据、清空当前数据）与关于（版本由宿主注入）。`data/drift_data_maintenance.dart` 只清空正式事实表并保留设置；草稿由独立连接计数 / 清除；添加仅在业务数据为空时执行（Q-034）。
+- **偏好存储**：`data/drift_app_preferences_store.dart` 使用独立命名连接（沿用睡眠开启标记模式），字段缺省为 null 表示尚未选择，不用默认值替产品决定（Q-026 / Q-029 / Q-033 仍属候选）。
+- **接线**：`AppBootstrap` 新增 `openPreferences`，以 `AppPreferencesSession` 惰性打开并于 dispose 关闭；`MainApp` 新增 `settingsEntry`，「更多」菜单加入「设置」；目标入口换为 `GoalManagementPage`。测试新增 `test/app/rebuild_pages_test.dart`；`goal_entry_test.dart`、`goal_rhythm_closure_test.dart` 改走新目标 UI 并注入内存偏好。
+
+**验证：** `dart format` 对全部改动文件无 diff；`flutter analyze` 仅余 `guided_recording_test.dart` 既存 2 条 info；全套 `flutter test` 结果与记录基线**逐条一致**（108 项既存失败，0 新增 / 0 修复）。真实设备、2 倍字体、IME 与正式持久化未验证；未改领域文档，Q-029 / Q-031 / Q-032 保持未决。
+
 ## 代码边界
 
 | 处理 | 范围 |
