@@ -182,11 +182,13 @@ class HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
                                       onChooseDate: _chooseDate,
                                       compact: tight,
                                     ),
-                                  if (!tight && view != null)
+                                  // 高度不足（如横屏）时只收起覆盖行，
+                                  // 时间分布说明与刷新入口始终可达。
+                                  if (view != null)
                                     Padding(
-                                      padding: const EdgeInsets.fromLTRB(
+                                      padding: EdgeInsets.fromLTRB(
                                         20,
-                                        10,
+                                        tight ? 2 : 10,
                                         20,
                                         6,
                                       ),
@@ -194,8 +196,10 @@ class HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          HomeCoverageLine(view: view),
-                                          const SizedBox(height: 2),
+                                          if (!tight) ...[
+                                            HomeCoverageLine(view: view),
+                                            const SizedBox(height: 2),
+                                          ],
                                           Row(
                                             children: [
                                               TextButton(

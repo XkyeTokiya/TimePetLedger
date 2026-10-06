@@ -203,6 +203,20 @@ void main() {
     );
   });
 
+  testWidgets('short landscape keeps 时间分布说明 and 刷新账本 reachable', (t) async {
+    final loader = DayLedgerLoader(
+      resolveDate: resolveDeviceRecordingDate,
+      readFacts: (_) async => mixedFacts(),
+    );
+    // 844×390 是审计里入口消失的视口：高度小于 520 触发 tight 分支。
+    await mount(t, const Size(844, 390), loader);
+
+    expect(find.byKey(const ValueKey('home-distribution')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-refresh')), findsOneWidget);
+    expect(find.text('时间分布说明'), findsOneWidget);
+    expect(find.text('刷新账本'), findsOneWidget);
+  });
+
   testWidgets('unknown reads as a state and a gap stays one row tall', (
     t,
   ) async {

@@ -592,29 +592,34 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
   }
 
   /// 色阶对应的时长范围，避免只从颜色猜测投入量。
-  Widget _heatLegend() => Row(
+  /// 分档与 [_heatCell] 一致：<1h、1–2h、2–4h、≥4h。
+  Widget _heatLegend() => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text('少', style: _muted),
-      const SizedBox(width: 6),
-      for (final color in const [
-        Color(0xFFEEE0D8),
-        Color(0xFFDFB6A5),
-        Color(0xFFBF765E),
-        Color(0xFF914C3A),
-      ])
-        Container(
-          width: 18,
-          height: 14,
-          margin: const EdgeInsets.symmetric(horizontal: 2),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ),
-      const SizedBox(width: 6),
-      Text('多', style: _muted),
-      const SizedBox(width: 10),
-      const Expanded(child: Text('空白＝当天没有投入；淡格＝尚未到来的日期', style: _muted)),
+      Row(
+        children: [
+          for (final (color, label) in const [
+            (Color(0xFFEEE0D8), '＜1h'),
+            (Color(0xFFDFB6A5), '1–2h'),
+            (Color(0xFFBF765E), '2–4h'),
+            (Color(0xFF914C3A), '≥4h'),
+          ]) ...[
+            Container(
+              width: 18,
+              height: 14,
+              margin: const EdgeInsets.only(right: 4),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+            Text(label, style: _muted),
+            const SizedBox(width: 10),
+          ],
+        ],
+      ),
+      const SizedBox(height: 4),
+      const Text('空白＝当天没有投入；淡格＝尚未到来的日期', style: _muted),
     ],
   );
 
