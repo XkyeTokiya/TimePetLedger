@@ -1,0 +1,29 @@
+{
+  "baseline_head": "55bca8017c98377343760c844b25f187dbd01e77",
+  "current_failure_count": 20,
+  "baseline_failure_count": 20,
+  "new_failures": [],
+  "baseline_only_failures": [],
+  "reproduced_failures": [
+    "basic_recording_flow_test.dart: historical candidate requires choice; invalid and sleep conflict can be corrected",
+    "basic_recording_flow_test.dart: sleep-only today suggests tail; mixed precision survives draft, save, edit and delete",
+    "gap_recording_flow_test.dart: Gap partial known draft survives leaving and file reopen, existing precision wins, ordinary draft remains separate, save leaves remainder",
+    "gap_recording_flow_test.dart: empty historical Gap prefills full calendar day; future date exposes no Gap action",
+    "gap_recording_flow_test.dart: empty ordinary entry stays manual but explicit full-day Gap prefills approximate and saves untitled Unknown only after confirmation",
+    "gap_recording_flow_test.dart: stale Gap conflicts atomically with new sleep, retains input and draft until manual correction succeeds",
+    "sleep_draft_entry_test.dart: app entry needs no Goal, closes/reopens real draft storage and leaves formal data unchanged",
+    "sleep_editing_flow_test.dart: app edits complete fact from either day, reopens file draft, migrates wake summary, preserves note and deletes with refreshed Gap",
+    "sleep_editing_test.dart: cancel deletion leaves fact and draft; formal failure is editable and preserves both",
+    "sleep_editing_test.dart: delete post-commit cleanup/other-day read failure locks mutations and retry does not repeat them",
+    "sleep_editing_test.dart: update post-commit cleanup/other-day read failure locks mutations and retry does not repeat them",
+    "sleep_recording_flow_test.dart: committed create/edit/delete with real cleanup and read failures only retries cleanup and reads",
+    "sleep_recording_flow_test.dart: facts changed after drafting reject both conflicts; manual correction survives real rollback and editing conflicts",
+    "sleep_recording_flow_test.dart: first real entry persists a draft, submits cross-day/multiple main sleeps and nap, edits and deletes with independent approximation",
+    "sleep_recording_flow_test.dart: midnight wake saved via entry remains in complete summary with zero day contribution and is editable",
+    "sleep_submission_test.dart: widget blocks a second click and back while submitting; write failure leaves editable draft",
+    "sleep_submission_test.dart: widget distinguishes committed both failure and only finishes cleanup/read",
+    "sleep_submission_test.dart: widget distinguishes committed clear failure and only finishes cleanup/read",
+    "sleep_submission_test.dart: widget distinguishes committed refresh failure and only finishes cleanup/read",
+    "sleep_submission_test.dart: widget lists both conflict identities and full intervals and permits manual correction"
+  ]
+}

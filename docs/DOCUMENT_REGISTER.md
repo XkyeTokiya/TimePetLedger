@@ -55,6 +55,10 @@
 | [TASKS](../TASKS.md) | 持续维护（含历史索引） | 任务定义、完成入口及依赖；顶部设计阶段说明与正在变动的实现需由实施负责人对齐，本文不重判完成或授权 |
 | [COMPLETED_TASKS](planning/COMPLETED_TASKS.md) | 历史归档 | 已移出的 77 项完整任务定义；已归档，不重复搬迁；完成证据以 TASKS 和具体报告核对 |
 | [UI_REBUILD_PLAN](planning/UI_REBUILD_PLAN.md) | 持续维护（当前前端交接） | 当前设计入口，含轮次、确认、素材及待评审项；内部早期“未实施 Flutter”及 Q 状态不能直接代表正在变化的工作区 |
+| [TIME_RECORDING_AUTOMATION](planning/TIME_RECORDING_AUTOMATION.md) | 现行依据（当前实施任务） | 2026-10-07用户授权TIME-01，来源Q-032 / Q-035；时间初始化与直接组件编辑，状态和验证查正文 |
+| [DATE_TIME_EDITING](planning/DATE_TIME_EDITING.md) | 现行依据（本轮实施） | TIME-02用户授权补齐全应用日期 / 时间独立直达，Q-038覆盖手动串联；与时间初始化 / 学习算法分开 |
+| [LONG_GAP_ACTIVITY_INITIALIZATION](planning/LONG_GAP_ACTIVITY_INITIALIZATION.md) | 现行依据（本轮实施） | TIME-03只实施Q-037已确认5小时 / 60分钟分支，后续睡眠首版另沿TIME-04，不改本任务历史结果 |
+| [SLEEP_TIME_PREDICTION](planning/SLEEP_TIME_PREDICTION.md) | 现行依据（本轮实施） | TIME-04修复整段多日Gap睡眠初值，采用用户已批准的个人睡眠模型和参数 |
 
 ## 4. 旧设计与计划：原地逻辑归档
 
@@ -90,6 +94,10 @@
 
 | 报告 | 内容入口 |
 | --- | --- |
+| [TIME-01_TIME_AUTOMATION_REPORT](reports/TIME-01_TIME_AUTOMATION_REPORT.md) | 2026-10-07 活动 / 睡眠时间日期自动化；实现交付与平台验收限制 |
+| [TIME-02_DATE_TIME_EDITING_REPORT](reports/TIME-02_DATE_TIME_EDITING_REPORT.md) | 日期 / 时间独立字段、全入口清理与实际验证限制 |
+| [TIME-03_LONG_GAP_ACTIVITY_REPORT](reports/TIME-03_LONG_GAP_ACTIVITY_REPORT.md) | 长Gap后的普通活动初值、跨日 / 缓存 / 剩余Gap与实际验证 |
+| [TIME-04_SLEEP_PREDICTION_REPORT](reports/TIME-04_SLEEP_PREDICTION_REPORT.md) | 用户已批准的个人睡眠初值、辅助反馈 / 迁移、跨日 / 类型与真实存储验证 |
 | [E0-T01_BASELINE_REPORT](reports/E0-T01_BASELINE_REPORT.md) | E0-T01 工程与验证基线完成报告 |
 | [E2-T01_DRIVER_REPORT](reports/E2-T01_DRIVER_REPORT.md) | E2-T01 — 核验持久化驱动选择 |
 | [E2-T02_PERSISTENCE_CONNECTION_REPORT](reports/E2-T02_PERSISTENCE_CONNECTION_REPORT.md) | E2-T02 — 接入单库连接与测试环境 |

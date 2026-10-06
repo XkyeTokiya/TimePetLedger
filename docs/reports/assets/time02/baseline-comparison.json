@@ -1,0 +1,49 @@
+{
+  "baseline_head": "55bca8017c98377343760c844b25f187dbd01e77",
+  "final_related_passed": 97,
+  "final_related_failed": 3,
+  "final_related_failures": [
+    "test/features/ledger/presentation/recording_form_layout_test.dart: folds retain raw fields, no formal writes, restore and state switches",
+    "test/features/ledger/presentation/recording_rhythm_test.dart: duplicate add preserves explicit intent and reports correct relation failure",
+    "test/features/ledger/presentation/recording_rhythm_test.dart: missing edit preserves explicit intent and reports correct relation failure"
+  ],
+  "reproduced_in_head": [
+    "test/features/ledger/presentation/recording_form_layout_test.dart: folds retain raw fields, no formal writes, restore and state switches",
+    "test/features/ledger/presentation/recording_rhythm_test.dart: duplicate add preserves explicit intent and reports correct relation failure",
+    "test/features/ledger/presentation/recording_rhythm_test.dart: missing edit preserves explicit intent and reports correct relation failure"
+  ],
+  "not_reproduced_in_head": [],
+  "expanded_old_app_failure_names": [
+    "test/app/day_summary_recalculation_flow_test.dart: current-day UI save retry and summary route return refresh without repeated writes or stale snapshot",
+    "test/app/day_summary_recalculation_flow_test.dart: real file app UI mutations keep historical mixed summaries derived from current facts",
+    "test/app/review_closure_flow_test.dart: committed leap-day review with simultaneous cleanup/read faults recovers through full bootstrap reopen and retries only finish before edit/delete",
+    "test/app/review_closure_flow_test.dart: independent SQLite writer wins selected date, restored failed draft stays distinct; write retry and deleted stale source never retarget a replacement",
+    "test/app/review_closure_flow_test.dart: real mixed summary to raw draft, Unicode limit and changed Goal failure, full-field create/edit/move/delete preserve facts",
+    "test/app/review_correction_flow_test.dart: actual bootstrap restores edit draft, retains archived Goal, saves moved date and no-op without changing identity or creation time",
+    "test/app/review_correction_flow_test.dart: post-update clear/read failure feedback freezes input and retries only finalization",
+    "test/app/review_route_flow_test.dart: actual fact correction refreshes ledger, summary and review context while archived original Goal and review text keep their source",
+    "test/app/review_route_flow_test.dart: ledger entry allows failed facts, rejects invalid dates and pins displayed today across midnight with one route",
+    "test/app/review_route_flow_test.dart: real summary save-return, historical ledger read/edit, move to new day and delete leave original facts intact",
+    "test/app/review_route_flow_test.dart: summary entry allows failed facts, rejects invalid dates and pins displayed today across midnight with one route",
+    "test/app/ui_t04_navigation_test.dart: shared fixed/follow date, modal cancel, native root back, formal saved date and drafts"
+  ],
+  "expanded_old_app_reproduced": [
+    "test/app/day_summary_recalculation_flow_test.dart: current-day UI save retry and summary route return refresh without repeated writes or stale snapshot",
+    "test/app/day_summary_recalculation_flow_test.dart: real file app UI mutations keep historical mixed summaries derived from current facts",
+    "test/app/review_closure_flow_test.dart: committed leap-day review with simultaneous cleanup/read faults recovers through full bootstrap reopen and retries only finish before edit/delete",
+    "test/app/review_closure_flow_test.dart: independent SQLite writer wins selected date, restored failed draft stays distinct; write retry and deleted stale source never retarget a replacement",
+    "test/app/review_closure_flow_test.dart: real mixed summary to raw draft, Unicode limit and changed Goal failure, full-field create/edit/move/delete preserve facts",
+    "test/app/review_correction_flow_test.dart: actual bootstrap restores edit draft, retains archived Goal, saves moved date and no-op without changing identity or creation time",
+    "test/app/review_correction_flow_test.dart: post-update clear/read failure feedback freezes input and retries only finalization",
+    "test/app/review_route_flow_test.dart: actual fact correction refreshes ledger, summary and review context while archived original Goal and review text keep their source",
+    "test/app/review_route_flow_test.dart: ledger entry allows failed facts, rejects invalid dates and pins displayed today across midnight with one route",
+    "test/app/review_route_flow_test.dart: real summary save-return, historical ledger read/edit, move to new day and delete leave original facts intact",
+    "test/app/review_route_flow_test.dart: summary entry allows failed facts, rejects invalid dates and pins displayed today across midnight with one route",
+    "test/app/ui_t04_navigation_test.dart: shared fixed/follow date, modal cancel, native root back, formal saved date and drafts"
+  ],
+  "timezone_tests_passed": 9,
+  "final_date_and_focus_passed": 9,
+  "final_date_and_focus_failed": 1,
+  "web_integration": "passed",
+  "android": "no connected device"
+}
