@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'theme/home_theme.dart';
@@ -14,12 +16,14 @@ import '../features/review/presentation/review_context_page.dart';
 import '../features/ledger/application/day_ledger_loader.dart';
 import '../features/ledger/presentation/day_ledger_controller.dart';
 import '../features/ledger/presentation/home/home_menu_page.dart';
-import '../features/ledger/presentation/home/home_review_card.dart';
 import '../features/ledger/presentation/home/home_shell.dart';
+import '../features/ledger/presentation/home/home_suggestion_card.dart';
 import '../features/ledger/presentation/home/home_summary_tab.dart';
 import '../features/ledger/presentation/home/home_timeline_tab.dart';
 import '../features/ledger/domain/projection/ledger_coverage.dart';
 import '../features/ledger/domain/projection/ledger_segment.dart';
+import '../features/ledger/application/home_suggestion.dart';
+import '../features/settings/domain/app_preferences.dart';
 
 import 'time/device_recording_date.dart';
 import '../features/ledger/application/sleep_first_open.dart';
@@ -52,10 +56,14 @@ class MainApp extends StatefulWidget {
     this.goalEntry,
     this.settingsEntry,
     this.goals,
+    this.preferences,
   });
   final Widget Function()? goalEntry;
   final Widget Function()? settingsEntry;
   final GoalRepository? goals;
+
+  /// 首页建议区域读取提醒开关与时点（Q-028 / Q-029）；不写入。
+  final AppPreferencesStore? preferences;
   final DayLedgerLoader? dayLedger;
   final ReviewContextLoader? reviewContext;
   final ReviewDraftStore? reviewDrafts;
@@ -83,6 +91,7 @@ class _MainAppState extends State<MainApp> {
       goals: widget.goals,
       goalEntry: widget.goalEntry,
       settingsEntry: widget.settingsEntry,
+      preferences: widget.preferences,
       dayLedger: widget.dayLedger,
       reviewContext: widget.reviewContext,
       reviewDrafts: widget.reviewDrafts,
@@ -118,10 +127,12 @@ class _RecordingHome extends StatefulWidget {
     required this.goalEntry,
     required this.settingsEntry,
     required this.goals,
+    required this.preferences,
   });
   final Widget Function()? goalEntry;
   final Widget Function()? settingsEntry;
   final GoalRepository? goals;
+  final AppPreferencesStore? preferences;
   final DayLedgerLoader? dayLedger;
   final ReviewContextLoader? reviewContext;
   final ReviewDraftStore? reviewDrafts;
@@ -148,9 +159,9 @@ class _RecordingHomeState extends State<_RecordingHome>
   bool ledgerInteraction = false;
   bool reviewInteraction = false;
   bool checkingSleep = false;
-  CivilDate? sleepCheckDate;
-  CivilDate? pendingSleepConfirmation;
+  bool? recordedMainSleepToday;
   String? firstSleepError;
+  AppPreferences? preferences;
   ModalRoute<void>? route;
 
   bool get busy => opening || ledgerInteraction || reviewInteraction;
@@ -162,7 +173,10 @@ class _RecordingHomeState extends State<_RecordingHome>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkFirstSleep());
+    _loadPreferences();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _refreshSuggestionState(),
+    );
   }
 
   @override
@@ -178,25 +192,34 @@ class _RecordingHomeState extends State<_RecordingHome>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _checkFirstSleep();
+    if (state == AppLifecycleState.resumed) _refreshSuggestionState();
   }
 
   @override
   void didPopNext() => WidgetsBinding.instance.addPostFrameCallback(
-    (_) => _checkSleepOnReturn(),
+    (_) => _refreshSuggestionState(),
   );
 
-  Future<void> _checkSleepOnReturn() async {
-    if (!mounted || busy || route?.isCurrent != true) return;
-    final today = deviceDateOfInstant(widget.now().millisecondsSinceEpoch);
-    if (pendingSleepConfirmation == today) {
-      await _checkFirstSleep();
-    } else if (today != sleepCheckDate) {
-      await _checkFirstSleep();
-    }
+  /// 读取本机偏好；失败时按默认值展示建议区域，不阻止记账。
+  ///
+  /// 不阻塞首页与导航：偏好尚未就绪时先按默认开关 / 时点展示。
+  /// 存储不可用时（例如缺少平台实现的测试环境）静默按默认值处理，
+  /// 读取失败不得逃逸为未捕获的异步错误。
+  void _loadPreferences() {
+    final store = widget.preferences;
+    if (store == null) return;
+    runZonedGuarded(() {
+      store.read().then((loaded) {
+        if (mounted) setState(() => preferences = loaded);
+      }, onError: (Object _) {});
+    }, (Object _, StackTrace _) {});
   }
 
-  Future<void> _checkFirstSleep() async {
+  /// 重算建议区域所需的睡眠已记录状态（Q-029）。
+  ///
+  /// 取代每日首次打开的确认弹窗：只读取状态驱动建议区域，不弹模态框。
+  /// 读取失败只显示可重试横幅，不阻止记账、不消费首次标记。
+  Future<void> _refreshSuggestionState() async {
     final coordinator = widget.firstSleepOpen;
     if (!mounted ||
         coordinator == null ||
@@ -208,7 +231,6 @@ class _RecordingHomeState extends State<_RecordingHome>
     checkingSleep = true;
     final instant = widget.now().millisecondsSinceEpoch;
     final today = deviceDateOfInstant(instant);
-    sleepCheckDate = today;
     setState(() => firstSleepError = null);
     try {
       final result = await coordinator.check(date: today, now: instant);
@@ -216,53 +238,18 @@ class _RecordingHomeState extends State<_RecordingHome>
           deviceDateOfInstant(widget.now().millisecondsSinceEpoch) != today) {
         return;
       }
-      if (result.ledger.recordedMainSleepToday == true) {
-        pendingSleepConfirmation = null;
-      }
-      if (result.shouldConfirm) pendingSleepConfirmation = today;
-      if (!busy &&
-          route?.isCurrent == true &&
-          pendingSleepConfirmation == today) {
-        await _showSleepConfirmation(today);
-      }
+      setState(
+        () => recordedMainSleepToday = result.ledger.recordedMainSleepToday,
+      );
     } catch (_) {
-      if (mounted) setState(() => firstSleepError = '主睡眠确认检查失败；可继续记账，或重试检查。');
+      if (mounted) {
+        setState(() => firstSleepError = '主睡眠检查失败；可继续记账，或重试检查。');
+      }
     } finally {
       checkingSleep = false;
       if (mounted &&
           deviceDateOfInstant(widget.now().millisecondsSinceEpoch) != today) {
-        _checkFirstSleep();
-      }
-    }
-  }
-
-  Future<void> _showSleepConfirmation(CivilDate today) async {
-    if (!mounted || busy || route?.isCurrent != true) return;
-    pendingSleepConfirmation = null;
-    setState(() => opening = true);
-    try {
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('确认主睡眠'),
-          content: const Text('今天几点醒来？请确认主睡眠的入睡和醒来时间。已有睡眠输入会继续保留。'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('继续账本'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('确认睡眠起止'),
-            ),
-          ],
-        ),
-      );
-      if (confirm == true && mounted) await _pushSleep(today);
-    } finally {
-      if (mounted) {
-        setState(() => opening = false);
-        selection.refresh();
+        _refreshSuggestionState();
       }
     }
   }
@@ -278,7 +265,7 @@ class _RecordingHomeState extends State<_RecordingHome>
     });
     if (!value) {
       WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _checkSleepOnReturn(),
+        (_) => _refreshSuggestionState(),
       );
     }
   }
@@ -329,7 +316,7 @@ class _RecordingHomeState extends State<_RecordingHome>
       if (mounted) {
         setState(() => opening = false);
         selection.refresh();
-        await _checkSleepOnReturn();
+        await _refreshSuggestionState();
       }
     }
   }
@@ -344,7 +331,7 @@ class _RecordingHomeState extends State<_RecordingHome>
       if (mounted) {
         setState(() => opening = false);
         selection.refresh();
-        await _checkSleepOnReturn();
+        await _refreshSuggestionState();
       }
     }
   }
@@ -368,7 +355,7 @@ class _RecordingHomeState extends State<_RecordingHome>
       if (mounted) {
         setState(() => opening = false);
         selection.refresh();
-        await _checkSleepOnReturn();
+        await _refreshSuggestionState();
       }
     }
   }
@@ -454,7 +441,7 @@ class _RecordingHomeState extends State<_RecordingHome>
       if (mounted) {
         setState(() => opening = false);
         selection.refresh();
-        await _checkSleepOnReturn();
+        await _refreshSuggestionState();
       }
     }
   }
@@ -492,7 +479,7 @@ class _RecordingHomeState extends State<_RecordingHome>
       if (mounted) {
         setState(() => opening = false);
         selection.refresh();
-        await _checkSleepOnReturn();
+        await _refreshSuggestionState();
       }
     }
     return committed;
@@ -542,7 +529,7 @@ class _RecordingHomeState extends State<_RecordingHome>
       if (mounted) {
         setState(() => opening = false);
         selection.refresh();
-        await _checkSleepOnReturn();
+        await _refreshSuggestionState();
       }
     }
   }
@@ -550,6 +537,44 @@ class _RecordingHomeState extends State<_RecordingHome>
   void _snack(String message) =>
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
+
+  /// 首页建议区域：按 Q-028 优先级与 Q-029 边界由已提交投影推导。
+  ///
+  /// 只读当前 [DayLedgerController] 的视图与日期上下文；不查询、不写入。
+  Widget _suggestionCard(DayLedgerController controller) {
+    final view = controller.view;
+    final dateContext = controller.dateContext;
+    if (view == null || dateContext == null) return const SizedBox.shrink();
+    // 当地时刻用日边界与当前 instant 之差求得，不再次读取时区。
+    final nowMinutes = (dateContext.now - dateContext.dayStartedAt) ~/ 60000;
+    final suggestion = resolveHomeSuggestion(
+      relation: dateContext.relation,
+      nowMinutes: nowMinutes,
+      sleepReminderMinutes:
+          preferences?.sleepReminderMinutes ?? defaultSleepReminderMinutes,
+      reviewReminderMinutes:
+          preferences?.reviewReminderMinutes ?? defaultReviewReminderMinutes,
+      hasRecordedMainSleepToday: recordedMainSleepToday ?? false,
+      trailingGapMinutes: trailingGapEndingAt(
+        view.unresolvedSpans,
+        view.window.endedAt,
+      ),
+    );
+    return Padding(
+      key: const ValueKey('home-suggestion'),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      child: HomeSuggestionCard(
+        suggestion: suggestion,
+        onAction: switch (suggestion.kind) {
+          HomeSuggestionKind.greeting => null,
+          HomeSuggestionKind.sleep => busy ? null : _recordSleep,
+          HomeSuggestionKind.record => busy ? null : _recordActivity,
+          HomeSuggestionKind.review =>
+            busy ? null : () => homeShellKey.currentState?.openReviewTab(),
+        },
+      ),
+    );
+  }
 
   Future<void> _editCompleteSleep(CivilDate date, SleepSession sleep) async {
     if (busy) return;
@@ -566,7 +591,7 @@ class _RecordingHomeState extends State<_RecordingHome>
       if (mounted) {
         setState(() => opening = false);
         selection.refresh();
-        await _checkSleepOnReturn();
+        await _refreshSuggestionState();
       }
     }
   }
@@ -601,7 +626,7 @@ class _RecordingHomeState extends State<_RecordingHome>
                 children: [
                   Text(firstSleepError!, style: const TextStyle(fontSize: 13)),
                   TextButton(
-                    onPressed: busy ? null : _checkFirstSleep,
+                    onPressed: busy ? null : _refreshSuggestionState,
                     child: const Text('重试主睡眠检查'),
                   ),
                 ],
@@ -611,23 +636,7 @@ class _RecordingHomeState extends State<_RecordingHome>
       onRecordActivity: _recordActivity,
       onRecordSleep: _recordSleep,
       reviewEnabled: widget.reviewContext != null,
-      floatingCard: widget.reviewContext == null
-          ? null
-          : (controller) {
-              final view = controller.view;
-              if (view == null) return const SizedBox.shrink();
-              return Padding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-                child: HomeReviewCard(
-                  loader: widget.reviewContext!,
-                  date: view.date,
-                  now: () => widget.now().millisecondsSinceEpoch,
-                  onOpen: busy
-                      ? null
-                      : () => homeShellKey.currentState?.openReviewTab(),
-                ),
-              );
-            },
+      floatingCard: (preferences?.reminders ?? true) ? _suggestionCard : null,
       timeline: _ledgerTimeline,
       summary: (controller, _) => HomeSummaryTab(
         controller: controller,

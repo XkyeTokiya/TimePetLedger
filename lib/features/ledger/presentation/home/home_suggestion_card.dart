@@ -1,0 +1,84 @@
+import 'package:flutter/material.dart';
+
+import '../../../../app/theme/home_theme.dart';
+import '../../application/home_suggestion.dart';
+
+/// 首页建议区域：随情境给出当前最该做的一件事，或普通问候（Q-028 / Q-029）。
+///
+/// 只呈现已由 application 解析出的建议；不读取时钟、账本或偏好。
+class HomeSuggestionCard extends StatelessWidget {
+  const HomeSuggestionCard({
+    super.key,
+    required this.suggestion,
+    this.onAction,
+  });
+
+  final HomeSuggestion suggestion;
+
+  /// 记录睡眠 / 补记一笔 / 开始复盘入口；问候为 null。
+  final VoidCallback? onAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final action = suggestion.action;
+    return Material(
+      key: ValueKey('home-suggestion-${suggestion.kind.name}'),
+      color: HomePalette.tint,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: action == null ? null : onAction,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(
+                _iconFor(suggestion.kind),
+                size: 26,
+                color: HomePalette.accent,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  suggestion.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontFamily: homeSerifFamily,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: HomePalette.ink,
+                  ),
+                ),
+              ),
+              if (action != null) ...[
+                const SizedBox(width: 8),
+                Text(
+                  action,
+                  style: const TextStyle(
+                    fontFamily: homeSerifFamily,
+                    fontSize: 14,
+                    color: HomePalette.accentDeep,
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 18,
+                  color: HomePalette.accentDeep,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static IconData _iconFor(HomeSuggestionKind kind) => switch (kind) {
+    HomeSuggestionKind.sleep => Icons.bedtime_outlined,
+    HomeSuggestionKind.record => Icons.edit_outlined,
+    HomeSuggestionKind.review => Icons.description_outlined,
+    HomeSuggestionKind.greeting => Icons.wb_sunny_outlined,
+  };
+}

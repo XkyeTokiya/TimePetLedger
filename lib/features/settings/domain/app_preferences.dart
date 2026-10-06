@@ -16,6 +16,8 @@ final class AppPreferences {
     this.heatRange,
     this.recordingMode,
     this.reminders,
+    this.sleepReminderMinutes,
+    this.reviewReminderMinutes,
   });
 
   /// 用户显式指定的常用目标；归档 / 删除后清除（Q-025）。
@@ -30,17 +32,27 @@ final class AppPreferences {
   /// 首页提醒 / 问候区域总开关。
   final bool? reminders;
 
+  /// 睡眠建议时点（当地时刻的分钟数）；null 表示尚未选择，按 08:00 展示（Q-029）。
+  final int? sleepReminderMinutes;
+
+  /// 复盘建议时点（当地时刻的分钟数）；null 表示尚未选择，按 22:00 展示（Q-029）。
+  final int? reviewReminderMinutes;
+
   AppPreferences copyWith({
     EntityId? commonGoalId,
     bool clearCommonGoal = false,
     HeatRange? heatRange,
     RecordingMode? recordingMode,
     bool? reminders,
+    int? sleepReminderMinutes,
+    int? reviewReminderMinutes,
   }) => AppPreferences(
     commonGoalId: clearCommonGoal ? null : (commonGoalId ?? this.commonGoalId),
     heatRange: heatRange ?? this.heatRange,
     recordingMode: recordingMode ?? this.recordingMode,
     reminders: reminders ?? this.reminders,
+    sleepReminderMinutes: sleepReminderMinutes ?? this.sleepReminderMinutes,
+    reviewReminderMinutes: reviewReminderMinutes ?? this.reviewReminderMinutes,
   );
 }
 

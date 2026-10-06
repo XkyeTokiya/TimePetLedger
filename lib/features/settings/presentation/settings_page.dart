@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../app/theme/home_theme.dart';
 import '../../../core/identity/entity_id.dart';
+import '../../ledger/application/home_suggestion.dart';
 import '../domain/app_preferences.dart';
 import '../domain/data_overview.dart';
 
@@ -324,7 +325,35 @@ class _SettingsPageState extends State<SettingsPage> {
             contentPadding: EdgeInsets.zero,
           ),
           const SizedBox(height: 8),
-          const Text('睡眠 08:00 · 复盘 22:00', style: _muted),
+          _timeRow(
+            key: 'settings-sleep-reminder',
+            label: '提醒记录睡眠',
+            minutes: prefs.sleepReminderMinutes ?? defaultSleepReminderMinutes,
+            enabled: prefs.reminders != false && !busy,
+            onTap: () => _pickReminderTime(
+              key: 'settings-sleep-reminder',
+              current:
+                  prefs.sleepReminderMinutes ?? defaultSleepReminderMinutes,
+              onPicked: (minutes) => _savePreference(
+                (c) => c.copyWith(sleepReminderMinutes: minutes),
+              ),
+            ),
+          ),
+          _timeRow(
+            key: 'settings-review-reminder',
+            label: '提醒复盘',
+            minutes:
+                prefs.reviewReminderMinutes ?? defaultReviewReminderMinutes,
+            enabled: prefs.reminders != false && !busy,
+            onTap: () => _pickReminderTime(
+              key: 'settings-review-reminder',
+              current:
+                  prefs.reviewReminderMinutes ?? defaultReviewReminderMinutes,
+              onPicked: (minutes) => _savePreference(
+                (c) => c.copyWith(reviewReminderMinutes: minutes),
+              ),
+            ),
+          ),
         ];
       case _View.advanced:
         final counts = this.counts;
@@ -455,6 +484,58 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
     ),
   );
+
+  /// 可编辑的提醒时点行：显示当前时分，点击打开时间选择（Q-029）。
+  Widget _timeRow({
+    required String key,
+    required String label,
+    required int minutes,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) => InkWell(
+    key: ValueKey(key),
+    onTap: enabled ? onTap : null,
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+      ),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: _entryTitle)),
+          Text(
+            _formatMinutes(minutes),
+            key: ValueKey('$key-value'),
+            style: _value,
+          ),
+          const SizedBox(width: 6),
+          Icon(
+            Icons.schedule,
+            size: 20,
+            color: enabled ? HomePalette.accentDeep : HomePalette.muted,
+          ),
+        ],
+      ),
+    ),
+  );
+
+  Future<void> _pickReminderTime({
+    required String key,
+    required int current,
+    required void Function(int minutes) onPicked,
+  }) async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: current ~/ 60, minute: current % 60),
+      helpText: '选择提醒时点',
+    );
+    if (picked == null) return;
+    onPicked(picked.hour * 60 + picked.minute);
+  }
+
+  static String _formatMinutes(int minutes) =>
+      '${(minutes ~/ 60).toString().padLeft(2, '0')}:'
+      '${(minutes % 60).toString().padLeft(2, '0')}';
 
   Widget _countsList(DataCounts counts) => Column(
     children: [

@@ -298,6 +298,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
             clock: widget.now,
           ),
           reviewDrafts: _reviewDrafts,
+          preferences: _preferences,
           firstSleepOpen: SleepFirstOpenCoordinator(
             ledger: sleepLedger,
             claimOpening: _claimSleepOpening,

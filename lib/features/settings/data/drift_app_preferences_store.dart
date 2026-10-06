@@ -37,6 +37,8 @@ final class DriftAppPreferencesStore implements AppPreferencesStore {
         heatRange: _heatRange(values['heat_range']),
         recordingMode: _recordingMode(values['recording_mode']),
         reminders: _bool(values['reminders']),
+        sleepReminderMinutes: _int(values['sleep_reminder_minutes']),
+        reviewReminderMinutes: _int(values['review_reminder_minutes']),
       );
     } catch (error, stack) {
       Error.throwWithStackTrace(AppPreferencesStorageException(error), stack);
@@ -52,6 +54,10 @@ final class DriftAppPreferencesStore implements AppPreferencesStore {
           'heat_range': preferences.heatRange?.name,
           'recording_mode': preferences.recordingMode?.name,
           'reminders': preferences.reminders?.toString(),
+          'sleep_reminder_minutes': preferences.sleepReminderMinutes
+              ?.toString(),
+          'review_reminder_minutes': preferences.reviewReminderMinutes
+              ?.toString(),
         }.entries) {
           final value = entry.value;
           if (value == null) {
@@ -88,6 +94,8 @@ final class DriftAppPreferencesStore implements AppPreferencesStore {
     'false' => false,
     _ => null,
   };
+
+  static int? _int(String? value) => value == null ? null : int.tryParse(value);
 }
 
 class _PreferencesDatabase extends GeneratedDatabase {
