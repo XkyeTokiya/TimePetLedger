@@ -11,7 +11,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../support/checked_sleep_opening.dart';
 
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
-import 'package:time_pet_ledger/app/theme/time_ledger_theme.dart';
+import 'package:time_pet_ledger/app/theme/home_theme.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_recording_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_ledger_repository.dart';
@@ -207,13 +207,13 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(
       tester.widget<MaterialApp>(find.byType(MaterialApp)).theme,
-      same(timeLedgerTheme),
+      same(homeTheme),
     );
     await tester.pumpAndSettle();
     expect(find.text('日账本'), findsOneWidget);
     expect(
       tester.widget<MaterialApp>(find.byType(MaterialApp)).theme,
-      same(timeLedgerTheme),
+      same(homeTheme),
     );
     await tester.pumpWidget(
       AppBootstrap(
@@ -289,7 +289,7 @@ void main() {
     expect(find.text('无法打开本地存储，请重新启动应用。'), findsOneWidget);
     expect(
       tester.widget<MaterialApp>(find.byType(MaterialApp)).theme,
-      same(timeLedgerTheme),
+      same(homeTheme),
     );
     expect(find.textContaining('private SQL path'), findsNothing);
   });

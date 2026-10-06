@@ -148,6 +148,27 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
 
   Future<void> _leave({bool discard = false}) async {
     if (closing) return;
+    if (discard) {
+      // 与活动 / 睡眠一致：清除草稿前先让用户确认并可取消。
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('放弃这份复盘草稿？'),
+          content: const Text('未保存的内容将被清除。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('继续填写'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('放弃草稿'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted || closing) return;
+    }
     final success = discard ? await model.discard() : await model.leave();
     if (!mounted || !success) return;
     await _pop(model.deleted?.original.date ?? model.committed?.review.date);

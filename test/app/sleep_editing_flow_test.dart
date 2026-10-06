@@ -299,6 +299,11 @@ void main() {
       );
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
+      // UI-04：编辑返回先回到来源详情，再返回账本。
+      if (find.byType(BackButton).evaluate().isNotEmpty) {
+        await tester.tap(find.byType(BackButton));
+        await tester.pumpAndSettle();
+      }
       expect(ledgerDuration('已交代', '0 分钟'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();

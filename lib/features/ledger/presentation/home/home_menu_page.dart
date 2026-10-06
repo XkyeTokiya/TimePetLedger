@@ -8,13 +8,13 @@ import '../../../../app/theme/home_theme.dart';
 /// 它是独立整页路由，不再用底部弹层充当菜单；账本自身的刷新与时间分布
 /// 说明不占用菜单。
 class HomeMenuPage extends StatelessWidget {
-  const HomeMenuPage({super.key, this.onGoals, this.onSettings});
+  const HomeMenuPage({super.key, this.goalsPage, this.settingsPage});
 
-  /// 目标管理入口；为空时不显示该项。
-  final VoidCallback? onGoals;
+  /// 目标管理入口的页面构建器；为空时不显示该项。
+  final Widget Function()? goalsPage;
 
-  /// 设置入口；为空时不显示该项。
-  final VoidCallback? onSettings;
+  /// 设置入口的页面构建器；为空时不显示该项。
+  final Widget Function()? settingsPage;
 
   @override
   Widget build(BuildContext context) => Theme(
@@ -27,19 +27,24 @@ class HomeMenuPage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
         children: [
-          if (onGoals != null)
+          if (goalsPage != null)
             _Entry(
               key: const ValueKey('menu-goals'),
               icon: Icons.flag_outlined,
               label: '我的目标',
-              onTap: onGoals!,
+              // 菜单只是入口：目标 / 设置替换菜单路由，返回直接回首页。
+              onTap: () => Navigator.of(context).pushReplacement<void, void>(
+                MaterialPageRoute(builder: (_) => goalsPage!()),
+              ),
             ),
-          if (onSettings != null)
+          if (settingsPage != null)
             _Entry(
               key: const ValueKey('menu-settings'),
               icon: Icons.settings_outlined,
               label: '设置',
-              onTap: onSettings!,
+              onTap: () => Navigator.of(context).pushReplacement<void, void>(
+                MaterialPageRoute(builder: (_) => settingsPage!()),
+              ),
             ),
         ],
       ),

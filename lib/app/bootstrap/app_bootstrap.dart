@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/persistence/app_database.dart';
 import '../../core/persistence/database_connection.dart';
 import '../main_app.dart';
+import '../app_version.dart';
 import '../theme/home_theme.dart';
 import '../../features/goals/data/drift_goal_repository.dart';
 import '../../features/goals/data/drift_goal_history_reader.dart';
@@ -286,6 +287,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
             newGoalId: newLocalTimeBlockId,
             newFactId: newLocalTimeBlockId,
             now: () => widget.now().millisecondsSinceEpoch,
+            versionLabel: kAppVersionLabel,
           ),
           dayLedger: createDayLedgerLoader(_database!),
           reviewContext: reviewLoader,

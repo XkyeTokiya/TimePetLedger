@@ -27,7 +27,7 @@ Future<bool> tapRootAction(WidgetTester tester, String text) async {
       return true;
     case '打开目标':
       await tap(find.byKey(const ValueKey('home-menu')));
-      await tap(find.text('目标管理'));
+      await tap(find.byKey(const ValueKey('menu-goals')));
       return true;
     case '记录活动':
       await tap(root);

@@ -136,7 +136,7 @@ class HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     final today = widget.dateOfInstant(widget.now());
     final onTimeline = tabs.index == 0;
-    // Ambient app theme (dark) still owns the pages that were not rebuilt.
+    // 复盘页仍按环境主题渲染；根主题已是 homeTheme，二者一致。
     final appTheme = Theme.of(context);
     return Theme(
       data: homeTheme,

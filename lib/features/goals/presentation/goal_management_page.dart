@@ -585,9 +585,38 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
         ),
         const SizedBox(height: 10),
         const Text('深浅表示时长。今天只计已经发生的时间。', style: _muted),
+        const SizedBox(height: 6),
+        _heatLegend(),
       ],
     );
   }
+
+  /// 色阶对应的时长范围，避免只从颜色猜测投入量。
+  Widget _heatLegend() => Row(
+    children: [
+      Text('少', style: _muted),
+      const SizedBox(width: 6),
+      for (final color in const [
+        Color(0xFFEEE0D8),
+        Color(0xFFDFB6A5),
+        Color(0xFFBF765E),
+        Color(0xFF914C3A),
+      ])
+        Container(
+          width: 18,
+          height: 14,
+          margin: const EdgeInsets.symmetric(horizontal: 2),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+      const SizedBox(width: 6),
+      Text('多', style: _muted),
+      const SizedBox(width: 10),
+      const Expanded(child: Text('空白＝当天没有投入；淡格＝尚未到来的日期', style: _muted)),
+    ],
+  );
 
   Widget _heatCell(_DayInvestment day) {
     final level = day.future
@@ -694,45 +723,46 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
 
   Widget _historyRow(GoalInvestmentRecord record) {
     final unknown = record.block.knowledgeState.name == 'unknown';
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  unknown ? '想不起来' : (record.block.title ?? '未命名记录'),
-                  style: const TextStyle(
-                    fontFamily: homeSerifFamily,
-                    fontSize: 19,
-                    color: HomePalette.ink,
+    final title = unknown ? '想不起来' : (record.block.title ?? '未命名记录');
+    final interval =
+        '${_dateText(record.startedAt)} · '
+        '${_clock(record.startedAt)}–${_clock(record.endedAt)}';
+    final duration = _compactDuration(record.endedAt - record.startedAt);
+    return Semantics(
+      label: '$title，$interval，$duration',
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontFamily: homeSerifFamily,
+                      fontSize: 19,
+                      color: HomePalette.ink,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${_dateText(record.startedAt)} · '
-                  '${_clock(record.startedAt)}–${_clock(record.endedAt)}',
-                  style: _muted,
-                ),
-                if (unknown)
-                  const Text('已交代 · 想不起来', style: _muted)
-                else if (record.annotation?.state case final state?)
-                  Text(_rhythmLabel(state), style: _muted),
-              ],
+                  const SizedBox(height: 2),
+                  Text(interval, style: _muted),
+                  if (unknown)
+                    const Text('已交代 · 想不起来', style: _muted)
+                  else if (record.annotation?.state case final state?)
+                    Text(_rhythmLabel(state), style: _muted),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            _compactDuration(record.endedAt - record.startedAt),
-            style: _muted,
-          ),
-        ],
+            const SizedBox(width: 8),
+            Text(duration, style: _muted),
+          ],
+        ),
       ),
     );
   }
@@ -935,21 +965,39 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
           ),
           title: const Text('目标'),
         ),
-        body: goal == null ? _list() : _detail(goal),
+        // 桌面视口下限制正文最大宽度，避免列表、图表与按钮被横向拉满。
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 640),
+            child: goal == null ? _list() : _detail(goal),
+          ),
+        ),
         bottomNavigationBar: goal == null
             ? SafeArea(
                 top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-                  child: FilledButton.icon(
-                    key: const ValueKey('goal-new'),
-                    onPressed: busy ? null : () => _form(null),
-                    icon: const Icon(Icons.add, size: 19),
-                    label: const Text('新建目标'),
+                child: Center(
+                  heightFactor: 1,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 640),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                      child: FilledButton.icon(
+                        key: const ValueKey('goal-new'),
+                        onPressed: busy ? null : () => _form(null),
+                        icon: const Icon(Icons.add, size: 19),
+                        label: const Text('新建目标'),
+                      ),
+                    ),
                   ),
                 ),
               )
-            : _detailFooter(goal),
+            : Center(
+                heightFactor: 1,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 640),
+                  child: _detailFooter(goal),
+                ),
+              ),
       ),
     );
   }

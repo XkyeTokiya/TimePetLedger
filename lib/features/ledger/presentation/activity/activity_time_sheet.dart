@@ -126,15 +126,9 @@ class _ActivityTimeSheetState extends State<_ActivityTimeSheet> {
   }
 
   Future<void> pickDate(_Endpoint endpoint, String label) async {
-    final picked = await showDatePicker(
+    final picked = await showDialog<DateTime>(
       context: context,
-      initialDate: baseDate(endpoint),
-      firstDate: DateTime(1),
-      lastDate: DateTime(9999, 12, 31),
-      initialEntryMode: DatePickerEntryMode.calendarOnly,
-      helpText: '$label日期',
-      cancelText: '取消',
-      confirmText: '确定',
+      builder: (_) => _ChineseDatePicker(initial: baseDate(endpoint)),
     );
     if (!mounted || picked == null) return;
     setState(() {
@@ -144,16 +138,10 @@ class _ActivityTimeSheetState extends State<_ActivityTimeSheet> {
   }
 
   Future<void> pickClock(_Endpoint endpoint, String label) async {
-    final picked = await showTimePicker(
+    final picked = await showDialog<TimeOfDay>(
       context: context,
-      initialTime: endpoint.clock ?? const TimeOfDay(hour: 12, minute: 0),
-      initialEntryMode: TimePickerEntryMode.dialOnly,
-      helpText: '$label时分',
-      cancelText: '取消',
-      confirmText: '确定',
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-        child: child!,
+      builder: (_) => _ChineseTimePicker(
+        initial: endpoint.clock ?? const TimeOfDay(hour: 12, minute: 0),
       ),
     );
     if (!mounted || picked == null) return;
@@ -311,6 +299,229 @@ class _ActivityTimeSheetState extends State<_ActivityTimeSheet> {
 /// 供时间页与测试复用的“已选区间”文案。
 String activityTimeSummary(int? startedAt, int? endedAt) =>
     '${formatRecordingTime(startedAt)} → ${formatRecordingTime(endedAt)}';
+
+/// 账本风格的中文日期选择器：月历网格，标题与星期均为中文，不使用英文
+/// Material 日期控件。
+class _ChineseDatePicker extends StatefulWidget {
+  const _ChineseDatePicker({required this.initial});
+  final DateTime initial;
+
+  @override
+  State<_ChineseDatePicker> createState() => _ChineseDatePickerState();
+}
+
+class _ChineseDatePickerState extends State<_ChineseDatePicker> {
+  late DateTime month = DateTime(widget.initial.year, widget.initial.month, 1);
+  late DateTime selected = DateTime(
+    widget.initial.year,
+    widget.initial.month,
+    widget.initial.day,
+  );
+
+  void _move(int direction) => setState(() {
+    month = DateTime(month.year, month.month + direction, 1);
+  });
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    insetPadding: const EdgeInsets.all(16),
+    content: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 360),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                tooltip: '上个月',
+                onPressed: () => _move(-1),
+                icon: const Icon(Icons.chevron_left),
+              ),
+              Expanded(
+                child: Text(
+                  '${month.year}年${month.month}月',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: homeSerifFamily,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: HomePalette.ink,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: '下个月',
+                onPressed: () => _move(1),
+                icon: const Icon(Icons.chevron_right),
+              ),
+            ],
+          ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cell = (constraints.maxWidth / 7).floorToDouble();
+              return SizedBox(width: cell * 7, child: _grid(cell));
+            },
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('取消'),
+      ),
+      FilledButton(
+        key: const ValueKey('date-picker-confirm'),
+        onPressed: () => Navigator.pop(context, selected),
+        child: const Text('确定'),
+      ),
+    ],
+  );
+
+  Widget _grid(double cell) {
+    final weekday = DateTime.utc(month.year, month.month, 1).weekday - 1;
+    final count = DateTime.utc(month.year, month.month + 1, 0).day;
+    return Column(
+      children: [
+        Row(
+          children: [
+            for (final day in ['一', '二', '三', '四', '五', '六', '日'])
+              SizedBox(
+                width: cell,
+                child: Text(
+                  day,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontFamily: homeSerifFamily,
+                    fontSize: 13,
+                    color: HomePalette.muted,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        for (var week = 0; week < (weekday + count + 6) ~/ 7; week++)
+          Row(
+            children: [
+              for (var column = 0; column < 7; column++)
+                _cell(week * 7 + column - weekday + 1, count, cell),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _cell(int day, int count, double cell) {
+    if (day < 1 || day > count) return SizedBox(width: cell, height: cell);
+    final date = DateTime(month.year, month.month, day);
+    final selectedDay =
+        date.year == selected.year &&
+        date.month == selected.month &&
+        date.day == selected.day;
+    return SizedBox(
+      width: cell,
+      height: cell,
+      child: TextButton(
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.zero,
+          backgroundColor: selectedDay ? HomePalette.accentDeep : null,
+          foregroundColor: selectedDay ? Colors.white : HomePalette.ink,
+        ),
+        onPressed: () => setState(() => selected = date),
+        child: Text(
+          '$day',
+          style: const TextStyle(fontFamily: homeSerifFamily, fontSize: 15),
+        ),
+      ),
+    );
+  }
+}
+
+/// 账本风格的中文时分选择器：小时 / 分钟两列，不使用英文 Material 拨盘。
+class _ChineseTimePicker extends StatefulWidget {
+  const _ChineseTimePicker({required this.initial});
+  final TimeOfDay initial;
+
+  @override
+  State<_ChineseTimePicker> createState() => _ChineseTimePickerState();
+}
+
+class _ChineseTimePickerState extends State<_ChineseTimePicker> {
+  late int hour = widget.initial.hour;
+  late int minute = widget.initial.minute;
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('选择时分'),
+    content: SizedBox(
+      height: 260,
+      width: 220,
+      child: Row(
+        children: [
+          Expanded(
+            child: _column(24, hour, (v) => setState(() => hour = v), '小时'),
+          ),
+          Expanded(
+            child: _column(60, minute, (v) => setState(() => minute = v), '分钟'),
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.pop(context),
+        child: const Text('取消'),
+      ),
+      FilledButton(
+        key: const ValueKey('time-picker-confirm'),
+        onPressed: () =>
+            Navigator.pop(context, TimeOfDay(hour: hour, minute: minute)),
+        child: const Text('确定'),
+      ),
+    ],
+  );
+
+  Widget _column(
+    int count,
+    int current,
+    ValueChanged<int> onPick,
+    String label,
+  ) => Column(
+    children: [
+      Text(
+        label,
+        style: const TextStyle(
+          fontFamily: homeSerifFamily,
+          fontSize: 14,
+          color: HomePalette.muted,
+        ),
+      ),
+      const SizedBox(height: 6),
+      Expanded(
+        child: ListWheelScrollView.useDelegate(
+          controller: FixedExtentScrollController(initialItem: current),
+          itemExtent: 44,
+          onSelectedItemChanged: onPick,
+          physics: const FixedExtentScrollPhysics(),
+          childDelegate: ListWheelChildBuilderDelegate(
+            childCount: count,
+            builder: (context, index) => Center(
+              child: Text(
+                index.toString().padLeft(2, '0'),
+                style: const TextStyle(
+                  fontFamily: homeSerifFamily,
+                  fontSize: 22,
+                  color: HomePalette.ink,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
+}
 
 const _title = TextStyle(
   fontFamily: homeSerifFamily,

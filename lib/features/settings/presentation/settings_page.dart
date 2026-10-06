@@ -203,13 +203,24 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         title: Text(_title),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-        children: [
-          if (error != null) ...[_error(error!), const SizedBox(height: 12)],
-          if (status != null) ...[_note(status!), const SizedBox(height: 12)],
-          ..._body(),
-        ],
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            children: [
+              if (error != null) ...[
+                _error(error!),
+                const SizedBox(height: 12),
+              ],
+              if (status != null) ...[
+                _note(status!),
+                const SizedBox(height: 12),
+              ],
+              ..._body(),
+            ],
+          ),
+        ),
       ),
     ),
   );
@@ -233,8 +244,7 @@ class _SettingsPageState extends State<SettingsPage> {
     switch (view) {
       case _View.home:
         return [
-          Text('设置', style: _heading),
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
           _entry(
             _View.display,
             '界面设置',
@@ -252,9 +262,16 @@ class _SettingsPageState extends State<SettingsPage> {
         ];
       case _View.display:
         return [
-          Text('界面设置', style: _heading),
-          const SizedBox(height: 16),
-          Text('目标热力图', style: _sectionHeading),
+          Row(
+            children: [
+              Text('目标热力图', style: _sectionHeading),
+              const Spacer(),
+              Text(
+                _rangeText(prefs),
+                key: const ValueKey('settings-heat-current'),
+              ),
+            ],
+          ),
           const SizedBox(height: 8),
           for (final range in HeatRange.values)
             _choice(
@@ -269,9 +286,16 @@ class _SettingsPageState extends State<SettingsPage> {
         ];
       case _View.recording:
         return [
-          Text('记录与提醒', style: _heading),
-          const SizedBox(height: 16),
-          Text('记录方式', style: _sectionHeading),
+          Row(
+            children: [
+              Text('记录方式', style: _sectionHeading),
+              const Spacer(),
+              Text(
+                _modeText(prefs),
+                key: const ValueKey('settings-mode-current'),
+              ),
+            ],
+          ),
           for (final mode in RecordingMode.values)
             _choice(
               key: 'settings-mode-${mode.name}',
@@ -311,8 +335,6 @@ class _SettingsPageState extends State<SettingsPage> {
           ];
         }
         return [
-          Text('高级设置', style: _heading),
-          const SizedBox(height: 16),
           Text('当前数据', style: _sectionHeading),
           const SizedBox(height: 8),
           if (counts.isEmpty)
@@ -344,8 +366,6 @@ class _SettingsPageState extends State<SettingsPage> {
         ];
       case _View.about:
         return [
-          Text('关于', style: _heading),
-          const SizedBox(height: 16),
           const Text('日账本', style: _aboutMark),
           const SizedBox(height: 6),
           const Text('把一天慢慢记清楚。', style: _muted),
@@ -401,33 +421,37 @@ class _SettingsPageState extends State<SettingsPage> {
     required String title,
     required String description,
     required VoidCallback? onTap,
-  }) => InkWell(
-    key: ValueKey(key),
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            selected ? Icons.radio_button_checked : Icons.radio_button_off,
-            size: 22,
-            color: selected ? HomePalette.accentDeep : HomePalette.muted,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: _entryTitle),
-                const SizedBox(height: 2),
-                Text(description, style: _muted),
-              ],
+  }) => Semantics(
+    selected: selected,
+    button: true,
+    child: InkWell(
+      key: ValueKey(key),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.radio_button_checked : Icons.radio_button_off,
+              size: 22,
+              color: selected ? HomePalette.accentDeep : HomePalette.muted,
             ),
-          ),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: _entryTitle),
+                  const SizedBox(height: 2),
+                  Text(description, style: _muted),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );
@@ -540,13 +564,6 @@ class _SettingsPageState extends State<SettingsPage> {
   };
 }
 
-const _heading = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 30,
-  height: 1.4,
-  fontWeight: FontWeight.w600,
-  color: HomePalette.ink,
-);
 const _sectionHeading = TextStyle(
   fontFamily: homeSerifFamily,
   fontSize: 22,

@@ -129,9 +129,14 @@ class _FactDetailPageState extends State<FactDetailPage> {
         ),
         title: Text(confirming ? '删除记录' : '记录详情'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-        children: confirming ? _confirmBody() : _detailBody(),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            children: confirming ? _confirmBody() : _detailBody(),
+          ),
+        ),
       ),
       bottomNavigationBar: SafeArea(
         top: false,

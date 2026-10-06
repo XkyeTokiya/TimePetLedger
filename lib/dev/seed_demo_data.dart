@@ -33,7 +33,8 @@ Future<void> seedDemoDataIfEmpty(AppDatabase database) async {
   final goals = DriftGoalRepository(database);
   final ledger = DriftLedgerRepository(database);
 
-  await goals.create(id: goalId, name: '毕业设计', now: 1);
+  // 演示目标的创建时间取演示窗口内的一天，避免 1970 这类夹具时间戳。
+  await goals.create(id: goalId, name: '毕业设计', now: at(day2, 9, 0));
 
   // Two nights of sleep so both the day-before (full reference-like day) and
   // today (this morning's slice) show a main sleep.

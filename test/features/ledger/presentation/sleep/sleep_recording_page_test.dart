@@ -254,8 +254,7 @@ void main() {
     await settleNative(t);
     await tapKey(t, 'open');
 
-    await tapKey(t, 'sleep-more');
-    await t.tap(find.text('删除睡眠'));
+    await tapKey(t, 'sleep-delete');
     await settleNative(t);
     await t.tap(find.text('确认删除'));
     await settleNative(t);

@@ -12,6 +12,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
+import 'package:time_pet_ledger/app/theme/home_theme.dart';
 import 'package:time_pet_ledger/app/theme/time_ledger_theme.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_recording_draft_store.dart';
@@ -139,7 +140,7 @@ void main() {
         final loadingTheme = Theme.of(
           tester.element(find.byType(CircularProgressIndicator)),
         );
-        expect(loadingTheme.brightness, Brightness.dark);
+        expect(loadingTheme.brightness, Brightness.light);
         await capture(tester, 'loading-$width-$scale');
         // No text or interactive target exists in this original loading state.
         await guidelines(tester, standardPixelContrast: true);
@@ -197,7 +198,7 @@ void main() {
           expect(find.text('日账本'), findsOneWidget);
           expect(
             tester.widget<MaterialApp>(find.byType(MaterialApp)).theme,
-            same(timeLedgerTheme),
+            same(homeTheme),
           );
           await capture(tester, 'ready-$width-$scale');
           await guidelines(tester);

@@ -53,7 +53,9 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
 
   void _changed() {
     if (title.text != model.title) title.text = model.title;
-    if (reason.text != model.stuckReasonText) reason.text = model.stuckReasonText;
+    if (reason.text != model.stuckReasonText) {
+      reason.text = model.stuckReasonText;
+    }
     if (mounted) setState(() {});
   }
 
@@ -220,32 +222,6 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
             onPressed: model.submitting ? null : _leave,
           ),
           title: Text(_editing ? '更正记录' : '记录一笔'),
-          actions: [
-            PopupMenuButton<String>(
-              key: const ValueKey('activity-more'),
-              tooltip: '更多',
-              enabled: model.editable || model.missingOriginal,
-              onSelected: (value) {
-                if (value == 'keep') {
-                  _leave();
-                } else if (value == 'discard') {
-                  _discard();
-                }
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(
-                  key: ValueKey('activity-more-keep'),
-                  value: 'keep',
-                  child: Text('保留草稿并返回'),
-                ),
-                PopupMenuItem(
-                  key: ValueKey('activity-more-discard'),
-                  value: 'discard',
-                  child: Text('放弃草稿'),
-                ),
-              ],
-            ),
-          ],
         ),
         body: model.loading
             ? const Center(child: CircularProgressIndicator())
@@ -835,29 +811,55 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
           border: Border(top: BorderSide(color: HomePalette.hairline)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (step > 0 && committed == null) ...[
-              Expanded(
-                flex: 5,
-                child: OutlinedButton(
-                  key: const ValueKey('activity-previous'),
-                  onPressed: model.editable ? _previous : null,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                  ),
-                  child: const Text('上一步', maxLines: 1, softWrap: false),
+            if (model.editable &&
+                committed == null &&
+                (model.rhythmState != null ||
+                    model.title.isNotEmpty ||
+                    model.note.isNotEmpty ||
+                    model.continuationHint.isNotEmpty ||
+                    model.time.startedAt != null ||
+                    model.time.endedAt != null ||
+                    _editing ||
+                    step > 0)) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  key: const ValueKey('activity-discard'),
+                  onPressed: exiting ? null : _discard,
+                  child: const Text('放弃草稿'),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(height: 4),
             ],
-            Expanded(
-              flex: step > 0 && committed == null ? 7 : 1,
-              child: FilledButton(
-                key: const ValueKey('activity-primary'),
-                onPressed: action,
-                child: Text(label),
-              ),
+            Row(
+              children: [
+                if (step > 0 && committed == null) ...[
+                  Expanded(
+                    flex: 5,
+                    child: OutlinedButton(
+                      key: const ValueKey('activity-previous'),
+                      onPressed: model.editable ? _previous : null,
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                      ),
+                      child: const Text('上一步', maxLines: 1, softWrap: false),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  flex: step > 0 && committed == null ? 7 : 1,
+                  child: FilledButton(
+                    key: const ValueKey('activity-primary'),
+                    onPressed: action,
+                    child: Text(label),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

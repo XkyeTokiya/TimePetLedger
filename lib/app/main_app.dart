@@ -359,16 +359,8 @@ class _RecordingHomeState extends State<_RecordingHome>
       await Navigator.of(context).push<void>(
         MaterialPageRoute(
           builder: (_) => HomeMenuPage(
-            onGoals: widget.goalEntry == null
-                ? null
-                : () => Navigator.of(context).push<void>(
-                    MaterialPageRoute(builder: (_) => widget.goalEntry!()),
-                  ),
-            onSettings: widget.settingsEntry == null
-                ? null
-                : () => Navigator.of(context).push<void>(
-                    MaterialPageRoute(builder: (_) => widget.settingsEntry!()),
-                  ),
+            goalsPage: widget.goalEntry,
+            settingsPage: widget.settingsEntry,
           ),
         ),
       );

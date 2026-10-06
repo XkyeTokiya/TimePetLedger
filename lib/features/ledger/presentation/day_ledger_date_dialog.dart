@@ -84,10 +84,12 @@ class _DateDialogState extends State<_DateDialog> {
   late bool manual =
       widget.manual || widget.date.year < 1 || widget.date.year > 9999;
   late final text = TextEditingController(text: ledgerDateText(widget.date));
+  final calendarScroll = ScrollController();
   bool invalid = false;
   @override
   void dispose() {
     text.dispose();
+    calendarScroll.dispose();
     super.dispose();
   }
 
@@ -123,7 +125,10 @@ class _DateDialogState extends State<_DateDialog> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    insetPadding: const EdgeInsets.all(16),
+    // 收窄边距让 336px 的整周日历在 360 宽即可完整显示；同时保留 48px
+    // 触控格，320 宽放不下时仍可横向滚动（UI-06）。
+    insetPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 16),
+    contentPadding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
     scrollable: true,
     title: const Text('选择账本日期'),
     content: ConstrainedBox(
@@ -176,12 +181,30 @@ class _DateDialogState extends State<_DateDialog> {
                 ),
               ],
             ),
-            // 七列在窄屏也完整可见：按可用宽度分配单元格，不再横向滚动。
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final cell = (constraints.maxWidth / 7).floorToDouble();
-                return SizedBox(width: cell * 7, child: _calendar(cell));
-              },
+            // 七列在窄屏也尽量完整可见：缩小弹窗边距后，360 / 390 宽可整周
+            // 显示；320 宽放不下 7 个 48px 触控格，仍可横向滚动。
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (MediaQuery.sizeOf(context).width < 352)
+                  Text(
+                    '左右滑动查看整周',
+                    style: Theme.of(context).textTheme.bodySmall
+                        ?.copyWith(fontSize: 13),
+                  ),
+                Scrollbar(
+                  controller: calendarScroll,
+                  thumbVisibility: true,
+                  child: SingleChildScrollView(
+                    controller: calendarScroll,
+                    scrollDirection: Axis.horizontal,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: SizedBox(width: 336, child: _calendar(48)),
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             Text('已选 ${ledgerDateText(selected)}'),

@@ -228,6 +228,8 @@ void main() {
       expect(fieldText(t, 'review-step'), ' \n ');
       expect(fieldText(t, 'review-reflection'), '多行\n\n😀反思');
       await tap(t, '放弃此复盘草稿');
+      // UI-17：放弃前先确认，取消可保留。
+      await tap(t, '放弃草稿');
       expect(store.values, isEmpty);
       reopened.dispose();
     },
@@ -255,11 +257,14 @@ void main() {
       await tap(t, '重试保存草稿');
       store.failClear = true;
       await tap(t, '放弃此复盘草稿');
+      // UI-17：确认后才尝试清除，失败仍留在页面。
+      await tap(t, '放弃草稿');
       expect(find.byType(ReviewForm), findsOneWidget);
       expect(find.textContaining('无法放弃复盘草稿'), findsOneWidget);
       expect(fieldText(t, 'review-reflection'), '失败时仍保留\n输入');
       store.failClear = false;
       await tap(t, '放弃此复盘草稿');
+      await tap(t, '放弃草稿');
       expect(find.byType(ReviewForm), findsNothing);
       expect(store.values, isEmpty);
       model.dispose();

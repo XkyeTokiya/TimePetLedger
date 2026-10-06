@@ -248,11 +248,14 @@ void main() {
         await tester.tap(find.byKey(const ValueKey('ledger-date-picker')));
         await tester.pumpAndSettle();
         await screenshot(tester, 'calendar-320-scale-2');
+        // UI-06：48px 触控格在 320 宽放不下整周，仍保留横向滚动；360 宽
+        // 收紧边距后整周可见（见下面 width 360 断言）。
         final horizontal = find.byWidgetPredicate(
           (widget) =>
               widget is SingleChildScrollView &&
               widget.scrollDirection == Axis.horizontal,
         );
+        expect(horizontal, findsOneWidget);
         await tester.drag(horizontal, const Offset(-200, 0));
         await tester.pumpAndSettle();
         await tester.ensureVisible(find.text('4'));

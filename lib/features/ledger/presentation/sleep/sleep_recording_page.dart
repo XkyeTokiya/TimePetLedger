@@ -119,17 +119,38 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
   }
 
   Future<void> _delete() async {
+    final start = model.startedAt;
+    final end = model.endedAt;
+    final crossDay =
+        start != null &&
+        end != null &&
+        DateTime.fromMillisecondsSinceEpoch(start).day !=
+            DateTime.fromMillisecondsSinceEpoch(end).day;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('删除睡眠'),
-        content: const Text('删除这次完整睡眠后，相关日期的覆盖和睡眠摘要会重新计算。'),
+        title: const Text('删除这段睡眠？'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (start != null && end != null)
+              Text('${formatSleepTime(start)} → ${formatSleepTime(end)}'),
+            const SizedBox(height: 10),
+            Text(
+              crossDay
+                  ? '会删除整段跨夜睡眠，包括其他日期里显示的部分。相关日期的时间线会随之更新。'
+                  : '删除这次完整睡眠后，相关日期的覆盖和睡眠摘要会重新计算。',
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('取消'),
+            child: const Text('保留记录'),
           ),
           FilledButton(
+            key: const ValueKey('sleep-confirm-delete'),
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('确认删除'),
           ),
@@ -204,41 +225,6 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
             onPressed: model.submitting ? null : _leave,
           ),
           title: Text(_editing ? '编辑睡眠' : '记录睡眠'),
-          actions: [
-            PopupMenuButton<String>(
-              key: const ValueKey('sleep-more'),
-              tooltip: '更多',
-              enabled: !exiting && !model.submitting,
-              onSelected: (value) {
-                if (value == 'delete') {
-                  _delete();
-                } else if (value == 'discard') {
-                  _discard();
-                } else {
-                  _leave();
-                }
-              },
-              itemBuilder: (_) => [
-                const PopupMenuItem(
-                  key: ValueKey('sleep-more-keep'),
-                  value: 'keep',
-                  child: Text('保留草稿并返回'),
-                ),
-                if (!model.postCommit)
-                  const PopupMenuItem(
-                    key: ValueKey('sleep-more-discard'),
-                    value: 'discard',
-                    child: Text('放弃草稿'),
-                  ),
-                if (_editing && model.entryEditor != null && !model.postCommit)
-                  const PopupMenuItem(
-                    key: ValueKey('sleep-more-delete'),
-                    value: 'delete',
-                    child: Text('删除睡眠'),
-                  ),
-              ],
-            ),
-          ],
         ),
         body: model.loading
             ? const Center(child: CircularProgressIndicator())
@@ -352,49 +338,53 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
       children: [
         for (final type in SleepType.values)
           Expanded(
-            child: Material(
-              key: ValueKey(
-                type == SleepType.mainSleep
-                    ? 'sleep-type-main'
-                    : 'sleep-type-nap',
-              ),
-              color: model.type == type
-                  ? HomePalette.paper
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(24),
-              child: InkWell(
+            child: Semantics(
+              selected: model.type == type,
+              button: true,
+              child: Material(
+                key: ValueKey(
+                  type == SleepType.mainSleep
+                      ? 'sleep-type-main'
+                      : 'sleep-type-nap',
+                ),
+                color: model.type == type
+                    ? HomePalette.paper
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(24),
-                onTap: model.editable ? () => model.setType(type) : null,
-                child: Container(
-                  constraints: const BoxConstraints(minHeight: homeTapTarget),
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        type == SleepType.mainSleep
-                            ? Icons.bedtime_outlined
-                            : Icons.nights_stay_outlined,
-                        size: 19,
-                        color: model.type == type
-                            ? HomePalette.accentDeep
-                            : HomePalette.ink,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        type == SleepType.mainSleep ? '主睡眠' : '小睡',
-                        style: TextStyle(
-                          fontFamily: homeSerifFamily,
-                          fontSize: 16,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(24),
+                  onTap: model.editable ? () => model.setType(type) : null,
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: homeTapTarget),
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          type == SleepType.mainSleep
+                              ? Icons.bedtime_outlined
+                              : Icons.nights_stay_outlined,
+                          size: 19,
                           color: model.type == type
                               ? HomePalette.accentDeep
                               : HomePalette.ink,
-                          fontWeight: model.type == type
-                              ? FontWeight.w600
-                              : FontWeight.w400,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Text(
+                          type == SleepType.mainSleep ? '主睡眠' : '小睡',
+                          style: TextStyle(
+                            fontFamily: homeSerifFamily,
+                            fontSize: 16,
+                            color: model.type == type
+                                ? HomePalette.accentDeep
+                                : HomePalette.ink,
+                            fontWeight: model.type == type
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -587,11 +577,46 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
           border: Border(top: BorderSide(color: HomePalette.hairline)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-        child: FilledButton.icon(
-          key: const ValueKey('sleep-primary'),
-          onPressed: action,
-          icon: const Icon(Icons.check, size: 19),
-          label: Text(label),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (model.editable &&
+                !committed &&
+                !model.postCommit &&
+                (model.type != null ||
+                    model.startedAt != null ||
+                    model.endedAt != null ||
+                    model.note.isNotEmpty ||
+                    _editing)) ...[
+              Row(
+                children: [
+                  TextButton(
+                    key: const ValueKey('sleep-discard'),
+                    onPressed: exiting ? null : _discard,
+                    child: const Text('放弃草稿'),
+                  ),
+                  const Spacer(),
+                  if (_editing && model.entryEditor != null)
+                    TextButton(
+                      key: const ValueKey('sleep-delete'),
+                      onPressed: exiting ? null : _delete,
+                      style: TextButton.styleFrom(
+                        foregroundColor: HomePalette.accentDeep,
+                      ),
+                      child: const Text('删除睡眠'),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+            ],
+            FilledButton.icon(
+              key: const ValueKey('sleep-primary'),
+              onPressed: action,
+              icon: const Icon(Icons.check, size: 19),
+              label: Text(label),
+            ),
+          ],
         ),
       ),
     );

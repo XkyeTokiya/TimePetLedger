@@ -293,6 +293,8 @@ void main() {
         before!['daily_reviews'],
       );
       await tapText(t, '放弃此复盘草稿');
+      // UI-17：放弃前先确认。
+      await tapText(t, '放弃草稿');
       expect(find.byType(ReviewForm), findsNothing);
       expect(
         await t.runAsync(

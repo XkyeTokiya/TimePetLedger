@@ -25,7 +25,8 @@ Future<void> recorderTap(WidgetTester t, String key) async {
 }
 
 /// 继续 / 保存 / 重试收尾 — the single primary action.
-Future<void> recorderAdvance(WidgetTester t) => recorderTap(t, 'activity-primary');
+Future<void> recorderAdvance(WidgetTester t) =>
+    recorderTap(t, 'activity-primary');
 
 /// Advances until the 时间 step, where the primary action saves.
 Future<void> recorderToTime(WidgetTester t) async {
@@ -103,19 +104,12 @@ Future<void> recorderChooseGoal(WidgetTester t, String id) async {
   await recorderTap(t, 'activity-goal-$id');
 }
 
-/// Keeps the draft and returns (leading back button or the more menu).
+/// Keeps the draft and returns via the leading back button.
 Future<void> recorderKeep(WidgetTester t) async {
   final exit = find.byKey(const ValueKey('activity-exit'));
-  if (exit.evaluate().isNotEmpty) {
-    await t.tap(exit.first);
-    await t.pumpAndSettle();
-    return;
-  }
-  if (find.byType(BackButton).evaluate().isNotEmpty) {
-    await t.tap(find.byType(BackButton).first);
-    await t.pumpAndSettle();
-    return;
-  }
-  await recorderTap(t, 'activity-more');
-  await recorderTap(t, 'activity-more-keep');
+  final target = exit.evaluate().isNotEmpty
+      ? exit.first
+      : find.byType(BackButton).first;
+  await t.tap(target);
+  await t.pumpAndSettle();
 }
