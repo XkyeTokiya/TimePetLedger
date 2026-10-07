@@ -73,6 +73,8 @@ void main() {
     Size size,
     DayLedgerLoader loader, {
     Widget Function(DayLedgerController)? floatingCard,
+    VoidCallback? onGoals,
+    VoidCallback? onSettings,
   }) async {
     t.view.devicePixelRatio = 1;
     t.view.physicalSize = size;
@@ -91,7 +93,8 @@ void main() {
           now: () => DateTime(2026, 10, 3, 9).millisecondsSinceEpoch,
           dateOfInstant: deviceDateOfInstant,
           busy: false,
-          onMenu: () {},
+          onGoals: onGoals ?? () {},
+          onSettings: onSettings ?? () {},
           onRecordActivity: () {},
           onRecordSleep: () {},
           review: (_) =>
@@ -168,7 +171,7 @@ void main() {
         now: 2,
       ),
     );
-    t.state<HomeShellState>(find.byType(HomeShell)).refreshFromMenu();
+    t.state<HomeShellState>(find.byType(HomeShell)).controller.refresh();
     await t.pumpAndSettle();
     expect(find.text('真实记录二'), findsOneWidget);
     expect(find.text('真实记录一'), findsOneWidget);
@@ -176,7 +179,7 @@ void main() {
     await t.runAsync(
       () => repo.deleteTimeBlock('00000000-0000-4000-8000-0000000000a1'),
     );
-    t.state<HomeShellState>(find.byType(HomeShell)).refreshFromMenu();
+    t.state<HomeShellState>(find.byType(HomeShell)).controller.refresh();
     await t.pumpAndSettle();
     expect(find.text('真实记录一'), findsNothing);
     expect(find.text('真实记录二'), findsOneWidget);
@@ -216,19 +219,47 @@ void main() {
     );
   });
 
-  testWidgets('short landscape keeps 时间分布说明 and 刷新账本 reachable', (t) async {
-    final loader = DayLedgerLoader(
-      resolveDate: resolveDeviceRecordingDate,
-      readFacts: (_) async => mixedFacts(),
-    );
-    // 844×390 是审计里入口消失的视口：高度小于 520 触发 tight 分支。
-    await mount(t, const Size(844, 390), loader);
+  testWidgets(
+    'top bar opens the sidebar; old right and ledger entries stay hidden',
+    (t) async {
+      final loader = DayLedgerLoader(
+        resolveDate: resolveDeviceRecordingDate,
+        readFacts: (_) async => mixedFacts(),
+      );
+      var goals = 0;
+      var settings = 0;
+      await mount(
+        t,
+        const Size(390, 800),
+        loader,
+        onGoals: () => goals++,
+        onSettings: () => settings++,
+      );
 
-    expect(find.byKey(const ValueKey('home-distribution')), findsOneWidget);
-    expect(find.byKey(const ValueKey('home-refresh')), findsOneWidget);
-    expect(find.text('时间分布说明'), findsOneWidget);
-    expect(find.text('刷新账本'), findsOneWidget);
-  });
+      // 右上角入口与时间分布说明 / 刷新账本入口均已隐藏（2026-10-07 用户要求）。
+      expect(find.byKey(const ValueKey('home-date')), findsNothing);
+      expect(find.byKey(const ValueKey('home-distribution')), findsNothing);
+      expect(find.byKey(const ValueKey('home-refresh')), findsNothing);
+
+      // 左上角打开 MD3 侧边栏，沿用「我的目标 / 设置」两个入口。
+      await t.tap(find.byKey(const ValueKey('home-menu')));
+      await t.pumpAndSettle();
+      expect(find.byType(NavigationDrawer), findsOneWidget);
+      expect(find.text('我的目标'), findsOneWidget);
+      expect(find.text('设置'), findsOneWidget);
+
+      await t.tap(find.byKey(const ValueKey('menu-goals')));
+      await t.pumpAndSettle();
+      expect(goals, 1);
+      expect(settings, 0);
+
+      await t.tap(find.byKey(const ValueKey('home-menu')));
+      await t.pumpAndSettle();
+      await t.tap(find.byKey(const ValueKey('menu-settings')));
+      await t.pumpAndSettle();
+      expect(settings, 1);
+    },
+  );
 
   testWidgets('unknown reads as a state and a gap stays one row tall', (
     t,

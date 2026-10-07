@@ -20,6 +20,7 @@ import 'package:time_pet_ledger/features/ledger/domain/projection/ledger_segment
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_timeline.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart';
 
 import 'gap_recording_flow_test.dart' show tap, enterTime, disposeApp;
@@ -488,9 +489,8 @@ void main() {
         isNull,
       );
       app.clock = DateTime(2026, 9, 29, 13);
-      await tester.tap(find.byKey(const ValueKey('home-menu')));
+      tester.state<HomeShellState>(find.byType(HomeShell)).controller.refresh();
       await tester.pumpAndSettle();
-      await tap(tester, '刷新账本');
       expectLedger(
         tester,
         start: at(0),

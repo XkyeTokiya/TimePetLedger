@@ -315,7 +315,7 @@ void main() {
           );
           await backFromPage(t);
           await settleNative(t);
-          await t.tap(find.byTooltip('更多'));
+          await t.tap(find.byTooltip('菜单'));
           await settleNative(t);
           await capture(t, 'more-$width-$scale');
           await backFromPage(t);

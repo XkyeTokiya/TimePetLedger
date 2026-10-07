@@ -228,7 +228,13 @@ void main() {
     );
     expect(find.byType(HomeDonutChart), findsOneWidget);
     expect(find.byType(PieChart), findsOneWidget);
-    expect(find.byType(ListTile), findsNWidgets(4));
+    expect(
+      find.descendant(
+        of: find.byType(HomeDonutChart),
+        matching: find.byType(ListTile),
+      ),
+      findsNWidgets(4),
+    );
     expect(find.text('一天时间构成'), findsOneWidget);
     expect(find.text('已交代'), findsOneWidget);
     expect(find.text('2 小时 30 分钟'), findsOneWidget);
@@ -284,7 +290,36 @@ void main() {
     tester,
   ) async {
     await mount(tester, facts(blocks: [block(1, at(1), at(2))]), now: at(2));
+    // 明细默认折叠；展开后仍显示原有缺失表达。
+    await tester.tap(find.byKey(const ValueKey('summary-rhythm-details')));
+    await tester.pumpAndSettle();
     expect(find.text('这段时间还没有目标相关记录'), findsOneWidget);
+  });
+
+  testWidgets('sleep records and rhythm details fold behind MD3 tiles', (
+    tester,
+  ) async {
+    await mount(
+      tester,
+      facts(sleeps: [sleep(at(0), at(1))], blocks: [block(1, at(1), at(2))]),
+      now: at(3),
+    );
+
+    // 单条睡眠记录默认折叠，展开后仍可查看完整时长。
+    expect(find.textContaining('完整时长'), findsNothing);
+    final sleepTile = find.byKey(const ValueKey('sleep-summary-mainSleep'));
+    await tester.scrollUntilVisible(sleepTile, 100);
+    await tester.tap(sleepTile);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('完整时长'), findsOneWidget);
+
+    // 目标与节奏明细默认折叠，展开后仍显示完整细分。
+    final rhythmTile = find.byKey(const ValueKey('summary-rhythm-details'));
+    expect(find.text('全局节奏（账本窗口）'), findsNothing);
+    await tester.scrollUntilVisible(rhythmTile, 100);
+    await tester.tap(rhythmTile);
+    await tester.pumpAndSettle();
+    expect(find.text('全局节奏（账本窗口）'), findsOneWidget);
   });
 
   testWidgets(
