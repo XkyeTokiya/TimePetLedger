@@ -372,7 +372,7 @@ void main() {
       await text(t, '保存复盘');
       expect(find.textContaining('请检查复盘日期与文字'), findsOneWidget);
       expect(app.audit.creates, 0);
-      await text(t, '保留草稿并返回');
+      await text(t, '返回');
       expect(await t.runAsync(app.snapshot), original);
       await app.reopen(t);
       await source(t);
@@ -390,7 +390,7 @@ void main() {
       );
       await enter(t, 'review-step', '  $limit  ');
       await text(t, '保存复盘');
-      expect(find.textContaining('草稿尚未保留成功'), findsOneWidget);
+      expect(find.textContaining('本次填写尚未保留成功'), findsOneWidget);
       expect(app.audit.creates, 0);
       expect(
         (await t.runAsync(() => app.drafts.read(entry)))!.tomorrowFirstStepText,
@@ -403,7 +403,7 @@ void main() {
           (db) => db.customStatement('DROP TRIGGER fail_draft_write'),
         ),
       );
-      await text(t, '重试保存草稿');
+      await text(t, '重试保留本次填写');
       await t.runAsync(() => app.goals.archive(id: id(2), now: 5));
       await text(t, '保存复盘');
       expect(find.textContaining('目标已归档或不存在'), findsOneWidget);
@@ -510,7 +510,7 @@ void main() {
         29,
       ).millisecondsSinceEpoch;
       await text(t, '保存复盘');
-      expect(find.textContaining('草稿清理和读回失败'), findsOneWidget);
+      expect(find.textContaining('本地收尾和读回失败'), findsOneWidget);
       expect(find.text('保存复盘'), findsNothing);
       final committed = (await t.runAsync(app.snapshot))!;
       expect(committed['daily_reviews']!.length, 1);
@@ -523,7 +523,7 @@ void main() {
       app.clock = DateTime(2026, 10, 4, 0, 5);
       await app.reopen(t);
       await source(t);
-      expect(find.textContaining('草稿清理和读回失败'), findsOneWidget);
+      expect(find.textContaining('本地收尾和读回失败'), findsOneWidget);
       expect(input(t, 'review-date'), '2024-02-29');
       expect(find.text('下一自然日：2024-03-01'), findsOneWidget);
       expect(
@@ -602,7 +602,7 @@ void main() {
       await text(t, '保存复盘');
       expect(find.textContaining('该日期已有复盘，未覆盖'), findsOneWidget);
       expect(await t.runAsync(app.snapshot), occupied);
-      await text(t, '保留草稿并返回');
+      await text(t, '返回');
       await app.reopen(t);
       await source(t);
       expect(input(t, 'review-step'), '  和竞争者不同的下一步  ');
@@ -613,7 +613,7 @@ void main() {
       await enter(t, 'review-date', '2024-03-01');
       await t.runAsync(() => app.createFault(true));
       await text(t, '保存复盘');
-      expect(find.textContaining('正式保存失败，输入和草稿已保留'), findsOneWidget);
+      expect(find.textContaining('正式保存失败，当前输入仍保留'), findsOneWidget);
       expect(find.textContaining('private write'), findsNothing);
       expect(await t.runAsync(app.snapshot), occupied);
       expect((await t.runAsync(() => app.drafts.read(entry)))!.date, marchDay);
@@ -645,7 +645,7 @@ void main() {
         (await t.runAsync(() => app.drafts.read(staleKey)))!.reflection,
         '  过期编辑仍保留的输入  ',
       );
-      await text(t, '保留草稿并返回');
+      await text(t, '返回');
       expect(find.text('替代复盘的步骤'), findsOneWidget);
       await app.reopen(t);
       await homeDate(t, '2024-03-01');

@@ -7,6 +7,9 @@ import 'package:drift/drift.dart'
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_ledger_repository.dart';
@@ -105,6 +108,7 @@ class LedgerApp {
   AppBootstrap build() => AppBootstrap(
     openDatabase: () async => db,
     openDrafts: () async => drafts,
+    openReviewDrafts: emptyLegacyReviewDrafts,
     openSleepDrafts: () => DriftSleepDraftStore.open(
       NativeDatabase(File('${dir.path}/sleep.sqlite')),
     ),
@@ -294,7 +298,7 @@ void main() {
       await enterTime(tester, '结束时间', '2026-09-29 10:00');
       // Draft selections are not facts or accounted time.
       await onlyFacts(tester, app, blocks: 1, sleeps: 1);
-      await tap(tester, '保留草稿并返回');
+      await tap(tester, '返回');
       expectLedger(
         tester,
         start: at(29, 0),
@@ -389,6 +393,8 @@ void main() {
         AppBootstrap(
           openDatabase: () async => reopened,
           openDrafts: () async => reopenedDrafts,
+          openSleepDrafts: emptyLegacySleepDrafts,
+          openReviewDrafts: emptyLegacyReviewDrafts,
           openSleepOpenings: () => DriftSleepOpeningStore.open(
             NativeDatabase(File('${app.dir.path}/openings.sqlite')),
           ),
@@ -489,7 +495,7 @@ void main() {
         isNull,
       );
       app.clock = DateTime(2026, 9, 29, 13);
-      tester.state<HomeShellState>(find.byType(HomeShell)).controller.refresh();
+      tester.state<HomeShellState>(find.byType(HomeShell)).refresh();
       await tester.pumpAndSettle();
       expectLedger(
         tester,

@@ -10,6 +10,7 @@ import 'package:time_pet_ledger/features/ledger/data/drift_recording_draft_store
 import 'package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart';
 
 import 'support/checked_sleep_opening.dart';
+import '../support/legacy_input_stores.dart';
 
 void main() {
   testWidgets('bootstrap creates and manages goals on its existing database', (
@@ -26,6 +27,8 @@ void main() {
       AppBootstrap(
         openDatabase: () async => db,
         openDrafts: () async => drafts,
+        openSleepDrafts: emptyLegacySleepDrafts,
+        openReviewDrafts: emptyLegacyReviewDrafts,
         openSleepOpenings: () => openCheckedSleepOpening(clock),
         openPreferences: () =>
             DriftAppPreferencesStore.open(NativeDatabase.memory()),

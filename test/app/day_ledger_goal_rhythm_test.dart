@@ -7,6 +7,9 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/app/bootstrap/day_ledger.dart';
 import 'package:time_pet_ledger/app/time/device_recording_date.dart';
@@ -131,6 +134,8 @@ class Fixture {
       AppBootstrap(
         openDatabase: () async => db,
         openDrafts: () async => drafts,
+        openSleepDrafts: emptyLegacySleepDrafts,
+        openReviewDrafts: emptyLegacyReviewDrafts,
         openSleepOpenings: () => openCheckedSleepOpening(now),
         now: () => now,
       ),

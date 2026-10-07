@@ -282,7 +282,7 @@ void main() {
       expect(find.text('仅由用户填写的下一步'), findsNothing);
       await tapText(t, '填写复盘');
       expect(input(t, 'review-step'), '');
-      await tapText(t, '保留草稿并返回');
+      await tapText(t, '返回');
       expect(await t.runAsync(app.reviewRows), isEmpty);
       expect(await t.runAsync(app.facts), facts);
     },
@@ -320,7 +320,7 @@ void main() {
       expect(find.text('已交代：1 小时'), findsOneWidget);
       await tapText(t, '编辑复盘草稿');
       expect(input(t, 'review-step'), '已存明天第一步');
-      await tapText(t, '保留草稿并返回');
+      await tapText(t, '返回');
       // Use the actual app-composed editor route over the review to exercise
       // route-return refresh without adding a new product editing entry.
       Navigator.of(t.element(find.byType(ReviewContextPage)))

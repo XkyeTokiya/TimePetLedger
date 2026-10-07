@@ -52,11 +52,18 @@ Future<SleepSession> save(
   ),
 ))!;
 
-Future<void> open(WidgetTester tester, AppDatabase db, int day, int now) async {
+Future<GlobalKey<NavigatorState>> open(
+  WidgetTester tester,
+  AppDatabase db,
+  int day,
+  int now,
+) async {
   final observer = RouteObserver<ModalRoute<void>>();
+  final navigator = GlobalKey<NavigatorState>();
   await tester.pumpWidget(
     MaterialApp(
       key: UniqueKey(),
+      navigatorKey: navigator,
       navigatorObservers: [observer],
       home: DaySummaryPage(
         loader: createDayLedgerLoader(db),
@@ -68,6 +75,7 @@ Future<void> open(WidgetTester tester, AppDatabase db, int day, int now) async {
     ),
   );
   await tester.pumpAndSettle();
+  return navigator;
 }
 
 SleepSummaryView summary(WidgetTester tester) =>

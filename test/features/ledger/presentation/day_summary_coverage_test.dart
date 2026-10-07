@@ -10,6 +10,7 @@ import 'package:time_pet_ledger/features/ledger/domain/sleep_session.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_block.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/home/home_donut_chart.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/day_summary_page.dart';
 
 const minute = 60000;
@@ -107,9 +108,24 @@ Future<void> verify(
   );
   await tester.pumpAndSettle();
   for (final label in labels) {
-    expect(find.text(label), findsOneWidget);
+    // 新版摘要把覆盖数字并入“已交代 X · 尚未记录 Y”一行。
+    if (label.startsWith('已交代 ') || label.startsWith('尚未记录 ')) {
+      expect(find.textContaining(label), findsOneWidget);
+    } else {
+      expect(find.text(label), findsOneWidget);
+    }
   }
-  expect(find.text('未知已包含在已交代时间中。'), findsOneWidget);
+  // Unknown 仍计入已交代，改由圆环“想不起来”分块承载。
+  final chart = tester.widget<HomeDonutChart>(
+    find.byKey(const ValueKey('summary-day-chart')),
+  );
+  expect(
+    chart.parts
+        .firstWhere((part) => part.id == 'unknown')
+        .duration
+        .milliseconds,
+    unknown,
+  );
   expect(find.textContaining('%'), findsNothing);
   expect(find.text('补一笔'), findsNothing);
 }
@@ -125,7 +141,7 @@ void main() {
           accounted: 0,
           unknown: 0,
           gap: hours * 60 * minute,
-          labels: ['已交代：0 分钟', '其中未知：0 分钟', '尚未记录：$hours 小时'],
+          labels: ['已交代 0 分钟', '尚未记录 $hours 小时'],
         );
       }
       await verify(
@@ -136,7 +152,7 @@ void main() {
         accounted: 0,
         unknown: 0,
         gap: 15 * 60 * minute,
-        labels: ['尚未记录：15 小时'],
+        labels: ['尚未记录 15 小时'],
       );
       for (final relation in [
         LedgerDateRelation.future,
@@ -159,9 +175,9 @@ void main() {
               startPrecision: TimePrecision.approximate,
             ),
           ],
-          labels: ['已交代：0 分钟', '其中未知：0 分钟', '尚未记录：0 分钟', '当前账本窗口为空，不产生未记录缺口。'],
+          labels: ['已交代 0 分钟', '尚未记录 0 分钟'],
         );
-        expect(find.text('此账本窗口没有未记录缺口。'), findsNothing);
+        expect(find.text('此账本窗口及醒来日期尚无正式记录。'), findsOneWidget);
       }
     },
   );
@@ -181,7 +197,7 @@ void main() {
           block(2, 120 * minute, 150 * minute, unknown: true),
           block(3, 180 * minute, 240 * minute),
         ],
-        labels: ['已交代：3 小时 30 分钟', '其中未知：30 分钟', '尚未记录：30 分钟'],
+        labels: ['已交代 3 小时 30 分钟', '尚未记录 30 分钟'],
       );
     },
   );
@@ -271,7 +287,7 @@ void main() {
             startPrecision: TimePrecision.approximate,
           ),
         ],
-        labels: ['已交代：30 分钟', '其中未知：0 分钟', '尚未记录：40 分钟'],
+        labels: ['已交代 30 分钟', '尚未记录 40 分钟'],
       );
     },
   );

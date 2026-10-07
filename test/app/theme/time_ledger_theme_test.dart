@@ -11,6 +11,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/app/theme/home_theme.dart';
 import 'package:time_pet_ledger/app/theme/time_ledger_theme.dart';
@@ -189,6 +192,8 @@ void main() {
               child: AppBootstrap(
                 openDatabase: () async => database,
                 openDrafts: () async => drafts,
+                openSleepDrafts: emptyLegacySleepDrafts,
+                openReviewDrafts: emptyLegacyReviewDrafts,
                 openSleepOpenings: () async => openings,
                 now: () => now,
               ),
@@ -217,10 +222,13 @@ void main() {
             isNotNull,
           );
           expect(
-            find.byKey(const ValueKey('home-tab-timeline')),
+            find.byKey(const ValueKey('ledger-date-picker')),
             findsOneWidget,
           );
-          expect(find.byKey(const ValueKey('home-tab-review')), findsOneWidget);
+          expect(
+            find.byKey(const ValueKey('home-record-activity')),
+            findsOneWidget,
+          );
           await capture(tester, 'ready-error-$width-$scale');
           await guidelines(tester);
           expect(tester.takeException(), isNull);

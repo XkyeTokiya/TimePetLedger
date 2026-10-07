@@ -145,7 +145,7 @@ void main() {
       await tapText(t, '编辑复盘草稿');
       expect(find.text('保存复盘'), findsNothing);
       await enter(t, 'review-reflection', '仅修改编辑草稿');
-      await tapText(t, '保留草稿并返回');
+      await tapText(t, '返回');
       expect(
         (await t.runAsync(() => h.reviews.findByDate(reviewDate)))!.reflection,
         isNull,
@@ -164,7 +164,7 @@ void main() {
       await enter(t, 'review-step', '已提交的步骤😀');
       await tapText(t, '保存复盘');
       expect(find.byType(ReviewForm), findsOneWidget);
-      expect(find.textContaining('草稿清理和读回失败'), findsOneWidget);
+      expect(find.textContaining('本地收尾和读回失败'), findsOneWidget);
       expect(find.text('保存复盘'), findsNothing);
       expect(
         t.widget<TextField>(find.byKey(const ValueKey('review-step'))).enabled,
@@ -213,13 +213,13 @@ void main() {
       await enter(t, 'review-date', '2024-02-29');
       await enter(t, 'review-step', '已提交的历史步骤');
       await tapText(t, '保存复盘');
-      expect(find.textContaining('草稿清理失败'), findsOneWidget);
+      expect(find.textContaining('本地收尾失败'), findsOneWidget);
       await tapText(t, '返回复盘读取');
       expect(find.text('已存复盘日期：2024-02-29'), findsOneWidget);
       await selectLedgerDate(t, '2025-12-31');
       await settleNative(t);
       await tapText(t, '填写复盘');
-      expect(find.textContaining('草稿清理失败'), findsOneWidget);
+      expect(find.textContaining('本地收尾失败'), findsOneWidget);
       expect(find.text('已恢复未保存的复盘输入。'), findsNothing);
       expect(find.text('保存复盘'), findsNothing);
       expect(h.reviews.creates, 1);
@@ -318,7 +318,7 @@ void main() {
       await enter(t, 'review-summary', '  多行\n\n  概述😀  ');
       await t.runAsync(() => h.failWrite(true));
       await tapText(t, '保存复盘');
-      expect(find.textContaining('正式保存失败，输入和草稿已保留'), findsOneWidget);
+      expect(find.textContaining('正式保存失败，当前输入仍保留'), findsOneWidget);
       expect(
         (await t.runAsync(() => h.drafts.read(draftContext)))!.summary,
         '  多行\n\n  概述😀  ',

@@ -1,6 +1,9 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_ledger_repository.dart';
@@ -59,6 +62,7 @@ Future<void> open(
     AppBootstrap(
       openDatabase: () async => db,
       openDrafts: () async => drafts,
+      openReviewDrafts: emptyLegacyReviewDrafts,
       openSleepDrafts: () async => sleepDrafts,
       openSleepOpenings: () async => openings,
       openPreferences: () async => prefStore,

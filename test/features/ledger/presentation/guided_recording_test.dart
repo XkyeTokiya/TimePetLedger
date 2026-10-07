@@ -471,11 +471,11 @@ void main() {
       var exits = 0;
       await mount(t, s.model!, s.navigation, exit: () => exits++);
       await tap(t, key('guided-rhythm-stuck'));
-      await tap(t, find.byTooltip('保留草稿并退出'));
+      await tap(t, find.byTooltip('返回'));
       expect(exits, 0);
-      expect(find.text('重试保留草稿'), findsOneWidget);
-      await tap(t, find.text('重试保留草稿'));
-      await tap(t, find.byTooltip('保留草稿并退出'));
+      expect(find.text('重试保留本次填写'), findsOneWidget);
+      await tap(t, find.text('重试保留本次填写'));
+      await tap(t, find.byTooltip('返回'));
       expect(exits, 1);
       await t.pumpWidget(const SizedBox());
       final missing = await session(GuidedSampleScenario.missing);

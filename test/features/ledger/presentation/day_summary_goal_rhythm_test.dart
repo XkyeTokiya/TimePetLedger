@@ -54,11 +54,38 @@ Future<void> block(
 }
 
 Future<GoalRhythmSummaryView> section(WidgetTester tester) async {
+  // 摘要页把目标与节奏收进可折叠区块：滚动到区块，必要时展开，再读取。
+  final tile = find.byKey(const ValueKey('summary-rhythm-details'));
+  if (find.byType(GoalRhythmSummaryView).evaluate().isEmpty) {
+    await tester.scrollUntilVisible(
+      tile,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(tile);
+    await tester.pumpAndSettle();
+  }
   await tester.ensureVisible(find.byType(GoalRhythmSummaryView));
   await tester.pumpAndSettle();
   return tester.widget<GoalRhythmSummaryView>(
     find.byType(GoalRhythmSummaryView),
   );
+}
+
+/// 独立摘要页没有单独刷新按钮；离开并返回是它的真实重读路径。
+Future<void> refreshSummary(
+  WidgetTester tester,
+  GlobalKey<NavigatorState> navigator,
+) async {
+  navigator.currentState!.push<void>(
+    MaterialPageRoute<void>(
+      builder: (_) => const Scaffold(body: Text('other page')),
+    ),
+  );
+  await tester.pumpAndSettle();
+  navigator.currentState!.pop();
+  await tester.pumpAndSettle();
 }
 
 Finder card(int n) => find.byKey(ValueKey('summary-goal-${id(n)}'));
@@ -207,7 +234,7 @@ void main() {
       await goal(tester, db, 2, '同名');
       await block(tester, db, 10, instant(2, 1), instant(2, 2), goalId: 1);
       await block(tester, db, 11, instant(2, 2), instant(2, 3), goalId: 2);
-      await open(tester, db, 2, instant(2, 12));
+      final navigator = await open(tester, db, 2, instant(2, 12));
       final old = (await section(tester)).goals;
       final longName = '目标' * 100;
       await tester.runAsync(() async {
@@ -215,9 +242,7 @@ void main() {
         await repo.rename(id: id(1), name: longName, now: 2);
         await repo.archive(id: id(1), now: 3);
       });
-      await tester.ensureVisible(find.text('刷新摘要'));
-      await tester.tap(find.text('刷新摘要'));
-      await tester.pumpAndSettle();
+      await refreshSummary(tester, navigator);
       await section(tester);
       label(1, longName);
       label(1, '已归档');
@@ -226,7 +251,13 @@ void main() {
       expect(old.first.isArchived, isFalse);
       await tester.binding.setSurfaceSize(const Size(360, 700));
       await tester.pumpAndSettle();
-      await tester.ensureVisible(card(1));
+      // 窄视口下可折叠区块可能已重建为折叠；重新展开后再滚动到目标卡片。
+      await section(tester);
+      await tester.scrollUntilVisible(
+        card(1),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       final nameText = tester.widget<Text>(find.text(longName));

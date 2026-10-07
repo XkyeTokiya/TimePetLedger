@@ -204,7 +204,7 @@ void main() {
     );
     model.setReflection('  新的\n\n  反思😀  ');
     expect(await model.submit(), isNull);
-    expect(model.submitError, contains('草稿尚未保留成功'));
+    expect(model.submitError, contains('本次填写尚未保留成功'));
     expect(model.reflection, '  新的\n\n  反思😀  ');
     expect(h.reviews.creates, 0);
     expect((await h.drafts.read(draftContext))!.reflection, '');
@@ -409,7 +409,7 @@ void main() {
     expect(model.firstStep, '用户下一步');
     expect(await model.submit(), isNull);
     expect(await model.discard(), false);
-    expect(model.committedMessage, contains('草稿清理失败'));
+    expect(model.committedMessage, contains('本地收尾失败'));
     await h.failClear(false);
     expect(await model.retryFinish(), isNotNull);
     expect(h.reviews.creates, 1);

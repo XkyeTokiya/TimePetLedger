@@ -6,6 +6,9 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/features/goals/data/drift_goal_repository.dart';
@@ -85,6 +88,8 @@ void main() {
           AppBootstrap(
             openDatabase: () async => db,
             openDrafts: () async => drafts,
+            openSleepDrafts: emptyLegacySleepDrafts,
+            openReviewDrafts: emptyLegacyReviewDrafts,
             openSleepOpenings: () =>
                 openCheckedSleepOpening(DateTime(2026, 10, 1)),
             now: () => DateTime(2026, 10, 1, 12),
@@ -110,7 +115,7 @@ void main() {
       final context = tester
           .widget<RecordingForm>(find.byType(RecordingForm))
           .context;
-      await textTap(tester, '保留草稿并返回');
+      await textTap(tester, '返回');
       expect(
         (await tester.runAsync(
           () => db.customSelect('SELECT * FROM time_blocks').get(),
@@ -148,7 +153,7 @@ void main() {
       expect(block.goalId, id(2));
       await tap(tester, recordingFact(block.id));
       await textTap(tester, '移除目标归属');
-      await textTap(tester, '保留草稿并返回');
+      await textTap(tester, '返回');
       expect(
         (await tester.runAsync(
           () => DriftLedgerRepository(db).readTimeBlock(block.id),
@@ -192,6 +197,8 @@ void main() {
         AppBootstrap(
           openDatabase: () async => db,
           openDrafts: () async => drafts,
+          openSleepDrafts: emptyLegacySleepDrafts,
+          openReviewDrafts: emptyLegacyReviewDrafts,
           openSleepOpenings: () =>
               openCheckedSleepOpening(DateTime(2026, 10, 1)),
           now: () => DateTime(2026, 10, 1, 12),

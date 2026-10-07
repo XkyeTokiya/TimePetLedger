@@ -50,8 +50,7 @@ Future<void> tap(WidgetTester tester, String text) async {
   FocusManager.instance.primaryFocus?.unfocus();
   tester.testTextInput.hide();
   await tester.pumpAndSettle();
-  if (['保留草稿并返回', '放弃草稿'].contains(text) &&
-      find.text(text).evaluate().isEmpty) {
+  if (['返回', '重新填写'].contains(text) && find.text(text).evaluate().isEmpty) {
     await tester.tap(find.byTooltip('更多'));
     await tester.pumpAndSettle();
   }
@@ -179,6 +178,7 @@ void main() {
         ),
       );
       await tap(tester, '打开');
+      await tap(tester, '继续填写');
       expect(store.value, isNotNull);
       expect(find.text('  一半输入'), findsOneWidget);
       await revealRecordingField(tester, 'note');
@@ -195,9 +195,10 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const ValueKey('recording-end-time')), findsOneWidget);
-      await tap(tester, '放弃草稿');
+      await tap(tester, '重新填写');
+      await tap(tester, '重新填写');
       expect(store.value, isNull);
-      expect(find.text('打开'), findsOneWidget);
+      expect(find.text('  一半输入'), findsNothing);
     },
   );
   testWidgets('save and discard errors stay visible and preserve text', (
@@ -208,16 +209,17 @@ void main() {
     await tap(tester, '打开');
     await tester.enterText(find.byKey(const ValueKey('activity')), '不能丢');
     await tester.pumpAndSettle();
-    await tap(tester, '保留草稿并返回');
-    expect(find.text('草稿保存失败，输入仍在此页，请重试。'), findsOneWidget);
+    await tap(tester, '返回');
+    expect(find.text('暂时无法保留本次填写，输入仍在此页，请重试。'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, 900));
     await tester.pumpAndSettle();
     expect(find.text('不能丢'), findsOneWidget);
     store.failSave = false;
-    await tap(tester, '重试保存草稿');
+    await tap(tester, '重试保留本次填写');
     store.failClear = true;
-    await tap(tester, '放弃草稿');
-    expect(find.text('无法放弃草稿，输入已保留，请重试。'), findsOneWidget);
+    await tap(tester, '重新填写');
+    await tap(tester, '重新填写');
+    expect(find.text('暂时无法清空本次填写，请重试。'), findsOneWidget);
     expect(store.value!.title, '不能丢');
     expect(find.textContaining('private SQL'), findsNothing);
   });
@@ -227,7 +229,7 @@ void main() {
     final store = FormDraftStore()..failRead = true;
     await tester.pumpWidget(app(store));
     await tap(tester, '打开');
-    expect(find.text('无法读取草稿、时间建议或账本，请重试。'), findsOneWidget);
+    expect(find.text('无法读取未完成输入、时间建议或账本，请重试。'), findsOneWidget);
     expect(find.byKey(const ValueKey('activity')), findsNothing);
     expect(store.saves, 0);
     store.failRead = false;
@@ -375,7 +377,7 @@ void main() {
       await enterTime(tester, '结束时间', '2026-09-28 11:00');
       await tap(tester, '保存到账本');
       expect(find.text('已正式保存到账本，请不要再次提交。'), findsOneWidget);
-      expect(find.text('草稿清理失败，旧草稿仍可能显示；请重试清理。'), findsOneWidget);
+      expect(find.text('记录已保存，页面收尾未完成；请重试。'), findsOneWidget);
       expect(find.text('账本刷新失败，记录已保存；请重试刷新。'), findsOneWidget);
       expect(find.text('保存到账本'), findsNothing);
       store.failClear = false;
@@ -466,7 +468,7 @@ void main() {
       await tap(tester, '想不起来');
       await tester.enterText(find.byKey(const ValueKey('note')), '  更正\n备注  ');
       await enterTime(tester, '结束时间', '2026-09-29 01:00');
-      await tap(tester, '保留草稿并返回');
+      await tap(tester, '返回');
       expect(
         (await tester.runAsync(() => repository.readTimeBlock(id)))!
             .timeBlock
@@ -480,6 +482,7 @@ void main() {
         '原备注',
       );
       await tap(tester, '打开');
+      await tap(tester, '继续填写');
       expect(store.value, isNotNull);
       expect(find.byKey(const ValueKey('activity')), findsNothing);
       await revealRecordingField(tester, 'note');
@@ -565,7 +568,7 @@ void main() {
     await tap(tester, '打开');
     expect(find.text('记录已不存在，无法更正。'), findsOneWidget);
     expect(find.byKey(const ValueKey('activity')), findsNothing);
-    await tap(tester, '清除编辑草稿并返回');
+    await tap(tester, '清空未完成修改并返回');
     expect(store.value, isNull);
     expect(await tester.runAsync(() => repository.readTimeBlock(id)), isNull);
   });

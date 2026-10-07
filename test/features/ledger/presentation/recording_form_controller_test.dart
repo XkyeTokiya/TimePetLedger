@@ -58,6 +58,7 @@ void main() {
       first.setKnowledge(BlockKnowledgeState.unknown);
       first.setTime(start: 200, end: null);
       first.setPrecision(start: TimePrecision.exact);
+      first.setPresentationStep(2);
       expect(await first.flush(), isTrue);
       first.dispose();
       final restored = RecordingFormController(
@@ -68,6 +69,9 @@ void main() {
         ),
       );
       await restored.initialize();
+      expect(restored.pendingRecovery, isNotNull);
+      expect(restored.restored, isFalse);
+      await restored.resumePendingInput();
       expect(restored.restored, isTrue);
       expect(restored.title, '  未完成\n');
       expect(restored.note, '  并行\n活动  ');
@@ -75,6 +79,7 @@ void main() {
       expect(restored.time.endedAt, 1800300);
       expect(restored.time.startPrecision, TimePrecision.approximate);
       expect(restored.time.endPrecision, TimePrecision.approximate);
+      expect(restored.presentationStep, 2);
       expect(await restored.flush(), isTrue);
       expect(store.value!.startedAt, 300);
       restored.setTime(start: 400, end: 1800400);
@@ -82,6 +87,25 @@ void main() {
       expect(restored.time.startedAt, 400);
       await restored.flush();
       restored.dispose();
+    },
+  );
+  test(
+    'untouched input has no snapshot and returning to baseline clears it',
+    () async {
+      final store = FormDraftStore();
+      final c = controller(store);
+      await c.initialize();
+      expect(c.hasUserChanges, isFalse);
+      expect(await c.flush(), isTrue);
+      expect(store.saves, 0);
+      c.setTitle('改过');
+      await c.flush();
+      expect(store.value, isNotNull);
+      c.setTitle('');
+      await c.flush();
+      expect(c.hasUserChanges, isFalse);
+      expect(store.value, isNull);
+      c.dispose();
     },
   );
   test('read failure blocks writes and does not replace old draft', () async {
@@ -109,6 +133,8 @@ void main() {
       first.dispose();
       final second = controller(store);
       await second.initialize();
+      expect(second.pendingRecovery, isNotNull);
+      await second.resumePendingInput();
       expect(second.title, '跳跃记录');
       expect((second.time.startedAt, second.time.endedAt), (null, null));
       await second.flush();
@@ -142,14 +168,14 @@ void main() {
     await c.initialize();
     c.setTitle('仍保留');
     expect(await c.flush(), isFalse);
-    expect(c.storageError, contains('保存失败'));
+    expect(c.storageError, contains('无法保留本次填写'));
     expect(c.title, '仍保留');
     store.failSave = false;
     expect(await c.retrySave(), isTrue);
     store.failClear = true;
     expect(await c.discard(), isFalse);
     expect(store.value!.title, '仍保留');
-    expect(c.storageError, contains('无法放弃'));
+    expect(c.storageError, contains('无法清空本次填写'));
     store.failClear = false;
     expect(await c.discard(), isTrue);
     c.dispose();

@@ -22,7 +22,8 @@ import 'review_form_controller_test.dart'
         reviewId;
 
 Future<void> tap(WidgetTester t, String text) async {
-  if (['保留草稿并返回', '放弃此复盘草稿'].contains(text)) {
+  if (find.text(text).evaluate().isEmpty &&
+      ['返回', '重新填写', '重新编辑'].contains(text)) {
     await t.tap(find.byTooltip('更多'));
     await t.pumpAndSettle();
   }
@@ -143,7 +144,7 @@ void main() {
       await t.pumpAndSettle();
       expect(find.textContaining('当天事实上下文：'), findsNothing);
       expect(find.textContaining('下一自然日：'), findsNothing);
-      await tap(t, '保留草稿并返回');
+      await tap(t, '返回');
       expect(store.values[draftKey(entry)]!.dateInput, '2026-');
       model.dispose();
     },
@@ -173,6 +174,7 @@ void main() {
         },
       );
       await host(t, model, loader);
+      await tap(t, '继续填写');
       expect(model.restored, isTrue);
       await tap(t, '再写几句 ＋');
       expect(fieldText(t, 'review-summary'), '草稿\n\n段落😀');
@@ -196,7 +198,7 @@ void main() {
       await t.pumpAndSettle();
       expect(reads, 3);
       expect(fieldText(t, 'review-step'), '  先做\n\n  一件事 😀  ');
-      await tap(t, '保留草稿并返回');
+      await tap(t, '返回');
       expect(find.byType(ReviewForm), findsNothing);
       expect(store.values[draftKey(entry)]!.summary, '  用户改写\n\n内部段落  ');
       model.dispose();
@@ -223,13 +225,13 @@ void main() {
       model.dispose();
       final reopened = ReviewFormController(context: entry, store: store);
       await host(t, reopened, loader);
+      await tap(t, '继续填写');
       expect(reopened.dateInput, '2024-02-29');
       await tap(t, '再写几句 ＋');
       expect(fieldText(t, 'review-step'), ' \n ');
       expect(fieldText(t, 'review-reflection'), '多行\n\n😀反思');
-      await tap(t, '放弃此复盘草稿');
-      // UI-17：放弃前先确认，取消可保留。
-      await tap(t, '放弃草稿');
+      await tap(t, '重新填写');
+      await tap(t, '重新填写');
       expect(store.values, isEmpty);
       reopened.dispose();
     },
@@ -249,23 +251,24 @@ void main() {
         ),
       );
       await enter(t, 'review-reflection', '失败时仍保留\n输入');
-      await tap(t, '保留草稿并返回');
+      await tap(t, '返回');
       expect(find.byType(ReviewForm), findsOneWidget);
       expect(fieldText(t, 'review-reflection'), '失败时仍保留\n输入');
-      expect(find.textContaining('复盘草稿保存失败'), findsOneWidget);
+      expect(find.textContaining('暂时无法保留本次填写'), findsOneWidget);
+      await tap(t, '继续填写');
       store.failSave = false;
-      await tap(t, '重试保存草稿');
+      await tap(t, '重试保留本次填写');
       store.failClear = true;
-      await tap(t, '放弃此复盘草稿');
-      // UI-17：确认后才尝试清除，失败仍留在页面。
-      await tap(t, '放弃草稿');
+      await tap(t, '重新填写');
+      await tap(t, '重新填写');
       expect(find.byType(ReviewForm), findsOneWidget);
-      expect(find.textContaining('无法放弃复盘草稿'), findsOneWidget);
+      expect(find.textContaining('暂时无法清空本次填写'), findsOneWidget);
       expect(fieldText(t, 'review-reflection'), '失败时仍保留\n输入');
       store.failClear = false;
-      await tap(t, '放弃此复盘草稿');
-      await tap(t, '放弃草稿');
-      expect(find.byType(ReviewForm), findsNothing);
+      await tap(t, '重新填写');
+      await tap(t, '重新填写');
+      expect(find.byType(ReviewForm), findsOneWidget);
+      expect(fieldText(t, 'review-reflection'), isEmpty);
       expect(store.values, isEmpty);
       model.dispose();
     },
@@ -304,7 +307,7 @@ void main() {
       expect(model.goalId, isNull);
       expect(original.date, entryDate);
       expect(original.tomorrowFirstStep.goalId, goals.old.id);
-      await tap(t, '保留草稿并返回');
+      await tap(t, '返回');
       model.dispose();
     },
   );

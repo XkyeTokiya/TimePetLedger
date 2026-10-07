@@ -7,23 +7,30 @@ import 'package:time_pet_ledger/features/ledger/domain/ledger_conflicts.dart';
 /// Routes existing flow assertions through UI-T04's actual root controls.
 Future<bool> tapRootAction(WidgetTester tester, String text) async {
   final root = find.byKey(const ValueKey('home-record-activity'));
-  if (root.evaluate().isEmpty) return false;
   Future<void> tap(Finder target) async {
     await tester.tap(target);
     await tester.pumpAndSettle();
   }
 
+  // 首页即时间账本：这两个动作只要求回到根，不要求根已在最前。
+  if (text == '打开日账本' || text == '查看记录') {
+    if (root.evaluate().isEmpty) {
+      await backFromPage(tester);
+      await tester.pumpAndSettle();
+    }
+    return true;
+  }
+
+  if (root.evaluate().isEmpty) return false;
   switch (text) {
-    case '打开日账本':
-    case '查看记录':
-      await tap(find.byKey(const ValueKey('home-tab-timeline')));
-      return true;
     case '打开此日复盘':
     case '打开按日复盘':
-      await tap(find.byKey(const ValueKey('home-tab-review')));
+      await tap(find.byKey(const ValueKey('home-menu')));
+      await tap(find.byKey(const ValueKey('menu-review')));
       return true;
     case '打开基础摘要':
-      await tap(find.byKey(const ValueKey('home-tab-summary')));
+      await tap(find.byKey(const ValueKey('home-menu')));
+      await tap(find.byKey(const ValueKey('menu-summary')));
       return true;
     case '打开目标':
       await tap(find.byKey(const ValueKey('home-menu')));
@@ -50,7 +57,8 @@ Finder ledgerDuration(String label, String value) => find.byWidgetPredicate(
   (widget) =>
       widget is Text &&
       widget.key == ValueKey('coverage-$label') &&
-      widget.data == value,
+      // 覆盖值使用 Text.rich 分层显示数字与单位，需按拼接后的文本比较。
+      (widget.data ?? widget.textSpan?.toPlainText()) == value,
 );
 
 int ledgerFactCount(WidgetTester tester, String type) {
@@ -58,7 +66,8 @@ int ledgerFactCount(WidgetTester tester, String type) {
       .widget<HomeTimelineTab>(
         find.byType(HomeTimelineTab, skipOffstage: false),
       )
-      .view!;
+      .controller
+      .focusView!;
   return view.segments
       .where(
         (segment) => type == '睡眠'

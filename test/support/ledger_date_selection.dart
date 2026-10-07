@@ -16,14 +16,16 @@ Future<void> openManualLedgerDate(WidgetTester tester) async {
   if (button.evaluate().isEmpty) {
     final datePicker = find.byKey(const ValueKey('ledger-date-picker')).first;
     // The date header is eagerly built even while scrolled offscreen.
-    await Scrollable.ensureVisible(tester.element(datePicker));
+    await tester.ensureVisible(datePicker);
     await tester.pump();
     await tester.tap(datePicker);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     if (find.widgetWithText(TextField, '账本日期').evaluate().isNotEmpty) return;
   }
-  await Scrollable.ensureVisible(tester.element(button), alignment: .5);
+  // 日历弹窗内容可滚动，“手动输入日期”可能贴在下缘；先滚到可见再点击，
+  // 否则点击会落在遮罩上关闭弹窗。
+  await tester.ensureVisible(button);
   await tester.pump();
   await tester.tap(button);
   await tester.pump();

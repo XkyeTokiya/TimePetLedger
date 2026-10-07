@@ -235,7 +235,7 @@ void main() {
       ),
       findsNWidgets(4),
     );
-    expect(find.text('一天时间构成'), findsOneWidget);
+    expect(find.text('这一天的时间'), findsOneWidget);
     expect(find.text('已交代'), findsOneWidget);
     expect(find.text('2 小时 30 分钟'), findsOneWidget);
     expect(find.text('睡眠'), findsOneWidget);
@@ -274,7 +274,7 @@ void main() {
         ),
         now: at(4),
       );
-      expect(find.text('目标时间构成'), findsOneWidget);
+      expect(find.text('目标投入'), findsOneWidget);
       expect(find.text('甲目标'), findsOneWidget);
       expect(find.text('乙目标'), findsOneWidget);
       expect(find.text('无记录'), findsNothing);
@@ -326,7 +326,7 @@ void main() {
     'empty day window shows the fallback instead of a zero composition',
     (tester) async {
       await mount(tester, facts(), now: at(0));
-      expect(find.text('一天时间构成'), findsOneWidget);
+      expect(find.text('这一天的时间'), findsOneWidget);
       expect(find.text('当前窗口暂无可显示的时间构成。'), findsOneWidget);
       expect(find.byKey(const ValueKey('summary-part-sleep')), findsNothing);
       expect(find.text('已交代'), findsNothing);

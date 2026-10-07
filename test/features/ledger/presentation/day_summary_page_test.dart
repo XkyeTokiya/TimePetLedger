@@ -34,6 +34,7 @@ void main() {
             now: () => DateTime(2026, 9, 30, 12).millisecondsSinceEpoch,
             dateOfInstant: deviceDateOfInstant,
             routeObserver: observer,
+            initialDate: CivilDate(year: 2026, month: 9, day: 30),
           ),
         ),
       );
@@ -88,6 +89,7 @@ void main() {
             now: () => instant,
             dateOfInstant: deviceDateOfInstant,
             routeObserver: observer,
+            initialDate: CivilDate(year: 2026, month: 9, day: 30),
           ),
         ),
       );
@@ -136,8 +138,10 @@ void main() {
       readFacts: (_) async => emptyFacts(),
     );
     final observer = RouteObserver<ModalRoute<void>>();
+    final navigator = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
       MaterialApp(
+        navigatorKey: navigator,
         navigatorObservers: [observer],
         home: DaySummaryPage(
           loader: loader,
@@ -151,7 +155,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('账本窗口：23 小时'), findsOneWidget);
     hours = 25;
-    await tester.tap(find.text('刷新摘要'));
+    // 独立摘要页没有单独刷新按钮；返回本页会重新读取。
+    navigator.currentState!.push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => const Scaffold(body: Text('other page')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    navigator.currentState!.pop();
     await tester.pumpAndSettle();
     expect(find.text('账本窗口：25 小时'), findsOneWidget);
   });

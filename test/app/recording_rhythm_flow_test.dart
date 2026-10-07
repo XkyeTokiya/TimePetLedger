@@ -4,6 +4,9 @@ import '../support/root_navigation.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_ledger_repository.dart';
@@ -45,6 +48,8 @@ void main() {
           AppBootstrap(
             openDatabase: () async => db,
             openDrafts: () async => drafts,
+            openSleepDrafts: emptyLegacySleepDrafts,
+            openReviewDrafts: emptyLegacyReviewDrafts,
             openSleepOpenings: () =>
                 openCheckedSleepOpening(DateTime(2026, 10, 1)),
             now: () => DateTime(2026, 10, 1, 12),
@@ -71,7 +76,7 @@ void main() {
           find.byKey(const ValueKey('continuation-hint')),
           '  下次看笔记\n🐾  ',
         );
-        await textTap(tester, '保留草稿并返回');
+        await textTap(tester, '返回');
         expect(
           (await tester.runAsync(() => drafts.read(context)))!.annotationIntent,
           RecordingAnnotationIntent.add,

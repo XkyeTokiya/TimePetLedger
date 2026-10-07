@@ -8,6 +8,8 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/legacy_input_stores.dart';
+
 import '../support/checked_sleep_opening.dart';
 
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
@@ -77,6 +79,8 @@ void main() {
         openSleepOpenings: () => openCheckedSleepOpening(DateTime(2026, 9, 29)),
         openDatabase: () async => db,
         openDrafts: () async => drafts,
+        openSleepDrafts: emptyLegacySleepDrafts,
+        openReviewDrafts: emptyLegacyReviewDrafts,
         now: () => DateTime(2026, 9, 29, 12),
       ),
     );
@@ -95,7 +99,7 @@ void main() {
     );
     await tapVisible(tester, '更正完整记录');
     expect(find.text('记录已不存在，无法更正。'), findsOneWidget);
-    await tapVisible(tester, '清除编辑草稿并返回');
+    await tapVisible(tester, '清空未完成修改并返回');
     expect(
       await tester.runAsync(
         () =>
@@ -122,6 +126,8 @@ void main() {
               openCheckedSleepOpening(DateTime(2026, 9, 29)),
           openDatabase: () async => db,
           openDrafts: () async => drafts,
+          openSleepDrafts: emptyLegacySleepDrafts,
+          openReviewDrafts: emptyLegacyReviewDrafts,
           now: () => DateTime(2026, 9, 29, 12),
         ),
       );
@@ -202,6 +208,8 @@ void main() {
         openSleepOpenings: () => openCheckedSleepOpening(DateTime.now()),
         openDatabase: open,
         openDrafts: () async => drafts,
+        openSleepDrafts: emptyLegacySleepDrafts,
+        openReviewDrafts: emptyLegacyReviewDrafts,
       ),
     );
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -220,6 +228,8 @@ void main() {
         openSleepOpenings: () => openCheckedSleepOpening(DateTime.now()),
         openDatabase: open,
         openDrafts: () async => drafts,
+        openSleepDrafts: emptyLegacySleepDrafts,
+        openReviewDrafts: emptyLegacyReviewDrafts,
       ),
     );
     expect(opens, 1);
@@ -305,6 +315,8 @@ void main() {
               openCheckedSleepOpening(DateTime(2026, 9, 29)),
           openDatabase: () async => db,
           openDrafts: () async => throw StateError('private draft path'),
+          openSleepDrafts: emptyLegacySleepDrafts,
+          openReviewDrafts: emptyLegacyReviewDrafts,
         ),
       );
       await tester.runAsync(() async {
@@ -333,6 +345,8 @@ void main() {
         openSleepOpenings: () => openCheckedSleepOpening(DateTime(2026, 9, 29)),
         openDatabase: () async => db,
         openDrafts: () => pending.future,
+        openSleepDrafts: emptyLegacySleepDrafts,
+        openReviewDrafts: emptyLegacyReviewDrafts,
       ),
     );
     await tester.pump();

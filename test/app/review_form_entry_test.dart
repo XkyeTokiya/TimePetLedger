@@ -55,7 +55,7 @@ Future<void> tapText(WidgetTester t, String text) async {
   if (text == '刷新事实上下文' && find.text(text).evaluate().isEmpty) {
     await tapText(t, '查看当日事实');
   }
-  if (['删除复盘', '保留草稿并返回', '放弃此复盘草稿', '返回复盘读取'].contains(text) &&
+  if (['删除复盘', '返回', '重新填写', '重新编辑', '返回复盘读取'].contains(text) &&
       find.text(text).evaluate().isEmpty) {
     await t.tap(find.byTooltip('更多'));
     await settleNative(t);
@@ -229,7 +229,7 @@ void main() {
         '当天独立草稿',
       );
       await settleNative(t);
-      await tapText(t, '保留草稿并返回');
+      await tapText(t, '返回');
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
       await selectLedgerDate(t, '2025-12-31');
       await settleNative(t);
@@ -243,7 +243,7 @@ void main() {
       await settleNative(t);
       await changeReviewDate(t, '2024-02-29');
       await settleNative(t);
-      await tapText(t, '保留草稿并返回');
+      await tapText(t, '返回');
       expect(find.text('已存原反思'), findsOneWidget);
       await tapText(t, '编辑复盘草稿');
       expect(

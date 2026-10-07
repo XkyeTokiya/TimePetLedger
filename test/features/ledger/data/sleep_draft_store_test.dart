@@ -12,6 +12,7 @@ import 'package:time_pet_ledger/features/ledger/domain/sleep_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/recording_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
+import 'package:time_pet_ledger/features/ledger/domain/sleep_prediction.dart';
 import 'package:time_pet_ledger/features/ledger/domain/ledger_repository.dart';
 
 import '../../../../integration_test/support/ledger_read_contract.dart';
@@ -69,6 +70,31 @@ Future<void> _mutate(File file, Future<void> Function(_Probe) action) async {
 }
 
 void main() {
+  test('legacy input cleanup preserves sleep learning feedback', () async {
+    final store = await DriftSleepDraftStore.open(NativeDatabase.memory());
+    addTearDown(store.close);
+    await store.save(draft(context, start: 10, end: 20));
+    await store.saveSleepFeedback(
+      SleepPredictionFeedback(
+        sleepId: ledgerId,
+        origin: const SleepPredictionOrigin(
+          startedAt: 10,
+          endedAt: 20,
+          type: SleepType.mainSleep,
+        ),
+        startedAt: 11,
+        endedAt: 21,
+        startOffsetMinutes: 480,
+        endOffsetMinutes: 480,
+      ),
+    );
+
+    await store.clearDraftsOnly();
+
+    expect(await store.read(context), isNull);
+    expect((await store.readSleepFeedback()).single.sleepId, ledgerId);
+  });
+
   test('corrupt auxiliary feedback is rejected rather than treated as missing history', () async {
     final file = await tempFile();
     final created = await DriftSleepDraftStore.open(NativeDatabase(file));

@@ -11,6 +11,8 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/legacy_input_stores.dart';
+
 import 'support/checked_sleep_opening.dart';
 
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
@@ -104,6 +106,8 @@ void main() {
               openCheckedSleepOpening(DateTime(2026, 9, 29)),
           openDatabase: () async => db,
           openDrafts: () async => drafts,
+          openSleepDrafts: emptyLegacySleepDrafts,
+          openReviewDrafts: emptyLegacyReviewDrafts,
           now: () => DateTime(2026, 9, 29, 12),
         ),
       );
@@ -238,6 +242,8 @@ void main() {
               openCheckedSleepOpening(DateTime(2026, 9, 29)),
           openDatabase: () async => db,
           openDrafts: () async => drafts,
+          openSleepDrafts: emptyLegacySleepDrafts,
+          openReviewDrafts: emptyLegacyReviewDrafts,
           now: () => DateTime(2026, 9, 29, 12),
         ),
       );

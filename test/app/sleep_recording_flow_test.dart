@@ -8,6 +8,9 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart' hide Table;
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/core/time/civil_date.dart';
@@ -121,6 +124,7 @@ class LocalSleepApp {
   AppBootstrap build() => AppBootstrap(
     openDatabase: () async => db,
     openDrafts: () async => ordinary,
+    openReviewDrafts: emptyLegacyReviewDrafts,
     openSleepDrafts: () async {
       final store = await DriftSleepDraftStore.open(NativeDatabase(draftsFile));
       currentDrafts = store;
@@ -257,7 +261,7 @@ void main() {
         '2026-09-29 07:40',
         approxStart: true,
       );
-      await tapText(tester, '保留草稿并返回');
+      await tapText(tester, '返回');
       expect(ledgerDuration('已交代', '0 分钟'), findsOneWidget);
       expect((await summary(tester)).summary.mainSleep.records, isEmpty);
       expect(await tester.runAsync(app.sleeps), isEmpty);
@@ -451,7 +455,7 @@ void main() {
         ))!.startedAt,
         at(29, 10),
       );
-      await tapText(tester, '保留草稿并返回');
+      await tapText(tester, '返回');
       await tapText(tester, '记录睡眠');
       expect(find.text('已恢复上次睡眠输入'), findsOneWidget);
       await enter(tester, 'sleep-end', '2026-09-29 12:00');
@@ -462,7 +466,7 @@ void main() {
         ),
       );
       await tapText(tester, '确认并保存到账本');
-      expect(find.text('正式保存失败，睡眠输入和草稿已保留，请重试。'), findsOneWidget);
+      expect(find.text('正式保存失败，当前睡眠输入仍保留，请重试。'), findsOneWidget);
       expect(await tester.runAsync(app.facts), before);
       expect(
         (await tester.runAsync(
@@ -546,7 +550,7 @@ void main() {
         }
         final action = operation == 'delete' ? '删除' : '保存';
         expect(
-          find.text('睡眠已$action，但草稿清理和摘要 / 账本刷新失败；请继续处理，无需再次$action。'),
+          find.text('睡眠已$action，但本地收尾和摘要 / 账本刷新失败；请继续处理，无需再次$action。'),
           findsOneWidget,
         );
         expect(find.text('确认并保存到账本'), findsNothing);

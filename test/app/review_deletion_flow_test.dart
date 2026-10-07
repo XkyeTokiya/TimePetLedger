@@ -115,7 +115,13 @@ void main() {
       await confirm(t);
       expect(find.byType(ReviewForm), findsNothing);
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
-      expect(t.widget<Text>(find.text('日期：2025-12-31')).data, '日期：2025-12-31');
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('review-context-date')),
+          matching: find.textContaining('12月31日'),
+        ),
+        findsOneWidget,
+      );
       final after = (await t.runAsync(() => formalFacts(h)))!;
       for (final table in [
         'goals',
@@ -145,7 +151,7 @@ void main() {
             .text,
         '',
       );
-      await tapText(t, '保留草稿并返回');
+      await tapText(t, '返回');
       expect(await t.runAsync(() => h.reviews.findByDate(reviewDate)), isNull);
       await selectLedgerDate(t, '2026-01-01');
       await settleNative(t);
@@ -166,7 +172,7 @@ void main() {
       await enter(t, 'review-step', '');
       await t.runAsync(() => deleteFault(h, true));
       await confirm(t);
-      expect(find.textContaining('删除复盘失败，输入和草稿已保留'), findsOneWidget);
+      expect(find.textContaining('删除复盘失败，当前输入仍保留'), findsOneWidget);
       expect(find.text('此复盘已删除。'), findsNothing);
       expect(await t.runAsync(() => formalFacts(h)), before);
       final draft = (await t.runAsync(() => h.drafts.read(editContext)))!;
@@ -209,7 +215,7 @@ void main() {
       await settleNative(t);
       expect(find.byType(ReviewForm), findsOneWidget);
       expect(find.text('已删除'), findsOneWidget);
-      expect(find.textContaining('草稿清理和读回失败'), findsOneWidget);
+      expect(find.textContaining('本地收尾和读回失败'), findsOneWidget);
       expect(find.text('保存更正'), findsNothing);
       expect(find.text('删除复盘'), findsNothing);
       expect(
@@ -254,7 +260,7 @@ void main() {
       await enter(t, 'review-date', '2024-02-29');
       await t.runAsync(() => h.failClear(true));
       await confirm(t);
-      expect(find.textContaining('复盘已删除，但草稿清理失败'), findsOneWidget);
+      expect(find.textContaining('复盘已删除，但本地收尾失败'), findsOneWidget);
       await tapText(t, '返回复盘读取');
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
       await unmount(t);

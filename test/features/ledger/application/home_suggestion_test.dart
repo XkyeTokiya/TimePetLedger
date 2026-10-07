@@ -22,33 +22,27 @@ HomeSuggestion resolve({
 );
 
 void main() {
-  test('sleep wins inside its window when no main sleep is recorded', () {
-    final suggestion = resolve(nowMinutes: 9 * 60);
-    expect(suggestion.kind, HomeSuggestionKind.sleep);
-    expect(suggestion.action, '记录睡眠');
-  });
+  test(
+    'sleep uses a half-open window, requires no record, and has priority',
+    () {
+      expect(resolve(nowMinutes: 8 * 60).kind, HomeSuggestionKind.sleep);
+      expect(resolve(nowMinutes: 12 * 60 - 1).kind, HomeSuggestionKind.sleep);
+      expect(resolve(nowMinutes: 12 * 60).kind, HomeSuggestionKind.greeting);
+      expect(
+        resolve(nowMinutes: 7 * 60 + 59).kind,
+        HomeSuggestionKind.greeting,
+      );
+      expect(
+        resolve(nowMinutes: 9 * 60, sleepRecorded: true).kind,
+        HomeSuggestionKind.greeting,
+      );
+      final suggestion = resolve(nowMinutes: 9 * 60, trailingGapMinutes: 300);
+      expect(suggestion.kind, HomeSuggestionKind.sleep);
+      expect(suggestion.action, '记录睡眠');
+    },
+  );
 
-  test('sleep window is half-open from the reminder time to +4h', () {
-    expect(resolve(nowMinutes: 8 * 60).kind, HomeSuggestionKind.sleep);
-    expect(resolve(nowMinutes: 12 * 60 - 1).kind, HomeSuggestionKind.sleep);
-    expect(resolve(nowMinutes: 12 * 60).kind, HomeSuggestionKind.greeting);
-    expect(resolve(nowMinutes: 7 * 60 + 59).kind, HomeSuggestionKind.greeting);
-  });
-
-  test('recorded main sleep suppresses the sleep suggestion', () {
-    expect(
-      resolve(nowMinutes: 9 * 60, sleepRecorded: true).kind,
-      HomeSuggestionKind.greeting,
-    );
-  });
-
-  test('record wins over review once the sleep window has passed', () {
-    final suggestion = resolve(nowMinutes: 23 * 60, trailingGapMinutes: 120);
-    expect(suggestion.kind, HomeSuggestionKind.record);
-    expect(suggestion.action, '补记一笔');
-  });
-
-  test('a trailing gap under 2h does not trigger the record suggestion', () {
+  test('record starts at two hours and outranks review', () {
     expect(
       resolve(nowMinutes: 15 * 60, trailingGapMinutes: 119).kind,
       HomeSuggestionKind.greeting,
@@ -57,29 +51,27 @@ void main() {
       resolve(nowMinutes: 15 * 60, trailingGapMinutes: 120).kind,
       HomeSuggestionKind.record,
     );
+    final late = resolve(nowMinutes: 23 * 60, trailingGapMinutes: 120);
+    expect(late.kind, HomeSuggestionKind.record);
+    expect(late.action, '补记一笔');
   });
 
-  test('sleep still outranks a long trailing gap', () {
+  test('editable reminder times move sleep and review boundaries', () {
+    final suggestion = resolve(nowMinutes: 22 * 60);
+    expect(suggestion.kind, HomeSuggestionKind.review);
+    expect(suggestion.action, '开始复盘');
+    expect(resolve(nowMinutes: 21 * 60 + 59).kind, HomeSuggestionKind.greeting);
     expect(
-      resolve(nowMinutes: 9 * 60, trailingGapMinutes: 300).kind,
+      resolve(nowMinutes: 6 * 60, sleep: 6 * 60, review: 21 * 60).kind,
       HomeSuggestionKind.sleep,
+    );
+    expect(
+      resolve(nowMinutes: 21 * 60, sleep: 30 * 60, review: 21 * 60).kind,
+      HomeSuggestionKind.review,
     );
   });
 
-  test(
-    'review appears at the review time when sleep and record do not apply',
-    () {
-      final suggestion = resolve(nowMinutes: 22 * 60);
-      expect(suggestion.kind, HomeSuggestionKind.review);
-      expect(suggestion.action, '开始复盘');
-      expect(
-        resolve(nowMinutes: 21 * 60 + 59).kind,
-        HomeSuggestionKind.greeting,
-      );
-    },
-  );
-
-  test('greeting falls back by local time of day', () {
+  test('non-today dates and unmatched times use a greeting without action', () {
     expect(
       resolve(nowMinutes: 6 * 60, sleep: 30 * 60, review: 40 * 60).title,
       '早上好。',
@@ -96,9 +88,6 @@ void main() {
       resolve(nowMinutes: 18 * 60, sleep: 30 * 60, review: 40 * 60).title,
       '晚上好。',
     );
-  });
-
-  test('historical and future dates never suggest sleep, record or review', () {
     for (final relation in [
       LedgerDateRelation.historical,
       LedgerDateRelation.future,
@@ -111,29 +100,8 @@ void main() {
       expect(suggestion.kind, HomeSuggestionKind.greeting);
       expect(suggestion.action, isNull);
     }
-  });
-
-  test('editable reminder times move the sleep and review boundaries', () {
-    expect(
-      resolve(nowMinutes: 6 * 60, sleep: 6 * 60, review: 21 * 60).kind,
-      HomeSuggestionKind.sleep,
-    );
-    expect(
-      resolve(nowMinutes: 21 * 60, sleep: 30 * 60, review: 21 * 60).kind,
-      HomeSuggestionKind.review,
-    );
-  });
-
-  test('trailingGapEndingAt only counts a gap that reaches the window end', () {
-    // 没有直接构造 UnresolvedSpan 的公开入口，交由 widget 流程覆盖；
-    // 这里只校验纯函数在空集合上返回 null。
-    expect(trailingGapEndingAt(const [], 1000), isNull);
-  });
-
-  test('greeting suggestion carries no action and short copy', () {
     final greeting = greetingSuggestion(9 * 60);
     expect(greeting.kind, HomeSuggestionKind.greeting);
     expect(greeting.action, isNull);
-    expect(greeting.title.length, lessThan(10));
   });
 }

@@ -7,6 +7,8 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../support/legacy_input_stores.dart';
+
 import 'support/checked_sleep_opening.dart';
 
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
@@ -29,7 +31,8 @@ Future<void> selectDate(WidgetTester tester, String date) async {
 }
 
 Future<void> edit(WidgetTester tester) async {
-  final target = sleepFact(sleepId);
+  // 连续时间轴同屏展示跨日事实的每个日切片，同一 key 会出现多次。
+  final target = sleepFact(sleepId).first;
   await tester.scrollUntilVisible(
     target,
     150,
@@ -82,6 +85,7 @@ void main() {
               openCheckedSleepOpening(DateTime(2026, 9, 30)),
           openDatabase: () async => db,
           openDrafts: () async => ordinary,
+          openReviewDrafts: emptyLegacyReviewDrafts,
           openSleepDrafts: () async => nextStore,
           now: () => DateTime(2026, 9, 30, 12),
         ),
@@ -106,7 +110,7 @@ void main() {
         (await tester.runAsync(() => repo.readSleepSession(sleepId)))!.endedAt,
         original.endedAt,
       );
-      await tapText(tester, '保留草稿并返回');
+      await tapText(tester, '返回');
       nextStore = (await tester.runAsync(
         () => DriftSleepDraftStore.open(NativeDatabase(file)),
       ))!;
@@ -279,6 +283,7 @@ void main() {
               openCheckedSleepOpening(DateTime(2026, 9, 29)),
           openDatabase: () async => db,
           openDrafts: () async => ordinary,
+          openReviewDrafts: emptyLegacyReviewDrafts,
           openSleepDrafts: () async => store,
           now: () => DateTime(2026, 9, 29, 12),
         ),

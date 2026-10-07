@@ -41,7 +41,7 @@ void main() {
       await tapText(tester, '记录睡眠');
       await fill(tester, '2026-09-28 23:50', '2026-09-29 07:40');
       await enter(tester, 'sleep-note', raw);
-      await tapText(tester, '保留草稿并返回');
+      await tapText(tester, '返回');
       expect(await tester.runAsync(app.sleeps), isEmpty);
       final saved = (await tester.runAsync(() => app.readDraft(newContext)))!;
       expect(saved.note, raw);
@@ -56,7 +56,7 @@ void main() {
       await editSleep(tester, id);
       expect(noteInput(tester), original['note']);
       await enter(tester, 'sleep-note', edited);
-      await tapText(tester, '保留草稿并返回');
+      await tapText(tester, '返回');
       expect((await tester.runAsync(app.sleeps))!.single, original);
       await editSleep(tester, id);
       expect(noteInput(tester), edited);
@@ -73,14 +73,14 @@ void main() {
         ),
       );
       await tapText(tester, '保存更正');
-      expect(find.text('正式保存失败，睡眠输入和草稿已保留，请重试。'), findsOneWidget);
+      expect(find.text('正式保存失败，当前睡眠输入仍保留，请重试。'), findsOneWidget);
       expect((await tester.runAsync(app.sleeps))!.single, original);
       expect(
         (await tester.runAsync(() => app.readDraft(context, whileOpen: true)))!
             .note,
         edited,
       );
-      await tapText(tester, '保留草稿并返回');
+      await tapText(tester, '返回');
       await editSleep(tester, id);
       expect(noteInput(tester), edited);
       await tester.runAsync(
@@ -96,7 +96,7 @@ void main() {
       expect(await tester.runAsync(() => app.readDraft(context)), isNull);
       await editSleep(tester, id);
       await enter(tester, 'sleep-note', ' \n ');
-      await tapText(tester, '保留草稿并返回');
+      await tapText(tester, '返回');
       await editSleep(tester, id);
       expect(noteInput(tester), ' \n ');
       expect((await tester.runAsync(app.sleeps))!.single, updated);
@@ -119,7 +119,7 @@ void main() {
       expect(find.text('备注最多 2000 个字符。'), findsOneWidget);
       await tapText(tester, '确认并保存到账本');
       expect(await tester.runAsync(app.sleeps), isEmpty);
-      await tapText(tester, '保留草稿并返回');
+      await tapText(tester, '返回');
       expect(
         (await tester.runAsync(() => app.readDraft(newContext)))!.note,
         overlong,

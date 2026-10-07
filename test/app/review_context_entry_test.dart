@@ -7,6 +7,9 @@ import 'package:drift/drift.dart' show ApplyInterceptor;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/app/time/device_recording_date.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
@@ -72,13 +75,17 @@ void main() {
         AppBootstrap(
           openDatabase: () async => db,
           openDrafts: () async => drafts,
+          openSleepDrafts: emptyLegacySleepDrafts,
+          openReviewDrafts: emptyLegacyReviewDrafts,
           openSleepOpenings: () => openCheckedSleepOpening(clock),
           now: () => clock,
         ),
       );
       await t.pumpAndSettle();
       await tapText(t, '打开按日复盘');
-      expect(find.text('日账本'), findsOneWidget);
+      // 独立复盘页有自己的日期头与返回入口，首页仍在导航栈底。
+      expect(find.byType(ReviewContextPage), findsOneWidget);
+      expect(find.text('每日复盘'), findsWidgets);
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
       expect(find.text('未填写反思'), findsNothing);
       expect(find.text('明天第一步'), findsNothing);
@@ -135,7 +142,7 @@ void main() {
       expect(find.text('请输入有效日期 YYYY-MM-DD。'), findsOneWidget);
       expect(find.text('已有复盘'), findsOneWidget);
       await tapText(t, '取消');
-      await tapText(t, '今天');
+      await tapText(t, '回到今天');
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
       await t.pumpWidget(const SizedBox.shrink());
       await t.runAsync(() => Future<void>.delayed(Duration.zero));

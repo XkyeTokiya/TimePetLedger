@@ -236,8 +236,7 @@ Future<void> tap(WidgetTester t, Finder target) async {
 }
 
 Future<void> textTap(WidgetTester t, String text) async {
-  if (['保留草稿并返回', '放弃草稿'].contains(text) &&
-      find.text(text).evaluate().isEmpty) {
+  if (['返回', '重新填写'].contains(text) && find.text(text).evaluate().isEmpty) {
     await t.tap(find.byTooltip('更多'));
     await t.pumpAndSettle();
   }
@@ -246,6 +245,15 @@ Future<void> textTap(WidgetTester t, String text) async {
   }
   await revealRecordingField(t, text);
   await tap(t, find.text(text));
+  if (text == '打开') {
+    // 会话内输入会先弹恢复询问；等动画完成后再断言表单状态。
+    for (var i = 0; i < 10 && find.text('继续填写').evaluate().isEmpty; i++) {
+      await t.pump(const Duration(milliseconds: 50));
+    }
+    if (find.text('继续填写').evaluate().isNotEmpty) {
+      await tap(t, find.text('继续填写'));
+    }
+  }
 }
 
 Future<void> stateTap(WidgetTester t, RhythmState? state) async {
@@ -443,7 +451,7 @@ void main() {
               .text,
           text,
         );
-        await textTap(t, '保留草稿并返回');
+        await textTap(t, '返回');
         final draft = (await t.runAsync(() => f.drafts.read(newContext)))!;
         expect(draft.continuationHint, text);
         expect(draft.annotationIntent, RecordingAnnotationIntent.add);
@@ -532,7 +540,7 @@ void main() {
       await textTap(t, '打开');
       await stateTap(t, null);
       expect(find.byKey(const ValueKey('continuation-hint')), findsNothing);
-      await textTap(t, '保留草稿并返回');
+      await textTap(t, '返回');
       expect(
         (await t.runAsync(() => f.repo.readTimeBlock(id(8))))!.annotation,
         isNotNull,
@@ -581,7 +589,7 @@ void main() {
           await enter(t, 'continuation-hint', '保存失败不能丢');
         }
         await textTap(t, '保存更正');
-        expect(find.text('正式保存失败，输入和草稿已保留，请重试。'), findsOneWidget);
+        expect(find.text('正式保存失败，当前输入仍保留，请重试。'), findsOneWidget);
         expect(await t.runAsync(f.snapshot), before);
         expect(
           (await t.runAsync(() => f.drafts.read(editContext)))!
@@ -683,8 +691,8 @@ void main() {
         expect(
           find.text(
             duplicate
-                ? '此记录已有节奏解释，请重新打开后编辑；输入和草稿已保留。'
-                : '节奏解释已不存在，请重新打开后添加；输入和草稿已保留。',
+                ? '此记录已有节奏解释，请重新打开后编辑；当前输入仍保留。'
+                : '节奏解释已不存在，请重新打开后添加；当前输入仍保留。',
           ),
           findsOneWidget,
         );
@@ -696,7 +704,7 @@ void main() {
               ? RecordingAnnotationIntent.add
               : RecordingAnnotationIntent.edit,
         );
-        await textTap(t, '保留草稿并返回');
+        await textTap(t, '返回');
         await textTap(t, '打开');
         // Restored intent stays add/edit; merely reopening must not silently upsert.
         await textTap(t, '保存更正');

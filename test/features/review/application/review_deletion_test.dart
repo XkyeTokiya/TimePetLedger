@@ -255,7 +255,7 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     h.deletion.deleteGate!.complete();
     expect(await first, isNull);
-    expect(model.deletedMessage, contains('草稿清理和读回失败'));
+    expect(model.deletedMessage, contains('本地收尾和读回失败'));
     expect(await h.reviews.findByDate(original.date), isNull);
     expect(model.editable, false);
     expect(await model.submit(), isNull);
@@ -363,7 +363,7 @@ void main() {
     );
     model.setReflection('  内存新输入  ');
     expect(await model.deleteReview(), isNull);
-    expect(model.submitError, contains('草稿尚未保留成功'));
+    expect(model.submitError, contains('本次填写尚未保留成功'));
     expect(h.deletion.deletes, 0);
     expect((await h.drafts.read(editContext))!.reflection, '磁盘旧输入');
     expect((await h.reviews.findByDate(original.date))!.id, sourceId);

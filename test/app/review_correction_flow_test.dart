@@ -181,7 +181,7 @@ void main() {
       expect(h.traced.creates, 0);
       expect(await t.runAsync(() => h.reviews.findByDate(reviewDate)), isNull);
       expect((await t.runAsync(() => rows(h)))!.length, 1);
-      await tapText(t, '保留草稿并返回');
+      await tapText(t, '返回');
       expect(find.text('这一天尚无复盘。'), findsOneWidget);
       expect(await t.runAsync(() => h.drafts.read(editContext)), isNotNull);
       await unmount(t);
@@ -199,7 +199,7 @@ void main() {
       h.failRefresh = true;
       await tapText(t, '保存更正');
       expect(find.text('此复盘已正式保存。'), findsOneWidget);
-      expect(find.textContaining('草稿清理和读回失败'), findsOneWidget);
+      expect(find.textContaining('本地收尾和读回失败'), findsOneWidget);
       expect(find.text('保存更正'), findsNothing);
       expect(
         t

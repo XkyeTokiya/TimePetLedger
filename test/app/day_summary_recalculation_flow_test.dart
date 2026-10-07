@@ -7,6 +7,9 @@ import 'package:drift/drift.dart'
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/app/bootstrap/day_ledger.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
@@ -89,6 +92,7 @@ class SummaryApp extends ClosureApp {
       AppBootstrap(
         openDatabase: () async => db,
         openDrafts: () async => drafts,
+        openReviewDrafts: emptyLegacyReviewDrafts,
         openSleepDrafts: () => DriftSleepDraftStore.open(
           NativeDatabase(File('${dir.path}/sleep.sqlite')),
         ),
@@ -147,7 +151,7 @@ Future<String> ordinary(
   await textTap(t, '结束准确');
   if (goal != null) await chooseGoal(t, goal);
   if (state != null) await stateTap(t, state);
-  await textTap(t, draft ? '保留草稿并返回' : '保存到账本');
+  await textTap(t, draft ? '返回' : '保存到账本');
   if (draft) return '';
   final after = (await t.runAsync(app.snapshot))!['time_blocks']!;
   return after.singleWhere((r) => !before.any((b) => b['id'] == r['id']))['id']!
@@ -491,7 +495,7 @@ void main() {
       await textTap(t, '放弃草稿');
       await textTap(t, '记录睡眠');
       await fill(t, '2026-10-01 04:00', '2026-10-01 05:00', nap: true);
-      await sleep.tapText(t, '保留草稿并返回');
+      await sleep.tapText(t, '返回');
       expect(await t.runAsync(app.snapshot), beforeDraft);
       await inspect(
         t,

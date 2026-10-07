@@ -185,7 +185,7 @@ void main() {
       await support.textTap(t, '想不起来');
       expect(model(t), same(instance));
       expect(instance.title, '  活动🐾\n第二行  ');
-      await support.textTap(t, '保留草稿并返回');
+      await support.textTap(t, '返回');
       expect(await t.runAsync(f.snapshot), before);
       await support.textTap(t, '打开');
       await settleNative(t);
@@ -395,7 +395,7 @@ void main() {
         await capture(t, 'failure-draft-write');
         store.failClear = true;
         await support.textTap(t, '放弃草稿');
-        expect(find.text('无法放弃草稿，输入已保留，请重试。'), findsOneWidget);
+        expect(find.text('暂时无法清空本次填写，请重试。'), findsOneWidget);
         expect(model(t).note, '原输入🐾');
         await capture(t, 'failure-discard');
 

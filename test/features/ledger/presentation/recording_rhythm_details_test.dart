@@ -100,7 +100,7 @@ void main() {
       await support.stateTap(t, RhythmState.progress);
       expect(find.byKey(const ValueKey('recovery-method-other')), findsNothing);
       await support.stateTap(t, null);
-      await support.textTap(t, '保留草稿并返回');
+      await support.textTap(t, '返回');
       await mount(t, f, support.newContext);
       await support.stateTap(t, RhythmState.stuck);
       expect(
@@ -151,7 +151,7 @@ void main() {
       await support.stateTap(t, RhythmState.recovery);
       await choice(t, 'recovery-method', null);
       await choice(t, 'recovery-quality', null);
-      await support.textTap(t, '保留草稿并返回');
+      await support.textTap(t, '返回');
       final draft = (await t.runAsync(
         () => f.drafts.read(support.editContext),
       ))!;
@@ -240,7 +240,7 @@ void main() {
       await choice(t, 'recovery-quality', RecoveryQuality.notRecovered);
       await support.textTap(t, '保存更正');
       expect(await t.runAsync(f.snapshot), before);
-      await support.textTap(t, '保留草稿并返回');
+      await support.textTap(t, '返回');
       await mount(t, f, support.editContext);
       expect(find.textContaining('请不要再次提交'), findsNothing);
       await support.show(

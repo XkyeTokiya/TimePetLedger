@@ -82,7 +82,10 @@ void main() {
         await t.pumpAndSettle();
         expect(reads.last, chosen);
         expect(find.byType(AlertDialog), findsNothing);
-        expect(find.text('2027-01-01'), findsOneWidget);
+        expect(
+          find.descendant(of: field, matching: find.textContaining('1月1日')),
+          findsOneWidget,
+        );
       },
     );
   }

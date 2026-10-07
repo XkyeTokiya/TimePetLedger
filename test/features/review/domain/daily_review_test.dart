@@ -31,7 +31,7 @@ DailyReview _review({
 );
 
 void main() {
-  test('MODEL-001、DR-003：正式复盘保留一个下一步，可省略解释与目标', () {
+  test('MODEL-001/002、DR-003：复盘结构与三个文本字段的必填、可选和清理规则', () {
     final review = _review();
     expect(review.summary, isNull);
     expect(review.reflection, isNull);
@@ -46,54 +46,45 @@ void main() {
       review.tomorrowFirstStep.intendedDate,
       CivilDate(year: 2000, month: 1, day: 1),
     );
-  });
-
-  test('Q-015：可选空文本归一为 null，必填下一步拒绝空白', () {
     for (final blank in ['', ' ', '\t\n\r', '\u3000']) {
       final review = _review(summary: blank, reflection: blank);
       expect(review.summary, isNull);
       expect(review.reflection, isNull);
       expect(() => _review(text: blank), throwsArgumentError);
     }
-  });
-
-  test('MODEL-002：三种文本清理首尾，保留内部空格、换行和段落', () {
     const input = ' \t第一段  内容\n\n下一行\t说明\u3000';
     const expected = '第一段  内容\n\n下一行\t说明';
-    final review = _review(summary: input, reflection: input, text: input);
-    expect(review.summary, expected);
-    expect(review.reflection, expected);
-    expect(review.tomorrowFirstStep.text, expected);
+    final normalized = _review(summary: input, reflection: input, text: input);
+    expect(normalized.summary, expected);
+    expect(normalized.reflection, expected);
+    expect(normalized.tomorrowFirstStep.text, expected);
   });
 
-  for (final field in ['summary', 'reflection', 'text']) {
-    DailyReview withText(String value) => switch (field) {
-      'summary' => _review(summary: value),
-      'reflection' => _review(reflection: value),
-      _ => _review(text: value),
-    };
-    String? readText(DailyReview review) => switch (field) {
-      'summary' => review.summary,
-      'reflection' => review.reflection,
-      _ => review.tomorrowFirstStep.text,
-    };
+  DailyReview withText(String field, String value) => switch (field) {
+    'summary' => _review(summary: value),
+    'reflection' => _review(reflection: value),
+    _ => _review(text: value),
+  };
+  String? readText(String field, DailyReview review) => switch (field) {
+    'summary' => review.summary,
+    'reflection' => review.reflection,
+    _ => review.tomorrowFirstStep.text,
+  };
 
-    test('Q-015：$field 接受清理后 2000 码点，拒绝 2001', () {
+  test('Q-015：三个长文本字段共用 2000 码点上限', () {
+    for (final field in ['summary', 'reflection', 'text']) {
       for (final character in ['字', '😀']) {
         final text = character * 2000;
-        expect(readText(withText(' $text\n')), text);
-        expect(() => withText('$text$character'), throwsArgumentError);
+        expect(readText(field, withText(field, ' $text\n')), text);
+        expect(() => withText(field, '$text$character'), throwsArgumentError);
       }
-    });
-
-    test('Q-015：$field 组合字符按码点而非字素计数', () {
       final text = 'e\u0301' * 1000;
-      expect(readText(withText(text)), text);
-      expect(() => withText('${text}e'), throwsArgumentError);
-    });
-  }
+      expect(readText(field, withText(field, text)), text);
+      expect(() => withText(field, '${text}e'), throwsArgumentError);
+    }
+  });
 
-  test('Q-001：普通日、月末、闰日与跨年按公历计算，不依赖当前日期', () {
+  test('Q-001：下一步日期按公历派生且必须与复盘日匹配', () {
     for (final (year, month, day, nextYear, nextMonth, nextDay) in [
       (2026, 9, 12, 2026, 9, 13),
       (2026, 4, 30, 2026, 5, 1),
@@ -126,9 +117,6 @@ void main() {
       );
       expect(date, CivilDate(year: year, month: month, day: day));
     }
-  });
-
-  test('日期入口复用 CivilDate，非法日不自动归一', () {
     for (final (month, day) in [(0, 1), (13, 1), (2, 29), (4, 31), (1, 0)]) {
       expect(
         () => TomorrowFirstStep(
@@ -138,9 +126,6 @@ void main() {
         throwsArgumentError,
       );
     }
-  });
-
-  test('Q-001：拒绝属于另一复盘日期的下一步', () {
     expect(
       () => DailyReview(
         id: _id,
@@ -153,13 +138,10 @@ void main() {
     );
   });
 
-  test('Q-018：复盘与可选 Goal 标识遵循 UUID v4 合同', () {
+  test('Q-006/Q-018：复盘身份与 Goal 关联守住存在性、匹配和归档边界', () {
     expect(_review(goalId: _goalId).tomorrowFirstStep.goalId, _goalId);
     expect(() => _review(id: 'invalid'), throwsArgumentError);
     expect(() => _review(goalId: 'invalid'), throwsArgumentError);
-  });
-
-  test('Q-006：允许无 Goal、active 新关联及 archived 历史引用', () {
     validateReviewGoalAssociation(
       review: _review(),
       goal: null,
@@ -191,9 +173,6 @@ void main() {
         validateNew();
       }
     }
-  });
-
-  test('Q-006：有关联时拒绝缺失或不匹配的 Goal', () {
     for (final goal in [null, Goal.create(id: _id, name: '另一目标', now: 0)]) {
       for (final isNew in [false, true]) {
         expect(

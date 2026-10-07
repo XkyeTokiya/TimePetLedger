@@ -3,6 +3,9 @@ import '../support/root_navigation.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/core/time/civil_date.dart';
@@ -46,6 +49,8 @@ void main() {
         AppBootstrap(
           openDatabase: () async => db,
           openDrafts: () async => drafts,
+          openSleepDrafts: emptyLegacySleepDrafts,
+          openReviewDrafts: emptyLegacyReviewDrafts,
           openSleepOpenings: () =>
               openCheckedSleepOpening(DateTime(2026, 9, 30)),
           now: () => clock,

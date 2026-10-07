@@ -54,6 +54,26 @@ void fill(SleepFormController c) {
 
 void main() {
   test(
+    'untouched open creates no snapshot and restart clears changes',
+    () async {
+      final store = FormSleepStore();
+      final c = model(store);
+      await c.initialize();
+      expect(c.hasUserChanges, isFalse);
+      expect(await c.flush(), isTrue);
+      expect(store.saves, 0);
+      c.setNote('临时');
+      await c.flush();
+      expect(store.value, isNotNull);
+      await c.restartInput();
+      expect(c.note, isEmpty);
+      expect(store.value, isNull);
+      expect(c.hasUserChanges, isFalse);
+      c.dispose();
+    },
+  );
+
+  test(
     'manual sleep entry retains type/note without restoring old times',
     () async {
       final store = FormSleepStore();
@@ -69,6 +89,8 @@ void main() {
         loadSuggestion: () async => const ManualTimeEntry(),
       );
       await second.initialize();
+      expect(second.pendingRecovery, isNotNull);
+      await second.resumePendingInput();
       expect((second.startedAt, second.endedAt), (null, null));
       expect(second.startedAtInput, isEmpty);
       expect(second.endedAtInput, isEmpty);
@@ -98,6 +120,8 @@ void main() {
         ),
       );
       await second.initialize();
+      expect(second.pendingRecovery, isNotNull);
+      await second.resumePendingInput();
       expect((second.startedAt, second.endedAt), (1000000, 2800000));
       expect(second.type, SleepType.mainSleep);
       expect(second.note, '昼夜颠倒');
@@ -112,7 +136,7 @@ void main() {
     },
   );
 
-  test('new entry defaults to main sleep; incomplete text and precision restore without inference', () async {
+  test('new entry keeps choices but never restores old time text', () async {
     final store = FormSleepStore();
     final first = model(store);
     await first.initialize();
@@ -127,13 +151,15 @@ void main() {
     first.dispose();
     final second = model(store);
     await second.initialize();
+    expect(second.pendingRecovery, isNotNull);
+    await second.resumePendingInput();
     expect(second.restored, isTrue);
-    expect(second.startedAtInput, ' 2026-09-');
+    expect(second.startedAtInput, isEmpty);
     expect(second.startedAt, isNull);
-    expect(second.endedAtInput, '2026-09-29 07:40');
+    expect(second.endedAtInput, isEmpty);
     expect(second.type, SleepType.nap);
     expect(second.startPrecision, isNull);
-    expect(second.endPrecision, TimePrecision.exact);
+    expect(second.endPrecision, isNull);
     second.setStartedAtInput('2026-09-28 23:50');
     await second.initialize();
     expect(second.startedAtInput, '2026-09-28 23:50');
@@ -218,13 +244,13 @@ void main() {
     fill(c);
     expect(await c.flush(), isFalse);
     expect(c.startedAtInput, '2026-09-28 23:50');
-    expect(c.storageError, contains('保存失败'));
+    expect(c.storageError, contains('无法保留本次填写'));
     store.failSave = false;
     expect(await c.retrySave(), isTrue);
     store.failClear = true;
     expect(await c.discard(), isFalse);
     expect(store.value!.type, SleepType.mainSleep);
-    expect(c.storageError, contains('无法放弃'));
+    expect(c.storageError, contains('无法清空本次填写'));
     store.failClear = false;
     expect(await c.discard(), isTrue);
     c.dispose();
@@ -265,6 +291,8 @@ void main() {
         original: original,
       );
       await c.initialize();
+      expect(c.pendingRecovery, isNotNull);
+      await c.resumePendingInput();
       expect(
         c.startedAt,
         isNull,

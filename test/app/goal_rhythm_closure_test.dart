@@ -7,6 +7,9 @@ import 'package:drift/drift.dart'
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/features/goals/data/drift_goal_repository.dart';
@@ -25,7 +28,7 @@ import 'package:time_pet_ledger/features/settings/data/drift_app_preferences_sto
 
 import '../support/app_recording_navigation.dart' show tap, textTap;
 import '../support/activity_recorder.dart';
-import 'day_ledger_editing_flow_test.dart' show controller;
+import 'day_ledger_editing_flow_test.dart' show controller, ledgerView;
 import 'day_ledger_resolution_flow_test.dart' show BlockReadFailure;
 import 'recording_goal_flow_test.dart' show disposeApp;
 import 'support/checked_sleep_opening.dart';
@@ -74,6 +77,7 @@ class ClosureApp {
       AppBootstrap(
         openDatabase: () async => db,
         openDrafts: () async => drafts,
+        openReviewDrafts: emptyLegacyReviewDrafts,
         openSleepDrafts: () =>
             DriftSleepDraftStore.open(NativeDatabase.memory()),
         openSleepOpenings: () => openCheckedSleepOpening(clock),
@@ -370,7 +374,7 @@ void main() {
       await textTap(t, '保存到账本');
       expect(find.byType(ActivityRecordingEntry), findsOneWidget);
       expect(await t.runAsync(app.snapshot), before);
-      expect(find.text('正式保存失败，输入和草稿已保留，请重试。'), findsOneWidget);
+      expect(find.text('正式保存失败，当前输入仍保留，请重试。'), findsOneWidget);
       final draft = (await t.runAsync(() => app.drafts.read(draftContext)))!;
       expect(draft.goalId, goal);
       expect(draft.rhythmState, RhythmState.progress);
@@ -399,7 +403,7 @@ void main() {
       );
       await textTap(t, '保存更正');
       expect(await t.runAsync(app.snapshot), rows);
-      expect(find.text('正式保存失败，输入和草稿已保留，请重试。'), findsOneWidget);
+      expect(find.text('正式保存失败，当前输入仍保留，请重试。'), findsOneWidget);
       final editDraft = (await t.runAsync(() => app.drafts.read(editContext)))!;
       expect(editDraft.title, '更正后的活动');
       expect(editDraft.rhythmState, RhythmState.recovery);
@@ -408,7 +412,7 @@ void main() {
       await t.runAsync(
         () => app.db.customStatement('DROP TRIGGER fail_annotation'),
       );
-      await textTap(t, '保留草稿并返回');
+      await textTap(t, '返回');
       await app.reopen(t);
       await textTap(t, '打开日账本');
       expect(
@@ -464,7 +468,7 @@ void main() {
       app.clear.fail = true;
       await textTap(t, '保存到账本');
       expect(find.textContaining('已正式保存到账本，请不要再次提交。'), findsOneWidget);
-      expect(find.textContaining('草稿清理失败，旧草稿仍可能显示'), findsOneWidget);
+      expect(find.textContaining('本地收尾失败，旧草稿仍可能显示'), findsOneWidget);
       expect(find.textContaining('账本刷新失败，记录已保存'), findsOneWidget);
       expect(find.text('保存到账本'), findsNothing);
       final committed = (await t.runAsync(app.snapshot))!;
@@ -492,11 +496,9 @@ void main() {
       expect(await t.runAsync(app.snapshot), committed);
       expect(app.reads.blockInserts, 1);
       await textTap(t, '打开日账本');
-      expect(controller(t).view!.goalSummaries.single.goalId, goal);
-      expect(
-        controller(t).view!.goalSummaries.single.progressDuration.milliseconds,
-        hour,
-      );
+      final view = ledgerView(t);
+      expect(view.goalSummaries.single.goalId, goal);
+      expect(view.goalSummaries.single.progressDuration.milliseconds, hour);
       await disposeApp(t);
     },
   );

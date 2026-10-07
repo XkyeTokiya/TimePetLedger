@@ -6,6 +6,9 @@ import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:time_pet_ledger/features/review/data/drift_review_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/app/bootstrap/day_ledger.dart';
 import 'package:time_pet_ledger/app/time/device_recording_date.dart';
@@ -23,6 +26,7 @@ import 'package:time_pet_ledger/features/ledger/data/drift_sleep_draft_store.dar
 import 'package:time_pet_ledger/features/ledger/domain/annotation_change.dart';
 import 'package:time_pet_ledger/features/ledger/domain/block_knowledge_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/ledger_conflicts.dart';
+import 'package:time_pet_ledger/features/ledger/domain/projection/day_ledger_view.dart';
 import 'package:time_pet_ledger/features/ledger/domain/projection/ledger_segment.dart';
 import 'package:time_pet_ledger/features/ledger/domain/recording_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
@@ -30,6 +34,7 @@ import 'package:time_pet_ledger/features/ledger/domain/sleep_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_controller.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_page.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_timeline.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart';
@@ -53,6 +58,24 @@ DayLedgerController controller(WidgetTester t) => t
     .map((builder) => builder.listenable)
     .whereType<DayLedgerController>()
     .first;
+
+/// 首页改版后时间轴由 feed 控制器驱动，不再挂 [DayLedgerController]；
+/// 独立摘要 / 复盘页仍然挂。优先取直接控制器，否则读首页聚焦投影。
+DayLedgerView ledgerView(WidgetTester t) {
+  final direct = t
+      .widgetList<ListenableBuilder>(
+        find.byType(ListenableBuilder, skipOffstage: false),
+      )
+      .map((builder) => builder.listenable)
+      .whereType<DayLedgerController>()
+      .map((controller) => controller.view)
+      .whereType<DayLedgerView>();
+  if (direct.isNotEmpty) return direct.first;
+  return t
+      .state<HomeShellState>(find.byType(HomeShell, skipOffstage: false))
+      .feed
+      .focusView!;
+}
 
 Future<void> select(WidgetTester t, int date) async {
   await selectLedgerDate(t, '2026-09-${date.toString().padLeft(2, '0')}');
@@ -117,6 +140,7 @@ class Fixture {
       AppBootstrap(
         openDatabase: () async => db,
         openDrafts: () async => drafts,
+        openReviewDrafts: emptyLegacyReviewDrafts,
         openSleepDrafts: () async => sleepStores.removeAt(0),
         openSleepOpenings: () => openCheckedSleepOpening(now),
         now: () => now,
@@ -297,7 +321,7 @@ void main() {
         t.widget<SleepForm>(find.byType(SleepForm)).controller.original!.id,
         id(1),
       );
-      await tap(t, '保留草稿并返回');
+      await tap(t, '返回');
       await disposeApp(t);
     },
   );
@@ -388,7 +412,7 @@ void main() {
         t.widget<SleepForm>(find.byType(SleepForm)).controller.draft.endedAt,
         at(29, 9),
       );
-      await tap(t, '保留草稿并返回');
+      await tap(t, '返回');
       await editFact(t, LedgerFactType.timeBlock, id(1));
       await enterTime(t, '结束时间', '2026-09-29 10:00');
       await t.runAsync(
@@ -421,7 +445,7 @@ void main() {
       await t.runAsync(() => f.repo.deleteTimeBlock(id(1)));
       await tap(t, '保存更正');
       expect(find.textContaining('记录已不存在'), findsOneWidget);
-      await tap(t, '保留草稿并返回');
+      await tap(t, '返回');
       expect(
         controller(t).view!.segments.whereType<TimeBlockSegment>(),
         isEmpty,

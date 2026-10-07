@@ -89,6 +89,18 @@ Future<void> capture(WidgetTester t, String name) async {
 ScrollableState readingScroll(WidgetTester t) =>
     t.state<ScrollableState>(find.byType(Scrollable).first);
 
+/// 连续时间轴按天定位：跳转后目标日的日期分隔应落在可视区内。
+void expectDayRevealed(WidgetTester t, int day) {
+  final divider = find.byKey(ValueKey('day-divider-2026-10-$day'));
+  expect(divider, findsOneWidget);
+  final rect = t.getRect(divider);
+  expect(rect.bottom, greaterThan(0));
+  expect(
+    rect.top,
+    lessThan(t.view.physicalSize.height / t.view.devicePixelRatio),
+  );
+}
+
 void main() {
   setUpAll(() async {
     final path = Platform.environment['UI_T04_FONT_PATH'];
@@ -198,7 +210,10 @@ void main() {
       await t.ensureVisible(tile);
       await settleNative(t);
       final before = t.getTopLeft(tile).dy;
-      await t.tap(find.byKey(const ValueKey('home-tab-timeline')));
+      // 首页即时间账本：经抽屉进入日账本应保持当前阅读位置。
+      await t.tap(find.byKey(const ValueKey('home-menu')));
+      await settleNative(t);
+      await t.tap(find.byKey(const ValueKey('menu-ledger')));
       await settleNative(t);
       expect(t.getTopLeft(tile).dy, closeTo(before, 1));
       await tapRootAction(t, '记录活动');
@@ -238,19 +253,18 @@ void main() {
       await settleNative(t);
       await selectLedgerDate(t, '2026-10-01');
       await settleNative(t);
-      expect(readingScroll(t).position.pixels, 0);
+      expectDayRevealed(t, 1);
       await selectLedgerDate(t, '2026-10-02');
       await settleNative(t);
-      // Opening the date picker explicitly scrolls to the compact header;
-      // that is now the last reading position of the previous date.
-      expect(readingScroll(t).position.pixels, 0);
+      expectDayRevealed(t, 2);
       for (var date = 4; date <= 10; date++) {
         await selectLedgerDate(t, '2026-10-${date.toString().padLeft(2, '0')}');
         await settleNative(t);
       }
+      expectDayRevealed(t, 10);
       await selectLedgerDate(t, '2026-10-02');
       await settleNative(t);
-      expect(readingScroll(t).position.pixels, 0);
+      expectDayRevealed(t, 2);
     },
   );
 
@@ -304,6 +318,9 @@ void main() {
           await tapRootAction(t, '打开按日复盘');
           await settleNative(t);
           await capture(t, 'review-$width-$scale');
+          // 复盘是独立页面：先回到首页，再从底部入口新建记录。
+          await backFromPage(t);
+          await settleNative(t);
           await t.tap(find.byKey(const ValueKey('home-record-activity')));
           await settleNative(t);
           await capture(t, 'create-$width-$scale');

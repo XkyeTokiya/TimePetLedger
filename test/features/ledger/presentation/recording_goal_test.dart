@@ -198,12 +198,21 @@ Future<void> tap(WidgetTester tester, Finder target) async {
 }
 
 Future<void> textTap(WidgetTester tester, String text) async {
-  if (['保留草稿并返回', '放弃草稿'].contains(text) &&
-      find.text(text).evaluate().isEmpty) {
+  if (['返回', '重新填写'].contains(text) && find.text(text).evaluate().isEmpty) {
     await tester.tap(find.byTooltip('更多'));
     await tester.pumpAndSettle();
   }
   await tap(tester, find.text(text));
+  if (text == '打开') {
+    // 同一入口有会话内输入时会先弹恢复询问；等它完成动画后再继续操作。
+    for (var i = 0; i < 10 && find.text('继续填写').evaluate().isEmpty; i++) {
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    if (find.text('继续填写').evaluate().isNotEmpty) {
+      await tester.tap(find.text('继续填写'));
+      await tester.pumpAndSettle();
+    }
+  }
   if (text == '打开' &&
       find
           .byKey(const ValueKey('recording-goal-toggle'))
@@ -295,6 +304,7 @@ void main() {
       c.dispose();
       final restored = h.controller(context);
       await restored.initialize();
+      await restored.resumePendingInput();
       expect(restored.goalId, id(1));
       expect(restored.title, '保留活动');
       restored.dispose();
@@ -465,7 +475,7 @@ void main() {
       expect(find.byKey(ValueKey('goal-option-${id(3)}')), findsNothing);
       await tap(tester, find.byKey(ValueKey('goal-option-${id(2)}')));
       await textTap(tester, '想不起来');
-      await textTap(tester, '保留草稿并返回');
+      await textTap(tester, '返回');
       final draft = await tester.runAsync(() => h.drafts.read(context));
       expect(draft!.goalId, id(2));
       expect(draft.goalProvided, isTrue);
@@ -473,6 +483,13 @@ void main() {
         await tester.runAsync(() => h.ledger.readTimeBlock(id(9))),
         isNull,
       );
+      for (var i = 0; i < 5; i++) {
+        await tester.pump();
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 10)),
+        );
+      }
+      await tester.pumpAndSettle();
       await textTap(tester, '打开');
       expect(
         find.byKey(const ValueKey('goal-time-confirmation')),
@@ -481,7 +498,7 @@ void main() {
       expect(
         find.descendant(
           of: find.byKey(const ValueKey('goal-time-confirmation')),
-          matching: find.textContaining('约 ${formatRecordingTime(start)}'),
+          matching: find.textContaining(formatRecordingTime(start)),
         ),
         findsOneWidget,
       );
@@ -532,7 +549,7 @@ void main() {
             }
           });
           await textTap(tester, editing ? '保存更正' : '保存到账本');
-          expect(find.text('正式保存失败，输入和草稿已保留，请重试。'), findsOneWidget);
+          expect(find.text('正式保存失败，当前输入仍保留，请重试。'), findsOneWidget);
           final draft = (await tester.runAsync(() => h.drafts.read(context)))!;
           expect(draft.goalId, id(1));
           expect(draft.title, '修改但未提交');
@@ -589,7 +606,7 @@ void main() {
       expect(retained.annotation!.continuationHint, '接续点');
       await textTap(tester, '打开');
       await textTap(tester, '移除目标归属');
-      await textTap(tester, '保留草稿并返回');
+      await textTap(tester, '返回');
       final pending = (await tester.runAsync(() => h.drafts.read(context)))!;
       expect(pending.goalProvided, isTrue);
       expect(pending.goalId, isNull);
@@ -632,7 +649,7 @@ void main() {
       await textTap(tester, '想不起来');
       await choose(tester, 1);
       await textTap(tester, '保存到账本');
-      expect(find.text('正式保存失败，输入和草稿已保留，请重试。'), findsOneWidget);
+      expect(find.text('正式保存失败，当前输入仍保留，请重试。'), findsOneWidget);
       expect(
         (await tester.runAsync(() => h.drafts.read(context)))!.goalId,
         id(1),
@@ -673,6 +690,7 @@ void main() {
       c.dispose();
       c = h.controller(context);
       await tester.runAsync(c.initialize);
+      await tester.runAsync(c.resumePendingInput);
       expect(c.committed, isNull);
       expect(c.goalId, isNull);
       expect(await tester.runAsync(() => h.drafts.read(context)), isNotNull);

@@ -386,7 +386,7 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     h.traced.updateGate!.complete();
     expect(await first, isNull);
-    expect(model.committedMessage, contains('草稿清理和读回失败'));
+    expect(model.committedMessage, contains('本地收尾和读回失败'));
     final committedAt = model.committed!.review.updatedAt;
     await h.failClear(false);
     h.clock += 1000;

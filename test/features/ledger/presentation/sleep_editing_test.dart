@@ -236,7 +236,7 @@ void main() {
       h.repo.failRead = true;
       final c = h.model();
       await show(tester, c);
-      expect(find.text('无法读取睡眠记录或草稿，请重试。'), findsOneWidget);
+      expect(find.text('无法读取睡眠记录或未完成输入，请重试。'), findsOneWidget);
       expect(find.textContaining('private'), findsNothing);
       expect(h.store.value!.endedAtInput, '2026-');
       h.repo.failRead = false;
@@ -271,7 +271,7 @@ void main() {
         }
         expect(c.postCommit, isTrue);
         expect(c.finishPending, isTrue);
-        expect(find.textContaining('草稿清理和摘要 / 账本刷新失败'), findsOneWidget);
+        expect(find.textContaining('本地收尾和摘要 / 账本刷新失败'), findsOneWidget);
         expect(find.text('保存更正'), findsNothing);
         expect(find.text('删除睡眠'), findsNothing);
         expect(h.store.value, isNotNull);
@@ -308,7 +308,7 @@ void main() {
       await tapText(tester, '删除睡眠');
       await tester.tap(find.text('确认删除'));
       await tester.pumpAndSettle();
-      expect(find.text('删除失败，睡眠记录与草稿已保留，请重试。'), findsOneWidget);
+      expect(find.text('删除失败，睡眠记录与当前输入仍保留，请重试。'), findsOneWidget);
       expect(c.editable, isTrue);
       expect(c.deleted, isNull);
       expect(

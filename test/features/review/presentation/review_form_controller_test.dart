@@ -82,6 +82,25 @@ DailyReview originalReview({String? goal = goalId}) => DailyReview(
 );
 
 void main() {
+  test(
+    'untouched review creates no snapshot and restart restores baseline',
+    () async {
+      final store = MemoryDrafts();
+      final model = ReviewFormController(context: entry, store: store);
+      await model.initialize();
+      expect(model.hasUserChanges, isFalse);
+      expect(await model.flush(), isTrue);
+      expect(store.snapshots, isEmpty);
+      model.setSummary('临时');
+      await model.flush();
+      expect(store.values[draftKey(entry)], isNotNull);
+      await model.restartInput();
+      expect(model.summary, isEmpty);
+      expect(store.values[draftKey(entry)], isNull);
+      model.dispose();
+    },
+  );
+
   test('restore full cleared snapshot by original identity, mutable date and incomplete input never fall back', () async {
     final store = MemoryDrafts();
     final original = originalReview();
@@ -103,6 +122,8 @@ void main() {
       original: original,
     );
     await model.initialize();
+    expect(model.pendingRecovery, isNotNull);
+    await model.resumePendingInput();
     expect(model.restored, true);
     expect(model.date, isNull);
     expect(model.dateInput, '2026-');
@@ -139,7 +160,7 @@ void main() {
     expect(model.valid, false);
     model.setFirstStep('');
     await model.flush();
-    expect(store.values[draftKey(entry)]!.tomorrowFirstStepText, '');
+    expect(store.values[draftKey(entry)], isNull);
     model.dispose();
   });
 
@@ -205,6 +226,8 @@ void main() {
     model.dispose();
     final restored = ReviewFormController(context: entry, store: store);
     await restored.initialize();
+    expect(restored.pendingRecovery, isNotNull);
+    await restored.resumePendingInput();
     expect(restored.dateInput, '2025-02-29');
     expect(restored.date, isNull);
     restored.dispose();
@@ -325,6 +348,8 @@ void main() {
       goals: goals,
     );
     await restored.initialize();
+    expect(restored.pendingRecovery, isNotNull);
+    await restored.resumePendingInput();
     expect(restored.goalId, isNull);
     expect(restored.selectedGoal, isNull);
     expect(restored.firstStep, '原下一步');

@@ -9,6 +9,9 @@ import 'package:flutter/material.dart';
 import '../support/ledger_date_selection.dart';
 
 import 'package:flutter_test/flutter_test.dart';
+
+import '../support/legacy_input_stores.dart';
+
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/app/bootstrap/day_ledger.dart';
 import 'package:time_pet_ledger/app/bootstrap/recording_ledger.dart';
@@ -84,6 +87,8 @@ Future<void> mount(
     AppBootstrap(
       openDatabase: () async => db,
       openDrafts: () async => drafts,
+      openSleepDrafts: emptyLegacySleepDrafts,
+      openReviewDrafts: emptyLegacyReviewDrafts,
       openSleepOpenings: () => openCheckedSleepOpening(DateTime(2026, 10, 1)),
       now: () => DateTime(2026, 10, 1, 12),
     ),
@@ -121,7 +126,7 @@ void main() {
       await mount(tester, db, drafts);
       await tap(tester, '记录活动');
       expect(find.widgetWithText(ListTile, '未填写'), findsNWidgets(2));
-      await tap(tester, '保留草稿并返回');
+      await tap(tester, '返回');
       await openGap(tester);
       expect(
         recordingTimeSummaryContaining('2026-10-01 00:00'),
@@ -226,7 +231,7 @@ void main() {
         ))!,
         isEmpty,
       );
-      await tap(tester, '保留草稿并返回');
+      await tap(tester, '返回');
       await selectLedgerDate(tester, '2026-10-02');
       await tester.pumpAndSettle();
       expect(find.byType(LedgerGapTimelineTile), findsNothing);
@@ -273,7 +278,7 @@ void main() {
       await tester.enterText(find.byKey(const ValueKey('activity')), '读书');
       await enterTime(tester, '结束时间', '2026-10-01 10:00');
       await tap(tester, '开始准确');
-      await tap(tester, '保留草稿并返回');
+      await tap(tester, '返回');
       expect(
         find.byType(LedgerFactTimelineTile),
         findsOneWidget,
@@ -494,7 +499,7 @@ void main() {
       await tap(tester, '保存到账本');
       expect(find.text('已正式保存到账本，请不要再次提交。'), findsOneWidget);
       expect(find.text('保存到账本'), findsNothing);
-      expect(find.text('草稿清理失败，旧草稿仍可能显示；请重试清理。'), findsOneWidget);
+      expect(find.text('记录已保存，页面收尾未完成；请重试。'), findsOneWidget);
       expect(find.text('账本刷新失败，记录已保存；请重试刷新。'), findsOneWidget);
       expect(creations, 1);
       expect(

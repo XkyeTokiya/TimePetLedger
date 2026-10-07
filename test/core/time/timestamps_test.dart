@@ -10,9 +10,9 @@ void main() {
   });
 
   const Timestamps previous = (createdAt: 1001, updatedAt: 2002);
-  for (final changed in [false, true]) {
-    for (final succeeded in [false, true]) {
-      test('内容变化=$changed、保存成功=$succeeded 时的更新时间', () {
+  test('只有内容变化且保存成功才更新 updatedAt', () {
+    for (final changed in [false, true]) {
+      for (final succeeded in [false, true]) {
         final result = timestampsAfterSave(
           previous: previous,
           now: 3003,
@@ -22,11 +22,8 @@ void main() {
         expect(result.createdAt, 1001);
         expect(result.updatedAt, changed && succeeded ? 3003 : 2002);
         expect(previous, (createdAt: 1001, updatedAt: 2002));
-      });
+      }
     }
-  }
-
-  test('成功更正后的无变化重复请求不更新时间', () {
     final saved = timestampsAfterSave(
       previous: previous,
       now: 3003,
