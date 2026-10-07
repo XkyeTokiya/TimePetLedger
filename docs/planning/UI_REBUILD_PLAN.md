@@ -24,6 +24,23 @@
 3. 历史日期按完整本地自然日，今天按00:00至当前时刻；未来部分不计为Gap。自然日不写死为1440分钟，沿既有日界线合同计算。
 4. 无目标记录展示空态，不造评分或效率判断。事实与可选节奏解释仍分开；Unknown属于已交代，Gap是派生缺口。
 
+2026-10-07用户明确要求删除首页顶部“其中想不起来……（已包含在已交代时间中）”整段辅助说明。顶部保留已交代 / 尚未记录概览，摘要图例继续展示想不起来的实际时长；Unknown统计和图表实现不在本轮调整范围。决定见[Q-027](../domain/OPEN_QUESTIONS.md#q-027)，本轮授权实施此文案删除。
+
+实施：`HomeCoverageLine`已删除整段说明及其间距。改动Dart文件格式检查、`flutter analyze --no-pub`和`flutter test --no-pub test/features/ledger/presentation/home_summary_donut_test.dart`（4项）通过；首页源码检索无该文案。未执行设备截图验收。
+
+### 摘要环图与Material 3图例（2026-10-07后续授权）
+
+用户采用推荐的fl_chart + Material 3 ListTile方案并要求完成替换，授权`fl_chart 1.2.0`依赖接入。范围为首页“一天时间构成”与“目标时间构成”共用的`HomeDonutChart`；其他摘要内容、目标详情、首页模块与领域统计不在本轮改动范围。fl_chart采用MIT许可，包声明支持Android / Web；工程实际兼容性由本轮构建和测试确认。
+
+- 手机圆环在上、全宽图例在下，宽屏且文字比例适合时并排，避免图例名称逐字换行；保留首页米色 / 衬线 / 既有分段颜色。
+- 圆环由fl_chart绘制，图例由Material 3 ListTile承载；点击图例或圆环联动选中，图例显示所选实际占比，再次点击取消。
+- 占比按原始毫秒计算并最终取整，中心仍显示原汇总；Unknown计入已交代，Gap保持虚线，零时长不造扇区，总时长为零显示既有空态。
+- 验证两种构成、微小时长、零值 / 空态、刷新和切日后的选择、Gap区分、窄屏 / 大字 / 长名称、Semantics，以及Android / Web编译；不把组件测试当成真实设备验收。
+
+选择依据：[fl_chart包与平台声明](https://pub.dev/packages/fl_chart)、[圆环API](https://pub.dev/documentation/fl_chart/latest/fl_chart/PieChartData-class.html)、[MIT许可](https://pub.dev/packages/fl_chart/license)。决定追溯见[Q-027](../domain/OPEN_QUESTIONS.md#q-027)。
+
+已完成本轮替换：16项相关测试、格式检查和静态分析通过，Web与Android调试APK编译通过。组件及首页壳截图已检查；没有执行真机安装或Web浏览器运行验收。改动、命令、截图及限制见[实施报告](../reports/HOME_SUMMARY_FL_CHART_REPORT.md)。
+
 以上是本轮用户委托细化、随后认可的设计基线；不代表正式统计实现或逐像素验收完成。
 
 ### 建议区域
@@ -308,3 +325,11 @@ HEAD：`8924e67a19e90363c1eee23235f2368762018dd7`。工作区已有未提交文�
 ## 日期与时间独立修改（2026-10-07，TIME-02）
 
 用户先要求对完整提示词审查，再授权补齐遗漏。按Q-038恢复四个独立入口：日期直达日历、时分直达原中文滚轮，各自确定立即更新，取消不改；移除TIME-01手动时分→日期串联。范围覆盖当前活动 / 睡眠、保留旧表单与预览、提醒设置、复盘和摘要日期入口。进入时自动日期时间与手动编辑分开，个人睡眠模型不在此次实施范围。设计、文件与实际验证见[设计](DATE_TIME_EDITING.md)和[报告](../reports/TIME-02_DATE_TIME_EDITING_REPORT.md)。旧轮次记录及TIME-01测试结论不被改写。
+
+## 睡眠类型默认与分段切换反馈（2026-10-07）
+
+用户确认两处记录页反馈。新建睡眠默认选中主睡眠，解决审计UI-10中睡眠页待评审的默认值：已有草稿与更正记录仍按自身类型恢复，小睡可随时切换，空表单当前值同时由外观和辅助语义表达。实现放在共享`SleepFormController.initialize`：非编辑且类型为空时取`SleepType.mainSleep`；不覆盖已保存类型，不改变TIME-04预测与类型切换保护，旧SleepForm因同一控制器也默认主睡眠。
+
+睡眠“主睡眠 / 小睡”与活动“记得 / 想不起来”两处分段切换原用InkWell默认按压高亮 / 水波，在底纸选择态上形成多余叠层。两处改为`NoSplash`且highlight / hover / focus透明。随后用户要求滑动动效：选中底纸改为Stack内的独立指示层，用`AnimatedAlign`在200ms / easeInOutCubic内滑动到对应半区，文字与图标颜色同步过渡；系统关闭动画时瞬时完成。选中样式、48高触控目标、Semantics与点击逻辑不变，页面其他按钮及旧ChoiceChip不在本轮范围。
+
+验证：受影响4个测试文件25项通过（新增新建默认主睡眠、滑动途中位置与无按压叠层断言）；`flutter analyze --no-pub`无问题；改动Dart文件`dart format` 0 changed。`test/app`两批受影响文件在改动前后失败集合一致（睡眠相关7项、视觉 / 闭环相关22项），属旧页面迁移遗留，不由本轮引入，也未在本轮修复。真实设备按压手感、动效观感与平台视觉验收未执行。
