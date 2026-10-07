@@ -333,3 +333,25 @@ HEAD：`8924e67a19e90363c1eee23235f2368762018dd7`。工作区已有未提交文�
 睡眠“主睡眠 / 小睡”与活动“记得 / 想不起来”两处分段切换原用InkWell默认按压高亮 / 水波，在底纸选择态上形成多余叠层。两处改为`NoSplash`且highlight / hover / focus透明。随后用户要求滑动动效：选中底纸改为Stack内的独立指示层，用`AnimatedAlign`在200ms / easeInOutCubic内滑动到对应半区，文字与图标颜色同步过渡；系统关闭动画时瞬时完成。选中样式、48高触控目标、Semantics与点击逻辑不变，页面其他按钮及旧ChoiceChip不在本轮范围。
 
 验证：受影响4个测试文件25项通过（新增新建默认主睡眠、滑动途中位置与无按压叠层断言）；`flutter analyze --no-pub`无问题；改动Dart文件`dart format` 0 changed。`test/app`两批受影响文件在改动前后失败集合一致（睡眠相关7项、视觉 / 闭环相关22项），属旧页面迁移遗留，不由本轮引入，也未在本轮修复。真实设备按压手感、动效观感与平台视觉验收未执行。
+
+## 首页外壳与摘要删减（2026-10-07）
+
+用户要求优先复用可直接复用的 MD3 组件，并处理首页入口与文本问题：
+
+- 左上角改为打开侧边栏：Scaffold drawer 使用 MD3 `NavigationDrawer`，保留「我的目标 / 设置」两个入口（键`menu-goals` / `menu-settings`不变），选择后关闭抽屉再进入对应整页；旧的独立菜单整页`HomeMenuPage`不再挂载，左上角 tooltip 从“更多”改为“菜单”。
+- 右上角日期入口隐藏（构建代码以注释保留），日期仍可点大日期标题进入。
+- 摘要删减：删除睡眠背景说明句；单条睡眠记录（含更正入口）与「目标与节奏明细」分别收进 MD3 `ExpansionTile`，默认折叠，两张环图与主 / 小睡、目标合计保持可见。旧日摘要页与复盘事实视图复用同一`SleepSummaryView` / `GoalRhythmSummaryView`，默认不折叠，行为不变。
+- 删除首页「时间分布说明」与「刷新账本」入口；`HomeShellState.showDistribution` / `refreshFromMenu`一并删除。`DayLedgerOverview.showExplanation`仍由旧`DayLedgerPage`使用，未删除。
+
+验证：全仓库`flutter test`既有失败与改动前基线逐条一致（103项，无新增）；新增侧边栏、隐藏入口与折叠断言通过；`flutter analyze --no-pub`无问题；改动Dart文件格式0 changed。真实设备 / Web 的抽屉手势与视觉未实测。
+
+### 生产不可达代码盘点（2026-10-07）
+
+静态引用检索（main.dart → app_bootstrap → main_app 为生产入口；不含反射 / 字符串调用）：
+
+- 完全无引用：`home_menu_page.dart`（本轮改为抽屉后；文件保留待定）。
+- 仅测试引用：`app/navigation/ledger_shell.dart`、`day_ledger_page.dart`、`day_ledger_timeline.dart`、`day_ledger_fact_details.dart`、`day_summary_page.dart`、`sleep_form.dart`。
+- 仅 dev 预览引用：`dev/activity_preview.dart`、`dev/activity_sample.dart`、`main_activity_sample.dart`、`main_guided_recording_sample.dart`（后两者为`-t`备用入口，无仓库内引用）。
+- 测试 + dev 引用：`app/theme/time_ledger_theme.dart`、`dev/guided_recording_sample.dart`、`activity_editor.dart`、`guided_recording_page.dart`、`guided_recording_sheets.dart`、`goals/presentation/goal_create_sheet.dart`。
+- 文件可达但组件已死：`RecordingForm` widget（文件因`formatRecordingTime` / `parseRecordingDate`可达，`parseRecordingTime`无生产引用）、`GoalsPage`、`RecordingOptionalSection` widget（文件因`recordingDetailPreview`可达）。
+- `main_app.dart`无旧页面挂载分支；现役活动 / 睡眠入口分别为`ActivityRecordingEntry` / `SleepEntry`。上述清单只记录未清理项，未在本轮删除。
