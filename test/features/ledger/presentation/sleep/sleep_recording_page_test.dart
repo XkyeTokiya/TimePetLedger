@@ -176,7 +176,12 @@ void main() {
     // No precision choice: Q-030 keeps review input uniformly approximate.
     expect(find.byType(ChoiceChip), findsNothing);
 
-    await tapKey(t, 'sleep-type-main');
+    // 新建睡眠默认选中主睡眠（2026-10-07 用户决定）。
+    expect(
+      t.widget<AnimatedAlign>(key('sleep-type-indicator')).alignment,
+      Alignment.centerLeft,
+    );
+
     await pickTimes(t, '2026-09-30 23:40', '2026-10-01 07:20');
 
     // Prototype row order: date on the left, clock on the right.
@@ -215,7 +220,44 @@ void main() {
     expect(await t.runAsync(() => f.drafts.read(newContext)), isNull);
   });
 
-  testWidgets('requires a type and a positive interval before saving', (
+  testWidgets(
+    'new entry defaults to main sleep and requires times before saving',
+    (t) async {
+      final f = await open(t);
+      await t.pumpWidget(f.app(newContext));
+      await settleNative(t);
+      await tapKey(t, 'open');
+
+      expect(
+        t
+            .widget<SleepRecordingPage>(find.byType(SleepRecordingPage))
+            .controller
+            .type,
+        SleepType.mainSleep,
+      );
+
+      // Missing times are surfaced without a type error and without saving.
+      await tapKey(t, 'sleep-primary');
+      await t.scrollUntilVisible(
+        find.text('请填写有效的入睡和醒来日期时间。'),
+        160,
+        scrollable: find.byType(Scrollable).last,
+      );
+      expect(find.text('先选择主睡眠或小睡。'), findsNothing);
+      expect(find.text('请填写有效的入睡和醒来日期时间。'), findsOneWidget);
+      expect(
+        (await t.runAsync(
+          () => f.repo.readWindow(
+            startedAt: DateTime(2026, 10, 1).millisecondsSinceEpoch,
+            endedAt: DateTime(2026, 10, 2).millisecondsSinceEpoch,
+          ),
+        ))!.sleepSessions,
+        isEmpty,
+      );
+    },
+  );
+
+  testWidgets('sleep type segment slides selection without ink press overlay', (
     t,
   ) async {
     final f = await open(t);
@@ -223,24 +265,36 @@ void main() {
     await settleNative(t);
     await tapKey(t, 'open');
 
-    // Missing type and missing times are surfaced without saving.
-    await tapKey(t, 'sleep-primary');
-    await t.scrollUntilVisible(
-      find.text('先选择主睡眠或小睡。'),
-      160,
-      scrollable: find.byType(Scrollable).last,
+    InkWell well(String value) => t.widget<InkWell>(
+      find.descendant(of: key(value), matching: find.byType(InkWell)),
     );
-    expect(find.text('先选择主睡眠或小睡。'), findsOneWidget);
-    expect(find.text('请填写有效的入睡和醒来日期时间。'), findsOneWidget);
-    expect(
-      (await t.runAsync(
-        () => f.repo.readWindow(
-          startedAt: DateTime(2026, 10, 1).millisecondsSinceEpoch,
-          endedAt: DateTime(2026, 10, 2).millisecondsSinceEpoch,
-        ),
-      ))!.sleepSessions,
-      isEmpty,
-    );
+    AnimatedAlign indicator() =>
+        t.widget<AnimatedAlign>(key('sleep-type-indicator'));
+    Rect pill() => t.getRect(key('sleep-type-pill'));
+
+    for (final value in ['sleep-type-main', 'sleep-type-nap']) {
+      // 分段切换的按压不叠加高亮 / 水波，选择态由滑动底纸表达。
+      expect(well(value).splashFactory, NoSplash.splashFactory);
+      expect(well(value).highlightColor, Colors.transparent);
+      expect(well(value).hoverColor, Colors.transparent);
+    }
+    expect(indicator().alignment, Alignment.centerLeft);
+    final before = pill();
+
+    // 点击小睡后底纸滑向右侧，途中位置严格介于两端之间。
+    await t.tap(key('sleep-type-nap'));
+    await t.pump();
+    await t.pump(const Duration(milliseconds: 60));
+    final mid = pill();
+    expect(mid.left, greaterThan(before.left));
+
+    await settleNative(t);
+    final ended = pill();
+    expect(mid.left, lessThan(ended.left));
+    expect(indicator().alignment, Alignment.centerRight);
+
+    await tapKey(t, 'sleep-type-main');
+    expect(indicator().alignment, Alignment.centerLeft);
   });
 
   testWidgets('edit mode loads the source, keeps precision and corrects', (

@@ -316,6 +316,48 @@ void main() {
     expect(saved.timeBlocks.single.title, isNull);
   });
 
+  testWidgets(
+    'knowledge segment defaults to 记得 and slides without ink press overlay',
+    (t) async {
+      final f = await open(t);
+      await t.pumpWidget(f.app(newContext));
+      await settleNative(t);
+      await tapKey(t, 'open');
+
+      // No rhythm at all: step 1 continues straight to the activity question.
+      await tapKey(t, 'activity-primary');
+      expect(find.text('这段主要做了什么？'), findsOneWidget);
+
+      InkWell well(String value) => t.widget<InkWell>(
+        find.descendant(of: key(value), matching: find.byType(InkWell)),
+      );
+      AnimatedAlign indicator() =>
+          t.widget<AnimatedAlign>(key('activity-knowledge-indicator'));
+      Rect pill() => t.getRect(key('activity-knowledge-pill'));
+
+      for (final value in ['activity-known', 'activity-unknown']) {
+        // 分段切换的按压不叠加高亮 / 水波，选择态由滑动底纸表达。
+        expect(well(value).splashFactory, NoSplash.splashFactory);
+        expect(well(value).highlightColor, Colors.transparent);
+        expect(well(value).hoverColor, Colors.transparent);
+      }
+      expect(indicator().alignment, Alignment.centerLeft);
+      final before = pill();
+
+      // 点击想不起来后底纸滑向右侧，途中位置严格介于两端之间。
+      await t.tap(key('activity-unknown'));
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 60));
+      final mid = pill();
+      expect(mid.left, greaterThan(before.left));
+
+      await settleNative(t);
+      final ended = pill();
+      expect(mid.left, lessThan(ended.left));
+      expect(indicator().alignment, Alignment.centerRight);
+    },
+  );
+
   testWidgets('卡住 collects the applicable reason and hides recovery fields', (
     t,
   ) async {

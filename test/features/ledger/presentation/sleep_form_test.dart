@@ -75,18 +75,31 @@ Future<void> open(WidgetTester tester, FormSleepStore store) async {
 
 void main() {
   testWidgets(
-    'cross-day minute input, independent precision, no goal or implicit type',
+    'cross-day minute input, independent precision, new entry defaults to main sleep',
     (tester) async {
       final store = FormSleepStore();
       await open(tester, store);
       expect(
         tester
-            .widgetList<ChoiceChip>(find.byType(ChoiceChip))
-            .every((chip) => !chip.selected),
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '主睡眠'))
+            .selected,
         isTrue,
       );
+      expect(
+        tester
+            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '小睡'))
+            .selected,
+        isFalse,
+      );
+      for (final label in ['入睡准确', '入睡大约', '醒来准确', '醒来大约']) {
+        expect(
+          tester
+              .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, label))
+              .selected,
+          isFalse,
+        );
+      }
       expect(find.textContaining('Goal'), findsNothing);
-      await tapText(tester, '主睡眠');
       await enter(tester, 'sleep-start', '2026-09-28 23:50');
       await enter(tester, 'sleep-end', '2026-09-29 07:40');
       await tapText(tester, '入睡大约');

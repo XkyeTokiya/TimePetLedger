@@ -112,38 +112,35 @@ void main() {
     },
   );
 
-  test(
-    'incomplete text, type and independent precision restore without inference',
-    () async {
-      final store = FormSleepStore();
-      final first = model(store);
-      await first.initialize();
-      expect(first.type, isNull);
-      expect(first.startPrecision, isNull);
-      expect(first.endPrecision, isNull);
-      first.setStartedAtInput(' 2026-09-');
-      first.setEndedAtInput('2026-09-29 07:40');
-      first.setType(SleepType.nap);
-      first.setPrecision(end: TimePrecision.exact);
-      expect(await first.flush(), isTrue);
-      first.dispose();
-      final second = model(store);
-      await second.initialize();
-      expect(second.restored, isTrue);
-      expect(second.startedAtInput, ' 2026-09-');
-      expect(second.startedAt, isNull);
-      expect(second.endedAtInput, '2026-09-29 07:40');
-      expect(second.type, SleepType.nap);
-      expect(second.startPrecision, isNull);
-      expect(second.endPrecision, TimePrecision.exact);
-      second.setStartedAtInput('2026-09-28 23:50');
-      await second.initialize();
-      expect(second.startedAtInput, '2026-09-28 23:50');
-      expect(store.reads, 2); // no repeated restore over current user input
-      await second.flush();
-      second.dispose();
-    },
-  );
+  test('new entry defaults to main sleep; incomplete text and precision restore without inference', () async {
+    final store = FormSleepStore();
+    final first = model(store);
+    await first.initialize();
+    expect(first.type, SleepType.mainSleep);
+    expect(first.startPrecision, isNull);
+    expect(first.endPrecision, isNull);
+    first.setStartedAtInput(' 2026-09-');
+    first.setEndedAtInput('2026-09-29 07:40');
+    first.setType(SleepType.nap);
+    first.setPrecision(end: TimePrecision.exact);
+    expect(await first.flush(), isTrue);
+    first.dispose();
+    final second = model(store);
+    await second.initialize();
+    expect(second.restored, isTrue);
+    expect(second.startedAtInput, ' 2026-09-');
+    expect(second.startedAt, isNull);
+    expect(second.endedAtInput, '2026-09-29 07:40');
+    expect(second.type, SleepType.nap);
+    expect(second.startPrecision, isNull);
+    expect(second.endPrecision, TimePrecision.exact);
+    second.setStartedAtInput('2026-09-28 23:50');
+    await second.initialize();
+    expect(second.startedAtInput, '2026-09-28 23:50');
+    expect(store.reads, 2); // no repeated restore over current user input
+    await second.flush();
+    second.dispose();
+  });
 
   test('read is exclusive, read failure never overwrites existing draft, retry restores', () async {
     final store = FormSleepStore()

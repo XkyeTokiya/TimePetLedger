@@ -118,6 +118,19 @@ void main() {
       await t.tap(find.byKey(const ValueKey('home-tab-summary')));
       await t.pumpAndSettle();
       await capture(t, 'home-r1-summary-$width');
+      final gap = find.byKey(const ValueKey('summary-part-gap'));
+      await t.ensureVisible(gap);
+      await t.pumpAndSettle();
+      await t.tap(gap);
+      await t.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('summary-part-percent-gap')),
+        findsOneWidget,
+      );
+      expect(t.takeException(), isNull);
+      await capture(t, 'home-r1-summary-selected-$width');
+      // 每个视口用独立页面，避免上一轮选择被下一次点击取消。
+      await t.pumpWidget(const SizedBox.shrink());
     }
   });
 
