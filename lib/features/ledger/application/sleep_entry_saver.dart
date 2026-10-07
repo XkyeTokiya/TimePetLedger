@@ -137,22 +137,20 @@ final class SleepEntrySaver {
         if (learning != null) {
           final draft = await drafts.read(context);
           final origin = draft?.predictionOrigin;
-          await learning!.completeSleepDraft(
-            context: context,
-            feedback: origin == null || offsetMinutes == null
-                ? null
-                : SleepPredictionFeedback(
-                    sleepId: sleepSession.id,
-                    origin: origin,
-                    startedAt: sleepSession.startedAt,
-                    endedAt: sleepSession.endedAt,
-                    startOffsetMinutes: offsetMinutes!(sleepSession.startedAt),
-                    endOffsetMinutes: offsetMinutes!(sleepSession.endedAt),
-                  ),
-          );
-        } else {
-          await drafts.clear(context);
+          if (origin != null && offsetMinutes != null) {
+            await learning!.saveSleepFeedback(
+              SleepPredictionFeedback(
+                sleepId: sleepSession.id,
+                origin: origin,
+                startedAt: sleepSession.startedAt,
+                endedAt: sleepSession.endedAt,
+                startOffsetMinutes: offsetMinutes!(sleepSession.startedAt),
+                endOffsetMinutes: offsetMinutes!(sleepSession.endedAt),
+              ),
+            );
+          }
         }
+        await drafts.clear(context);
         cleared = true;
       } catch (_) {
         // The draft store is independent of the committed formal transaction.

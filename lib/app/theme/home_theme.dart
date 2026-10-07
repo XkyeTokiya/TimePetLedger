@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
-/// Visual tokens taken from the confirmed home reference
+/// App-wide visual tokens taken from the confirmed home reference
 /// (docs/planning/assets/home-summary-round-one/home-reference.png).
 ///
-/// Scoped to the rebuilt home for now; the previous [timeLedgerTheme] still
-/// serves the pages that have not been rebuilt yet.
+/// The historical `Home` name is retained to avoid a repository-wide rename.
+/// New production UI should treat these values and [homeTheme] as the shared
+/// app theme; see `design.md` for the usage contract.
 class HomePalette {
   const HomePalette._();
 
@@ -23,6 +24,28 @@ class HomePalette {
   static const recovery = Color(0xFF6D7E64);
   static const error = Color(0xFF9C3325);
   static const errorSurface = Color(0xFFF9E9E1);
+}
+
+/// The shared spacing scale. Components may combine adjacent steps, but should
+/// not introduce one-off values without a layout-specific reason.
+class TimeLedgerSpacing {
+  const TimeLedgerSpacing._();
+
+  static const xxs = 4.0;
+  static const xs = 8.0;
+  static const sm = 12.0;
+  static const md = 16.0;
+  static const lg = 20.0;
+  static const xl = 24.0;
+  static const xxl = 32.0;
+  static const page = lg;
+}
+
+class TimeLedgerRadius {
+  const TimeLedgerRadius._();
+
+  static const compact = 8.0;
+  static const panel = 10.0;
 }
 
 /// Bundled Simplified-Chinese serif declared in pubspec (`NotoSerifSC`).
@@ -83,6 +106,36 @@ ThemeData _buildHomeTheme() {
         displayColor: HomePalette.ink,
       )
       .copyWith(
+        displayLarge: const TextStyle(
+          fontFamily: homeSerifFamily,
+          fontSize: 48,
+          height: 1.16,
+          color: HomePalette.ink,
+        ),
+        headlineLarge: const TextStyle(
+          fontFamily: homeSerifFamily,
+          fontSize: 32,
+          height: 1.25,
+          color: HomePalette.ink,
+        ),
+        headlineMedium: const TextStyle(
+          fontFamily: homeSerifFamily,
+          fontSize: 28,
+          height: 1.3,
+          color: HomePalette.ink,
+        ),
+        headlineSmall: const TextStyle(
+          fontFamily: homeSerifFamily,
+          fontSize: 24,
+          height: 1.35,
+          color: HomePalette.ink,
+        ),
+        bodyLarge: const TextStyle(
+          fontFamily: homeSerifFamily,
+          fontSize: 17,
+          height: 1.5,
+          color: HomePalette.ink,
+        ),
         bodyMedium: const TextStyle(
           fontFamily: homeSerifFamily,
           fontSize: 15,
@@ -107,6 +160,30 @@ ThemeData _buildHomeTheme() {
           fontWeight: FontWeight.w600,
           color: HomePalette.ink,
         ),
+        titleSmall: const TextStyle(
+          fontFamily: homeSerifFamily,
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: HomePalette.ink,
+        ),
+        labelLarge: const TextStyle(
+          fontFamily: homeSerifFamily,
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: HomePalette.ink,
+        ),
+        labelMedium: const TextStyle(
+          fontFamily: homeSerifFamily,
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: HomePalette.ink,
+        ),
+        labelSmall: const TextStyle(
+          fontFamily: homeSerifFamily,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: HomePalette.muted,
+        ),
       );
   const pill = StadiumBorder();
   final minimumTarget = const WidgetStatePropertyAll(
@@ -129,6 +206,12 @@ ThemeData _buildHomeTheme() {
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
+      titleTextStyle: TextStyle(
+        fontFamily: homeSerifFamily,
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: HomePalette.ink,
+      ),
     ),
     tabBarTheme: const TabBarThemeData(
       labelColor: HomePalette.accentDeep,
@@ -170,6 +253,24 @@ ThemeData _buildHomeTheme() {
       textColor: HomePalette.ink,
       iconColor: HomePalette.muted,
       subtitleTextStyle: text.bodySmall,
+    ),
+    switchTheme: SwitchThemeData(
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      thumbColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? HomePalette.paper
+            : HomePalette.faint,
+      ),
+      trackColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? HomePalette.accentDeep
+            : HomePalette.tint,
+      ),
+      trackOutlineColor: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.selected)
+            ? Colors.transparent
+            : HomePalette.faint,
+      ),
     ),
     inputDecorationTheme: const InputDecorationThemeData(
       filled: true,

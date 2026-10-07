@@ -13,20 +13,23 @@ import '../summary_formatting.dart';
 import 'home_donut_chart.dart';
 
 /// Summary tab. Reads the same committed [DayLedgerView] as the timeline;
-/// no separate query or recomputation. First version answers "各部分占多少"
-/// with rings (Q-027): day composition first, then goal composition, with the
-/// complete sleep / goal rhythm / global recovery kept as supplement.
+/// no separate query or recomputation. 第一版回答“各部分占多少”（Q-027）：
+/// 这一天的时间 → 目标投入 → 睡眠背景；完整睡眠与节奏明细保留为补充内容。
 class HomeSummaryTab extends StatelessWidget {
   const HomeSummaryTab({
     super.key,
     required this.controller,
     this.onEditSleep,
     this.onRetry,
+    this.footer,
   });
 
   final DayLedgerController controller;
   final ValueChanged<SleepSession>? onEditSleep;
   final VoidCallback? onRetry;
+
+  /// 页面级入口（例如打开这一天的复盘）；为空时不显示。
+  final Widget? footer;
 
   static const _goalColors = [
     HomePalette.accent,
@@ -60,7 +63,19 @@ class HomeSummaryTab extends StatelessWidget {
                 padding: EdgeInsets.only(bottom: 20),
                 child: Text('此账本窗口及醒来日期尚无正式记录。'),
               ),
-            const _SectionLabel('一天时间构成'),
+            const _SectionLabel('这一天的时间'),
+            Text(
+              '已交代 ${formatDerivedDuration(view.accountedDuration)}'
+              ' · 尚未记录 ${formatDerivedDuration(view.unresolvedDuration)}',
+              style: _sectionSubStyle,
+            ),
+            // 账本窗口本身是统计口径（23/25 小时日不同），保留为辅助说明。
+            Text(
+              '账本窗口：'
+              '${formatDerivedDuration(DerivedDuration(milliseconds: view.window.milliseconds, hasApproximation: false))}',
+              style: _captionStyle,
+            ),
+            const SizedBox(height: 10),
             HomeDonutChart(
               key: const ValueKey('summary-day-chart'),
               parts: _dayParts(view),
@@ -70,7 +85,7 @@ class HomeSummaryTab extends StatelessWidget {
             ),
             const SizedBox(height: 28),
             if (view.goalSummaries.isNotEmpty) ...[
-              const _SectionLabel('目标时间构成'),
+              const _SectionLabel('目标投入'),
               HomeDonutChart(
                 key: const ValueKey('summary-goal-chart'),
                 parts: _goalParts(view.goalSummaries),
@@ -80,16 +95,7 @@ class HomeSummaryTab extends StatelessWidget {
                 ),
                 semanticsLabel: _goalSemantics(view.goalSummaries),
               ),
-              const SizedBox(height: 28),
             ],
-            const _SectionLabel('睡眠背景'),
-            const SizedBox(height: 8),
-            SleepSummaryView(
-              summary: view.sleepSummary,
-              onEdit: onEditSleep,
-              foldRecords: true,
-            ),
-            const SizedBox(height: 20),
             ExpansionTile(
               key: const ValueKey('summary-rhythm-details'),
               tilePadding: EdgeInsets.zero,
@@ -104,6 +110,18 @@ class HomeSummaryTab extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            const _SectionLabel('睡眠背景'),
+            const SizedBox(height: 8),
+            SleepSummaryView(
+              summary: view.sleepSummary,
+              onEdit: onEditSleep,
+              foldRecords: true,
+            ),
+            if (footer case final footer?) ...[
+              const SizedBox(height: 18),
+              Align(alignment: Alignment.centerLeft, child: footer),
+            ],
           ] else if (controller.status == DayLedgerStatus.empty)
             const Text('此账本窗口及醒来日期尚无正式记录。'),
         ],
@@ -207,4 +225,18 @@ const _sectionStyle = TextStyle(
   fontSize: 18,
   fontWeight: FontWeight.w600,
   color: HomePalette.ink,
+);
+
+const _sectionSubStyle = TextStyle(
+  fontFamily: homeSerifFamily,
+  fontSize: 13,
+  height: 1.5,
+  color: HomePalette.muted,
+);
+
+const _captionStyle = TextStyle(
+  fontFamily: homeSerifFamily,
+  fontSize: 12,
+  height: 1.5,
+  color: HomePalette.muted,
 );

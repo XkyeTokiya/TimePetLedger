@@ -76,6 +76,7 @@ final class RecordingDraft {
     this.recoveryMethodProvided = false,
     this.recoveryQuality,
     this.recoveryQualityProvided = false,
+    this.presentationStep = 0,
   });
 
   final RecordingDraftContext context;
@@ -113,6 +114,9 @@ final class RecordingDraft {
   final bool recoveryMethodProvided;
   final RecoveryQuality? recoveryQuality;
   final bool recoveryQualityProvided;
+
+  /// 仅用于当前会话恢复活动问答位置，不属于任何正式领域状态。
+  final int presentationStep;
 }
 
 /// 仅普通输入的独立本机存储；不查询或写入正式事实，不校验重叠。

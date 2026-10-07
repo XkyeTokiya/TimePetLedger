@@ -56,7 +56,7 @@ class _ActivityPreviewState extends State<ActivityPreview> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        saved! ? '活动已保存到当前预览' : '草稿已保留',
+                        saved! ? '活动已保存到当前预览' : '本次填写已保留',
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 16),

@@ -342,14 +342,14 @@ class _FactDetailPageState extends State<FactDetailPage> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('上次的修改还没保存。', style: _noteStyle),
+        const Text('这条记录还有未完成的修改。', style: _noteStyle),
         if (widget.onDiscardDraft != null)
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
               key: const ValueKey('fact-detail-discard-draft'),
               onPressed: widget.onDiscardDraft,
-              child: const Text('放弃这份草稿'),
+              child: const Text('清除未完成修改'),
             ),
           ),
       ],

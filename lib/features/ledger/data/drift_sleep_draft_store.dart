@@ -126,33 +126,30 @@ ON CONFLICT(context_key) DO UPDATE SET
       });
 
   @override
-  Future<void> completeSleepDraft({
-    required SleepDraftContext context,
-    SleepPredictionFeedback? feedback,
-  }) => _run(
+  Future<void> saveSleepFeedback(SleepPredictionFeedback feedback) => _run(
     SleepDraftOperation.clear,
     () => _database.transaction(() async {
-      if (feedback != null) {
-        await _database.customStatement(
-          'INSERT INTO sleep_learning_feedback (sleep_id,payload) VALUES (?,?) '
-          'ON CONFLICT(sleep_id) DO UPDATE SET payload=excluded.payload',
-          [
-            feedback.sleepId,
-            jsonEncode({
-              'origin': _encodeOrigin(feedback.origin),
-              'startedAt': feedback.startedAt,
-              'endedAt': feedback.endedAt,
-              'startOffsetMinutes': feedback.startOffsetMinutes,
-              'endOffsetMinutes': feedback.endOffsetMinutes,
-            }),
-          ],
-        );
-      }
       await _database.customStatement(
-        'DELETE FROM sleep_drafts WHERE context_key = ?',
-        [_key(context)],
+        'INSERT INTO sleep_learning_feedback (sleep_id,payload) VALUES (?,?) '
+        'ON CONFLICT(sleep_id) DO UPDATE SET payload=excluded.payload',
+        [
+          feedback.sleepId,
+          jsonEncode({
+            'origin': _encodeOrigin(feedback.origin),
+            'startedAt': feedback.startedAt,
+            'endedAt': feedback.endedAt,
+            'startOffsetMinutes': feedback.startOffsetMinutes,
+            'endOffsetMinutes': feedback.endOffsetMinutes,
+          }),
+        ],
       );
     }),
+  );
+
+  /// 升级到会话内输入恢复时，仅删除旧输入，保留睡眠学习证据。
+  Future<void> clearDraftsOnly() => _run(
+    SleepDraftOperation.clear,
+    () => _database.customStatement('DELETE FROM sleep_drafts'),
   );
 
   @override

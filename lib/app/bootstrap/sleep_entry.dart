@@ -6,18 +6,16 @@ import '../../features/ledger/application/sleep_entry_saver.dart';
 import '../../features/ledger/application/sleep_entry_editor.dart';
 import '../../features/ledger/application/recording_time_suggestion.dart';
 import '../../features/ledger/application/sleep_time_prediction_loader.dart';
-import '../../features/ledger/data/drift_sleep_draft_store.dart';
 import '../../features/ledger/domain/sleep_draft_store.dart';
 import '../../features/ledger/presentation/sleep/sleep_recording_page.dart';
 import '../../features/ledger/presentation/sleep_form_controller.dart';
 
-/// App-owned route lifetime: open a dedicated store, drain writes, then close.
-/// The presentation form receives only its controller, never a database opener.
+/// 使用 app 生命周期持有的会话输入存储；页面退出后仍可在同一会话恢复。
 class SleepEntry extends StatefulWidget {
   const SleepEntry({
     super.key,
     required this.context,
-    required this.openStore,
+    required this.store,
     this.createSaver,
     this.createEditor,
     this.loadSuggestion,
@@ -25,9 +23,8 @@ class SleepEntry extends StatefulWidget {
   });
   final SleepDraftContext context;
   final Future<RecordingTimeSuggestion> Function()? loadSuggestion;
-  final Future<SleepTimePredictions> Function(DriftSleepDraftStore store)?
-  loadPredictions;
-  final Future<DriftSleepDraftStore> Function() openStore;
+  final Future<SleepTimePredictions> Function()? loadPredictions;
+  final SleepDraftStore store;
   final SleepEntrySaver Function(SleepDraftStore)? createSaver;
   final SleepEntryEditor Function(SleepEntrySaver)? createEditor;
   @override
@@ -35,7 +32,6 @@ class SleepEntry extends StatefulWidget {
 }
 
 class _SleepEntryState extends State<SleepEntry> {
-  DriftSleepDraftStore? _store;
   SleepFormController? _controller;
   String? _error;
   bool _opening = false;
@@ -53,30 +49,21 @@ class _SleepEntryState extends State<SleepEntry> {
       _error = null;
     });
     try {
-      final store = await widget.openStore();
+      final store = widget.store;
       if (!mounted) {
-        await store.close();
         return;
       }
-      try {
-        final saver = widget.createSaver?.call(store);
-        _controller = SleepFormController(
-          context: widget.context,
-          store: store,
-          loadSuggestion: widget.loadSuggestion,
-          loadPredictions: widget.loadPredictions == null
-              ? null
-              : () => widget.loadPredictions!(store),
-          entrySaver: saver,
-          entryEditor: saver == null ? null : widget.createEditor?.call(saver),
-        );
-        _store = store;
-      } catch (_) {
-        await store.close();
-        rethrow;
-      }
+      final saver = widget.createSaver?.call(store);
+      _controller = SleepFormController(
+        context: widget.context,
+        store: store,
+        loadSuggestion: widget.loadSuggestion,
+        loadPredictions: widget.loadPredictions,
+        entrySaver: saver,
+        entryEditor: saver == null ? null : widget.createEditor?.call(saver),
+      );
     } catch (_) {
-      if (mounted) _error = '无法打开睡眠草稿，请重试。';
+      if (mounted) _error = '无法打开睡眠填写，请重试。';
     } finally {
       if (mounted) setState(() => _opening = false);
     }
@@ -85,20 +72,18 @@ class _SleepEntryState extends State<SleepEntry> {
   @override
   void dispose() {
     final controller = _controller;
-    final store = _store;
     controller?.dispose();
-    if (store != null) {
+    if (controller != null) {
       unawaited(() async {
         try {
-          await controller?.flush();
-          await store.close();
+          await controller.flush();
         } catch (error, stack) {
           FlutterError.reportError(
             FlutterErrorDetails(
               exception: error,
               stack: stack,
               library: 'sleep entry',
-              context: ErrorDescription('while closing sleep drafts'),
+              context: ErrorDescription('while retaining sleep input'),
             ),
           );
         }

@@ -179,7 +179,7 @@ class _GuidedRecordingPageState extends State<GuidedRecordingPage> {
       context: context,
       builder: (context) => AlertDialog(
         scrollable: true,
-        title: const Text('放弃这份草稿？'),
+        title: const Text('重新填写？'),
         content: const Text('未保存的内容将被清除。'),
         actions: [
           TextButton(
@@ -188,7 +188,7 @@ class _GuidedRecordingPageState extends State<GuidedRecordingPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('放弃草稿'),
+            child: const Text('重新填写'),
           ),
         ],
       ),
@@ -483,7 +483,7 @@ class _GuidedRecordingPageState extends State<GuidedRecordingPage> {
           model.storageError!,
           action: TextButton(
             onPressed: model.editable ? model.retrySave : null,
-            child: const Text('重试保留草稿'),
+            child: const Text('重试保留本次填写'),
           ),
         ),
       if (model.submitError != null) message(model.submitError!),
@@ -495,7 +495,7 @@ class _GuidedRecordingPageState extends State<GuidedRecordingPage> {
         message(
           model.committed!.complete
               ? '已保存记录。'
-              : '记录已经保存。${model.committed!.draftCleared ? '' : '草稿清理未完成。'}${model.committed!.refreshed == null ? '账本刷新未完成。' : ''}重试只会完成收尾。',
+              : '记录已经保存。${model.committed!.refreshed == null ? '账本刷新未完成。' : ''}重试只会完成收尾。',
         ),
     ],
   );
@@ -561,7 +561,7 @@ class _GuidedRecordingPageState extends State<GuidedRecordingPage> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: model.submitting ? null : leave,
-          tooltip: '保留草稿并退出',
+          tooltip: '返回',
           icon: const Icon(Icons.close),
         ),
         title: const Text('记录活动'),
@@ -573,7 +573,7 @@ class _GuidedRecordingPageState extends State<GuidedRecordingPage> {
               PopupMenuItem(
                 value: 'discard',
                 enabled: model.editable || model.missingOriginal,
-                child: const Text('放弃草稿'),
+                child: const Text('重新填写'),
               ),
             ],
           ),
@@ -592,7 +592,7 @@ class _GuidedRecordingPageState extends State<GuidedRecordingPage> {
                     child: const Text('重试读取'),
                   ),
                 if (model.missingOriginal)
-                  TextButton(onPressed: discard, child: const Text('清理失效草稿')),
+                  TextButton(onPressed: discard, child: const Text('清空未完成修改')),
                 if (model.storageError != null) Text(model.storageError!),
               ],
             )

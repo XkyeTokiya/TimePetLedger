@@ -9,13 +9,13 @@ import '../sleep_form_controller.dart';
 import '../sleep_time_input.dart';
 import '../summary_formatting.dart';
 
-/// 睡眠记录页：单页问答式编辑，复用既有 [SleepFormController] 的草稿、校验、
+/// 睡眠记录页：单页问答式编辑，复用既有 [SleepFormController] 的输入、校验、
 /// 提交、更正、删除与失败重试合同；不承载日账本或详情等其它事实视图。
 ///
 /// 版式按第一轮睡眠原型（assets/sleep-recording-round-one）：主问题、类型分段、
 /// 两端「日期在左 / 时间在右」、时长、红色备注链接与单个主动作。
 ///
-/// 按 Q-030，回顾式输入两端统一 approximate，不提供精度选择；仅当草稿带着旧
+/// 按 Q-030，回顾式输入两端统一 approximate，不提供精度选择；仅当输入带着旧
 /// 精度时才原样保留，不在本页改写历史事实。
 class SleepRecordingPage extends StatefulWidget {
   const SleepRecordingPage({super.key, required this.controller});
@@ -35,6 +35,7 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
   bool allowPop = false;
   bool exiting = false;
   bool noteOpen = false;
+  bool recoveryPromptShown = false;
 
   bool get _editing => model.context.isEditing;
 
@@ -55,6 +56,10 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
   void _changed() {
     if (note.text != model.note) note.text = model.note;
     if (mounted) setState(() {});
+    if (model.pendingRecovery != null && !recoveryPromptShown) {
+      recoveryPromptShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _chooseRecovery());
+    }
   }
 
   @override
@@ -191,18 +196,22 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
     final success = discard ? await model.discard() : await model.flush();
     if (!mounted) return;
     if (!success) {
-      setState(() => exiting = false);
-      return;
+      final leaveAnyway = await _confirmLeaveWithoutRecovery();
+      if (!mounted) return;
+      if (!leaveAnyway) {
+        setState(() => exiting = false);
+        return;
+      }
     }
     await _close(null);
   }
 
-  Future<void> _discard() async {
+  Future<void> _restart() async {
     final yes = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('放弃这次睡眠？'),
-        content: const Text('未保存的内容将被清除。'),
+        title: Text(_editing ? '重新编辑睡眠？' : '重新填写睡眠？'),
+        content: const Text('本次尚未正式保存的修改将被清除。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -210,13 +219,61 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('放弃草稿'),
+            child: Text(_editing ? '重新编辑' : '重新填写'),
           ),
         ],
       ),
     );
-    if (yes == true && mounted) await _leave(discard: true);
+    if (yes == true && mounted) await model.restartInput();
   }
+
+  Future<void> _chooseRecovery() async {
+    if (!mounted || model.pendingRecovery == null) return;
+    final resume = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(_editing ? '继续上次修改？' : '继续上次填写？'),
+        content: const Text('这个入口还有本次使用期间未完成的内容。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(_editing ? '重新编辑' : '重新填写'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('继续填写'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (resume == true) {
+      await model.resumePendingInput();
+    } else {
+      await model.restartInput();
+    }
+  }
+
+  Future<bool> _confirmLeaveWithoutRecovery() async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('本次填写暂时无法保留'),
+          content: const Text('仍然离开可能丢失最近的修改。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('继续填写'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('仍然离开'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
 
   @override
   Widget build(BuildContext context) => Theme(
@@ -247,10 +304,6 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
                         controller: scroll,
                         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                         children: [
-                          if (model.restored) ...[
-                            const Text('上次没写完，接着记吧。', style: _restored),
-                            const SizedBox(height: 12),
-                          ],
                           if (model.storageError != null) ...[
                             _notice(model.storageError!, error: true),
                             Align(
@@ -259,7 +312,7 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
                                 onPressed: model.editable
                                     ? model.retrySave
                                     : null,
-                                child: const Text('重试保存草稿'),
+                                child: const Text('重试保留本次填写'),
                               ),
                             ),
                             const SizedBox(height: 12),
@@ -323,10 +376,7 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
     children: [
       Text(model.loadError!, style: const TextStyle(color: HomePalette.error)),
       if (model.missingOriginal)
-        TextButton(
-          onPressed: () => _leave(discard: true),
-          child: const Text('放弃草稿'),
-        )
+        TextButton(onPressed: model.restartInput, child: const Text('清除未完成输入'))
       else
         FilledButton(onPressed: _initialize, child: const Text('重试读取')),
       if (model.storageError != null) ...[
@@ -663,9 +713,9 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
               Row(
                 children: [
                   TextButton(
-                    key: const ValueKey('sleep-discard'),
-                    onPressed: exiting ? null : _discard,
-                    child: const Text('放弃草稿'),
+                    key: const ValueKey('sleep-restart'),
+                    onPressed: exiting ? null : _restart,
+                    child: Text(_editing ? '重新编辑' : '重新填写'),
                   ),
                   const Spacer(),
                   if (_editing && model.entryEditor != null)
@@ -786,10 +836,5 @@ const _error = TextStyle(
   fontFamily: homeSerifFamily,
   fontSize: 14,
   color: HomePalette.error,
-);
-const _restored = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 13,
-  color: HomePalette.muted,
 );
 const _segmentSlide = Duration(milliseconds: 200);

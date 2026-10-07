@@ -65,6 +65,9 @@ class RecordingFormController extends ChangeNotifier {
   List<RecordingTimeInput> candidates = const [];
   bool loading = true;
   bool restored = false;
+  RecordingDraft? pendingRecovery;
+  RecordingDraft? _baseline;
+  int presentationStep = 0;
   bool saving = false;
   bool discarding = false;
   bool submitting = false;
@@ -86,7 +89,6 @@ class RecordingFormController extends ChangeNotifier {
   Future<void> initialize() async {
     if (_initialized || _initializing || _disposed) return;
     _initializing = true;
-    var initializedTime = false;
     loading = true;
     loadError = null;
     missingOriginal = false;
@@ -98,6 +100,7 @@ class RecordingFormController extends ChangeNotifier {
         if (source == null) {
           missingOriginal = true;
           loadError = '记录已不存在，无法更正。';
+          await store.clear(context);
           return;
         }
         original = source.timeBlock;
@@ -106,55 +109,6 @@ class RecordingFormController extends ChangeNotifier {
       final saved = await store.read(context);
       if (_disposed) return;
       if (saved != null) {
-        title = saved.title ?? '';
-        goalProvided = saved.goalProvided;
-        _selectedGoalId = saved.goalId;
-        annotationIntent = saved.annotationIntent;
-        annotationId = saved.annotationId;
-        rhythmState = saved.annotationIntent == RecordingAnnotationIntent.keep
-            ? originalAnnotation?.state
-            : saved.rhythmState;
-        hintProvided = saved.hintProvided;
-        stuckReasonCodeProvided = saved.stuckReasonCodeProvided;
-        stuckReasonCode =
-            saved.stuckReasonCodeProvided ||
-                saved.annotationIntent == RecordingAnnotationIntent.add
-            ? saved.stuckReasonCode
-            : originalAnnotation?.stuckReasonCode;
-        stuckReasonTextProvided = saved.stuckReasonTextProvided;
-        stuckReasonText =
-            saved.stuckReasonTextProvided ||
-                saved.annotationIntent == RecordingAnnotationIntent.add
-            ? saved.stuckReasonText ?? ''
-            : originalAnnotation?.stuckReasonText ?? '';
-        recoveryMethodProvided = saved.recoveryMethodProvided;
-        recoveryMethod =
-            saved.recoveryMethodProvided ||
-                saved.annotationIntent == RecordingAnnotationIntent.add
-            ? saved.recoveryMethod
-            : originalAnnotation?.recoveryMethod;
-        recoveryQualityProvided = saved.recoveryQualityProvided;
-        recoveryQuality =
-            saved.recoveryQualityProvided ||
-                saved.annotationIntent == RecordingAnnotationIntent.add
-            ? saved.recoveryQuality
-            : originalAnnotation?.recoveryQuality;
-
-        continuationHint =
-            saved.hintProvided ||
-                saved.annotationIntent == RecordingAnnotationIntent.add ||
-                saved.annotationIntent == RecordingAnnotationIntent.remove
-            ? saved.continuationHint ?? ''
-            : originalAnnotation?.continuationHint ?? '';
-        note = saved.noteProvided ? saved.note ?? '' : original?.note ?? '';
-        knowledgeState = saved.knowledgeState;
-        time = RecordingTimeInput(
-          startedAt: saved.startedAt,
-          endedAt: saved.endedAt,
-          startPrecision: saved.startPrecision,
-          endPrecision: saved.endPrecision,
-        );
-        restored = true;
         if (context.entry == RecordingDraftEntry.edit && entryEditor != null) {
           committed = await entryEditor!.recoverCommittedEdit(
             draft: saved,
@@ -166,7 +120,8 @@ class RecordingFormController extends ChangeNotifier {
           committed = await entrySaver!.recoverCommittedDraft(saved);
           if (_disposed) return;
         }
-      } else if (context.entry == RecordingDraftEntry.edit) {
+      }
+      if (context.entry == RecordingDraftEntry.edit) {
         goalProvided = false;
         _selectedGoalId = null;
         annotationIntent = RecordingAnnotationIntent.keep;
@@ -199,30 +154,24 @@ class RecordingFormController extends ChangeNotifier {
         switch (suggestion) {
           case DirectTimeSuggestion(:final input):
             time = input;
-            initializedTime = true;
           case TimeCandidates(:final candidates):
             this.candidates = candidates;
           case ManualTimeEntry():
             // 新建不恢复旧端点；全开区间由用户在本次编辑中填写。
             time = const RecordingTimeInput();
-            initializedTime = restored;
         }
       }
       if (!_disposed && goals != null) await loadGoals();
+      _baseline = _draft;
+      if (saved != null && committed == null) pendingRecovery = saved;
       _initialized = true;
     } catch (_) {
-      loadError = '无法读取草稿、时间建议或账本，请重试。';
+      loadError = '无法读取未完成输入、时间建议或账本，请重试。';
     } finally {
       _initializing = false;
       loading = false;
       _emit();
-      if (!_disposed &&
-          loadError == null &&
-          initializedTime &&
-          committed == null &&
-          context.entry != RecordingDraftEntry.edit) {
-        _persist();
-      }
+      // 系统生成的时间初值不是用户修改，不创建恢复快照。
     }
   }
 
@@ -233,6 +182,85 @@ class RecordingFormController extends ChangeNotifier {
       !submitting &&
       !missingOriginal &&
       committed == null;
+
+  bool get hasUserChanges =>
+      _baseline != null && !_sameRecordingDraft(_draft, _baseline!);
+
+  Future<void> resumePendingInput() async {
+    final saved = pendingRecovery;
+    if (saved == null || !editable) return;
+    _applySaved(saved, restoreTime: context.entry == RecordingDraftEntry.edit);
+    pendingRecovery = null;
+    restored = true;
+    _emit();
+    _persist();
+  }
+
+  Future<void> restartInput() async {
+    if (pendingRecovery == null && !hasUserChanges) return;
+    await _writes;
+    try {
+      await store.clear(context);
+    } catch (_) {
+      storageError = '暂时无法清空本次填写，请重试。';
+      _emit();
+      return;
+    }
+    final baseline = _baseline;
+    if (baseline != null) _applySaved(baseline, restoreTime: true);
+    pendingRecovery = null;
+    restored = false;
+    storageError = null;
+    _emit();
+  }
+
+  void setPresentationStep(int value) {
+    if (!editable || value == presentationStep) return;
+    presentationStep = value.clamp(0, 3);
+    _persist();
+  }
+
+  void _applySaved(RecordingDraft saved, {required bool restoreTime}) {
+    title = saved.title ?? '';
+    goalProvided = saved.goalProvided;
+    _selectedGoalId = saved.goalId;
+    annotationIntent = saved.annotationIntent;
+    annotationId = saved.annotationId;
+    rhythmState = saved.annotationIntent == RecordingAnnotationIntent.keep
+        ? originalAnnotation?.state
+        : saved.rhythmState;
+    hintProvided = saved.hintProvided;
+    stuckReasonCodeProvided = saved.stuckReasonCodeProvided;
+    stuckReasonCode = saved.stuckReasonCodeProvided
+        ? saved.stuckReasonCode
+        : originalAnnotation?.stuckReasonCode;
+    stuckReasonTextProvided = saved.stuckReasonTextProvided;
+    stuckReasonText = saved.stuckReasonTextProvided
+        ? saved.stuckReasonText ?? ''
+        : originalAnnotation?.stuckReasonText ?? '';
+    recoveryMethodProvided = saved.recoveryMethodProvided;
+    recoveryMethod = saved.recoveryMethodProvided
+        ? saved.recoveryMethod
+        : originalAnnotation?.recoveryMethod;
+    recoveryQualityProvided = saved.recoveryQualityProvided;
+    recoveryQuality = saved.recoveryQualityProvided
+        ? saved.recoveryQuality
+        : originalAnnotation?.recoveryQuality;
+    continuationHint = saved.hintProvided
+        ? saved.continuationHint ?? ''
+        : originalAnnotation?.continuationHint ?? '';
+    note = saved.noteProvided ? saved.note ?? '' : original?.note ?? '';
+    knowledgeState = saved.knowledgeState;
+    if (restoreTime) {
+      time = RecordingTimeInput(
+        startedAt: saved.startedAt,
+        endedAt: saved.endedAt,
+        startPrecision: saved.startPrecision,
+        endPrecision: saved.endPrecision,
+      );
+    }
+    presentationStep = saved.presentationStep.clamp(0, 3);
+  }
 
   /// Metadata reads never replace activity, times or draft association intent.
   /// A failed list is distinct from an empty active list.
@@ -477,22 +505,30 @@ class RecordingFormController extends ChangeNotifier {
     startPrecision: time.startPrecision,
     endPrecision: time.endPrecision,
     knowledgeState: knowledgeState,
+    presentationStep: presentationStep,
   );
 
   void _persist() {
     submitError = null;
     conflicts = const [];
     final draft = _draft;
+    final baseline = _baseline;
     final revision = ++_revision;
     saving = true;
     storageError = null;
     _emit();
     _writes = _writes.then((_) async {
       try {
-        await store.save(draft);
+        if (baseline != null && _sameRecordingDraft(draft, baseline)) {
+          await store.clear(context);
+        } else {
+          await store.save(draft);
+        }
         if (revision == _revision) storageError = null;
       } catch (_) {
-        if (revision == _revision) storageError = '草稿保存失败，输入仍在此页，请重试。';
+        if (revision == _revision) {
+          storageError = '暂时无法保留本次填写，输入仍在此页，请重试。';
+        }
       } finally {
         if (revision == _revision) saving = false;
         _emit();
@@ -518,7 +554,7 @@ class RecordingFormController extends ChangeNotifier {
     _emit();
     try {
       if (!await flush()) {
-        submitError = '草稿尚未保留成功，请先重试保存草稿。';
+        submitError = '本次填写尚未保留成功，请重试。';
         return null;
       }
       final result = context.entry == RecordingDraftEntry.edit
@@ -532,13 +568,13 @@ class RecordingFormController extends ChangeNotifier {
         ):
           this.conflicts = conflicts;
           submitError = notFound
-              ? '记录已不存在，无法更正；输入和草稿已保留。'
+              ? '记录已不存在，无法更正；当前输入仍保留。'
               : annotationFailure == AnnotationOperationFailure.alreadyExists
-              ? '此记录已有节奏解释，请重新打开后编辑；输入和草稿已保留。'
+              ? '此记录已有节奏解释，请重新打开后编辑；当前输入仍保留。'
               : annotationFailure == AnnotationOperationFailure.notFound
-              ? '节奏解释已不存在，请重新打开后添加；输入和草稿已保留。'
+              ? '节奏解释已不存在，请重新打开后添加；当前输入仍保留。'
               : conflicts.isEmpty
-              ? '正式保存失败，输入和草稿已保留，请重试。'
+              ? '正式保存失败，当前输入仍保留，请重试。'
               : '时间与已有记录冲突，请手动调整后再保存。';
           return null;
         case RecordingSubmitCommitted():
@@ -604,7 +640,7 @@ class RecordingFormController extends ChangeNotifier {
       storageError = null;
       return true;
     } catch (_) {
-      storageError = '无法放弃草稿，输入已保留，请重试。';
+      storageError = '暂时无法清空本次填写，请重试。';
       return false;
     } finally {
       discarding = false;
@@ -618,3 +654,29 @@ class RecordingFormController extends ChangeNotifier {
     super.dispose();
   }
 }
+
+bool _sameRecordingDraft(RecordingDraft a, RecordingDraft b) =>
+    a.title == b.title &&
+    a.startedAt == b.startedAt &&
+    a.endedAt == b.endedAt &&
+    a.startPrecision == b.startPrecision &&
+    a.endPrecision == b.endPrecision &&
+    a.knowledgeState == b.knowledgeState &&
+    a.note == b.note &&
+    a.noteProvided == b.noteProvided &&
+    a.goalId == b.goalId &&
+    a.goalProvided == b.goalProvided &&
+    a.annotationIntent == b.annotationIntent &&
+    a.annotationId == b.annotationId &&
+    a.rhythmState == b.rhythmState &&
+    a.continuationHint == b.continuationHint &&
+    a.hintProvided == b.hintProvided &&
+    a.stuckReasonCode == b.stuckReasonCode &&
+    a.stuckReasonCodeProvided == b.stuckReasonCodeProvided &&
+    a.stuckReasonText == b.stuckReasonText &&
+    a.stuckReasonTextProvided == b.stuckReasonTextProvided &&
+    a.recoveryMethod == b.recoveryMethod &&
+    a.recoveryMethodProvided == b.recoveryMethodProvided &&
+    a.recoveryQuality == b.recoveryQuality &&
+    a.recoveryQualityProvided == b.recoveryQualityProvided &&
+    a.presentationStep == b.presentationStep;

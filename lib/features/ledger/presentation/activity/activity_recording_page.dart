@@ -17,7 +17,7 @@ import '../recording_time_picker.dart';
 
 /// 活动记录页：节奏 → 适用子选项 → 事项 → 时间。
 ///
-/// 独立的新页面，只复用既有 [RecordingFormController] 的草稿、校验、提交、
+/// 独立的新页面，只复用既有 [RecordingFormController] 的输入、校验、提交、
 /// 更正与失败重试合同；不依赖盒子里的旧 RecordingForm / GuidedRecordingPage。
 class ActivityRecordingPage extends StatefulWidget {
   const ActivityRecordingPage({super.key, required this.model});
@@ -38,6 +38,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
   bool showErrors = false;
   bool allowPop = false;
   bool exiting = false;
+  bool recoveryPromptShown = false;
 
   bool get _hasChildren =>
       model.rhythmState == RhythmState.stuck ||
@@ -57,6 +58,10 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
       reason.text = model.stuckReasonText;
     }
     if (mounted) setState(() {});
+    if (model.pendingRecovery != null && !recoveryPromptShown) {
+      recoveryPromptShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _chooseRecovery());
+    }
   }
 
   @override
@@ -74,6 +79,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
       step = value;
       showErrors = false;
     });
+    model.setPresentationStep(value);
     if (scroll.hasClients) scroll.jumpTo(0);
   }
 
@@ -193,18 +199,22 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
     final okay = discard ? await model.discard() : await model.flush();
     if (!mounted) return;
     if (!okay) {
-      setState(() => exiting = false);
-      return;
+      final leaveAnyway = await _confirmLeaveWithoutRecovery();
+      if (!mounted) return;
+      if (!leaveAnyway) {
+        setState(() => exiting = false);
+        return;
+      }
     }
     await _close(null);
   }
 
-  Future<void> _discard() async {
+  Future<void> _restart() async {
     final yes = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('放弃这份草稿？'),
-        content: const Text('未保存的内容将被清除。'),
+        title: Text(_editing ? '重新编辑？' : '重新填写？'),
+        content: const Text('本次尚未正式保存的修改将被清除。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -212,13 +222,65 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('放弃草稿'),
+            child: Text(_editing ? '重新编辑' : '重新填写'),
           ),
         ],
       ),
     );
-    if (yes == true && mounted) await _leave(discard: true);
+    if (yes == true && mounted) {
+      await model.restartInput();
+      if (mounted) setState(() => step = model.presentationStep);
+    }
   }
+
+  Future<void> _chooseRecovery() async {
+    if (!mounted || model.pendingRecovery == null) return;
+    final resume = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(_editing ? '继续上次修改？' : '继续上次填写？'),
+        content: const Text('这个入口还有本次使用期间未完成的内容。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(_editing ? '重新编辑' : '重新填写'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('继续填写'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (resume == true) {
+      await model.resumePendingInput();
+    } else {
+      await model.restartInput();
+    }
+    if (mounted) setState(() => step = model.presentationStep);
+  }
+
+  Future<bool> _confirmLeaveWithoutRecovery() async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('本次填写暂时无法保留'),
+          content: const Text('仍然离开可能丢失最近的修改。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('继续填写'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('仍然离开'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
 
   @override
   Widget build(BuildContext context) => Theme(
@@ -248,10 +310,6 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
                       padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                       children: [
                         _goalBar(),
-                        if (model.restored) ...[
-                          const SizedBox(height: 12),
-                          const Text('已恢复上次输入', style: _restored),
-                        ],
                         if (model.storageError != null) ...[
                           const SizedBox(height: 12),
                           _notice(model.storageError!, error: true),
@@ -261,7 +319,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
                               onPressed: model.editable
                                   ? model.retrySave
                                   : null,
-                              child: const Text('重试保留草稿'),
+                              child: const Text('重试保留本次填写'),
                             ),
                           ),
                         ],
@@ -304,7 +362,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
     children: [
       Text(model.loadError!, style: const TextStyle(color: HomePalette.error)),
       if (model.missingOriginal)
-        TextButton(onPressed: _discard, child: const Text('清理失效草稿'))
+        TextButton(onPressed: model.restartInput, child: const Text('清除未完成输入'))
       else
         FilledButton(onPressed: model.initialize, child: const Text('重试读取')),
       if (model.storageError != null) ...[
@@ -322,7 +380,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
     }
     return _notice(
       '${_editing ? '更正已保存到账本' : '已正式保存到账本'}，请不要再次提交。'
-      '${committed.draftCleared ? '' : '草稿清理失败，旧草稿仍可能显示；请重试清理。'}'
+      '${committed.draftCleared ? '' : '本地收尾未完成；请重试。'}'
       '${committed.refreshed == null ? '账本刷新失败，记录已保存；请重试刷新。' : ''}',
       success: true,
     );
@@ -914,9 +972,9 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton(
-                  key: const ValueKey('activity-discard'),
-                  onPressed: exiting ? null : _discard,
-                  child: const Text('放弃草稿'),
+                  key: const ValueKey('activity-restart'),
+                  onPressed: exiting ? null : _restart,
+                  child: Text(_editing ? '重新编辑' : '重新填写'),
                 ),
               ),
               const SizedBox(height: 4),
@@ -1048,10 +1106,5 @@ const _fieldLabel = TextStyle(
   fontFamily: homeSerifFamily,
   fontSize: 15,
   color: HomePalette.ink,
-);
-const _restored = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 13,
-  color: HomePalette.muted,
 );
 const _segmentSlide = Duration(milliseconds: 200);

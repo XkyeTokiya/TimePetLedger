@@ -62,6 +62,7 @@ class _SleepFormState extends State<SleepForm> {
   }
 
   void _changed() {
+    if (note.text != model.note) note.text = model.note;
     if (mounted) setState(() {});
   }
 
@@ -112,6 +113,32 @@ class _SleepFormState extends State<SleepForm> {
     if (mounted) Navigator.of(context).pop(result);
   }
 
+  Future<void> _restart() async {
+    if (!model.editable) return;
+    final editing = model.context.isEditing;
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(editing ? '重新编辑睡眠？' : '重新填写睡眠？'),
+        content: const Text('本次尚未正式保存的修改将被清除。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('继续填写'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(editing ? '重新编辑' : '重新填写'),
+          ),
+        ],
+      ),
+    );
+    if (yes == true && mounted) {
+      await model.restartInput();
+      if (mounted) setState(() {});
+    }
+  }
+
   Future<void> _submit({bool finish = false}) async {
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() => showErrors = true);
@@ -138,8 +165,8 @@ class _SleepFormState extends State<SleepForm> {
             onSelected: (value) {
               if (value == '删除睡眠') {
                 _delete();
-              } else if (value == '放弃草稿') {
-                _leave(discard: true);
+              } else if (value == '重新填写') {
+                _restart();
               } else {
                 _leave();
               }
@@ -147,14 +174,14 @@ class _SleepFormState extends State<SleepForm> {
             itemBuilder: (_) => [
               PopupMenuItem(
                 enabled: !exiting && !model.submitting,
-                value: '保留草稿并返回',
-                child: const Text('保留草稿并返回'),
+                value: '返回',
+                child: const Text('返回'),
               ),
               if (!model.postCommit)
                 PopupMenuItem(
                   enabled: model.editable,
-                  value: '放弃草稿',
-                  child: const Text('放弃草稿'),
+                  value: '重新填写',
+                  child: const Text('重新填写'),
                 ),
               if (model.context.isEditing &&
                   model.entryEditor != null &&
@@ -179,7 +206,7 @@ class _SleepFormState extends State<SleepForm> {
                   TextButton(onPressed: _initialize, child: const Text('重试读取')),
                   TextButton(
                     onPressed: () => _leave(discard: true),
-                    child: const Text('放弃草稿'),
+                    child: const Text('清空本次填写'),
                   ),
                   if (model.storageError != null) Text(model.storageError!),
                 ],
@@ -191,7 +218,7 @@ class _SleepFormState extends State<SleepForm> {
                 status: model.postCommit
                     ? '已保存'
                     : model.storageError != null
-                    ? '草稿未保留'
+                    ? '本次填写未保留'
                     : model.saving
                     ? '正在保留…'
                     : model.context.isEditing
@@ -324,7 +351,7 @@ class _SleepFormState extends State<SleepForm> {
                     Text(model.storageError!),
                     TextButton(
                       onPressed: model.retrySave,
-                      child: const Text('重试保存草稿'),
+                      child: const Text('重试保留本次填写'),
                     ),
                   ],
                 ],

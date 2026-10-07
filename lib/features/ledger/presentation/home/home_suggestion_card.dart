@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/theme/home_theme.dart';
 import '../../application/home_suggestion.dart';
+import 'home_value_transition.dart';
 
 /// 首页建议区域：随情境给出当前最该做的一件事，或普通问候（Q-028 / Q-029）。
 ///
@@ -22,53 +23,65 @@ class HomeSuggestionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final action = suggestion.action;
     return Material(
-      key: ValueKey('home-suggestion-${suggestion.kind.name}'),
+      key: const ValueKey('home-suggestion-card'),
       color: HomePalette.tint,
       borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: action == null ? null : onAction,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Icon(
-                _iconFor(suggestion.kind),
-                size: 26,
-                color: HomePalette.accent,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  suggestion.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontFamily: homeSerifFamily,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: HomePalette.ink,
-                  ),
+      child: AnimatedSize(
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 160),
+        alignment: Alignment.bottomCenter,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: action == null ? null : onAction,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 12, 14),
+            child: HomeValueTransition(
+              value: (suggestion.kind, suggestion.title, action),
+              child: KeyedSubtree(
+                key: ValueKey('home-suggestion-${suggestion.kind.name}'),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _iconFor(suggestion.kind),
+                      size: 26,
+                      color: HomePalette.accent,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        suggestion.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: homeSerifFamily,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: HomePalette.ink,
+                        ),
+                      ),
+                    ),
+                    if (action != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        action,
+                        style: const TextStyle(
+                          fontFamily: homeSerifFamily,
+                          fontSize: 14,
+                          color: HomePalette.accentDeep,
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right,
+                        size: 18,
+                        color: HomePalette.accentDeep,
+                      ),
+                    ],
+                  ],
                 ),
               ),
-              if (action != null) ...[
-                const SizedBox(width: 8),
-                Text(
-                  action,
-                  style: const TextStyle(
-                    fontFamily: homeSerifFamily,
-                    fontSize: 14,
-                    color: HomePalette.accentDeep,
-                  ),
-                ),
-                const Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: HomePalette.accentDeep,
-                ),
-              ],
-            ],
+            ),
           ),
         ),
       ),

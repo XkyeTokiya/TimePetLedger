@@ -71,6 +71,8 @@ final class ReviewFormController extends ChangeNotifier {
   List<Goal> activeGoals = const [];
   bool loading = true;
   bool restored = false;
+  ReviewDraft? pendingRecovery;
+  ReviewDraft? _baseline;
   bool saving = false;
   bool discarding = false;
   bool leaving = false;
@@ -99,29 +101,22 @@ final class ReviewFormController extends ChangeNotifier {
     try {
       final saved = await store.read(context);
       if (_disposed) return;
-      // Full snapshot: cleared optional fields must not inherit original values.
-      date = saved == null ? original?.date ?? context.entryDate : saved.date;
-      dateInput =
-          saved?.dateInput ?? (date == null ? '' : formatReviewDate(date!));
-      summary = saved == null ? original?.summary ?? '' : saved.summary ?? '';
-      reflection = saved == null
-          ? original?.reflection ?? ''
-          : saved.reflection ?? '';
-      firstStep = saved == null
-          ? original?.tomorrowFirstStep.text ?? ''
-          : saved.tomorrowFirstStepText ?? '';
-      goalId = saved == null
-          ? original?.tomorrowFirstStep.goalId
-          : saved.tomorrowFirstStepGoalId;
+      date = original?.date ?? context.entryDate;
+      dateInput = date == null ? '' : formatReviewDate(date!);
+      summary = original?.summary ?? '';
+      reflection = original?.reflection ?? '';
+      firstStep = original?.tomorrowFirstStep.text ?? '';
+      goalId = original?.tomorrowFirstStep.goalId;
       if (selectedGoal?.id != goalId) selectedGoal = null;
-      restored = saved != null;
       if (saved != null && !context.isEditing && entrySaver != null) {
         committed = await entrySaver!.recoverCommittedDraft(saved);
         if (_disposed) return;
       }
+      _baseline = draft;
+      if (saved != null && committed == null) pendingRecovery = saved;
       _initialized = true;
     } catch (_) {
-      loadError = '复盘草稿或提交状态读取失败，请重试；已有草稿仍保留。';
+      loadError = '复盘未完成输入或提交状态读取失败，请重试。';
     } finally {
       loading = false;
       _initializing = false;
@@ -141,6 +136,50 @@ final class ReviewFormController extends ChangeNotifier {
       deleted == null &&
       !_discarded;
 
+  bool get hasUserChanges =>
+      _baseline != null && !_sameReviewDraft(draft, _baseline!);
+
+  Future<void> resumePendingInput() async {
+    final saved = pendingRecovery;
+    if (saved == null || !editable) return;
+    _applyDraft(saved);
+    pendingRecovery = null;
+    restored = true;
+    _emit();
+    _persist();
+    await loadGoals();
+  }
+
+  Future<void> restartInput() async {
+    if (pendingRecovery == null && !hasUserChanges) return;
+    await _writes;
+    try {
+      await store.clear(context);
+    } catch (_) {
+      storageError = '暂时无法清空本次填写，请重试。';
+      _emit();
+      return;
+    }
+    final baseline = _baseline;
+    if (baseline != null) _applyDraft(baseline);
+    pendingRecovery = null;
+    restored = false;
+    storageError = null;
+    _emit();
+    await loadGoals();
+  }
+
+  void _applyDraft(ReviewDraft value) {
+    date = value.date;
+    dateInput =
+        value.dateInput ?? (date == null ? '' : formatReviewDate(date!));
+    summary = value.summary ?? '';
+    reflection = value.reflection ?? '';
+    firstStep = value.tomorrowFirstStepText ?? '';
+    goalId = value.tomorrowFirstStepGoalId;
+    if (selectedGoal?.id != goalId) selectedGoal = null;
+  }
+
   CivilDate? get intendedDate =>
       date == null ? null : TomorrowFirstStep.dateAfter(date!);
   String? get dateError => date == null ? '请输入有效日期 YYYY-MM-DD。' : null;
@@ -157,7 +196,7 @@ final class ReviewFormController extends ChangeNotifier {
   String? get summaryError => _textError(summary, 'summary');
   String? get reflectionError => _textError(reflection, 'reflection');
   String? get firstStepError => firstStep.trim().isEmpty
-      ? '正式保存时需要填写一个非空白的下一步；草稿可以留空。'
+      ? '正式保存时需要填写一个非空白的下一步；未完成输入可以留空。'
       : _textError(firstStep, 'text');
   bool get valid =>
       dateError == null &&
@@ -203,16 +242,23 @@ final class ReviewFormController extends ChangeNotifier {
   void _persist() {
     submitError = null;
     final snapshot = draft;
+    final baseline = _baseline;
     final revision = ++_revision;
     saving = true;
     storageError = null;
     _emit();
     _writes = _writes.then((_) async {
       try {
-        await store.save(snapshot);
+        if (baseline != null && _sameReviewDraft(snapshot, baseline)) {
+          await store.clear(context);
+        } else {
+          await store.save(snapshot);
+        }
         if (revision == _revision) storageError = null;
       } catch (_) {
-        if (revision == _revision) storageError = '复盘草稿保存失败，输入仍在此页，请重试。';
+        if (revision == _revision) {
+          storageError = '暂时无法保留本次填写，输入仍在此页，请重试。';
+        }
       } finally {
         if (revision == _revision) saving = false;
         _emit();
@@ -257,7 +303,7 @@ final class ReviewFormController extends ChangeNotifier {
       _discarded = true;
       return true;
     } catch (_) {
-      storageError = '无法放弃复盘草稿，输入已保留，请重试。';
+      storageError = '暂时无法清空本次填写，请重试。';
       return false;
     } finally {
       discarding = false;
@@ -279,7 +325,7 @@ final class ReviewFormController extends ChangeNotifier {
       // Persist the final complete snapshot before creating or correcting a fact.
       _persist();
       if (!await flush()) {
-        submitError = '草稿尚未保留成功，请先重试保存草稿。';
+        submitError = '本次填写尚未保留成功，请重试。';
         return null;
       }
       final result = await entrySaver!.submit(draft);
@@ -287,12 +333,12 @@ final class ReviewFormController extends ChangeNotifier {
         case ReviewSubmitFailed(:final reason):
           submitError = switch (reason) {
             ReviewSubmitFailure.dateOccupied =>
-              '该日期已有复盘，未覆盖；输入和草稿已保留，请调整日期或返回读取。',
+              '该日期已有复盘，未覆盖；当前输入仍保留，请调整日期或返回读取。',
             ReviewSubmitFailure.invalidGoal => '目标已归档或不存在，未保存；请选择活跃目标或清空关联。',
-            ReviewSubmitFailure.invalidInput => '日期或文字不符合保存要求，输入和草稿已保留。',
+            ReviewSubmitFailure.invalidInput => '日期或文字不符合保存要求，当前输入仍保留。',
             ReviewSubmitFailure.missingSource =>
-              '原复盘已不存在，未保存更正，也未重新创建；输入和草稿已保留，请返回读取。',
-            ReviewSubmitFailure.storage => '正式保存失败，输入和草稿已保留，请重试。',
+              '原复盘已不存在，未保存更正，也未重新创建；当前输入仍保留，请返回读取。',
+            ReviewSubmitFailure.storage => '正式保存失败，当前输入仍保留，请重试。',
           };
           return null;
         case ReviewSubmitCommitted():
@@ -319,7 +365,7 @@ final class ReviewFormController extends ChangeNotifier {
       // Keep even invalid/incomplete input if the formal delete fails.
       _persist();
       if (!await flush()) {
-        submitError = '草稿尚未保留成功，请先重试保存草稿。';
+        submitError = '本次填写尚未保留成功，请重试。';
         return null;
       }
       final result = await entrySaver!.delete(
@@ -328,7 +374,7 @@ final class ReviewFormController extends ChangeNotifier {
       );
       switch (result) {
         case ReviewDeleteFailed():
-          submitError = '删除复盘失败，输入和草稿已保留，请重试。';
+          submitError = '删除复盘失败，当前输入仍保留，请重试。';
           return null;
         case ReviewDeleteCommitted():
           deleted = result;
@@ -384,11 +430,11 @@ final class ReviewFormController extends ChangeNotifier {
     if (result == null) return null;
     if (result.complete) return '复盘已保存。';
     if (!result.draftCleared && result.refreshed == null) {
-      return '复盘已保存，但草稿清理和读回失败；请重试收尾，无需再次保存。';
+      return '复盘已保存，但本地收尾和读回失败；请重试收尾，无需再次保存。';
     }
     return result.draftCleared
         ? '复盘已保存，但读回失败；请重试读取，无需再次保存。'
-        : '复盘已保存，但草稿清理失败；请重试清理，无需再次保存。';
+        : '复盘已保存，但本地收尾失败；请重试处理，无需再次保存。';
   }
 
   String? get deletedMessage {
@@ -396,11 +442,11 @@ final class ReviewFormController extends ChangeNotifier {
     if (result == null) return null;
     if (result.complete) return '复盘已删除。';
     if (!result.draftCleared && result.refreshed == null) {
-      return '复盘已删除，但草稿清理和读回失败；请重试收尾，无需再次删除。';
+      return '复盘已删除，但本地收尾和读回失败；请重试收尾，无需再次删除。';
     }
     return result.draftCleared
         ? '复盘已删除，但读回失败；请重试读取，无需再次删除。'
-        : '复盘已删除，但草稿清理失败；请重试清理，无需再次删除。';
+        : '复盘已删除，但本地收尾失败；请重试处理，无需再次删除。';
   }
 
   Future<void> loadGoals() async {
@@ -455,3 +501,11 @@ final class ReviewFormController extends ChangeNotifier {
     super.dispose();
   }
 }
+
+bool _sameReviewDraft(ReviewDraft a, ReviewDraft b) =>
+    a.date == b.date &&
+    a.dateInput == b.dateInput &&
+    a.summary == b.summary &&
+    a.reflection == b.reflection &&
+    a.tomorrowFirstStepText == b.tomorrowFirstStepText &&
+    a.tomorrowFirstStepGoalId == b.tomorrowFirstStepGoalId;

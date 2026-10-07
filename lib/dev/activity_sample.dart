@@ -31,7 +31,7 @@ enum ActivitySample {
   manual('无建议手填'),
   oneCandidate('单个候选'),
   candidates('多个候选'),
-  restored('草稿优先'),
+  restored('恢复未完成输入'),
   emptyGoals('目标为空'),
   goalReadFailure('目标读取失败'),
   goalWriteFailure('创建目标失败'),
@@ -39,11 +39,11 @@ enum ActivitySample {
   archived('归档引用'),
   conflict('时间冲突'),
   saveFailure('保存失败'),
-  draftFailure('草稿保留失败'),
+  draftFailure('本次填写保留失败'),
   cleanupFailure('提交后清理失败'),
   refreshFailure('提交后刷新失败'),
   missing('更正源已不存在'),
-  discardFailure('清理草稿失败'),
+  discardFailure('清理未完成输入失败'),
   loadFailure('读取失败');
 
   const ActivitySample(this.label);
@@ -362,7 +362,7 @@ class SampleActivityController extends RecordingFormController {
       if (!alive || !await flush()) return null;
       if (session.sample == ActivitySample.saveFailure && !failedSave) {
         failedSave = true;
-        submitError = '保存失败，输入和草稿已保留，请重试。';
+        submitError = '保存失败，本次输入仍在，请重试。';
         return null;
       }
       if (session.sample == ActivitySample.conflict &&
@@ -526,7 +526,7 @@ class _SampleHostState extends State<_SampleHost> {
                   ),
                 ),
                 IconButton(
-                  tooltip: '重开当前样板（保留已应用草稿）',
+                  tooltip: '重开当前样板（保留已应用输入）',
                   onPressed: () async {
                     await model.flush();
                     if (mounted) open();
@@ -562,7 +562,7 @@ class _SampleHostState extends State<_SampleHost> {
                         createGoal: session.goals.createNamed,
                         conflictName: (_) => '散步',
                         onExit: () =>
-                            setState(() => result = '已离开样板；已应用草稿保留在本次会话'),
+                            setState(() => result = '已离开样板；已应用输入保留在本次会话'),
                         onSaved: () => setState(
                           () =>
                               result = '模拟保存完成 · ${session.commits} 次\n未写入正式账本',

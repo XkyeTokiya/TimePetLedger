@@ -39,7 +39,7 @@ enum GuidedSampleScenario {
   oneCandidate('单个候选'),
   candidates('多个候选'),
   crossDay('跨日更正'),
-  restored('草稿优先'),
+  restored('恢复未完成输入'),
   archived('归档目标引用'),
   emptyGoals('空目标列表'),
   goalReadFailure('目标读取失败'),
@@ -47,12 +47,12 @@ enum GuidedSampleScenario {
   goalRefreshFailure('创建后读取失败'),
   conflict('时间冲突'),
   saveFailure('正式保存失败'),
-  draftFailure('草稿保留失败'),
+  draftFailure('本次填写保留失败'),
   cleanupFailure('提交后清理失败'),
   refreshFailure('提交后刷新失败'),
-  readFailure('草稿读取失败'),
+  readFailure('未完成输入读取失败'),
   missing('更正源已不存在'),
-  discardFailure('失效草稿清理失败');
+  discardFailure('失效输入清理失败');
 
   const GuidedSampleScenario(this.label);
   final String label;
@@ -591,7 +591,7 @@ class _SampleState extends State<GuidedRecordingSample> {
             padding: const EdgeInsets.all(16),
             children: [
               Text('样板设置', style: Theme.of(context).textTheme.titleLarge),
-              const Text('偏好只保留在当前开发会话。下一次进入生效，草稿原关联优先。'),
+              const Text('偏好只保留在当前开发会话。下一次进入生效，未完成输入的原关联优先。'),
               const SizedBox(height: 16),
               const Text('记录方式'),
               for (final mode in RecordingInputMode.values)
@@ -709,7 +709,7 @@ class _SampleState extends State<GuidedRecordingSample> {
                       opening
                           ? '正在读取'
                           : session.drafts.value != null
-                          ? '恢复草稿体验'
+                          ? '恢复未完成输入'
                           : '开始体验',
                     ),
                   ),

@@ -105,6 +105,7 @@ class _RecordingFormState extends State<RecordingForm> {
   final timeKey = GlobalKey();
   bool showErrors = false;
   bool focusErrors = false;
+  bool recoveryPromptShown = false;
   bool titleVisited = false;
   bool noteVisited = false;
   bool timeVisited = false;
@@ -170,10 +171,52 @@ class _RecordingFormState extends State<RecordingForm> {
   }
 
   void _changed() {
+    if (title.text != model.title) title.text = model.title;
+    if (note.text != model.note) note.text = model.note;
+    if (continuationHint.text != model.continuationHint) {
+      continuationHint.text = model.continuationHint;
+    }
+    if (stuckReasonText.text != model.stuckReasonText) {
+      stuckReasonText.text = model.stuckReasonText;
+    }
     if (mounted) {
       setState(() {});
       _revealErrors();
     }
+    if (model.pendingRecovery != null && !recoveryPromptShown) {
+      recoveryPromptShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _chooseRecovery());
+    }
+  }
+
+  Future<void> _chooseRecovery() async {
+    if (!mounted || model.pendingRecovery == null) return;
+    final editing = widget.context.entry == RecordingDraftEntry.edit;
+    final resume = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(editing ? '继续上次修改？' : '继续上次填写？'),
+        content: const Text('这个入口还有本次使用期间未完成的内容。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(editing ? '重新编辑' : '重新填写'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('继续填写'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (resume == true) {
+      await model.resumePendingInput();
+    } else {
+      await model.restartInput();
+    }
+    if (mounted) setState(() => showErrors = model.restored);
   }
 
   void _revealErrors() {
@@ -257,6 +300,32 @@ class _RecordingFormState extends State<RecordingForm> {
     setState(() => allowPop = true);
     await WidgetsBinding.instance.endOfFrame;
     if (mounted) Navigator.of(context).pop(model.committed?.refreshed);
+  }
+
+  Future<void> _restart() async {
+    if (!model.editable) return;
+    final editing = widget.context.entry == RecordingDraftEntry.edit;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(editing ? '重新编辑？' : '重新填写？'),
+        content: const Text('本次填写中尚未正式保存的修改将被清除。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('继续填写'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(editing ? '重新编辑' : '重新填写'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await model.restartInput();
+      if (mounted) setState(() => showErrors = false);
+    }
   }
 
   Future<void> _submit() async {
@@ -504,10 +573,10 @@ class _RecordingFormState extends State<RecordingForm> {
             model.submitting
                 ? '正在保存到账本…'
                 : model.saving
-                ? '正在保留草稿…'
+                ? '正在保留本次填写…'
                 : widget.context.entry == RecordingDraftEntry.edit
-                ? '更正草稿已保留，原记录尚未改变。'
-                : '输入作为草稿保留，尚未计入账本。',
+                ? '本次修改已保留，原记录尚未改变。'
+                : '本次填写已保留，尚未计入账本。',
           ),
         if (model.submitError != null && model.conflicts.isEmpty)
           Text(
@@ -543,7 +612,7 @@ class _RecordingFormState extends State<RecordingForm> {
           ),
           if (!committed.draftCleared)
             Text(
-              '草稿清理失败，旧草稿仍可能显示；请重试清理。',
+              '记录已保存，页面收尾未完成；请重试。',
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           if (committed.refreshed == null)
@@ -564,7 +633,7 @@ class _RecordingFormState extends State<RecordingForm> {
           ),
           TextButton(
             onPressed: model.editable ? model.retrySave : null,
-            child: const Text('重试保存草稿'),
+            child: const Text('重试保留本次填写'),
           ),
         ],
       ],
@@ -1008,18 +1077,18 @@ class _RecordingFormState extends State<RecordingForm> {
           actions: [
             PopupMenuButton<bool>(
               tooltip: '更多',
-              onSelected: (discard) => _leave(discard: discard),
+              onSelected: (restart) => restart ? _restart() : _leave(),
               itemBuilder: (_) => [
                 PopupMenuItem(
                   value: false,
                   enabled: !exiting && !model.submitting,
-                  child: const Text('保留草稿并返回'),
+                  child: const Text('返回'),
                 ),
                 if (model.committed == null)
                   PopupMenuItem(
                     value: true,
                     enabled: model.editable,
-                    child: const Text('放弃草稿'),
+                    child: const Text('重新填写'),
                   ),
               ],
             ),
@@ -1047,7 +1116,7 @@ class _RecordingFormState extends State<RecordingForm> {
                       if (model.missingOriginal) ...[
                         TextButton(
                           onPressed: () => _leave(discard: true),
-                          child: const Text('清除编辑草稿并返回'),
+                          child: const Text('清空未完成修改并返回'),
                         ),
                         TextButton(
                           onPressed: () => _leave(),
@@ -1077,14 +1146,14 @@ class _RecordingFormState extends State<RecordingForm> {
                         prototypeSpacing: true,
                         action: _saveAction(),
                         status: model.storageError != null
-                            ? '草稿未保留'
+                            ? '本次填写未保留'
                             : model.saving
                             ? '正在保留…'
                             : model.committed != null
                             ? '已保存'
                             : model.knowledgeState == null
                             ? '尚未填写'
-                            : '草稿已保留',
+                            : '本次填写已保留',
                         children: [_content(context)],
                       ),
                     ),

@@ -181,7 +181,7 @@ class _ActivityEditorState extends State<ActivityEditor> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('放弃这份草稿？'),
+        title: const Text('重新填写？'),
         content: const Text('未保存的修改将被清除。'),
         actions: [
           TextButton(
@@ -190,7 +190,7 @@ class _ActivityEditorState extends State<ActivityEditor> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('放弃草稿'),
+            child: const Text('重新填写'),
           ),
         ],
       ),
@@ -797,7 +797,7 @@ class _ActivityEditorState extends State<ActivityEditor> {
             model.storageError!,
             action: TextButton(
               onPressed: model.retrySave,
-              child: const Text('重试保留草稿'),
+              child: const Text('重试保留本次填写'),
             ),
           ),
         FilledButton(
@@ -826,10 +826,10 @@ class _ActivityEditorState extends State<ActivityEditor> {
         const SizedBox(height: 17),
         Text(
           model.saving
-              ? '正在保留草稿'
+              ? '正在保留本次填写'
               : model.storageError != null
-              ? '草稿尚未保留成功'
-              : '草稿已保留',
+              ? '本次填写尚未保留成功'
+              : '本次填写已保留',
           textAlign: TextAlign.center,
           style: text(13, color: colors.onSurfaceVariant),
         ),
@@ -893,7 +893,7 @@ class _ActivityEditorState extends State<ActivityEditor> {
                         if (model.missingOriginal)
                           TextButton(
                             onPressed: discard,
-                            child: const Text('清理更正草稿'),
+                            child: const Text('清空未完成修改'),
                           )
                         else
                           TextButton(
@@ -910,7 +910,7 @@ class _ActivityEditorState extends State<ActivityEditor> {
                     return ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
-                        const Text('记录已保存，仍需完成草稿清理或页面刷新。'),
+                        const Text('记录已保存，仍需完成页面刷新。'),
                         FilledButton(
                           onPressed: model.submitting
                               ? null

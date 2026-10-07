@@ -14,6 +14,8 @@ import '../../features/settings/data/drift_app_preferences_store.dart';
 import '../../features/settings/data/drift_data_maintenance.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/ledger/data/drift_recording_draft_store.dart';
+import '../../features/ledger/data/session_recording_draft_store.dart';
+import '../../features/ledger/data/session_sleep_draft_store.dart';
 import '../../features/ledger/application/recording_entry_editor.dart';
 import 'recording_drafts.dart';
 import 'app_preferences.dart';
@@ -27,6 +29,7 @@ import 'review_context.dart';
 import 'review_submission.dart';
 import 'review_drafts.dart';
 import '../../features/review/data/drift_review_draft_store.dart';
+import '../../features/review/data/session_review_draft_store.dart';
 import 'sleep_submission.dart';
 import 'sleep_openings.dart';
 import '../../core/time/civil_date.dart';
@@ -40,7 +43,7 @@ Future<AppDatabase> openAppDatabase() async {
   return AppDatabase.open(await connectDatabase('time_pet_ledger'));
 }
 
-/// Owns formal and independent draft connections; presentation receives interfaces.
+/// Owns formal storage, persistent sleep learning, and session-only input recovery.
 class AppBootstrap extends StatefulWidget {
   const AppBootstrap({
     super.key,
@@ -72,45 +75,27 @@ class AppBootstrap extends StatefulWidget {
 class _AppBootstrapState extends State<AppBootstrap> {
   late final Future<void> _ready;
   AppDatabase? _database;
-  DriftRecordingDraftStore? _drafts;
+  final _drafts = SessionRecordingDraftStore();
+  final _sleepDrafts = SessionSleepDraftStore();
+  final _reviewDrafts = SessionReviewDraftStore();
+  DriftSleepDraftStore? _sleepLearning;
   Future<DriftSleepOpeningStore>? _openingSleepState;
   DriftSleepOpeningStore? _sleepState;
   late final _preferences = AppPreferencesSession(
     openStore: widget.openPreferences,
   );
-  late final _reviewDrafts = ReviewDraftSession(
-    openStore: widget.openReviewDrafts,
-  );
 
-  /// 数据概况用：三类草稿的现存数量之和。
+  /// 数据概况内部仍计入未完成输入，但设置页不单列其数量。
   Future<int> _openDrafts() async {
-    final drafts = _drafts;
-    if (drafts == null) return 0;
-    final sleep = await widget.openSleepDrafts();
-    final review = await widget.openReviewDrafts();
-    try {
-      return await drafts.countAll() +
-          await sleep.countAll() +
-          await review.countAll();
-    } finally {
-      await sleep.close();
-      await review.close();
-    }
+    return _drafts.count + _sleepDrafts.count + _reviewDrafts.count;
   }
 
-  /// 数据清空用：清除三类草稿；草稿连接用完即关。
+  /// 高级清空同时清除当前会话输入与睡眠学习辅助数据。
   Future<void> _clearDrafts() async {
-    final drafts = _drafts;
-    final sleep = await widget.openSleepDrafts();
-    final review = await widget.openReviewDrafts();
-    try {
-      await drafts?.clearAll();
-      await sleep.clearAll();
-      await review.clearAll();
-    } finally {
-      await sleep.close();
-      await review.close();
-    }
+    _drafts.clearAll();
+    _sleepDrafts.clearAll();
+    _reviewDrafts.clearAll();
+    await _sleepLearning?.clearAll();
   }
 
   Future<bool> _claimSleepOpening(CivilDate date) async {
@@ -139,28 +124,44 @@ class _AppBootstrapState extends State<AppBootstrap> {
 
   Future<void> _open() async {
     final database = await widget.openDatabase();
-    DriftRecordingDraftStore? drafts;
+    DriftRecordingDraftStore? legacyRecording;
+    DriftReviewDraftStore? legacyReview;
+    DriftSleepDraftStore? sleepLearning;
     try {
       if (!mounted) {
         await database.close();
         return;
       }
-      drafts = await widget.openDrafts();
+      // 旧版本曾把未完成输入写入独立 SQLite。升级启动时清除它们；
+      // 睡眠学习证据继续留在原辅助库并由 app 生命周期持有。
+      legacyRecording = await widget.openDrafts();
+      legacyReview = await widget.openReviewDrafts();
+      sleepLearning = await widget.openSleepDrafts();
+      await legacyRecording.clearAll();
+      await legacyReview.clearAll();
+      await sleepLearning.clearDraftsOnly();
+      await legacyRecording.close();
+      legacyRecording = null;
+      await legacyReview.close();
+      legacyReview = null;
       if (!mounted) {
-        await drafts.close();
+        await sleepLearning.close();
         await database.close();
       } else {
         final seed = widget.seed;
         if (seed != null) await seed(database);
         if (!mounted) {
-          await drafts.close();
+          await sleepLearning.close();
           await database.close();
           return;
         }
         _database = database;
-        _drafts = drafts;
+        _sleepLearning = sleepLearning;
       }
     } catch (_) {
+      await legacyRecording?.close();
+      await legacyReview?.close();
+      await sleepLearning?.close();
       await database.close();
       rethrow;
     }
@@ -168,18 +169,6 @@ class _AppBootstrapState extends State<AppBootstrap> {
 
   @override
   void dispose() {
-    unawaited(
-      _reviewDrafts.close().catchError((Object error, StackTrace stack) {
-        FlutterError.reportError(
-          FlutterErrorDetails(
-            exception: error,
-            stack: stack,
-            library: 'app bootstrap',
-            context: ErrorDescription('while closing review drafts'),
-          ),
-        );
-      }),
-    );
     unawaited(
       _preferences.close().catchError((Object error, StackTrace stack) {
         FlutterError.reportError(
@@ -222,16 +211,16 @@ class _AppBootstrapState extends State<AppBootstrap> {
         }),
       );
     }
-    final drafts = _drafts;
-    if (drafts != null) {
+    final sleepLearning = _sleepLearning;
+    if (sleepLearning != null) {
       unawaited(
-        drafts.close().catchError((Object error, StackTrace stack) {
+        sleepLearning.close().catchError((Object error, StackTrace stack) {
           FlutterError.reportError(
             FlutterErrorDetails(
               exception: error,
               stack: stack,
               library: 'app bootstrap',
-              context: ErrorDescription('while closing recording drafts'),
+              context: ErrorDescription('while closing sleep learning'),
             ),
           );
         }),
@@ -264,7 +253,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
         final ledger = createRecordingLedgerLoader(_database!);
         final saver = createRecordingEntrySaver(
           database: _database!,
-          drafts: _drafts!,
+          drafts: _drafts,
           ledger: ledger,
           clock: widget.now,
         );
@@ -310,28 +299,34 @@ class _AppBootstrapState extends State<AppBootstrap> {
             final openedAt = widget.now().millisecondsSinceEpoch;
             return SleepEntry(
               context: context,
-              loadPredictions: (store) => SleepTimePredictionLoader(
-                repository: ledger.repository,
-                resolveDate: ledger.resolveDate,
-                calendar: const DeviceSleepPredictionCalendar(),
-              ).load(date: context.date, now: openedAt, learning: store),
-              openStore: widget.openSleepDrafts,
+              loadPredictions: () =>
+                  SleepTimePredictionLoader(
+                    repository: ledger.repository,
+                    resolveDate: ledger.resolveDate,
+                    calendar: const DeviceSleepPredictionCalendar(),
+                  ).load(
+                    date: context.date,
+                    now: openedAt,
+                    learning: _sleepLearning,
+                  ),
+              store: _sleepDrafts,
               createEditor: createSleepEntryEditor,
               createSaver: (drafts) => createSleepEntrySaver(
                 database: _database!,
                 drafts: drafts,
                 ledger: sleepLedger,
                 clock: widget.now,
+                learning: _sleepLearning,
               ),
             );
           },
           ledger: ledger,
-          drafts: _drafts!,
+          drafts: _drafts,
           now: widget.now,
           entrySaver: saver,
           entryEditor: RecordingEntryEditor(
             repository: saver.repository,
-            drafts: _drafts!,
+            drafts: _drafts,
             saver: saver,
           ),
         );

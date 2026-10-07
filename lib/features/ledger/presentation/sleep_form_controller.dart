@@ -60,6 +60,8 @@ class SleepFormController extends ChangeNotifier {
   SleepType? type;
   bool loading = true;
   bool restored = false;
+  SleepDraft? pendingRecovery;
+  SleepDraft? _baseline;
   bool saving = false;
   bool discarding = false;
   String? loadError;
@@ -79,7 +81,6 @@ class SleepFormController extends ChangeNotifier {
     // A late/repeated restore must never overwrite the user's current input.
     if (_initialized || _initializing || _disposed) return;
     _initializing = true;
-    var initializedTime = false;
     loading = true;
     loadError = null;
     missingOriginal = false;
@@ -90,34 +91,26 @@ class SleepFormController extends ChangeNotifier {
         if (_disposed) return;
         if (original == null) {
           missingOriginal = true;
-          loadError = '记录已不存在，无法更正；已有草稿仍保留。';
+          loadError = '记录已不存在，无法更正；未完成输入将被清除。';
+          await store.clear(context);
           return;
         }
       }
       final saved = await store.read(context);
       if (_disposed) return;
-      startedAt = saved?.startedAt;
-      endedAt = saved?.endedAt;
-      startPrecision = saved?.startPrecision;
-      endPrecision = saved?.endPrecision;
-      type = saved?.type;
-      _predictionOrigin = saved?.predictionOrigin;
-      if (saved == null) {
-        startedAt = original?.startedAt;
-        endedAt = original?.endedAt;
-        startPrecision = original?.startPrecision;
-        endPrecision = original?.endPrecision;
-        type = original?.type;
-      }
-      // 新建睡眠默认主睡眠（2026-10-07 用户决定）；已有草稿与更正记录保持原类型。
+      startedAt = original?.startedAt;
+      endedAt = original?.endedAt;
+      startPrecision = original?.startPrecision;
+      endPrecision = original?.endPrecision;
+      type = original?.type;
+      // 新建睡眠默认主睡眠（2026-10-07 用户决定）。
       if (!context.isEditing && type == null) {
         type = SleepType.mainSleep;
       }
-      startedAtInput = saved?.startedAtInput ?? formatSleepTime(startedAt);
-      endedAtInput = saved?.endedAtInput ?? formatSleepTime(endedAt);
-      _noteProvided = saved?.noteProvided ?? false;
-      note = _noteProvided ? saved!.note ?? '' : original?.note ?? '';
-      restored = saved != null;
+      startedAtInput = formatSleepTime(startedAt);
+      endedAtInput = formatSleepTime(endedAt);
+      _noteProvided = false;
+      note = original?.note ?? '';
       if (saved != null) {
         if (context.isEditing && entryEditor != null) {
           committed = await entryEditor!.recoverCommittedEdit(
@@ -133,7 +126,6 @@ class SleepFormController extends ChangeNotifier {
         _predictions = await loadPredictions!();
         if (_disposed) return;
         _applyPrediction(_predictions!.forType(type ?? SleepType.mainSleep));
-        initializedTime = true;
       } else if (!context.isEditing &&
           committed == null &&
           loadSuggestion != null) {
@@ -146,7 +138,6 @@ class SleepFormController extends ChangeNotifier {
           endedAtInput = formatSleepTime(endedAt);
           startPrecision = input.startPrecision;
           endPrecision = input.endPrecision;
-          initializedTime = true;
         } else if (suggestion is ManualTimeEntry) {
           startedAt = null;
           endedAt = null;
@@ -154,17 +145,19 @@ class SleepFormController extends ChangeNotifier {
           endedAtInput = '';
           startPrecision = TimePrecision.approximate;
           endPrecision = TimePrecision.approximate;
-          initializedTime = restored;
         }
       }
+      _baseline = draft;
+      if (saved != null && committed == null) pendingRecovery = saved;
       _initialized = true;
     } catch (_) {
-      loadError = context.isEditing ? '无法读取睡眠记录或草稿，请重试。' : '无法读取睡眠草稿或时间建议，请重试。';
+      loadError = context.isEditing
+          ? '无法读取睡眠记录或未完成输入，请重试。'
+          : '无法读取未完成睡眠输入或时间建议，请重试。';
     } finally {
       _initializing = false;
       loading = false;
       _emit();
-      if (!_disposed && initializedTime && loadError == null) _persist();
     }
   }
 
@@ -178,6 +171,64 @@ class SleepFormController extends ChangeNotifier {
       committed == null &&
       deleted == null &&
       !missingOriginal;
+
+  bool get hasUserChanges =>
+      _baseline != null && !_sameSleepDraft(draft, _baseline!);
+
+  Future<void> resumePendingInput() async {
+    final saved = pendingRecovery;
+    if (saved == null || !editable) return;
+    _noteProvided = saved.noteProvided;
+    note = saved.noteProvided ? saved.note ?? '' : original?.note ?? '';
+    type = saved.type ?? type;
+    if (context.isEditing) {
+      startedAt = saved.startedAt;
+      endedAt = saved.endedAt;
+      startPrecision = saved.startPrecision;
+      endPrecision = saved.endPrecision;
+      startedAtInput = saved.startedAtInput ?? formatSleepTime(startedAt);
+      endedAtInput = saved.endedAtInput ?? formatSleepTime(endedAt);
+      _predictionOrigin = saved.predictionOrigin;
+    } else if (_predictions != null) {
+      _applyPrediction(_predictions!.forType(type ?? SleepType.mainSleep));
+    }
+    pendingRecovery = null;
+    restored = true;
+    _emit();
+    _persist();
+  }
+
+  Future<void> restartInput() async {
+    if (pendingRecovery == null && !hasUserChanges) return;
+    await _writes;
+    try {
+      await store.clear(context);
+    } catch (_) {
+      storageError = '暂时无法清空本次填写，请重试。';
+      _emit();
+      return;
+    }
+    final baseline = _baseline;
+    if (baseline != null) _applyDraft(baseline);
+    pendingRecovery = null;
+    restored = false;
+    storageError = null;
+    _emit();
+  }
+
+  void _applyDraft(SleepDraft value) {
+    startedAt = value.startedAt;
+    endedAt = value.endedAt;
+    startPrecision = value.startPrecision;
+    endPrecision = value.endPrecision;
+    type = value.type;
+    startedAtInput = value.startedAtInput ?? formatSleepTime(startedAt);
+    endedAtInput = value.endedAtInput ?? formatSleepTime(endedAt);
+    note = value.note ?? '';
+    _noteProvided = value.noteProvided;
+    _predictionOrigin = value.predictionOrigin;
+    _timeManuallyChanged = false;
+  }
 
   void setStartedAtInput(String value) {
     if (!editable) return;
@@ -273,16 +324,23 @@ class SleepFormController extends ChangeNotifier {
     submitError = null;
     conflicts = const [];
     final input = draft;
+    final baseline = _baseline;
     final revision = ++_revision;
     saving = true;
     storageError = null;
     _emit();
     _writes = _writes.then((_) async {
       try {
-        await store.save(input);
+        if (baseline != null && _sameSleepDraft(input, baseline)) {
+          await store.clear(context);
+        } else {
+          await store.save(input);
+        }
         if (revision == _revision) storageError = null;
       } catch (_) {
-        if (revision == _revision) storageError = '睡眠草稿保存失败，输入仍在此页，请重试。';
+        if (revision == _revision) {
+          storageError = '暂时无法保留本次填写，输入仍在此页，请重试。';
+        }
       } finally {
         if (revision == _revision) saving = false;
         _emit();
@@ -306,7 +364,7 @@ class SleepFormController extends ChangeNotifier {
     _emit();
     try {
       if (!await flush()) {
-        submitError = '草稿尚未保留成功，请先重试保存草稿。';
+        submitError = '本次填写尚未保留成功，请重试。';
         return null;
       }
       final result = context.isEditing
@@ -317,9 +375,9 @@ class SleepFormController extends ChangeNotifier {
           this.conflicts = conflicts;
           missingOriginal = notFound;
           submitError = notFound
-              ? '记录已不存在，无法更正；输入和草稿已保留。'
+              ? '记录已不存在，无法更正；当前输入仍保留。'
               : conflicts.isEmpty
-              ? '正式保存失败，睡眠输入和草稿已保留，请重试。'
+              ? '正式保存失败，当前睡眠输入仍保留，请重试。'
               : '时间与已有记录冲突，请手动调整后再保存。';
           return null;
         case SleepSubmitCommitted():
@@ -340,7 +398,7 @@ class SleepFormController extends ChangeNotifier {
     _emit();
     try {
       if (!await flush()) {
-        submitError = '草稿尚未保留成功，请先重试保存草稿。';
+        submitError = '本次填写尚未保留成功，请重试。';
         return null;
       }
       final result = await entryEditor!.delete(
@@ -349,7 +407,7 @@ class SleepFormController extends ChangeNotifier {
       );
       switch (result) {
         case SleepDeleteFailed():
-          submitError = '删除失败，睡眠记录与草稿已保留，请重试。';
+          submitError = '删除失败，睡眠记录与当前输入仍保留，请重试。';
           return null;
         case SleepDeleteCommitted():
           deleted = result;
@@ -411,11 +469,11 @@ class SleepFormController extends ChangeNotifier {
     final refreshed = deleted?.refreshComplete ?? committed!.refreshComplete;
     if (cleared && refreshed) return deleted != null ? '睡眠已删除。' : '睡眠已保存到账本。';
     if (!cleared && !refreshed) {
-      return '睡眠已$action，但草稿清理和摘要 / 账本刷新失败；请继续处理，无需再次$action。';
+      return '睡眠已$action，但本地收尾和摘要 / 账本刷新失败；请继续处理，无需再次$action。';
     }
     return cleared
         ? '睡眠已$action，但摘要 / 账本刷新失败；请继续刷新，无需再次$action。'
-        : '睡眠已$action，但草稿清理失败；请继续清理，无需再次$action。';
+        : '睡眠已$action，但本地收尾失败；请继续处理，无需再次$action。';
   }
 
   Future<bool> flush() async {
@@ -447,7 +505,7 @@ class SleepFormController extends ChangeNotifier {
       _discarded = true;
       return true;
     } catch (_) {
-      storageError = '无法放弃睡眠草稿，输入已保留，请重试。';
+      storageError = '暂时无法清空本次填写，请重试。';
       return false;
     } finally {
       discarding = false;
@@ -461,3 +519,15 @@ class SleepFormController extends ChangeNotifier {
     super.dispose();
   }
 }
+
+bool _sameSleepDraft(SleepDraft a, SleepDraft b) =>
+    a.startedAt == b.startedAt &&
+    a.endedAt == b.endedAt &&
+    a.startPrecision == b.startPrecision &&
+    a.endPrecision == b.endPrecision &&
+    a.type == b.type &&
+    a.startedAtInput == b.startedAtInput &&
+    a.endedAtInput == b.endedAtInput &&
+    a.note == b.note &&
+    a.noteProvided == b.noteProvided &&
+    a.predictionOrigin == b.predictionOrigin;

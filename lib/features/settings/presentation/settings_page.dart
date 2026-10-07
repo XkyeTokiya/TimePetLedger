@@ -105,7 +105,7 @@ class _SettingsPageState extends State<SettingsPage> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('清空当前数据？'),
         content: const Text(
-          '会清空记录、睡眠、目标、复盘和未保存草稿，并清除常用目标选择。'
+          '会清空记录、睡眠、目标、复盘和未完成的填写，并清除常用目标选择。'
           '界面、记录方式和提醒设置会保留。',
         ),
         actions: [
@@ -209,9 +209,14 @@ class _SettingsPageState extends State<SettingsPage> {
       ),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
+          constraints: const BoxConstraints(maxWidth: 560),
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+            padding: const EdgeInsets.fromLTRB(
+              TimeLedgerSpacing.page,
+              TimeLedgerSpacing.xxs,
+              TimeLedgerSpacing.page,
+              TimeLedgerSpacing.xl,
+            ),
             children: [
               if (error != null) ...[
                 _error(error!),
@@ -248,7 +253,6 @@ class _SettingsPageState extends State<SettingsPage> {
     switch (view) {
       case _View.home:
         return [
-          const SizedBox(height: 4),
           _entry(
             _View.display,
             '界面设置',
@@ -266,17 +270,11 @@ class _SettingsPageState extends State<SettingsPage> {
         ];
       case _View.display:
         return [
-          Row(
-            children: [
-              Text('目标热力图', style: _sectionHeading),
-              const Spacer(),
-              Text(
-                _rangeText(prefs),
-                key: const ValueKey('settings-heat-current'),
-              ),
-            ],
+          _sectionHeader(
+            '目标热力图',
+            value: _rangeText(prefs),
+            valueKey: const ValueKey('settings-heat-current'),
           ),
-          const SizedBox(height: 8),
           for (final range in HeatRange.values)
             _choice(
               key: 'settings-heat-${range.name}',
@@ -290,15 +288,10 @@ class _SettingsPageState extends State<SettingsPage> {
         ];
       case _View.recording:
         return [
-          Row(
-            children: [
-              Text('记录方式', style: _sectionHeading),
-              const Spacer(),
-              Text(
-                _modeText(prefs),
-                key: const ValueKey('settings-mode-current'),
-              ),
-            ],
+          _sectionHeader(
+            '记录方式',
+            value: _modeText(prefs),
+            valueKey: const ValueKey('settings-mode-current'),
           ),
           for (final mode in RecordingMode.values)
             _choice(
@@ -313,21 +306,21 @@ class _SettingsPageState extends State<SettingsPage> {
                   : () =>
                         _savePreference((c) => c.copyWith(recordingMode: mode)),
             ),
-          const SizedBox(height: 12),
-          SwitchListTile(
+          const SizedBox(height: TimeLedgerSpacing.xl),
+          Text('提醒', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: TimeLedgerSpacing.xxs),
+          _toggleRow(
             key: const ValueKey('settings-reminders'),
             value: prefs.reminders ?? true,
             onChanged: busy
                 ? null
                 : (value) =>
                       _savePreference((c) => c.copyWith(reminders: value)),
-            title: const Text('首页提醒'),
-            subtitle: Text(
-              prefs.reminders == false ? '首页不再显示提醒与问候区域。' : '打开首页时，提醒睡眠、补记或复盘。',
-            ),
-            contentPadding: EdgeInsets.zero,
+            title: '首页提醒',
+            subtitle: prefs.reminders == false
+                ? '首页不再显示提醒与问候区域。'
+                : '打开首页时，提醒睡眠、补记或复盘。',
           ),
-          const SizedBox(height: 8),
           _timeRow(
             key: 'settings-sleep-reminder',
             label: '提醒记录睡眠',
@@ -365,13 +358,14 @@ class _SettingsPageState extends State<SettingsPage> {
           ];
         }
         return [
-          Text('当前数据', style: _sectionHeading),
-          const SizedBox(height: 8),
+          _sectionHeader('当前数据'),
           if (counts.isEmpty)
-            const Text('目前还没有数据。', style: _muted)
+            Text('目前还没有数据。', style: Theme.of(context).textTheme.bodySmall)
           else
             _countsList(counts),
-          const SizedBox(height: 20),
+          const SizedBox(height: TimeLedgerSpacing.xl),
+          Text('数据操作', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: TimeLedgerSpacing.xxs),
           _action(
             key: 'settings-seed',
             icon: Icons.storage,
@@ -380,26 +374,27 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
           Text(
             counts.isEmpty ? '添加今天及之前六天的示例记录，方便体验。' : '已有数据，暂时不能添加测试数据。',
-            style: _muted,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: TimeLedgerSpacing.lg),
           _action(
             key: 'settings-clear',
             icon: Icons.delete_outline,
             label: '清空当前数据',
             onTap: counts.isEmpty || busy ? null : _confirmClear,
+            destructive: true,
           ),
           Text(
-            counts.isEmpty ? '目前没有需要清空的数据。' : '清空记录、目标、复盘和草稿，保留设置。',
-            style: _muted,
+            counts.isEmpty ? '目前没有需要清空的数据。' : '清空记录、目标、复盘和未完成的填写，保留设置。',
+            style: Theme.of(context).textTheme.bodySmall,
           ),
         ];
       case _View.about:
         return [
-          const Text('日账本', style: _aboutMark),
-          const SizedBox(height: 6),
-          const Text('把一天慢慢记清楚。', style: _muted),
-          const SizedBox(height: 16),
+          Text('日账本', style: Theme.of(context).textTheme.headlineLarge),
+          const SizedBox(height: TimeLedgerSpacing.xxs),
+          Text('把一天慢慢记清楚。', style: Theme.of(context).textTheme.bodySmall),
+          const SizedBox(height: TimeLedgerSpacing.lg),
           _aboutRow('应用名称', 'Time Pet Ledger'),
           _aboutRow('版本', widget.versionLabel ?? '—'),
         ];
@@ -411,39 +406,66 @@ class _SettingsPageState extends State<SettingsPage> {
     String title,
     String description,
     IconData icon,
-  ) => InkWell(
-    key: ValueKey('settings-open-${target.name}'),
-    onTap: busy
-        ? null
-        : () => setState(() {
-            view = target;
-            error = null;
-            status = null;
-          }),
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 18),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 26, color: HomePalette.muted),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: _entryTitle),
-                const SizedBox(height: 3),
-                Text(description, style: _muted),
-              ],
+  ) => Semantics(
+    button: true,
+    child: InkWell(
+      key: ValueKey('settings-open-${target.name}'),
+      onTap: busy
+          ? null
+          : () => setState(() {
+              view = target;
+              error = null;
+              status = null;
+            }),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 72),
+        padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.sm),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: HomePalette.muted),
+            const SizedBox(width: TimeLedgerSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.bodyLarge),
+                  const SizedBox(height: TimeLedgerSpacing.xxs),
+                  Text(
+                    description,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
-          ),
-          const Icon(Icons.chevron_right, color: HomePalette.muted),
-        ],
+            const Icon(Icons.chevron_right, size: 20, color: HomePalette.muted),
+          ],
+        ),
       ),
     ),
   );
+
+  Widget _sectionHeader(String title, {String? value, Key? valueKey}) =>
+      Padding(
+        padding: const EdgeInsets.only(bottom: TimeLedgerSpacing.xs),
+        child: Row(
+          children: [
+            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            if (value != null) ...[
+              const Spacer(),
+              Text(
+                value,
+                key: valueKey,
+                style: Theme.of(context).textTheme.labelMedium
+                    ?.copyWith(color: HomePalette.accentDeep),
+              ),
+            ],
+          ],
+        ),
+      );
 
   Widget _choice({
     required String key,
@@ -458,7 +480,8 @@ class _SettingsPageState extends State<SettingsPage> {
       key: ValueKey(key),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        constraints: const BoxConstraints(minHeight: 64),
+        padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
         decoration: const BoxDecoration(
           border: Border(bottom: BorderSide(color: HomePalette.hairline)),
         ),
@@ -466,23 +489,46 @@ class _SettingsPageState extends State<SettingsPage> {
           children: [
             Icon(
               selected ? Icons.radio_button_checked : Icons.radio_button_off,
-              size: 22,
+              size: 20,
               color: selected ? HomePalette.accentDeep : HomePalette.muted,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: TimeLedgerSpacing.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: _entryTitle),
-                  const SizedBox(height: 2),
-                  Text(description, style: _muted),
+                  Text(title, style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: TimeLedgerSpacing.xxs),
+                  Text(
+                    description,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ],
               ),
             ),
           ],
         ),
       ),
+    ),
+  );
+
+  Widget _toggleRow({
+    required Key key,
+    required bool value,
+    required ValueChanged<bool>? onChanged,
+    required String title,
+    required String subtitle,
+  }) => DecoratedBox(
+    decoration: const BoxDecoration(
+      border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+    ),
+    child: SwitchListTile.adaptive(
+      key: key,
+      value: value,
+      onChanged: onChanged,
+      title: Text(title, style: Theme.of(context).textTheme.titleMedium),
+      subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+      contentPadding: EdgeInsets.zero,
     ),
   );
 
@@ -497,19 +543,22 @@ class _SettingsPageState extends State<SettingsPage> {
     key: ValueKey(key),
     onTap: enabled ? onTap : null,
     child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: HomePalette.hairline)),
       ),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: _entryTitle)),
+          Expanded(
+            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
+          ),
           Text(
             _formatMinutes(minutes),
             key: ValueKey('$key-value'),
-            style: _value,
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: TimeLedgerSpacing.xs),
           Icon(
             Icons.schedule,
             size: 20,
@@ -542,33 +591,42 @@ class _SettingsPageState extends State<SettingsPage> {
       _countRow('睡眠记录', '${counts.sleep}条'),
       _countRow('目标', '${counts.goals}个'),
       _countRow('每日复盘', '${counts.reviews}条'),
-      _countRow('未保存草稿', '${counts.drafts}条'),
     ],
   );
 
   Widget _countRow(String label, String value) => Container(
-    padding: const EdgeInsets.symmetric(vertical: 10),
+    constraints: const BoxConstraints(minHeight: homeTapTarget),
+    padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
     decoration: const BoxDecoration(
       border: Border(bottom: BorderSide(color: HomePalette.hairline)),
     ),
     child: Row(
       children: [
-        Expanded(child: Text(label, style: _muted)),
-        Text(value, style: _value),
+        Expanded(
+          child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+        ),
+        Text(value, style: Theme.of(context).textTheme.bodyMedium),
       ],
     ),
   );
 
   Widget _aboutRow(String label, String value) => Container(
-    padding: const EdgeInsets.symmetric(vertical: 10),
+    constraints: const BoxConstraints(minHeight: homeTapTarget),
+    padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
     decoration: const BoxDecoration(
       border: Border(bottom: BorderSide(color: HomePalette.hairline)),
     ),
     child: Row(
       children: [
-        Expanded(child: Text(label, style: _muted)),
+        Expanded(
+          child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+        ),
         Flexible(
-          child: Text(value, style: _value, textAlign: TextAlign.right),
+          child: Text(
+            value,
+            style: Theme.of(context).textTheme.bodyMedium,
+            textAlign: TextAlign.right,
+          ),
         ),
       ],
     ),
@@ -579,25 +637,36 @@ class _SettingsPageState extends State<SettingsPage> {
     required IconData icon,
     required String label,
     required VoidCallback? onTap,
+    bool destructive = false,
   }) => InkWell(
     key: ValueKey(key),
     onTap: onTap,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+    child: Container(
+      constraints: const BoxConstraints(minHeight: 56),
+      padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+      ),
       child: Row(
         children: [
           Icon(
             icon,
-            size: 26,
-            color: onTap == null ? HomePalette.muted : HomePalette.accentDeep,
+            size: 22,
+            color: onTap == null
+                ? HomePalette.faint
+                : destructive
+                ? HomePalette.error
+                : HomePalette.accentDeep,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: TimeLedgerSpacing.sm),
           Text(
             label,
-            style: TextStyle(
-              fontFamily: homeSerifFamily,
-              fontSize: 21,
-              color: onTap == null ? HomePalette.muted : HomePalette.accentDeep,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: onTap == null
+                  ? HomePalette.faint
+                  : destructive
+                  ? HomePalette.error
+                  : HomePalette.accentDeep,
             ),
           ),
         ],
@@ -607,28 +676,22 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Widget _note(String text) => Container(
     width: double.infinity,
-    padding: const EdgeInsets.all(14),
+    padding: const EdgeInsets.all(TimeLedgerSpacing.sm),
     decoration: BoxDecoration(
       color: HomePalette.tint,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(TimeLedgerRadius.panel),
     ),
     child: Text(
       text,
-      style: const TextStyle(
-        fontFamily: homeSerifFamily,
-        fontSize: 15,
-        color: HomePalette.recovery,
-      ),
+      style: Theme.of(context).textTheme.bodyMedium
+          ?.copyWith(color: HomePalette.recovery),
     ),
   );
 
   Widget _error(String text) => Text(
     text,
-    style: const TextStyle(
-      fontFamily: homeSerifFamily,
-      fontSize: 15,
-      color: HomePalette.error,
-    ),
+    style: Theme.of(context).textTheme.bodyMedium
+        ?.copyWith(color: HomePalette.error),
   );
 
   String _rangeText(AppPreferences prefs) => switch (prefs.heatRange) {
@@ -643,34 +706,3 @@ class _SettingsPageState extends State<SettingsPage> {
     null => '未设置',
   };
 }
-
-const _sectionHeading = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 22,
-  height: 1.5,
-  fontWeight: FontWeight.w600,
-  color: HomePalette.ink,
-);
-const _entryTitle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 22,
-  height: 1.5,
-  color: HomePalette.ink,
-);
-const _aboutMark = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 38,
-  height: 1.3,
-  color: HomePalette.ink,
-);
-const _value = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 17,
-  color: HomePalette.ink,
-);
-const _muted = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 14,
-  height: 1.6,
-  color: HomePalette.muted,
-);

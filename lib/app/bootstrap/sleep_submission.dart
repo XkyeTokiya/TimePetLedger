@@ -14,6 +14,7 @@ SleepEntrySaver createSleepEntrySaver({
   required SleepDraftStore drafts,
   required SleepLedgerLoader ledger,
   required DateTime Function() clock,
+  SleepLearningStore? learning,
 }) => SleepEntrySaver(
   repository: DriftLedgerRepository(database),
   drafts: drafts,
@@ -21,7 +22,7 @@ SleepEntrySaver createSleepEntrySaver({
   // Reuse the existing app-local UUID v4 generator for this independent fact.
   newId: newLocalTimeBlockId,
   now: () => clock().millisecondsSinceEpoch,
-  learning: drafts is SleepLearningStore ? drafts as SleepLearningStore : null,
+  learning: learning,
   offsetMinutes: const DeviceSleepPredictionCalendar().offsetMinutes,
 );
 

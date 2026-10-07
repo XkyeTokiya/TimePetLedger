@@ -51,6 +51,7 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
   bool writing = false;
   bool showErrors = false;
   FocusNode? lastWritingFocus;
+  bool recoveryPromptShown = false;
 
   Future<void> _date() async {
     final picked = await showDayLedgerDateDialog(
@@ -98,6 +99,13 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
       step.text = model.firstStep;
       synced = true;
     }
+    if (synced) {
+      if (summary.text != model.summary) summary.text = model.summary;
+      if (reflection.text != model.reflection) {
+        reflection.text = model.reflection;
+      }
+      if (step.text != model.firstStep) step.text = model.firstStep;
+    }
     if (synced && factsDate != model.date) {
       factsDate = model.date;
       if (factsDate == null) {
@@ -107,6 +115,10 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
       }
     }
     setState(() {});
+    if (model.pendingRecovery != null && !recoveryPromptShown) {
+      recoveryPromptShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _chooseRecovery());
+    }
   }
 
   void _factsChanged() {
@@ -121,33 +133,85 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _leave({bool discard = false}) async {
+  Future<void> _leave() async {
     if (closing) return;
-    if (discard) {
-      // 与活动 / 睡眠一致：清除草稿前先让用户确认并可取消。
-      final confirmed = await showDialog<bool>(
+    final success = await model.leave();
+    if (!mounted) return;
+    if (!success && !await _confirmLeaveWithoutRecovery()) return;
+    await _pop(model.deleted?.original.date ?? model.committed?.review.date);
+  }
+
+  Future<void> _restart() async {
+    if (closing || !model.editable) return;
+    final editing = model.context.isEditing;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(editing ? '重新编辑复盘？' : '重新填写复盘？'),
+        content: const Text('本次尚未正式保存的修改将被清除。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('继续填写'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(editing ? '重新编辑' : '重新填写'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) await model.restartInput();
+  }
+
+  Future<void> _chooseRecovery() async {
+    if (!mounted || model.pendingRecovery == null) return;
+    final editing = model.context.isEditing;
+    final resume = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text(editing ? '继续上次修改？' : '继续上次填写？'),
+        content: const Text('这个入口还有本次使用期间未完成的内容。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(editing ? '重新编辑' : '重新填写'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('继续填写'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (resume == true) {
+      await model.resumePendingInput();
+    } else {
+      await model.restartInput();
+    }
+  }
+
+  Future<bool> _confirmLeaveWithoutRecovery() async =>
+      await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: const Text('放弃这份复盘草稿？'),
-          content: const Text('未保存的内容将被清除。'),
+        builder: (context) => AlertDialog(
+          title: const Text('本次填写暂时无法保留'),
+          content: const Text('仍然离开可能丢失最近的修改。'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
+              onPressed: () => Navigator.pop(context, false),
               child: const Text('继续填写'),
             ),
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('放弃草稿'),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('仍然离开'),
             ),
           ],
         ),
-      );
-      if (confirmed != true || !mounted || closing) return;
-    }
-    final success = discard ? await model.discard() : await model.leave();
-    if (!mounted || !success) return;
-    await _pop(model.deleted?.original.date ?? model.committed?.review.date);
-  }
+      ) ??
+      false;
 
   Future<void> _delete() async {
     if (closing ||
@@ -171,7 +235,7 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
           return AlertDialog(
             title: const Text('删除这份复盘？'),
             content: Text(
-              '将删除 ${formatReviewDate(model.original!.date)} 的已存复盘和明天第一步，并清理其编辑草稿。当天时间记录和其他复盘保留。',
+              '将删除 ${formatReviewDate(model.original!.date)} 的已存复盘和明天第一步，并清理未完成的修改。当天时间记录和其他复盘保留。',
             ),
             actions: [
               TextButton(
@@ -285,8 +349,10 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
             onSelected: (value) {
               if (value == '删除复盘') {
                 _delete();
+              } else if (value == '重新填写') {
+                _restart();
               } else {
-                _leave(discard: value == '放弃此复盘草稿');
+                _leave();
               }
             },
             itemBuilder: (_) => [
@@ -297,17 +363,17 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
                     !model.leaving &&
                     !model.submitting &&
                     !closing,
-                value: '保留草稿并返回',
+                value: '返回',
                 child: Text(
                   model.committed != null || model.deleted != null
                       ? '返回复盘读取'
-                      : '保留草稿并返回',
+                      : '返回',
                 ),
               ),
               PopupMenuItem(
                 enabled: model.editable,
-                value: '放弃此复盘草稿',
-                child: const Text('放弃此复盘草稿'),
+                value: '重新填写',
+                child: Text(model.context.isEditing ? '重新编辑' : '重新填写'),
               ),
               if (model.context.isEditing &&
                   model.entrySaver != null &&
@@ -324,7 +390,7 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
       ),
       body: EditorBody(
         status: model.storageError != null
-            ? '草稿未保留'
+            ? '本次填写未保留'
             : model.saving
             ? '正在保留…'
             : model.committed != null
@@ -402,7 +468,7 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
             Text(error),
             TextButton(
               onPressed: model.initialize,
-              child: const Text('重试读取草稿'),
+              child: const Text('重试读取未完成输入'),
             ),
           ],
           Row(
@@ -530,7 +596,7 @@ class _ReviewFormState extends State<ReviewForm> with WidgetsBindingObserver {
             Text(error),
             TextButton(
               onPressed: model.editable ? model.retrySave : null,
-              child: const Text('重试保存草稿'),
+              child: const Text('重试保留本次填写'),
             ),
           ],
           if (model.submitError case final error?) Text(error),

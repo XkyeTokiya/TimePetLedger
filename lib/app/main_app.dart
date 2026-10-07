@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'theme/home_theme.dart';
-import '../features/ledger/presentation/day_date_selection.dart';
+import '../features/ledger/presentation/day_summary_page.dart';
 import '../features/ledger/presentation/day_read_scroll.dart';
 import '../features/ledger/domain/sleep_session.dart';
 
@@ -14,11 +14,9 @@ import '../features/review/domain/review_draft_store.dart';
 import '../features/review/presentation/review_context_page.dart';
 
 import '../features/ledger/application/day_ledger_loader.dart';
-import '../features/ledger/presentation/day_ledger_controller.dart';
 import '../features/ledger/presentation/home/home_shell.dart';
 import '../features/ledger/presentation/home/home_suggestion_card.dart';
-import '../features/ledger/presentation/home/home_summary_tab.dart';
-import '../features/ledger/presentation/home/home_timeline_tab.dart';
+import '../features/ledger/presentation/home/ledger_feed_controller.dart';
 import '../features/ledger/domain/projection/ledger_coverage.dart';
 import '../features/ledger/domain/projection/ledger_segment.dart';
 import '../features/ledger/application/home_suggestion.dart';
@@ -151,7 +149,6 @@ class _RecordingHome extends StatefulWidget {
 
 class _RecordingHomeState extends State<_RecordingHome>
     with WidgetsBindingObserver, RouteAware {
-  final selection = DayDateSelection();
   final homeShellKey = GlobalKey<HomeShellState>();
   final scrollSession = DayReadScrollSession();
   bool opening = false;
@@ -164,9 +161,16 @@ class _RecordingHomeState extends State<_RecordingHome>
   ModalRoute<void>? route;
 
   bool get busy => opening || ledgerInteraction || reviewInteraction;
+
+  /// 首页顶部当前浏览日期；记录入口与摘要 / 复盘入口都继承它。
   CivilDate get selectedDate =>
-      selection.date ??
+      homeShellKey.currentState?.browsingDate ??
       deviceDateOfInstant(widget.now().millisecondsSinceEpoch);
+
+  /// 编辑返回后的首页刷新：数据重读，日期与阅读位置保持。
+  Future<void> _refreshHome() async {
+    await homeShellKey.currentState?.refresh();
+  }
 
   @override
   void initState() {
@@ -191,7 +195,14 @@ class _RecordingHomeState extends State<_RecordingHome>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _refreshSuggestionState();
+    if (state == AppLifecycleState.resumed) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        // 独立页 / 编辑器继续管理自己的日期；返回首页沿原路由刷新。
+        if (!mounted || busy || route?.isCurrent != true) return;
+        await _refreshHome();
+        if (mounted) await _refreshSuggestionState();
+      });
+    }
   }
 
   @override
@@ -308,7 +319,7 @@ class _RecordingHomeState extends State<_RecordingHome>
     } finally {
       if (mounted) {
         setState(() => opening = false);
-        selection.refresh();
+        await _refreshHome();
         await _refreshSuggestionState();
       }
     }
@@ -323,7 +334,7 @@ class _RecordingHomeState extends State<_RecordingHome>
     } finally {
       if (mounted) {
         setState(() => opening = false);
-        selection.refresh();
+        await _refreshHome();
         await _refreshSuggestionState();
       }
     }
@@ -344,58 +355,71 @@ class _RecordingHomeState extends State<_RecordingHome>
     } finally {
       if (mounted) {
         setState(() => opening = false);
-        selection.refresh();
+        await _refreshHome();
         await _refreshSuggestionState();
       }
     }
   }
 
-  Widget _reviewPage(CivilDate date, {required bool active}) =>
-      ReviewContextPage(
-        loader: widget.reviewContext!,
-        drafts: widget.reviewDrafts,
-        saver: widget.reviewSaver,
-        goals: widget.goals,
-        now: () => widget.now().millisecondsSinceEpoch,
-        dateOfInstant: deviceDateOfInstant,
-        routeObserver: widget.dayRoutes,
-        initialDate: date,
-        selection: selection,
-        embedded: true,
-        active: active,
-        scrollSession: scrollSession,
-        onInteraction: (value) => _interaction(value, review: true),
-      );
+  Widget _reviewPage(CivilDate date) => ReviewContextPage(
+    loader: widget.reviewContext!,
+    drafts: widget.reviewDrafts,
+    saver: widget.reviewSaver,
+    goals: widget.goals,
+    now: () => widget.now().millisecondsSinceEpoch,
+    dateOfInstant: deviceDateOfInstant,
+    routeObserver: widget.dayRoutes,
+    initialDate: date,
+    scrollSession: scrollSession,
+    onInteraction: (value) => _interaction(value, review: true),
+  );
 
-  Widget _ledgerTimeline(DayLedgerController controller, bool active) =>
-      ListenableBuilder(
-        listenable: controller,
-        builder: (context, _) => HomeTimelineTab(
-          view: controller.view,
-          scrollSession: scrollSession,
-          // While an editor or modal is on top the list is not the active
-          // reading surface; on return it restores the saved anchor.
-          active: active && !busy,
-          placeholder: switch (controller.status) {
-            DayLedgerStatus.failed => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('账本读取失败。'),
-                TextButton(
-                  onPressed: busy ? null : controller.refresh,
-                  child: const Text('重试读取'),
-                ),
-              ],
-            ),
-            DayLedgerStatus.empty => const Text('这一天还没有记录。'),
-            _ => const Center(child: CircularProgressIndicator()),
-          },
-          onEditFact: busy ? null : _openFact,
-          onDeleteTimeBlock: busy ? null : _deleteTimeBlock,
-          onFillGap: busy ? null : _openGap,
-          bottomInset: widget.reviewContext == null ? 0 : 88,
+  /// 侧边栏入口：独立「当日摘要」页，继承首页当前浏览日期。
+  Future<void> _openSummary() async {
+    final loader = widget.dayLedger;
+    if (busy || loader == null) return;
+    setState(() => opening = true);
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => DaySummaryPage(
+            loader: loader,
+            now: () => widget.now().millisecondsSinceEpoch,
+            dateOfInstant: deviceDateOfInstant,
+            routeObserver: widget.dayRoutes,
+            initialDate: selectedDate,
+            reviewEntry: widget.reviewContext == null ? null : _reviewPage,
+            onEditSleep: widget.reviewContext == null
+                ? null
+                : _editCompleteSleep,
+          ),
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => opening = false);
+        await _refreshHome();
+        await _refreshSuggestionState();
+      }
+    }
+  }
+
+  /// 侧边栏入口：独立「每日复盘」页，继承首页当前浏览日期。
+  Future<void> _openReview() async {
+    if (busy || widget.reviewContext == null) return;
+    setState(() => opening = true);
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(builder: (_) => _reviewPage(selectedDate)),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => opening = false);
+        await _refreshHome();
+        await _refreshSuggestionState();
+      }
+    }
+  }
 
   Future<void> _openGap(CivilDate date, UnresolvedSpan gap) async {
     if (busy) return;
@@ -424,7 +448,7 @@ class _RecordingHomeState extends State<_RecordingHome>
     } finally {
       if (mounted) {
         setState(() => opening = false);
-        selection.refresh();
+        await _refreshHome();
         await _refreshSuggestionState();
       }
     }
@@ -462,7 +486,7 @@ class _RecordingHomeState extends State<_RecordingHome>
     } finally {
       if (mounted) {
         setState(() => opening = false);
-        selection.refresh();
+        await _refreshHome();
         await _refreshSuggestionState();
       }
     }
@@ -512,7 +536,7 @@ class _RecordingHomeState extends State<_RecordingHome>
     } finally {
       if (mounted) {
         setState(() => opening = false);
-        selection.refresh();
+        await _refreshHome();
         await _refreshSuggestionState();
       }
     }
@@ -524,10 +548,10 @@ class _RecordingHomeState extends State<_RecordingHome>
 
   /// 首页建议区域：按 Q-028 优先级与 Q-029 边界由已提交投影推导。
   ///
-  /// 只读当前 [DayLedgerController] 的视图与日期上下文；不查询、不写入。
-  Widget _suggestionCard(DayLedgerController controller) {
-    final view = controller.view;
-    final dateContext = controller.dateContext;
+  /// 只读当前浏览日的投影与日期上下文；不查询、不写入。
+  Widget _suggestionCard(LedgerFeedController controller) {
+    final view = controller.focusView;
+    final dateContext = controller.focusContext;
     if (view == null || dateContext == null) return const SizedBox.shrink();
     // 当地时刻用日边界与当前 instant 之差求得，不再次读取时区。
     final nowMinutes = (dateContext.now - dateContext.dayStartedAt) ~/ 60000;
@@ -553,8 +577,7 @@ class _RecordingHomeState extends State<_RecordingHome>
           HomeSuggestionKind.greeting => null,
           HomeSuggestionKind.sleep => busy ? null : _recordSleep,
           HomeSuggestionKind.record => busy ? null : _recordActivity,
-          HomeSuggestionKind.review =>
-            busy ? null : () => homeShellKey.currentState?.openReviewTab(),
+          HomeSuggestionKind.review => busy ? null : _openReview,
         },
       ),
     );
@@ -574,7 +597,7 @@ class _RecordingHomeState extends State<_RecordingHome>
     } finally {
       if (mounted) {
         setState(() => opening = false);
-        selection.refresh();
+        await _refreshHome();
         await _refreshSuggestionState();
       }
     }
@@ -584,7 +607,6 @@ class _RecordingHomeState extends State<_RecordingHome>
   void dispose() {
     widget.dayRoutes.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
-    selection.dispose();
     super.dispose();
   }
 
@@ -596,10 +618,10 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
     return HomeShell(
       key: homeShellKey,
-      selection: selection,
       ledgerLoader: dayLedger,
       now: () => widget.now().millisecondsSinceEpoch,
       dateOfInstant: deviceDateOfInstant,
+      initialDate: selectedDate,
       busy: busy,
       banner: firstSleepError == null
           ? null
@@ -620,17 +642,12 @@ class _RecordingHomeState extends State<_RecordingHome>
       onSettings: widget.settingsEntry == null ? null : _openSettings,
       onRecordActivity: _recordActivity,
       onRecordSleep: _recordSleep,
-      reviewEnabled: widget.reviewContext != null,
+      onOpenSummary: _openSummary,
+      onOpenReview: widget.reviewContext == null ? () {} : _openReview,
+      onEditFact: busy ? null : _openFact,
+      onDeleteTimeBlock: busy ? null : _deleteTimeBlock,
+      onFillGap: busy ? null : _openGap,
       floatingCard: (preferences?.reminders ?? true) ? _suggestionCard : null,
-      timeline: _ledgerTimeline,
-      summary: (controller, _) => HomeSummaryTab(
-        controller: controller,
-        onEditSleep: busy
-            ? null
-            : (sleep) => _editCompleteSleep(selectedDate, sleep),
-        onRetry: controller.refresh,
-      ),
-      review: (active) => _reviewPage(selectedDate, active: active),
     );
   }
 }

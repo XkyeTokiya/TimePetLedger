@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../../core/time/civil_date.dart';
 import '../application/day_ledger_loader.dart';
-import '../domain/projection/derived_duration.dart';
+import '../domain/sleep_session.dart';
 import 'day_ledger_controller.dart';
-import 'day_date_selection.dart';
 import 'day_ledger_date_dialog.dart';
-import 'summary_formatting.dart';
-import 'sleep_summary_view.dart';
-import 'goal_rhythm_summary_view.dart';
+import 'day_page_header.dart';
+import 'home/home_summary_tab.dart';
 
-/// 摘要与日账本共用完整投影及读取状态；不查询草稿或重新计算摘要。
+/// 独立「当日摘要」页。
+///
+/// 从首页进入时继承当时的浏览日期；进入后独立管理日期，返回首页不改变
+/// 首页的日期与阅读位置。数据仍来自与时间轴同一次单日投影，不另算统计。
 class DaySummaryPage extends StatefulWidget {
   const DaySummaryPage({
     super.key,
@@ -18,18 +19,20 @@ class DaySummaryPage extends StatefulWidget {
     required this.now,
     required this.dateOfInstant,
     required this.routeObserver,
-    this.initialDate,
-    this.selection,
+    required this.initialDate,
     this.reviewEntry,
+    this.onEditSleep,
   });
 
-  final DayDateSelection? selection;
   final DayLedgerLoader loader;
   final int Function() now;
   final CivilDate Function(int) dateOfInstant;
   final RouteObserver<ModalRoute<void>> routeObserver;
-  final CivilDate? initialDate;
-  final Widget Function(CivilDate)? reviewEntry;
+  final CivilDate initialDate;
+
+  /// 打开该日复盘的入口；为空时不显示。
+  final Widget Function(CivilDate date)? reviewEntry;
+  final void Function(CivilDate date, SleepSession sleep)? onEditSleep;
 
   @override
   State<DaySummaryPage> createState() => _DaySummaryPageState();
@@ -41,45 +44,38 @@ class _DaySummaryPageState extends State<DaySummaryPage>
     loader: widget.loader,
     now: widget.now,
     dateOfInstant: widget.dateOfInstant,
-    selectedDate: widget.selection?.date ?? widget.initialDate,
+    selectedDate: widget.initialDate,
   );
   bool openingEntry = false;
   bool selectingDate = false;
   ModalRoute<void>? route;
 
+  CivilDate get _today => widget.dateOfInstant(widget.now());
+
+  void _refresh() => controller.refresh();
+
   Future<void> _chooseDate() async {
     if (openingEntry || selectingDate) return;
     setState(() => selectingDate = true);
-    final picked = await showDayLedgerDateDialog(
-      context,
-      controller.date ?? widget.dateOfInstant(widget.now()),
-    );
-    if (!mounted) return;
-    setState(() => selectingDate = false);
-    if (picked != null) _select(picked);
-  }
-
-  void _refresh() {
-    if (widget.selection case final selection?) {
-      controller.selectedDate = selection.date;
+    CivilDate? picked;
+    try {
+      picked = await showDayLedgerDateDialog(
+        context,
+        controller.date ?? widget.initialDate,
+      );
+    } finally {
+      // 弹窗关闭即恢复可点，不等待随后的一次读取。
+      if (mounted) setState(() => selectingDate = false);
     }
-    controller.refresh();
+    if (!mounted || picked == null) return;
+    await controller.select(picked);
   }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    widget.selection?.addListener(_refresh);
     _refresh();
-  }
-
-  void _select(CivilDate? date) {
-    if (widget.selection case final selection?) {
-      selection.select(date);
-    } else {
-      controller.select(date);
-    }
   }
 
   @override
@@ -96,6 +92,13 @@ class _DaySummaryPageState extends State<DaySummaryPage>
   @override
   void didPopNext() {
     if (!openingEntry) _refresh();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && route?.isCurrent == true) {
+      _refresh();
+    }
   }
 
   Future<void> _openReview() async {
@@ -115,97 +118,50 @@ class _DaySummaryPageState extends State<DaySummaryPage>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && route?.isCurrent == true) {
-      _refresh();
-    }
-  }
-
-  @override
   void dispose() {
     widget.routeObserver.unsubscribe(this);
     WidgetsBinding.instance.removeObserver(this);
-    widget.selection?.removeListener(_refresh);
     controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('基础摘要')),
-    body: ListenableBuilder(
-      listenable: controller,
-      builder: (context, _) => ListView(
-        padding: const EdgeInsets.all(16),
+    appBar: AppBar(title: const Text('当日摘要')),
+    body: SafeArea(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          InkWell(
-            key: const ValueKey('summary-date'),
-            onTap: openingEntry || selectingDate ? null : _chooseDate,
-            child: InputDecorator(
-              decoration: const InputDecoration(labelText: '摘要日期'),
-              child: Text(
-                ledgerDateText(
-                  controller.date ?? widget.dateOfInstant(widget.now()),
-                ),
-              ),
+          ListenableBuilder(
+            listenable: controller,
+            builder: (context, _) => DayPageHeader(
+              date: controller.date ?? widget.initialDate,
+              today: _today,
+              busy: openingEntry || selectingDate,
+              dateKey: const ValueKey('summary-date'),
+              onChoose: _chooseDate,
+              onToday: () => controller.select(_today),
             ),
           ),
-          Wrap(
-            spacing: 12,
-            children: [
-              TextButton(
-                onPressed: () {
-                  _select(null);
-                },
-                child: const Text('今天'),
-              ),
-              OutlinedButton(onPressed: _refresh, child: const Text('刷新摘要')),
-              if (widget.reviewEntry != null)
-                FilledButton(
-                  onPressed: openingEntry || controller.date == null
-                      ? null
-                      : _openReview,
-                  child: const Text('打开此日复盘'),
-                ),
-            ],
+          Expanded(
+            child: HomeSummaryTab(
+              controller: controller,
+              onEditSleep: widget.onEditSleep == null || controller.date == null
+                  ? null
+                  : (sleep) => widget.onEditSleep!(controller.date!, sleep),
+              onRetry: _refresh,
+              footer: widget.reviewEntry == null
+                  ? null
+                  : TextButton.icon(
+                      key: const ValueKey('summary-open-review'),
+                      onPressed: openingEntry || controller.date == null
+                          ? null
+                          : _openReview,
+                      icon: const Icon(Icons.menu_book_outlined, size: 18),
+                      label: const Text('打开这一天的复盘'),
+                    ),
+            ),
           ),
-          if (controller.date != null)
-            Text('日期：${ledgerDateText(controller.date!)}'),
-          if (controller.status == DayLedgerStatus.loading)
-            const Center(child: CircularProgressIndicator()),
-          if (controller.status == DayLedgerStatus.failed) ...[
-            const Text('摘要读取失败，请重试。'),
-            TextButton(onPressed: _refresh, child: const Text('重试读取')),
-          ],
-          if (controller.view case final view?) ...[
-            Text(
-              controller.status == DayLedgerStatus.empty
-                  ? '此账本窗口及醒来日期尚无正式记录。'
-                  : '摘要已读取。',
-            ),
-            Text(
-              '账本窗口：${formatDerivedDuration(DerivedDuration(milliseconds: view.window.milliseconds, hasApproximation: false))}',
-            ),
-            const SizedBox(height: 16),
-            const Text('账本覆盖'),
-            Text('已交代：${formatDerivedDuration(view.accountedDuration)}'),
-            Text('其中未知：${formatDerivedDuration(view.unknownDuration)}'),
-            const Text('未知已包含在已交代时间中。'),
-            Text('尚未记录：${formatDerivedDuration(view.unresolvedDuration)}'),
-            if (view.window.isEmpty)
-              const Text('当前账本窗口为空，不产生未记录缺口。')
-            else if (view.unresolvedDuration.milliseconds == 0)
-              const Text('此账本窗口没有未记录缺口。'),
-            const SizedBox(height: 16),
-            const Text('睡眠背景'),
-            const Text('按所选日期的醒来日期汇总完整睡眠；账本覆盖仅计窗口内贡献。'),
-            SleepSummaryView(summary: view.sleepSummary),
-            const SizedBox(height: 16),
-            GoalRhythmSummaryView(
-              goals: view.goalSummaries,
-              rhythm: view.rhythmSummary,
-            ),
-          ],
         ],
       ),
     ),

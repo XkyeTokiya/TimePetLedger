@@ -3,92 +3,160 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme/home_theme.dart';
 import '../../../../core/time/civil_date.dart';
 import '../../application/day_ledger_loader.dart';
-import '../day_date_selection.dart';
-import '../day_ledger_controller.dart';
+import '../../domain/projection/ledger_coverage.dart';
+import '../../domain/projection/ledger_segment.dart';
 import '../day_ledger_date_dialog.dart';
 import 'home_coverage_line.dart';
 import 'home_day_header.dart';
+import 'home_feed_transition.dart';
+import 'home_timeline_tab.dart';
+import 'ledger_feed_controller.dart';
 
-/// Rebuilt home chrome (confirmed reference):
-/// menu · large serif date · coverage line · 时间线 / 摘要 / 复盘 tabs ·
-/// 记录睡眠 / 记录一笔. Hosts the existing real timeline and review pages and
-/// shares one reading controller with the coverage header.
+/// 首页外壳：菜单 / 侧边栏、当前浏览日期、当日覆盖与跨日期连续时间轴。
+///
+/// 首页只保留时间账本；摘要与每日复盘改为侧边栏中的独立页面。顶部日期
+/// 与覆盖统计始终对应当前浏览日期，跨日滚动、滑动切日与日历跳转共用同一
+/// 次日期更新。
 class HomeShell extends StatefulWidget {
   const HomeShell({
     super.key,
-    required this.selection,
     required this.ledgerLoader,
     required this.now,
     required this.dateOfInstant,
-    required this.timeline,
-    required this.summary,
-    required this.review,
+    required this.initialDate,
     required this.busy,
     this.onGoals,
     this.onSettings,
+    required this.onOpenSummary,
+    required this.onOpenReview,
     required this.onRecordActivity,
     required this.onRecordSleep,
-    this.reviewEnabled = true,
-    this.banner,
+    this.onEditFact,
+    this.onDeleteTimeBlock,
+    this.onFillGap,
     this.floatingCard,
+    this.banner,
+    this.active = true,
   });
 
-  final DayDateSelection selection;
   final DayLedgerLoader ledgerLoader;
   final int Function() now;
   final CivilDate Function(int) dateOfInstant;
-  final Widget Function(DayLedgerController controller, bool active) timeline;
-  final Widget Function(DayLedgerController controller, bool active) summary;
-  final Widget Function(bool active) review;
 
-  /// 浮动提示卡（例如已保存的复盘），停在操作栏正上方，不随记录列表滚动。
-  final Widget Function(DayLedgerController controller)? floatingCard;
-  final bool reviewEnabled;
+  /// 首页首次打开时对应的自然日（跟随时为设备今天）。
+  final CivilDate initialDate;
   final bool busy;
 
   /// 侧边栏入口；为空时不显示对应项。
   final VoidCallback? onGoals;
   final VoidCallback? onSettings;
+  final VoidCallback onOpenSummary;
+  final VoidCallback onOpenReview;
   final VoidCallback onRecordActivity;
   final VoidCallback onRecordSleep;
 
+  final Future<bool> Function(CivilDate date, LedgerSegment segment)?
+  onEditFact;
+  final ValueChanged<TimeBlockSegment>? onDeleteTimeBlock;
+  final void Function(CivilDate date, UnresolvedSpan gap)? onFillGap;
+
+  /// 浮动提示卡（例如建议区域），停在操作栏正上方，不随记录列表滚动。
+  final Widget Function(LedgerFeedController controller)? floatingCard;
+
   /// 可选提示区（例如首次主睡眠检查失败），显示在顶栏与日期之间。
   final Widget? banner;
+
+  /// 首页是否为当前阅读面；压在编辑器或独立页下时为 false。
+  final bool active;
 
   @override
   State<HomeShell> createState() => HomeShellState();
 }
 
-class HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
-  late final TabController tabs = TabController(length: 3, vsync: this);
-  late final DayLedgerController controller;
+class HomeShellState extends State<HomeShell> {
+  late final LedgerFeedController feed;
   final _scaffold = GlobalKey<ScaffoldState>();
+  Offset? _dragStart;
+  Offset _dragDelta = Offset.zero;
+  final _pointers = <int>{};
+  int? _dragPointer;
+
+  /// 侧边栏打开时的左边缘 / 右边缘保留区，避免与抽屉和系统返回手势冲突。
+  static const _edgeGuard = 32.0;
+
+  CivilDate? _lastToday;
+
+  /// 顶部日期代表的当前浏览日期；记录入口与摘要 / 复盘入口都沿用它。
+  CivilDate get browsingDate => feed.focusDate;
 
   @override
   void initState() {
     super.initState();
-    controller = DayLedgerController(
+    feed = LedgerFeedController(
       loader: widget.ledgerLoader,
       now: widget.now,
       dateOfInstant: widget.dateOfInstant,
-      selectedDate: widget.selection.date,
+      initialDate: widget.initialDate,
     );
-    widget.selection.addListener(_onSelectionChanged);
-    tabs.addListener(_onTabChanged);
-    controller.refresh();
+    _lastToday = _today();
+    _showDate(widget.initialDate);
   }
 
-  void _onSelectionChanged() => controller.select(widget.selection.date);
-
-  void _onTabChanged() {
-    if (mounted) setState(() {});
+  @override
+  void dispose() {
+    feed.dispose();
+    super.dispose();
   }
 
-  void _openDrawer() => _scaffold.currentState?.openDrawer();
+  CivilDate _today() => widget.dateOfInstant(widget.now());
 
-  /// 侧边栏：沿用「我的目标 / 设置」两个入口（MD3 NavigationDrawer）。
+  Widget _timeline(CivilDate today) {
+    return HomeFeedTransition(
+      key: const ValueKey('home-timeline-transition'),
+      frame: feed.captureFrame(),
+      builder: (frame, positioned) => HomeTimelineTab(
+        key: ValueKey(frame.endDate),
+        controller: feed,
+        frame: frame,
+        onPositioned: positioned,
+        today: today,
+        active: widget.active && !widget.busy,
+        onEditFact: widget.onEditFact,
+        onDeleteTimeBlock: widget.onDeleteTimeBlock,
+        onFillGap: widget.onFillGap,
+        onDayTap: (date) => _chooseDate(initial: date),
+        bottomInset: widget.floatingCard == null ? 0 : 88,
+      ),
+    );
+  }
+
+  /// 侧边栏：时间账本 / 当日摘要 / 每日复盘 + 我的目标 / 设置。
   Widget _menuDrawer() {
-    final entries = <({Widget destination, VoidCallback action})>[
+    final entries = <({Widget destination, VoidCallback? action})>[
+      (
+        destination: const NavigationDrawerDestination(
+          key: ValueKey('menu-ledger'),
+          icon: Icon(Icons.list_alt_outlined),
+          label: Text('时间账本'),
+        ),
+        action: null,
+      ),
+      (
+        destination: const NavigationDrawerDestination(
+          key: ValueKey('menu-summary'),
+          icon: Icon(Icons.donut_small_outlined),
+          label: Text('当日摘要'),
+        ),
+        action: widget.onOpenSummary,
+      ),
+      (
+        destination: const NavigationDrawerDestination(
+          key: ValueKey('menu-review'),
+          icon: Icon(Icons.menu_book_outlined),
+          label: Text('每日复盘'),
+        ),
+        action: widget.onOpenReview,
+      ),
       if (widget.onGoals case final onGoals?)
         (
           destination: const NavigationDrawerDestination(
@@ -109,219 +177,250 @@ class HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
         ),
     ];
     return NavigationDrawer(
+      key: const ValueKey('home-drawer'),
+      selectedIndex: 0,
       onDestinationSelected: (index) {
-        Navigator.of(context).pop(); // 关闭侧边栏
-        entries[index].action();
+        Navigator.of(context).pop();
+        entries[index].action?.call();
       },
       children: [for (final entry in entries) entry.destination],
     );
   }
 
-  /// 复盘卡入口：切到复盘标签。
-  void openReviewTab() {
-    if (mounted) tabs.animateTo(2);
+  /// 日历 / 前后一天 / 滑动切日 / 回到今天共用：目标日成为浏览日期与窗口末端。
+  Future<void> _showDate(CivilDate date) async {
+    final today = _today();
+    if (await feed.showDate(date)) _lastToday = today;
   }
 
-  Future<void> _chooseDate() async {
-    final date = controller.date;
-    if (date == null || widget.busy) return;
+  /// 显式跳到某一天；日历、滑动切日与“回到今天”共用同一规则。
+  Future<void> openDate(CivilDate date) => _showDate(date);
+
+  Future<void> _refresh() async {
+    final today = _today();
+    if (await feed.refresh()) _lastToday = today;
+  }
+
+  /// 编辑记录返回后的数据刷新；跨过午夜且原来跟随今天时回到新的今天。
+  Future<void> refresh() async {
+    final today = _today();
+    final following = _lastToday != null && feed.focusDate == _lastToday;
+    if (following && feed.focusDate != today) {
+      await _showDate(today);
+      return;
+    }
+    await _refresh();
+  }
+
+  Future<void> _chooseDate({CivilDate? initial}) async {
+    if (widget.busy) return;
     var followToday = false;
     final selected = await showDayLedgerDateDialog(
       context,
-      date,
+      initial ?? feed.focusDate,
       onToday: () => followToday = true,
-      modeDescription: widget.selection.date == null ? '跟随今天' : '固定日期',
     );
     if (!mounted) return;
     if (followToday) {
-      widget.selection.select(null);
+      await _showDate(_today());
     } else if (selected != null) {
-      widget.selection.select(selected);
-    } else {
-      controller.refresh();
+      await _showDate(selected);
     }
   }
 
-  @override
-  void dispose() {
-    widget.selection.removeListener(_onSelectionChanged);
-    tabs.removeListener(_onTabChanged);
-    tabs.dispose();
-    controller.dispose();
-    super.dispose();
+  Future<void> _shiftDay(int direction) {
+    final target = adjacentLedgerDate(feed.navigationDate, direction);
+    return _showDate(target);
+  }
+
+  void _pointerDown(PointerDownEvent event) {
+    _pointers.add(event.pointer);
+    if (_pointers.length != 1 || widget.busy) {
+      _cancelDrag();
+      return;
+    }
+    final width = MediaQuery.sizeOf(context).width;
+    final x = event.position.dx;
+    if (x < _edgeGuard || x > width - _edgeGuard) {
+      _cancelDrag();
+      return;
+    }
+    _dragPointer = event.pointer;
+    _dragStart = event.position;
+    _dragDelta = Offset.zero;
+  }
+
+  void _recordPointerPosition(PointerEvent event) {
+    if (event.pointer != _dragPointer || _dragStart == null) return;
+    // 水平识别器会过滤接受手势前的垂直位移，原始指针保留真实双轴轨迹。
+    _dragDelta = event.position - _dragStart!;
+  }
+
+  void _pointerUp(PointerUpEvent event) {
+    _recordPointerPosition(event);
+    _pointers.remove(event.pointer);
+  }
+
+  void _pointerCancel(PointerCancelEvent event) {
+    _pointers.remove(event.pointer);
+    if (event.pointer == _dragPointer) _cancelDrag();
+  }
+
+  void _cancelDrag() {
+    _dragPointer = null;
+    _dragStart = null;
+    _dragDelta = Offset.zero;
+  }
+
+  void _dragEnd(DragEndDetails details) {
+    final started = _dragStart != null;
+    final dx = _dragDelta.dx;
+    final dy = _dragDelta.dy;
+    _cancelDrag();
+    if (!started || widget.busy) return;
+    // 明确的横向意图才切日，轻微斜滑不会误触记录或换日。
+    if (dx.abs() < 64 || dx.abs() <= dy.abs() * 1.6) return;
+    _shiftDay(dx < 0 ? 1 : -1);
   }
 
   @override
   Widget build(BuildContext context) {
-    final today = widget.dateOfInstant(widget.now());
-    final onTimeline = tabs.index == 0;
-    // 复盘页仍按环境主题渲染；根主题已是 homeTheme，二者一致。
-    final appTheme = Theme.of(context);
+    final today = _today();
     return Theme(
       data: homeTheme,
-      child: PopScope(
-        canPop: onTimeline,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) tabs.animateTo(0);
-        },
-        child: Scaffold(
-          key: _scaffold,
-          drawer: _menuDrawer(),
-          body: SafeArea(
-            bottom: false,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                // Short viewports drop the header coverage; the summary tab keeps it.
-                final tight = constraints.maxHeight < 520;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    MediaQuery.withClampedTextScaling(
-                      maxScaleFactor: 1.5,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          HomeTopBar(
-                            busy: widget.busy,
-                            onMenu: _openDrawer,
-                            onChooseDate: _chooseDate,
-                          ),
-                          ?widget.banner,
-                          ListenableBuilder(
-                            listenable: controller,
-                            builder: (context, _) {
-                              final date = controller.date;
-                              final view = controller.view;
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  if (date != null)
-                                    HomeDateTitle(
-                                      date: date,
-                                      today: today,
-                                      busy: widget.busy,
-                                      onChooseDate: _chooseDate,
-                                      compact: tight,
-                                    ),
-                                  // 高度不足（如横屏）时收起覆盖行；摘要 tab 仍保留覆盖信息。
-                                  if (view != null && !tight)
-                                    Padding(
-                                      padding: const EdgeInsets.fromLTRB(
-                                        20,
-                                        10,
-                                        20,
-                                        6,
+      child: Scaffold(
+        key: _scaffold,
+        drawer: _menuDrawer(),
+        body: SafeArea(
+          bottom: false,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // 高度不足（如横屏）时压缩头部；覆盖行在短视口收起。
+              final tight = constraints.maxHeight < 520;
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  MediaQuery.withClampedTextScaling(
+                    maxScaleFactor: 1.5,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        HomeTopBar(
+                          busy: widget.busy,
+                          onMenu: () => _scaffold.currentState?.openDrawer(),
+                        ),
+                        ?widget.banner,
+                        ListenableBuilder(
+                          listenable: feed,
+                          builder: (context, _) => Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              HomeDateTitle(
+                                date: feed.focusDate,
+                                today: today,
+                                busy: widget.busy,
+                                compact: tight,
+                                onChooseDate: _chooseDate,
+                                onShiftDay: _shiftDay,
+                                onToday: () => _showDate(today),
+                              ),
+                              if (!tight)
+                                if (feed.focusView case final view?)
+                                  HomeCoverageLine(
+                                    view: view,
+                                    onTap: widget.busy
+                                        ? null
+                                        : widget.onOpenSummary,
+                                  ),
+                              if (feed.refreshFailed)
+                                Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    20,
+                                    6,
+                                    20,
+                                    0,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Expanded(
+                                        child: Text(
+                                          '账本刷新失败，当前仍显示上一次读取结果。',
+                                          style: TextStyle(fontSize: 13),
+                                        ),
                                       ),
-                                      child: HomeCoverageLine(view: view),
-                                    ),
-                                ],
-                              );
-                            },
+                                      TextButton(
+                                        onPressed: widget.busy
+                                            ? null
+                                            : _refresh,
+                                        child: const Text('重试读取'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                    MediaQuery.withClampedTextScaling(
-                      maxScaleFactor: 1.5,
-                      child: TabBar(
-                        controller: tabs,
-                        tabs: const [
-                          Tab(key: ValueKey('home-tab-timeline'), text: '时间线'),
-                          Tab(key: ValueKey('home-tab-summary'), text: '摘要'),
-                          Tab(key: ValueKey('home-tab-review'), text: '复盘'),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
+                  ),
+                  Expanded(
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: Listener(
+                            behavior: HitTestBehavior.opaque,
+                            onPointerDown: _pointerDown,
+                            onPointerMove: _recordPointerPosition,
+                            onPointerUp: _pointerUp,
+                            onPointerCancel: _pointerCancel,
                             child: GestureDetector(
                               behavior: HitTestBehavior.opaque,
-                              onHorizontalDragEnd: (details) {
-                                final velocity = details.primaryVelocity ?? 0;
-                                if (velocity < -200 && tabs.index < 2) {
-                                  tabs.animateTo(tabs.index + 1);
-                                } else if (velocity > 200 && tabs.index > 0) {
-                                  tabs.animateTo(tabs.index - 1);
-                                }
-                              },
-                              child: IndexedStack(
-                                index: tabs.index,
-                                children: [
-                                  Offstage(
-                                    offstage: tabs.index != 0,
-                                    child: widget.timeline(
-                                      controller,
-                                      tabs.index == 0,
+                              onHorizontalDragEnd: _dragEnd,
+                              onHorizontalDragCancel: _cancelDrag,
+                              child: ListenableBuilder(
+                                listenable: feed,
+                                builder: (context, _) =>
+                                    MediaQuery.withClampedTextScaling(
+                                      maxScaleFactor: 1.5,
+                                      child: _timeline(today),
                                     ),
-                                  ),
-                                  Offstage(
-                                    offstage: tabs.index != 1,
-                                    child: widget.summary(
-                                      controller,
-                                      tabs.index == 1,
-                                    ),
-                                  ),
-                                  Offstage(
-                                    offstage: tabs.index != 2,
-                                    child: widget.reviewEnabled
-                                        ? Theme(
-                                            data: appTheme,
-                                            child: widget.review(
-                                              tabs.index == 2,
-                                            ),
-                                          )
-                                        : const _PlaceholderTab('复盘留待后续设计。'),
-                                  ),
-                                ],
                               ),
                             ),
                           ),
-                          // Floats above the action bar without joining the
-                          // timeline's scroll extent, so it never pushes the
-                          // action bar off screen or changes the reading
-                          // surface's viewport (which would move the anchor).
-                          if (widget.floatingCard != null && tabs.index == 0)
-                            Positioned(
-                              left: 0,
-                              right: 0,
-                              bottom: 0,
-                              child: MediaQuery.withClampedTextScaling(
-                                maxScaleFactor: 1.3,
-                                child: ListenableBuilder(
-                                  listenable: controller,
-                                  builder: (context, _) =>
-                                      widget.floatingCard!(controller),
-                                ),
+                        ),
+                        // Floats above the action bar without joining the
+                        // timeline's scroll extent, so it never pushes the
+                        // action bar off screen or changes the reading surface.
+                        if (widget.floatingCard != null)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: MediaQuery.withClampedTextScaling(
+                              maxScaleFactor: 1.3,
+                              child: ListenableBuilder(
+                                listenable: feed,
+                                builder: (context, _) =>
+                                    widget.floatingCard!(feed),
                               ),
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
-                  ],
-                );
-              },
-            ),
+                  ),
+                ],
+              );
+            },
           ),
-          bottomNavigationBar: _HomeBottomBar(
-            busy: widget.busy,
-            onRecordSleep: widget.onRecordSleep,
-            onRecordActivity: widget.onRecordActivity,
-          ),
+        ),
+        bottomNavigationBar: _HomeBottomBar(
+          busy: widget.busy,
+          onRecordSleep: widget.onRecordSleep,
+          onRecordActivity: widget.onRecordActivity,
         ),
       ),
     );
   }
-}
-
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) =>
-      Center(child: Text(text, style: Theme.of(context).textTheme.bodyMedium));
 }
 
 class _HomeBottomBar extends StatelessWidget {

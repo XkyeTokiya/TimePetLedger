@@ -316,7 +316,7 @@ class DayLedgerPageState extends State<DayLedgerPage>
       pendingDelete = result.complete
           ? null
           : (context: draftContext, result: result);
-      deleteError = result.complete ? null : '记录已删除，但草稿清理或读取失败；请继续清理并刷新。';
+      deleteError = result.complete ? null : '记录已删除，但本地收尾或读取失败；请继续处理并刷新。';
     });
     ScaffoldMessenger.of(context)
         .showSnackBar(const SnackBar(content: Text('记录已删除。')));
