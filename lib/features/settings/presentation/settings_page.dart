@@ -135,7 +135,7 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('添加测试数据？'),
-        content: const Text('将添加一组示例数据。设置保持原样，测试目标不会自动设为常用。'),
+        content: const Text('将添加今天及之前六天的示例记录。设置保持原样，测试目标不会自动设为常用。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -379,7 +379,7 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: counts.isEmpty && !busy ? _confirmSeed : null,
           ),
           Text(
-            counts.isEmpty ? '添加一组示例记录，方便体验。' : '已有数据，暂时不能添加测试数据。',
+            counts.isEmpty ? '添加今天及之前六天的示例记录，方便体验。' : '已有数据，暂时不能添加测试数据。',
             style: _muted,
           ),
           const SizedBox(height: 20),
