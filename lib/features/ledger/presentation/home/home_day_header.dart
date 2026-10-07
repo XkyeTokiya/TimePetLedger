@@ -24,19 +24,20 @@ class HomeTopBar extends StatelessWidget {
       children: [
         IconButton(
           key: const ValueKey('home-menu'),
-          tooltip: '更多',
+          tooltip: '菜单',
           onPressed: busy ? null : onMenu,
           icon: const Icon(Icons.menu),
         ),
         const SizedBox(width: 4),
         Text('日账本', style: Theme.of(context).textTheme.titleLarge),
         const Spacer(),
-        IconButton(
-          key: const ValueKey('home-date'),
-          tooltip: '选择日期',
-          onPressed: busy ? null : onChooseDate,
-          icon: const Icon(Icons.calendar_today_outlined),
-        ),
+        // 右上角入口暂时隐藏（2026-10-07 用户要求）；构建代码保留，待未来其他入口。
+        // IconButton(
+        //   key: const ValueKey('home-date'),
+        //   tooltip: '选择日期',
+        //   onPressed: busy ? null : onChooseDate,
+        //   icon: const Icon(Icons.calendar_today_outlined),
+        // ),
       ],
     ),
   );

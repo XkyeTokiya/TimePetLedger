@@ -83,13 +83,26 @@ class HomeSummaryTab extends StatelessWidget {
               const SizedBox(height: 28),
             ],
             const _SectionLabel('睡眠背景'),
-            const Text('按所选日期的醒来日期汇总完整睡眠；账本覆盖仅计当日窗口内的部分。'),
             const SizedBox(height: 8),
-            SleepSummaryView(summary: view.sleepSummary, onEdit: onEditSleep),
-            const SizedBox(height: 28),
-            GoalRhythmSummaryView(
-              goals: view.goalSummaries,
-              rhythm: view.rhythmSummary,
+            SleepSummaryView(
+              summary: view.sleepSummary,
+              onEdit: onEditSleep,
+              foldRecords: true,
+            ),
+            const SizedBox(height: 20),
+            ExpansionTile(
+              key: const ValueKey('summary-rhythm-details'),
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: const EdgeInsets.only(bottom: 8),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              title: const Text('目标与节奏明细', style: _sectionStyle),
+              children: [
+                GoalRhythmSummaryView(
+                  goals: view.goalSummaries,
+                  rhythm: view.rhythmSummary,
+                ),
+              ],
             ),
           ] else if (controller.status == DayLedgerStatus.empty)
             const Text('此账本窗口及醒来日期尚无正式记录。'),
@@ -185,14 +198,13 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 6),
-    child: Text(
-      text,
-      style: const TextStyle(
-        fontFamily: homeSerifFamily,
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: HomePalette.ink,
-      ),
-    ),
+    child: Text(text, style: _sectionStyle),
   );
 }
+
+const _sectionStyle = TextStyle(
+  fontFamily: homeSerifFamily,
+  fontSize: 18,
+  fontWeight: FontWeight.w600,
+  color: HomePalette.ink,
+);

@@ -15,7 +15,6 @@ import '../features/review/presentation/review_context_page.dart';
 
 import '../features/ledger/application/day_ledger_loader.dart';
 import '../features/ledger/presentation/day_ledger_controller.dart';
-import '../features/ledger/presentation/home/home_menu_page.dart';
 import '../features/ledger/presentation/home/home_shell.dart';
 import '../features/ledger/presentation/home/home_suggestion_card.dart';
 import '../features/ledger/presentation/home/home_summary_tab.dart';
@@ -330,21 +329,18 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  /// 菜单入口：进入独立「菜单」整页（只有我的目标 / 设置）。
-  ///
-  /// 账本自身的刷新与时间分布说明不再占用菜单，改由首页正文承接。
-  Future<void> _menu() async {
-    if (busy) return;
+  /// 侧边栏入口：进入独立「我的目标」整页。
+  Future<void> _openGoals() => _pushMenuEntry(widget.goalEntry);
+
+  /// 侧边栏入口：进入独立「设置」整页。
+  Future<void> _openSettings() => _pushMenuEntry(widget.settingsEntry);
+
+  Future<void> _pushMenuEntry(Widget Function()? entry) async {
+    if (busy || entry == null) return;
     setState(() => opening = true);
     try {
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (_) => HomeMenuPage(
-            goalsPage: widget.goalEntry,
-            settingsPage: widget.settingsEntry,
-          ),
-        ),
-      );
+      await Navigator.of(context)
+          .push<void>(MaterialPageRoute(builder: (_) => entry()));
     } finally {
       if (mounted) {
         setState(() => opening = false);
@@ -620,7 +616,8 @@ class _RecordingHomeState extends State<_RecordingHome>
                 ],
               ),
             ),
-      onMenu: _menu,
+      onGoals: widget.goalEntry == null ? null : _openGoals,
+      onSettings: widget.settingsEntry == null ? null : _openSettings,
       onRecordActivity: _recordActivity,
       onRecordSleep: _recordSleep,
       reviewEnabled: widget.reviewContext != null,

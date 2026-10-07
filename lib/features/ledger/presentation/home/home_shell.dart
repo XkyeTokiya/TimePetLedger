@@ -6,7 +6,6 @@ import '../../application/day_ledger_loader.dart';
 import '../day_date_selection.dart';
 import '../day_ledger_controller.dart';
 import '../day_ledger_date_dialog.dart';
-import '../day_ledger_overview.dart';
 import 'home_coverage_line.dart';
 import 'home_day_header.dart';
 
@@ -25,7 +24,8 @@ class HomeShell extends StatefulWidget {
     required this.summary,
     required this.review,
     required this.busy,
-    required this.onMenu,
+    this.onGoals,
+    this.onSettings,
     required this.onRecordActivity,
     required this.onRecordSleep,
     this.reviewEnabled = true,
@@ -45,7 +45,10 @@ class HomeShell extends StatefulWidget {
   final Widget Function(DayLedgerController controller)? floatingCard;
   final bool reviewEnabled;
   final bool busy;
-  final VoidCallback onMenu;
+
+  /// 侧边栏入口；为空时不显示对应项。
+  final VoidCallback? onGoals;
+  final VoidCallback? onSettings;
   final VoidCallback onRecordActivity;
   final VoidCallback onRecordSleep;
 
@@ -59,6 +62,7 @@ class HomeShell extends StatefulWidget {
 class HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
   late final TabController tabs = TabController(length: 3, vsync: this);
   late final DayLedgerController controller;
+  final _scaffold = GlobalKey<ScaffoldState>();
 
   @override
   void initState() {
@@ -80,27 +84,42 @@ class HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
     if (mounted) setState(() {});
   }
 
-  /// 菜单入口：重读当前日期账本。
-  void refreshFromMenu() {
-    if (widget.busy) return;
-    controller.refresh();
+  void _openDrawer() => _scaffold.currentState?.openDrawer();
+
+  /// 侧边栏：沿用「我的目标 / 设置」两个入口（MD3 NavigationDrawer）。
+  Widget _menuDrawer() {
+    final entries = <({Widget destination, VoidCallback action})>[
+      if (widget.onGoals case final onGoals?)
+        (
+          destination: const NavigationDrawerDestination(
+            key: ValueKey('menu-goals'),
+            icon: Icon(Icons.flag_outlined),
+            label: Text('我的目标'),
+          ),
+          action: onGoals,
+        ),
+      if (widget.onSettings case final onSettings?)
+        (
+          destination: const NavigationDrawerDestination(
+            key: ValueKey('menu-settings'),
+            icon: Icon(Icons.settings_outlined),
+            label: Text('设置'),
+          ),
+          action: onSettings,
+        ),
+    ];
+    return NavigationDrawer(
+      onDestinationSelected: (index) {
+        Navigator.of(context).pop(); // 关闭侧边栏
+        entries[index].action();
+      },
+      children: [for (final entry in entries) entry.destination],
+    );
   }
 
   /// 复盘卡入口：切到复盘标签。
   void openReviewTab() {
     if (mounted) tabs.animateTo(2);
-  }
-
-  /// 菜单入口：打开时间分布说明（只读当前投影）。
-  void showDistribution() {
-    final view = controller.view;
-    final dateContext = controller.dateContext;
-    if (widget.busy || view == null || dateContext == null) return;
-    DayLedgerOverview.showExplanation(
-      context,
-      view: view,
-      dateContext: dateContext,
-    );
   }
 
   Future<void> _chooseDate() async {
@@ -146,6 +165,8 @@ class HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
           if (!didPop) tabs.animateTo(0);
         },
         child: Scaffold(
+          key: _scaffold,
+          drawer: _menuDrawer(),
           body: SafeArea(
             bottom: false,
             child: LayoutBuilder(
@@ -162,7 +183,7 @@ class HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
                         children: [
                           HomeTopBar(
                             busy: widget.busy,
-                            onMenu: widget.onMenu,
+                            onMenu: _openDrawer,
                             onChooseDate: _chooseDate,
                           ),
                           ?widget.banner,
@@ -182,49 +203,16 @@ class HomeShellState extends State<HomeShell> with TickerProviderStateMixin {
                                       onChooseDate: _chooseDate,
                                       compact: tight,
                                     ),
-                                  // 高度不足（如横屏）时只收起覆盖行，
-                                  // 时间分布说明与刷新入口始终可达。
-                                  if (view != null)
+                                  // 高度不足（如横屏）时收起覆盖行；摘要 tab 仍保留覆盖信息。
+                                  if (view != null && !tight)
                                     Padding(
-                                      padding: EdgeInsets.fromLTRB(
+                                      padding: const EdgeInsets.fromLTRB(
                                         20,
-                                        tight ? 2 : 10,
+                                        10,
                                         20,
                                         6,
                                       ),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          if (!tight) ...[
-                                            HomeCoverageLine(view: view),
-                                            const SizedBox(height: 2),
-                                          ],
-                                          Row(
-                                            children: [
-                                              TextButton(
-                                                key: const ValueKey(
-                                                  'home-distribution',
-                                                ),
-                                                onPressed: widget.busy
-                                                    ? null
-                                                    : showDistribution,
-                                                child: const Text('时间分布说明'),
-                                              ),
-                                              const Spacer(),
-                                              TextButton(
-                                                key: const ValueKey(
-                                                  'home-refresh',
-                                                ),
-                                                onPressed: widget.busy
-                                                    ? null
-                                                    : refreshFromMenu,
-                                                child: const Text('刷新账本'),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
+                                      child: HomeCoverageLine(view: view),
                                     ),
                                 ],
                               );
