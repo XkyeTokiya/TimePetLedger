@@ -38,6 +38,7 @@
 | [根 README](../README.md) | 持续维护 | 项目介绍及统一文档入口；原 Flutter 模板说明已由本次整理替换 |
 | [docs README](README.md) | 持续维护 | 文档目录入口；定性集中在本台账，避免重复维护阶段结论 |
 | [本台账](DOCUMENT_REGISTER.md) | 持续维护 | 文档定性、查阅与归档关系；不代替任务状态表 |
+| [design.md](../design.md) | 现行依据（视觉与界面实现） | 当前调色板、字阶、间距、组件与设置页规范；不定义产品功能或领域规则，冲突时仍按 AGENTS 的 Source of Truth Priority 处理 |
 | [AGENTS](../AGENTS.md) | 现行依据 | Agent 工作方式、范围、来源优先级及完成门槛；不定义产品功能 |
 | [领域源提案](../time-ledger-domain-model-v4-proposal.md) | 现行依据 | 产品 / 领域 Source of Truth；先读顶部后续决定，原章节保留历史表达，不能单凭标题含“proposal”归档 |
 | [DOMAIN_RULES](domain/DOMAIN_RULES.md) | 现行依据 | 不变量、合法性、校验与业务规则；稳定规则编号 |

@@ -122,7 +122,7 @@ Q-013 已允许组合更正 TimeBlock 与 annotation，必须形成单个原子�
 
 ## Engineering Recommendation：UI state 与依赖注入
 
-UI state 放在所属 feature/presentation：当前选择日期、输入草稿、正在保存、错误提示、展示投影等。它们不新增领域实体状态；“正在保存”不写入 DailyReview.status，按 Q-012 自动保存本机草稿并跨启动 / 网页刷新恢复，草稿存储由所属 feature 的 application / data 协调，正式 domain 实体不因此增加状态。编辑期间正式事实保持原样，成功提交或主动放弃后清除对应草稿，失败保留。
+UI state 放在所属 feature/presentation：当前选择日期、会话内未完成输入快照、正在保存、错误提示、展示投影等。它们不新增领域实体状态；“正在保存”不写入 DailyReview.status。按Q-012，`AppBootstrap`在应用运行期持有活动、睡眠和复盘的内存session store，使跨路由返回可恢复；冷启动或Web reload会创建空store。编辑期间正式事实保持原样，正式提交成功后清除对应会话输入，失败则留在页面。睡眠学习store是独立持久化依赖，不兼任输入store。
 
 第一版可采用 Flutter 自带的局部状态与小型 controller / view model；需要通知多个 Widget 的 controller 可使用 ChangeNotifier / Listenable。它们只属于 presentation，不进入 domain。状态管理包与路由包不在本轮选定或安装。[Flutter UI 与状态建议](https://docs.flutter.dev/app-architecture/recommendations)
 

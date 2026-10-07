@@ -14,7 +14,7 @@
 | 领域值对象 | TomorrowFirstStep | 随 DailyReview 保存其内容；不是已确定的独立实体 / 表，intendedDate 按复盘日期派生 |
 | 领域枚举 | TimePrecision、BlockKnowledgeState、RhythmState、SleepType；Goal.status 的两个值 | 作为所属实体字段保存，无独立生命周期 |
 | Derived Models | DayLedgerView、UnresolvedSpan、时间切片与各项时长 / 汇总 | NO：由事实重新计算 |
-| UI Models | 记录草稿、时间区间建议、时间编辑状态等交互数据 | 独立本机草稿可持久化，但不属于正式领域事实（Q-012） |
+| UI Models | 会话内未完成输入快照、时间区间建议、时间编辑状态等交互数据 | 只存活于当前app / 网页会话，不属于正式领域事实（Q-012） |
 
 Time is the foundational fact。TimeBlock = what happened；RhythmAnnotation = 部分时间的目标节奏解释；SleepSession = independent sleep fact；DailyReview = interpretation and next action。
 
@@ -129,7 +129,7 @@ stuckReasonText 可以独立于代码填写，也可补充任一选项；选择 
 
 **Relationships:** 按 date 解读当天事实及其派生信息，不持有持久化 Day 实体；包含一个 TomorrowFirstStep，其中可引用 Goal。
 
-**Persistence status:** YES，保存解释和行动内容。progressMinutes / stuckMinutes / recoveryMinutes 不保存为复盘事实源。未完成复盘草稿不等于已定义的持久化 DailyReview（Q-012）。
+**Persistence status:** YES，保存解释和行动内容。progressMinutes / stuckMinutes / recoveryMinutes 不保存为复盘事实源。会话内未完成复盘输入不等于已定义的持久化 DailyReview（Q-012）。
 
 **What this object must NOT represent:** 统计快照的事实源、所有 Goal 的明日计划器、任务列表。keyProgress / mainStuckPoint / recoveryObservation 只是后续可考虑的结构，不属于第一版必需字段。
 
@@ -183,14 +183,14 @@ Goal.status 明确只有 active、archived；不额外引入新的生命周期�
 
 ## UI Models（§26–29）
 
-**Purpose:** 支撑时间建议、活动输入、补账草稿及时间编辑。
+**Purpose:** 支撑时间建议、活动输入、补账以及会话内输入恢复。
 
-**Fields / Field semantics:** 活动 / 睡眠草稿包含可修改的完整起止日期时间与独立精度。Q-036后续要求每次新建 / 补记进入直接重算完整可改估计，以约80%无需额外时间操作为目标，包含多日断记 / 漏睡眠；结合相邻完整事实与个人睡眠学习，无历史用常规作息。Q-035旧初始化保留追溯，3不再默认留空；不恢复旧缓存端点，其他未提交内容保留，同次稳定。确切模型 / 参数与学习元数据位置见Q-037候选，不将预测模型作为持久化账本事实。新建统一approximate，无精度选择（Q-030）；旧精度迁移待Q-031；既有更正 / 提交后恢复优先自身区间 / 结果。具体 UI 类型按职责组织。
+**Fields / Field semantics:** 会话快照可保留用户已修改的活动 / 睡眠 / 复盘文本、选择以及活动引导步骤。Q-036后续要求每次新建 / 补记进入直接重算完整可改估计，以约80%无需额外时间操作为目标，包含多日断记 / 漏睡眠；结合相邻完整事实与个人睡眠学习，无历史用常规作息。不用旧会话端点绕过时间初始化；既有事实更正则以当前正式记录为基线。确切模型 / 参数与学习元数据位置见Q-037候选，不将预测模型作为持久化账本事实。新建统一approximate，无精度选择（Q-030）；旧精度迁移待Q-031。
 
-**Relationships:** 草稿可由 UnresolvedSpan 预填，确认后形成领域事实；系统猜测本身不等于用户确认的记录。
+**Relationships:** 会话输入可由 UnresolvedSpan 预填，确认后形成领域事实；系统猜测和会话快照都不等于用户确认的记录。
 
 **Required / optional:** 未定义，不从示意交互推导新的领域必填项。
 
-**Persistence status:** 按 Q-012 自动保存普通记录、睡眠记录和每日复盘的未保存输入到本机，支持离开页面、关闭应用或网页刷新后恢复。与正式事实分开，不参与覆盖、统计或重叠判断；编辑草稿不修改原正式记录。成功保存或主动放弃后清除对应草稿，失败保留；正式保存仍执行完整校验。
+**Persistence status:** NO。按Q-012仅保留在当前应用 / 网页会话的内存快照中；冷启动或刷新后为空。快照与正式事实分开，不参与覆盖、统计或重叠判断，编辑期间不修改原正式记录。睡眠学习反馈另行持久化，不属于未完成输入。
 
 **What these objects must NOT represent:** 新增持久化 Gap、运行中的计时器领域实体、额外 Day 实体或强制记录流程状态。

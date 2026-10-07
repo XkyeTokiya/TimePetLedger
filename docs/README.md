@@ -6,6 +6,7 @@
 | --- | --- |
 | 文档职责、有效性、归档及替代关系 | [项目文档台账](DOCUMENT_REGISTER.md) |
 | 产品 / 领域首要来源 | [领域源提案](../time-ledger-domain-model-v4-proposal.md) |
+| 当前视觉语言、设计 token 与组件规范 | [design.md](../design.md) |
 | 未决事项与后续决定 | [OPEN_QUESTIONS](domain/OPEN_QUESTIONS.md) |
 | 当前前端设计与素材交接 | [UI_REBUILD_PLAN](planning/UI_REBUILD_PLAN.md) |
 | 任务范围与完成依据 | [TASKS](../TASKS.md)、[COMPLETED_TASKS](planning/COMPLETED_TASKS.md) |

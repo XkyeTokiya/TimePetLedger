@@ -173,7 +173,7 @@ add 后同一 TimeBlock 存在两份有效解释；用 neutral 表示 remove 的
 
 来源：§21–22、§33；规则 DR-001–DR-004。
 
-- **States:** 没有 draft / submitted / completed / locked 等正式领域状态。未完成输入按 Q-012 独立保存为本机 UI 草稿，不属于正式 DailyReview，不放宽正式字段规则。
+- **States:** 没有 draft / submitted / completed / locked 等正式领域状态。未完成输入按Q-012只是当前会话的presentation快照，不属于正式 DailyReview，不放宽正式字段规则。
 - **Events:** 保存解释与明天第一步；更正或删除的具体支持方式见 Q-013。
 - **Allowed transitions:** 无阶段式生命周期可定义。正式保存结果遵循一天最多一条及字段存在性规则；不推导每天必须提交、过日自动锁定或只能当天填写。
 - **Invalid transitions:** 以统计值达到阈值自动“完成复盘”；为明天第一步新增任务完成状态；把派生分钟数保存为复盘事实源。

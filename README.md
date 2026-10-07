@@ -6,6 +6,7 @@
 
 - 产品与领域依据：[领域源提案](time-ledger-domain-model-v4-proposal.md)。
 - 开发任务与完成索引：[TASKS](TASKS.md)。
+- 视觉语言与组件规范：[design.md](design.md)。
 - 当前前端设计交接：[UI_REBUILD_PLAN](docs/planning/UI_REBUILD_PLAN.md)。
 - Agent 工作规则：[AGENTS](AGENTS.md)。
 
