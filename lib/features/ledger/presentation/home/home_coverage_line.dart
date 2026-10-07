@@ -17,7 +17,6 @@ class HomeCoverageLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final accounted = formatDerivedDuration(view.accountedDuration);
     final unresolved = formatDerivedDuration(view.unresolvedDuration);
-    final unknown = view.unknownDuration;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -37,19 +36,6 @@ class HomeCoverageLine extends StatelessWidget {
             ),
           ],
         ),
-        if (unknown.milliseconds > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              '其中想不起来 ${formatDerivedDuration(unknown)}（已包含在已交代时间中）',
-              style: const TextStyle(
-                fontFamily: homeSerifFamily,
-                fontSize: 13,
-                height: 1.5,
-                color: HomePalette.muted,
-              ),
-            ),
-          ),
       ],
     );
   }

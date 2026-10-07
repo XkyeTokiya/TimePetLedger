@@ -109,6 +109,10 @@ class SleepFormController extends ChangeNotifier {
         endPrecision = original?.endPrecision;
         type = original?.type;
       }
+      // 新建睡眠默认主睡眠（2026-10-07 用户决定）；已有草稿与更正记录保持原类型。
+      if (!context.isEditing && type == null) {
+        type = SleepType.mainSleep;
+      }
       startedAtInput = saved?.startedAtInput ?? formatSleepTime(startedAt);
       endedAtInput = saved?.endedAtInput ?? formatSleepTime(endedAt);
       _noteProvided = saved?.noteProvided ?? false;

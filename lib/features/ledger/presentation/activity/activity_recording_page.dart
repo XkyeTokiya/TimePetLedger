@@ -618,54 +618,93 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
     );
   }
 
-  Widget _knowledgeSegment(bool unknown) => Container(
-    padding: const EdgeInsets.all(4),
-    decoration: BoxDecoration(
-      color: HomePalette.tint,
-      borderRadius: BorderRadius.circular(24),
-    ),
-    child: Row(
-      children: [
-        _segmentButton(
-          '记得',
-          key: const ValueKey('activity-known'),
-          selected: !unknown,
-          value: BlockKnowledgeState.known,
-        ),
-        _segmentButton(
-          '想不起来',
-          key: const ValueKey('activity-unknown'),
-          selected: unknown,
-          value: BlockKnowledgeState.unknown,
-        ),
-      ],
-    ),
-  );
+  /// 切换时选中底纸在两段之间滑动；空状态（极少见）按“记得”落位。
+  Widget _knowledgeSegment(bool unknown) {
+    final duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : _segmentSlide;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: HomePalette.tint,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: AnimatedAlign(
+              key: const ValueKey('activity-knowledge-indicator'),
+              alignment: unknown ? Alignment.centerRight : Alignment.centerLeft,
+              duration: duration,
+              curve: Curves.easeInOutCubic,
+              child: FractionallySizedBox(
+                key: const ValueKey('activity-knowledge-pill'),
+                widthFactor: 0.5,
+                heightFactor: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: HomePalette.paper,
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              _segmentButton(
+                '记得',
+                key: const ValueKey('activity-known'),
+                selected: !unknown,
+                value: BlockKnowledgeState.known,
+                duration: duration,
+              ),
+              _segmentButton(
+                '想不起来',
+                key: const ValueKey('activity-unknown'),
+                selected: unknown,
+                value: BlockKnowledgeState.unknown,
+                duration: duration,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _segmentButton(
     String label, {
     required Key key,
     required bool selected,
     required BlockKnowledgeState value,
+    required Duration duration,
   }) => Expanded(
     child: Material(
       key: key,
-      color: selected ? HomePalette.paper : Colors.transparent,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(22),
       child: InkWell(
         borderRadius: BorderRadius.circular(22),
+        // 分段切换不叠加按压高亮 / 水波，选择态由滑动底纸表达。
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        focusColor: Colors.transparent,
         onTap: model.editable ? () => model.setKnowledge(value) : null,
         child: Container(
           constraints: const BoxConstraints(minHeight: homeTapTarget),
           alignment: Alignment.center,
-          child: Text(
-            label,
+          child: AnimatedDefaultTextStyle(
+            duration: duration,
+            curve: Curves.easeInOutCubic,
             style: TextStyle(
               fontFamily: homeSerifFamily,
               fontSize: 16,
               color: selected ? HomePalette.accentDeep : HomePalette.ink,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             ),
+            child: Text(label),
           ),
         ),
       ),
@@ -1015,3 +1054,4 @@ const _restored = TextStyle(
   fontSize: 13,
   color: HomePalette.muted,
 );
+const _segmentSlide = Duration(milliseconds: 200);

@@ -336,71 +336,126 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
     ],
   );
 
-  Widget _typeSegment() => Container(
-    padding: const EdgeInsets.all(4),
-    decoration: BoxDecoration(
-      color: HomePalette.tint,
-      borderRadius: BorderRadius.circular(26),
-    ),
-    child: Row(
-      children: [
-        for (final type in SleepType.values)
-          Expanded(
-            child: Semantics(
-              selected: model.type == type,
-              button: true,
-              child: Material(
-                key: ValueKey(
-                  type == SleepType.mainSleep
-                      ? 'sleep-type-main'
-                      : 'sleep-type-nap',
-                ),
-                color: model.type == type
-                    ? HomePalette.paper
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(24),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(24),
-                  onTap: model.editable ? () => model.setType(type) : null,
-                  child: Container(
-                    constraints: const BoxConstraints(minHeight: homeTapTarget),
-                    alignment: Alignment.center,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          type == SleepType.mainSleep
-                              ? Icons.bedtime_outlined
-                              : Icons.nights_stay_outlined,
-                          size: 19,
-                          color: model.type == type
-                              ? HomePalette.accentDeep
-                              : HomePalette.ink,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          type == SleepType.mainSleep ? '主睡眠' : '小睡',
-                          style: TextStyle(
-                            fontFamily: homeSerifFamily,
-                            fontSize: 16,
-                            color: model.type == type
-                                ? HomePalette.accentDeep
-                                : HomePalette.ink,
-                            fontWeight: model.type == type
-                                ? FontWeight.w600
-                                : FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
+  /// 新建睡眠默认主睡眠；切换类型时选中底纸在两段之间滑动。
+  Widget _typeSegment() {
+    final mainSelected = model.type != SleepType.nap;
+    final duration = MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : _segmentSlide;
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: HomePalette.tint,
+        borderRadius: BorderRadius.circular(26),
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: AnimatedAlign(
+              key: const ValueKey('sleep-type-indicator'),
+              alignment: mainSelected
+                  ? Alignment.centerLeft
+                  : Alignment.centerRight,
+              duration: duration,
+              curve: Curves.easeInOutCubic,
+              child: FractionallySizedBox(
+                key: const ValueKey('sleep-type-pill'),
+                widthFactor: 0.5,
+                heightFactor: 1,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: HomePalette.paper,
+                    borderRadius: BorderRadius.circular(24),
                   ),
                 ),
               ),
             ),
           ),
-      ],
-    ),
-  );
+          Row(
+            children: [
+              for (final type in SleepType.values)
+                Expanded(
+                  child: Semantics(
+                    selected: model.type == type,
+                    button: true,
+                    child: Material(
+                      key: ValueKey(
+                        type == SleepType.mainSleep
+                            ? 'sleep-type-main'
+                            : 'sleep-type-nap',
+                      ),
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(24),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(24),
+                        // 分段切换不叠加按压高亮 / 水波，选择态由滑动底纸表达。
+                        splashFactory: NoSplash.splashFactory,
+                        highlightColor: Colors.transparent,
+                        hoverColor: Colors.transparent,
+                        focusColor: Colors.transparent,
+                        onTap: model.editable
+                            ? () => model.setType(type)
+                            : null,
+                        child: Container(
+                          constraints: const BoxConstraints(
+                            minHeight: homeTapTarget,
+                          ),
+                          alignment: Alignment.center,
+                          child: _segmentContent(type, duration),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 文字与图标颜色随底纸同步过渡，避免滑动途中瞬时跳色。
+  Widget _segmentContent(SleepType type, Duration duration) {
+    final selected = model.type == type;
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(end: selected ? 1 : 0),
+      duration: duration,
+      curve: Curves.easeInOutCubic,
+      builder: (context, value, _) {
+        final color = Color.lerp(
+          HomePalette.ink,
+          HomePalette.accentDeep,
+          value,
+        )!;
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              type == SleepType.mainSleep
+                  ? Icons.bedtime_outlined
+                  : Icons.nights_stay_outlined,
+              size: 19,
+              color: color,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              type == SleepType.mainSleep ? '主睡眠' : '小睡',
+              style: TextStyle(
+                fontFamily: homeSerifFamily,
+                fontSize: 16,
+                color: color,
+                fontWeight: FontWeight.lerp(
+                  FontWeight.w400,
+                  FontWeight.w600,
+                  value,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   Widget _endpoint(String name, int? value, String key) => Container(
     decoration: const BoxDecoration(
@@ -737,3 +792,4 @@ const _restored = TextStyle(
   fontSize: 13,
   color: HomePalette.muted,
 );
+const _segmentSlide = Duration(milliseconds: 200);

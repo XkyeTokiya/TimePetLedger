@@ -62,6 +62,7 @@ class HomeSummaryTab extends StatelessWidget {
               ),
             const _SectionLabel('一天时间构成'),
             HomeDonutChart(
+              key: const ValueKey('summary-day-chart'),
               parts: _dayParts(view),
               centerLabel: '已交代',
               centerValue: formatDerivedDuration(view.accountedDuration),
@@ -71,6 +72,7 @@ class HomeSummaryTab extends StatelessWidget {
             if (view.goalSummaries.isNotEmpty) ...[
               const _SectionLabel('目标时间构成'),
               HomeDonutChart(
+                key: const ValueKey('summary-goal-chart'),
                 parts: _goalParts(view.goalSummaries),
                 centerLabel: '目标相关',
                 centerValue: formatDerivedDuration(

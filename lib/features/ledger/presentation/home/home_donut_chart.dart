@@ -1,12 +1,13 @@
 import 'dart:math' as math;
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/home_theme.dart';
 import '../../domain/projection/derived_duration.dart';
 import '../summary_formatting.dart';
 
-/// 环图分段：实际时长与展示颜色；[dashed] 用于派生缺口。
+/// 实际时长与展示颜色；[dashed] 仅用于派生缺口。
 final class DonutPart {
   const DonutPart({
     required this.id,
@@ -23,10 +24,10 @@ final class DonutPart {
   final bool dashed;
 }
 
-/// 只读时间构成环图：按实际毫秒计算占比，点击图例查看所选部分百分比。
+/// fl_chart圆环与Material 3图例，共用调用方给定的事实投影。
 ///
-/// 不查询或重算时长；中心展示调用方给定的汇总文案，比例最终展示才取整
-/// （Q-017）。分母为各部分实际时长之和，即该窗口或该范围内的总时长。
+/// 分母是各部分实际毫秒之和，百分比最终展示才取整（Q-017）。
+/// 中心仍显示调用方给定的汇总，不查询、不修改或重新解释时间事实。
 class HomeDonutChart extends StatefulWidget {
   const HomeDonutChart({
     super.key,
@@ -49,6 +50,15 @@ class _HomeDonutChartState extends State<HomeDonutChart> {
   String? _selected;
 
   @override
+  void didUpdateWidget(HomeDonutChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.parts.any((part) => part.id == _selected)) _selected = null;
+  }
+
+  void _select(String id) =>
+      setState(() => _selected = _selected == id ? null : id);
+
+  @override
   Widget build(BuildContext context) {
     final total = widget.parts.fold<int>(
       0,
@@ -65,33 +75,39 @@ class _HomeDonutChartState extends State<HomeDonutChart> {
         ),
       );
     }
-    final legend = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (final part in widget.parts)
-          _LegendRow(
-            part: part,
-            total: total,
-            selected: _selected == part.id,
-            onTap: () => setState(
-              () => _selected = _selected == part.id ? null : part.id,
-            ),
-          ),
-      ],
-    );
     return LayoutBuilder(
       builder: (context, constraints) {
+        final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+        final diameter = math.min(
+          constraints.maxWidth,
+          224 * textScale.clamp(1.0, 1.35),
+        );
         final ring = _Ring(
           parts: widget.parts,
           total: total,
           selected: _selected,
+          diameter: diameter,
           centerLabel: widget.centerLabel,
           centerValue: widget.centerValue,
           semanticsLabel: widget.semanticsLabel,
+          onSelect: _select,
         );
-        if (constraints.maxWidth < 320) {
+        final legend = Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final part in widget.parts)
+              _LegendRow(
+                part: part,
+                total: total,
+                selected: _selected == part.id,
+                onTap: () => _select(part.id),
+              ),
+          ],
+        );
+        // 图例至少保有约300宽；大字模式直接纵向排列。
+        if (constraints.maxWidth < 560 || textScale > 1.3) {
           return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Center(child: ring),
               const SizedBox(height: 16),
@@ -103,7 +119,7 @@ class _HomeDonutChartState extends State<HomeDonutChart> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             ring,
-            const SizedBox(width: 20),
+            const SizedBox(width: 24),
             Expanded(child: legend),
           ],
         );
@@ -117,66 +133,135 @@ class _Ring extends StatelessWidget {
     required this.parts,
     required this.total,
     required this.selected,
+    required this.diameter,
     required this.centerLabel,
     required this.centerValue,
     required this.semanticsLabel,
+    required this.onSelect,
   });
 
   final List<DonutPart> parts;
   final int total;
   final String? selected;
+  final double diameter;
   final String centerLabel;
   final String centerValue;
   final String semanticsLabel;
+  final ValueChanged<String> onSelect;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    container: true,
-    label: semanticsLabel,
-    child: ExcludeSemantics(
-      child: SizedBox(
-        width: 168,
-        height: 168,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            CustomPaint(
-              size: const Size.square(168),
-              painter: _DonutPainter(
-                parts: parts,
-                total: total,
-                selected: selected,
+  Widget build(BuildContext context) {
+    final thickness = diameter * 0.105;
+    final centerRadius = diameter / 2 - thickness - 6;
+    const valueStyle = TextStyle(
+      fontFamily: homeSerifFamily,
+      fontSize: 20,
+      height: 1.3,
+      fontWeight: FontWeight.w600,
+      color: HomePalette.ink,
+    );
+    final valueMeasure = TextPainter(
+      text: TextSpan(text: centerValue, style: valueStyle),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final displayValue = valueMeasure.width > centerRadius * 1.7
+        ? centerValue.replaceFirst('小时 ', '小时\n')
+        : centerValue;
+    valueMeasure.dispose();
+    final slices = <({String id, PieChartSectionData section})>[];
+    for (final part in parts) {
+      if (part.duration.milliseconds <= 0) continue;
+      final value = part.duration.milliseconds.toDouble();
+      final radius = thickness + (selected == part.id ? 4 : 0);
+      void add(double value, Color color) => slices.add((
+        id: part.id,
+        section: PieChartSectionData(
+          value: value,
+          color: color,
+          radius: radius,
+          showTitle: false,
+        ),
+      ));
+      if (!part.dashed) {
+        add(value, part.color);
+        continue;
+      }
+      // fl_chart以实色/透明短段绘制Gap虚线，全部短段仍映射到同一类别。
+      // 透明间隔也占原时长，不能删掉它们而放大其他类别的比例。
+      final count = math.max(1, (value / total * 90).ceil());
+      final dashValue = value / count;
+      for (var dash = 0; dash < count; dash++) {
+        add(dashValue * 0.55, part.color);
+        add(dashValue * 0.45, Colors.transparent);
+      }
+    }
+    return Semantics(
+      container: true,
+      label: semanticsLabel,
+      child: ExcludeSemantics(
+        child: SizedBox.square(
+          dimension: diameter,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              PieChart(
+                PieChartData(
+                  sections: [for (final slice in slices) slice.section],
+                  centerSpaceRadius: centerRadius,
+                  centerSpaceColor: Colors.transparent,
+                  sectionsSpace: 0,
+                  startDegreeOffset: 270,
+                  borderData: FlBorderData(show: false),
+                  pieTouchData: PieTouchData(
+                    touchCallback: (event, response) {
+                      if (event is! FlTapUpEvent) return;
+                      final index =
+                          response?.touchedSection?.touchedSectionIndex;
+                      if (index == null ||
+                          index < 0 ||
+                          index >= slices.length) {
+                        return;
+                      }
+                      onSelect(slices[index].id);
+                    },
+                  ),
+                ),
+                // 刷新、切日和Gap短段数量变化立即反映实际占比。
+                duration: Duration.zero,
               ),
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  centerLabel,
-                  style: const TextStyle(
-                    fontFamily: homeSerifFamily,
-                    fontSize: 13,
-                    color: HomePalette.muted,
+              IgnorePointer(
+                child: SizedBox(
+                  width: centerRadius * 1.7,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        centerLabel,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontFamily: homeSerifFamily,
+                          fontSize: 13,
+                          height: 1.3,
+                          color: HomePalette.muted,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        displayValue,
+                        textAlign: TextAlign.center,
+                        style: valueStyle,
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  centerValue,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: homeSerifFamily,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: HomePalette.ink,
-                  ),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _LegendRow extends StatelessWidget {
@@ -196,170 +281,99 @@ class _LegendRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final durationText = formatDerivedDuration(part.duration);
     final percent = (part.duration.milliseconds * 100 / total).round();
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: selected
-          ? '${part.label} $durationText，占 $percent%'
-          : '${part.label} $durationText',
-      onTap: onTap,
-      child: ExcludeSemantics(
-        child: InkWell(
-          key: ValueKey('summary-part-${part.id}'),
+    final duration = Text(
+      durationText,
+      style: const TextStyle(
+        fontFamily: homeSerifFamily,
+        fontSize: 14,
+        height: 1.5,
+        color: HomePalette.muted,
+      ),
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final valuesBelow =
+            constraints.maxWidth < 280 ||
+            MediaQuery.textScalerOf(context).scale(14) > 18;
+        return Semantics(
+          button: true,
+          selected: selected,
+          label: selected
+              ? '${part.label} $durationText，占 $percent%'
+              : '${part.label} $durationText',
           onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-            child: Row(
-              children: [
-                _Swatch(color: part.color, dashed: part.dashed),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    part.label,
-                    style: const TextStyle(
-                      fontFamily: homeSerifFamily,
-                      fontSize: 14,
-                      color: HomePalette.ink,
-                    ),
-                  ),
+          child: ExcludeSemantics(
+            child: ListTile(
+              key: ValueKey('summary-part-${part.id}'),
+              onTap: onTap,
+              selected: selected,
+              selectedTileColor: HomePalette.tint,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+              horizontalTitleGap: 12,
+              minLeadingWidth: 20,
+              leading: _Swatch(color: part.color, dashed: part.dashed),
+              title: Text(
+                part.label,
+                style: const TextStyle(
+                  fontFamily: homeSerifFamily,
+                  fontSize: 15,
+                  height: 1.5,
+                  color: HomePalette.ink,
                 ),
-                Text(
-                  durationText,
-                  style: const TextStyle(
-                    fontFamily: homeSerifFamily,
-                    fontSize: 14,
-                    color: HomePalette.muted,
-                  ),
-                ),
-                if (selected) ...[
-                  const SizedBox(width: 8),
-                  Text(
-                    '$percent%',
-                    key: ValueKey('summary-part-percent-${part.id}'),
-                    style: const TextStyle(
-                      fontFamily: homeSerifFamily,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: HomePalette.accentDeep,
-                    ),
-                  ),
-                ],
-              ],
+              ),
+              trailing: valuesBelow ? null : duration,
+              subtitle: valuesBelow || selected
+                  ? Wrap(
+                      spacing: 12,
+                      children: [
+                        if (valuesBelow) duration,
+                        if (selected)
+                          Text(
+                            '$percent%',
+                            key: ValueKey('summary-part-percent-${part.id}'),
+                            style: const TextStyle(
+                              fontFamily: homeSerifFamily,
+                              fontSize: 14,
+                              height: 1.5,
+                              fontWeight: FontWeight.w600,
+                              color: HomePalette.accentDeep,
+                            ),
+                          ),
+                      ],
+                    )
+                  : null,
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
 class _Swatch extends StatelessWidget {
   const _Swatch({required this.color, required this.dashed});
+
   final Color color;
   final bool dashed;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 14,
-    height: 14,
+  Widget build(BuildContext context) => SizedBox.square(
+    dimension: 20,
     child: dashed
-        ? CustomPaint(painter: _DashedSwatch(color))
-        : DecoratedBox(
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(3),
+        ? Icon(Icons.more_horiz, color: color, size: 20)
+        : Center(
+            child: SizedBox.square(
+              dimension: 14,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
             ),
           ),
   );
-}
-
-class _DonutPainter extends CustomPainter {
-  _DonutPainter({
-    required this.parts,
-    required this.total,
-    required this.selected,
-  });
-
-  final List<DonutPart> parts;
-  final int total;
-  final String? selected;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const stroke = 20.0;
-    final rect = Rect.fromCircle(
-      center: size.center(Offset.zero),
-      radius: size.shortestSide / 2 - stroke / 2,
-    );
-    var start = -math.pi / 2;
-    for (final part in parts) {
-      final sweep = total == 0
-          ? 0.0
-          : 2 * math.pi * part.duration.milliseconds / total;
-      if (sweep <= 0) continue;
-      final paint = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = selected == part.id ? stroke + 4 : stroke
-        ..color = part.color;
-      if (part.dashed) {
-        _drawDashedArc(canvas, rect, start, sweep, paint);
-      } else {
-        canvas.drawArc(rect, start, sweep, false, paint);
-      }
-      start += sweep;
-    }
-  }
-
-  void _drawDashedArc(
-    Canvas canvas,
-    Rect rect,
-    double start,
-    double sweep,
-    Paint paint,
-  ) {
-    const step = 0.07;
-    final end = start + sweep;
-    var angle = start;
-    while (angle < end) {
-      final segment = math.min(step, end - angle);
-      canvas.drawArc(rect, angle, segment * 0.55, false, paint);
-      angle += segment;
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DonutPainter oldDelegate) => true;
-}
-
-class _DashedSwatch extends CustomPainter {
-  const _DashedSwatch(this.color);
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 1.4
-      ..style = PaintingStyle.stroke;
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          Rect.fromLTWH(0.7, 0.7, size.width - 1.4, size.height - 1.4),
-          const Radius.circular(3),
-        ),
-      );
-    final dashes = Path();
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        dashes.addPath(metric.extractPath(distance, distance + 3), Offset.zero);
-        distance += 5;
-      }
-    }
-    canvas.drawPath(dashes, paint);
-  }
-
-  @override
-  bool shouldRepaint(_DashedSwatch oldDelegate) => color != oldDelegate.color;
 }
