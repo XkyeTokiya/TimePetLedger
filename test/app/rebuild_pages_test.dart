@@ -272,13 +272,14 @@ void main() {
     addTearDown(() => t.runAsync(db.close));
     addTearDown(() => t.runAsync(prefsStore.close));
     final maintenance = DriftDataMaintenance(db);
+    var nextFactId = 2;
     await t.pumpWidget(
       host(
         SettingsPage(
           preferences: prefsStore,
           maintenance: maintenance,
           newGoalId: () => id(1),
-          newFactId: () => id(2),
+          newFactId: () => id(nextFactId++),
           now: () => now.millisecondsSinceEpoch,
           versionLabel: '0.1.0 · 构建 1',
         ),
@@ -349,7 +350,11 @@ void main() {
     await t.tap(find.byKey(const ValueKey('settings-confirm-seed')));
     await t.pumpAndSettle();
     expect(find.text('测试数据已添加。'), findsOneWidget);
-    expect((await t.runAsync(maintenance.counts))!.goals, 1);
+    final counts = (await t.runAsync(maintenance.counts))!;
+    expect(counts.goals, 1);
+    expect(counts.activities, greaterThan(0));
+    expect(counts.sleep, greaterThan(0));
+    expect(counts.reviews, greaterThan(0));
     expect(
       t.widget<InkWell>(find.byKey(const ValueKey('settings-seed'))).onTap,
       isNull,
