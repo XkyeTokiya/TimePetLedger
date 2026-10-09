@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "documents": 9,
+  "local_links_and_anchors": 486,
+  "unique_question_ids": 40,
+  "Q-039": "DECIDED",
+  "Q-040": "DECIDED",
+  "earlier_Q_entries": "unchanged",
+  "other_task_tracking": "unchanged",
+  "original_reference_sha256": {
+    "initial-state-reference.png": "71cb7ed7a4e90e2895ab680b0674dc187f22b5868f001b6a5be348f0bd13f454",
+    "scrolled-state-reference.png": "486cda70637aba852da4bb4eeb37d607cbed1445e88d39d1ea7980e966803033",
+    "user-design-v1-original.md": "d1182cc87f220fd125403ca15d1e2d53ce1d14420ef206e2efec983e14ff1ee2"
+  },
+  "git_diff_check": "passed"
+}

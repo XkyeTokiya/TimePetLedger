@@ -1,37 +1,48 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/home_theme.dart';
 import '../../../../core/time/civil_date.dart';
-import '../day_ledger_date_dialog.dart';
+import 'home_ledger_style.dart';
+import 'home_timeline_tab.dart' show ledgerWeekdayText;
 import 'home_value_transition.dart';
 
-/// Top row: menu entry and product name.
 class HomeTopBar extends StatelessWidget {
-  const HomeTopBar({super.key, required this.busy, required this.onMenu});
-
+  const HomeTopBar({
+    super.key,
+    required this.busy,
+    required this.onMenu,
+    this.onToday,
+  });
   final bool busy;
   final VoidCallback onMenu;
-
+  final VoidCallback? onToday;
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+    padding: const EdgeInsets.fromLTRB(4, 4, 16, 4),
     child: Row(
       children: [
         IconButton(
           key: const ValueKey('home-menu'),
           tooltip: '菜单',
           onPressed: busy ? null : onMenu,
-          icon: const Icon(Icons.menu),
+          icon: const Icon(Icons.menu, size: 24),
         ),
         const SizedBox(width: 4),
-        Text('日账本', style: Theme.of(context).textTheme.titleLarge),
-        const Spacer(),
+        Expanded(
+          child: Text('日账本', style: Theme.of(context).textTheme.titleMedium),
+        ),
+        if (onToday != null) ...[
+          const SizedBox(width: 8),
+          _TodayButton(busy: busy, onToday: onToday!),
+        ],
       ],
     ),
   );
 }
 
-/// 顶部日期：当前浏览日期 + 前后一天 + 日历入口；历史日期提供回到今天。
+/// Compact layout keeps all date controls, even when text requires two lines.
 class HomeDateTitle extends StatelessWidget {
   const HomeDateTitle({
     super.key,
@@ -41,137 +52,156 @@ class HomeDateTitle extends StatelessWidget {
     required this.onChooseDate,
     required this.onShiftDay,
     required this.onToday,
-    this.compact = false,
+    required this.onMenu,
+    this.progress = 0,
   });
-
   final CivilDate date;
   final CivilDate today;
   final bool busy;
   final VoidCallback onChooseDate;
   final ValueChanged<int> onShiftDay;
   final VoidCallback onToday;
-
-  /// Short viewports (e.g. landscape phones) shrink the otherwise oversized date.
-  final bool compact;
+  final VoidCallback onMenu;
+  final double progress;
 
   @override
   Widget build(BuildContext context) {
-    final narrow = MediaQuery.sizeOf(context).width < 370;
-    final fontSize = compact ? 28.0 : (narrow ? 34.0 : 42.0);
+    final compact = progress == 1;
+    final largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
+    final base = largeText ? 24.0 : HomeLedgerStyle.dateSize;
+    final fontSize = lerpDouble(
+      base,
+      HomeLedgerStyle.compactDateSize,
+      progress,
+    )!;
+    final dateText = date.year == today.year
+        ? '${date.month}月${date.day}日'
+        : '${date.year}年${date.month}月${date.day}日';
+    final dateStyle = TextStyle(
+      fontFamily: homeSerifFamily,
+      fontSize: fontSize,
+      height: 1.15,
+      fontWeight: FontWeight.w600,
+      color: compact ? HomePalette.ink : HomePalette.accentDeep,
+    );
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, compact ? 2 : 6, 8, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+      key: ValueKey(compact ? 'home-header-collapsed' : 'home-header-expanded'),
+      padding: EdgeInsets.fromLTRB(compact ? 4 : 16, compact ? 4 : 0, 16, 12),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Put today's shortcut in the navigation row when the actual text
+          // fits. Large text / cross-year dates keep a second accessible row.
+          final dateMeasure = TextPainter(
+            text: TextSpan(text: dateText, style: dateStyle),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+          )..layout();
+          final todayMeasure = TextPainter(
+            text: const TextSpan(text: '回到今天', style: HomeLedgerStyle.button),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+          )..layout();
+          final inlineToday =
+              compact &&
+              date != today &&
+              constraints.maxWidth >=
+                  3 * homeTapTarget +
+                      dateMeasure.width +
+                      todayMeasure.width +
+                      32;
+          dateMeasure.dispose();
+          todayMeasure.dispose();
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                // 日期随宽度缩小字体时仍保持 48 高的可点区域。
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 48),
-                  child: InkWell(
-                    key: const ValueKey('ledger-date-picker'),
-                    onTap: busy ? null : onChooseDate,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 2),
-                      child: Row(
-                        children: [
-                          Flexible(
-                            child: HomeValueTransition(
-                              value: date,
-                              height:
-                                  MediaQuery.textScalerOf(context)
-                                      .scale(fontSize) *
-                                  1.15,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  date.year == today.year
-                                      ? '${date.month}月${date.day}日'
-                                      : '${date.year}年${date.month}月${date.day}日',
-                                  key: const ValueKey('home-date-title'),
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  style: TextStyle(
-                                    fontFamily: homeSerifFamily,
-                                    fontSize: fontSize,
-                                    height: 1.15,
-                                    fontWeight: FontWeight.w600,
-                                    color: HomePalette.ink,
-                                  ),
-                                ),
+              Row(
+                children: [
+                  if (compact)
+                    IconButton(
+                      key: const ValueKey('home-menu'),
+                      tooltip: '菜单',
+                      onPressed: busy ? null : onMenu,
+                      icon: const Icon(Icons.menu, size: 24),
+                    ),
+                  IconButton(
+                    key: const ValueKey('home-previous-day'),
+                    tooltip: '前一天',
+                    onPressed: busy ? null : () => onShiftDay(-1),
+                    icon: const Icon(Icons.chevron_left, size: 24),
+                  ),
+                  Expanded(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: InkWell(
+                        key: const ValueKey('ledger-date-picker'),
+                        onTap: busy ? null : onChooseDate,
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: HomeValueTransition(
+                            value: date,
+                            child: Center(
+                              child: Text(
+                                dateText,
+                                key: const ValueKey('home-date-title'),
+                                textAlign: TextAlign.center,
+                                style: dateStyle,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          const Icon(
-                            Icons.expand_more,
-                            size: 18,
-                            color: HomePalette.muted,
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  IconButton(
+                    key: const ValueKey('home-next-day'),
+                    tooltip: '后一天',
+                    onPressed: busy ? null : () => onShiftDay(1),
+                    icon: const Icon(Icons.chevron_right, size: 24),
+                  ),
+                  if (inlineToday) _TodayButton(busy: busy, onToday: onToday),
+                ],
               ),
-              IconButton(
-                key: const ValueKey('home-previous-day'),
-                tooltip: '前一天',
-                onPressed: busy ? null : () => onShiftDay(-1),
-                icon: const Icon(Icons.chevron_left),
-              ),
-              IconButton(
-                key: const ValueKey('home-next-day'),
-                tooltip: '后一天',
-                onPressed: busy ? null : () => onShiftDay(1),
-                icon: const Icon(Icons.chevron_right),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(left: 2),
-            // 固定行高：日期是否提供“回到今天”不再改变头部高度，避免
-            // 视图高度与时间轴留白互相反馈。
-            child: SizedBox(
-              height: 48,
-              child: Row(
+              const SizedBox(height: 8),
+              Row(
                 children: [
-                  HomeValueTransition(
-                    value: _relativeLabel(date, today),
+                  Expanded(
                     child: Text(
-                      _relativeLabel(date, today),
+                      ledgerWeekdayText(date, today),
+                      textAlign: TextAlign.center,
                       style: const TextStyle(
-                        fontFamily: homeSerifFamily,
-                        fontSize: 13,
+                        fontSize: 12,
+                        height: 1.2,
                         color: HomePalette.muted,
                       ),
                     ),
                   ),
-                  const Spacer(),
-                  if (date != today)
-                    TextButton(
-                      key: const ValueKey('home-back-to-today'),
-                      onPressed: busy ? null : onToday,
-                      child: const Text('回到今天'),
-                    ),
+                  if (compact && date != today && !inlineToday)
+                    _TodayButton(busy: busy, onToday: onToday),
                 ],
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }
 }
 
-String _relativeLabel(CivilDate date, CivilDate today) {
-  const names = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-  final index = DateTime.utc(date.year, date.month, date.day).weekday - 1;
-  final weekday = index >= 0 && index < names.length ? names[index] : '所选日期';
-  if (date == today) return '$weekday · 今天';
-  if (date == adjacentLedgerDate(today, -1)) return '$weekday · 昨天';
-  return weekday;
+class _TodayButton extends StatelessWidget {
+  const _TodayButton({required this.busy, required this.onToday});
+  final bool busy;
+  final VoidCallback onToday;
+  @override
+  Widget build(BuildContext context) => TextButton(
+    key: const ValueKey('home-back-to-today'),
+    onPressed: busy ? null : onToday,
+    style: TextButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      textStyle: HomeLedgerStyle.button,
+      backgroundColor: HomePalette.tint,
+      foregroundColor: HomePalette.accentDeep,
+    ),
+    child: const Text('回到今天'),
+  );
 }

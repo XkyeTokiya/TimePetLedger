@@ -40,45 +40,104 @@ class HomeSuggestionCard extends StatelessWidget {
               value: (suggestion.kind, suggestion.title, action),
               child: KeyedSubtree(
                 key: ValueKey('home-suggestion-${suggestion.kind.name}'),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Icon(
-                      _iconFor(suggestion.kind),
-                      size: 26,
-                      color: HomePalette.accent,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        suggestion.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: homeSerifFamily,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: HomePalette.ink,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final large =
+                        MediaQuery.textScalerOf(context).scale(16) > 24 &&
+                        constraints.maxWidth < 400;
+                    if (large) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                _iconFor(suggestion.kind),
+                                size: 26,
+                                color: HomePalette.accent,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  suggestion.title,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: HomePalette.ink,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (action != null)
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      action,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: HomePalette.accentDeep,
+                                      ),
+                                    ),
+                                    const Icon(
+                                      Icons.chevron_right,
+                                      size: 18,
+                                      color: HomePalette.accentDeep,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    }
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _iconFor(suggestion.kind),
+                          size: 26,
+                          color: HomePalette.accent,
                         ),
-                      ),
-                    ),
-                    if (action != null) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        action,
-                        style: const TextStyle(
-                          fontFamily: homeSerifFamily,
-                          fontSize: 14,
-                          color: HomePalette.accentDeep,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            suggestion.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontFamily: homeSerifFamily,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: HomePalette.ink,
+                            ),
+                          ),
                         ),
-                      ),
-                      const Icon(
-                        Icons.chevron_right,
-                        size: 18,
-                        color: HomePalette.accentDeep,
-                      ),
-                    ],
-                  ],
+                        if (action != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            action,
+                            style: const TextStyle(
+                              fontFamily: homeSerifFamily,
+                              fontSize: 14,
+                              color: HomePalette.accentDeep,
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right,
+                            size: 18,
+                            color: HomePalette.accentDeep,
+                          ),
+                        ],
+                      ],
+                    );
+                  },
                 ),
               ),
             ),

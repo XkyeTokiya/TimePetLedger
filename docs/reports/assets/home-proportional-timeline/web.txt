@@ -1,0 +1,9 @@
+Launching integration_test/home_timeline_platform_test.dart on Web Server in debug mode...
+Waiting for connection from debug service on Web Server...         14.6s
+integration_test/home_timeline_platform_test.dart is being served at http://localhost:8765
+The web-server device requires the Dart Debug Chrome extension for debugging. Consider using the Chrome or Edge devices for an improved development workflow.
+Debug service listening on ws://127.0.0.1:45825/Btu5cUdxNoI=/ws
+A Dart VM Service on Web Server is available at: http://127.0.0.1:45825/Btu5cUdxNoI=
+The Flutter DevTools debugger and profiler on Web Server is available at: http://127.0.0.1:45825/Btu5cUdxNoI=/devtools/?uri=ws://127.0.0.1:45825/Btu5cUdxNoI=/ws
+All tests passed.
+Application finished.

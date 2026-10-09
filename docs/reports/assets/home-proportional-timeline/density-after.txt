@@ -1,0 +1,4 @@
+00:00 +0: loading /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart
+00:00 +0: 14 dense days keep a temporal position through continuous reading
+HOME_TIME_DENSITY_DEBUG 14x96 intervals: initial=1213ms, 30 pointer frames=1435ms
+00:03 +1: All tests passed!

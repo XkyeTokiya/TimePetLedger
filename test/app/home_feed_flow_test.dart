@@ -147,10 +147,11 @@ void main() {
     expect(homeDateTitle(tester), '10月2日');
 
     // 主体向下拖动 = 读更早的时间；跨过日期分隔后顶部日期随之变化。
-    await tester.drag(find.byType(HomeTimelineTab), const Offset(0, 160));
+    await tester.drag(find.byType(HomeTimelineTab), const Offset(0, 700));
     await settleNative(tester);
     expect(homeDateTitle(tester), isNot('10月2日'));
-    expect(find.byKey(const ValueKey('home-sticky-day')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-header-collapsed')), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-sticky-day')), findsNothing);
     expect(find.text('10月1日'), findsWidgets);
     expect(tester.takeException(), isNull);
   });
@@ -204,6 +205,8 @@ void main() {
     expect(coverageText(tester, '已交代'), '8 小时 20 分钟');
 
     // 日期分隔同样打开该日日历；取消不改变浏览日期。
+    await tester.ensureVisible(dayDivider(oct1));
+    await tester.pumpAndSettle();
     await tester.tap(dayDivider(oct1));
     await tester.pumpAndSettle();
     expect(find.text('选择账本日期'), findsOneWidget);
@@ -227,9 +230,7 @@ void main() {
     expect(homeDateTitle(tester), '10月1日');
     // 醒来日窗口内 00:00–07:20 的切片 + 1 小时活动。
     expect(coverageText(tester, '已交代'), '8 小时 20 分钟');
-    expect(find.text('完整时长'), findsWidgets);
-    expect(find.text('7 小时'), findsWidgets);
-    expect(find.text('40 分钟'), findsWidgets);
+    expect(find.textContaining('跨日切片'), findsWidgets);
 
     // 10 月 1 日的睡眠行是窗内切片，完整区间只在详情里展开。
     await tester.tap(
@@ -275,10 +276,18 @@ void main() {
     await mountHome(tester, db, initialDate: oct2, now: at(3, 9));
     // 初始窗口为 9 月 19 日–10 月 2 日；读到最早一天后继续向前装载。
     expect(find.byKey(const ValueKey('day-divider-2026-9-19')), findsOneWidget);
-    for (var i = 0; i < 8; i++) {
-      await tester.drag(find.byType(HomeTimelineTab), const Offset(0, 600));
-      await settleNative(tester);
-    }
+    final scroll = tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(HomeTimelineTab),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+    scroll.jumpTo(0);
+    await settleNative(tester);
     expect(find.byKey(const ValueKey('day-divider-2026-9-12')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });

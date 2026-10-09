@@ -51,9 +51,9 @@ class TimeLedgerRadius {
 /// Bundled Simplified-Chinese serif declared in pubspec (`NotoSerifSC`).
 const String homeSerifFamily = 'NotoSerifSC';
 
-/// Minimum touch target used across the rebuilt home. The reference's 44px
-/// visual minimum is raised to 48 so it also satisfies the Android
-/// accessibility tap-target guideline the app is verified against.
+/// Standard home controls retain a 48dp target. Proportional timeline data
+/// rectangles use the explicit Q-039 small-target exception, with independent
+/// semantics, keyboard focus and a 48dp-row disambiguation panel.
 const double homeTapTarget = 48;
 
 final ThemeData homeTheme = _buildHomeTheme();

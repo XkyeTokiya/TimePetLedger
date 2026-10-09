@@ -156,31 +156,29 @@ void main() {
     expect(settings, 1);
   });
 
-  testWidgets('unknown reads as a state and a gap stays one row tall', (
-    t,
-  ) async {
-    await mount(t, const Size(390, 800), sampleLoader());
+  testWidgets(
+    'unknown reads as a state and intervals use proportional heights',
+    (t) async {
+      await mount(t, const Size(390, 800), sampleLoader());
 
-    // "想不起来" is the fact; the half-remembered text is residue that belongs
-    // in the detail sheet, never in the row heading.
-    expect(find.text('想不起来'), findsOneWidget);
-    expect(find.text('已交代'), findsWidgets);
-    expect(find.text('只记得出门办事'), findsNothing);
+      // "想不起来" is the fact; the half-remembered text is residue that belongs
+      // in the detail sheet, never in the row heading.
+      expect(find.text('想不起来'), findsOneWidget);
+      expect(find.text('已交代'), findsWidgets);
+      expect(find.text('只记得出门办事'), findsNothing);
 
-    // A gap's 补记 is an inline affordance, not a button: a 48px tap target is
-    // what made gap rows twice as tall as the records around them. The whole
-    // row is already the tap target.
-    expect(find.widgetWithText(TextButton, '补记'), findsNothing);
-    expect(find.text('尚未记录'), findsWidgets);
-    double rowHeight(String label) => t
-        .getSize(
-          find
-              .ancestor(of: find.text(label), matching: find.byType(InkWell))
-              .first,
-        )
-        .height;
-    expect(rowHeight('尚未记录') - rowHeight('早餐'), lessThan(24));
-  });
+      // A gap's 补记 is an inline affordance, not a button: a 48px tap target is
+      // what made gap rows twice as tall as the records around them. The whole
+      // row is already the tap target.
+      expect(find.widgetWithText(TextButton, '补记'), findsNothing);
+      expect(find.text('尚未记录'), findsWidgets);
+      // Heights follow elapsed time, independent of labels and button minima.
+      final breakfast = find
+          .ancestor(of: find.text('早餐'), matching: find.byType(InkWell))
+          .first;
+      expect(t.getSize(breakfast).height, 48); // 40 minutes at 72dp/h.
+    },
+  );
 
   testWidgets('home shell survives large text and long content', (t) async {
     for (final scale in [1.5, 2.0]) {

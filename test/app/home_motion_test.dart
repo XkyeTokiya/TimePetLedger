@@ -5,7 +5,6 @@ import 'package:time_pet_ledger/features/ledger/presentation/home/home_timeline_
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_value_transition.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
 import 'package:time_pet_ledger/core/time/civil_date.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/day_read_scroll.dart';
 
 import '../support/home_feed.dart';
 import 'home_feed_flow_test.dart' show openLedger, mountHome, oct1, oct2, at;
@@ -60,20 +59,11 @@ void main() {
         visit(tester.getSemantics(find.byType(HomeShell)));
         expect(labels.where((label) => label.contains('十月二日活动')), isEmpty);
         expect(labels.where((label) => label.contains('十月一日活动')), isNotEmpty);
-        final targetTop = tester
-            .getTopLeft(
-              find
-                  .ancestor(
-                    of: dayDivider(oct1).last,
-                    matching: find.byType(ReadScrollAnchor),
-                  )
-                  .first,
-            )
-            .dy;
-        final viewportTop = tester
-            .getTopLeft(find.byType(HomeTimelineTab).last)
-            .dy;
-        expect(targetTop, closeTo(viewportTop, 1));
+        final targetState = tester.state<HomeTimelineTabState>(
+          find.byType(HomeTimelineTab).last,
+        );
+        expect(targetState.readingPosition!.instant, at(1, 0));
+        expect(targetState.readingPosition!.relativeY, closeTo(8, 1));
         await tester.pumpAndSettle();
         expect(observed, [oct1]);
         expect(find.byType(HomeTimelineTab), findsOneWidget);

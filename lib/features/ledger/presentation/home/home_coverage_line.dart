@@ -1,62 +1,102 @@
+import 'dart:ui' show lerpDouble;
+
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/home_theme.dart';
 import '../../domain/projection/day_ledger_view.dart';
 import '../summary_formatting.dart';
+import 'home_ledger_style.dart';
 import 'home_value_transition.dart';
 
-/// 首页覆盖概览：已交代 / 尚未记录双列小标签与时长。
-///
-/// 只统计当前浏览日的同一次投影；数字与单位分层显示，长时长在窄屏或
-/// 大字下整体缩放而不是挤成不稳定的两行。整块可进入当日摘要。
+/// Both states show the real durations from one committed projection. System
+/// text is allowed to wrap; the coverage bar describes time, never a score.
 class HomeCoverageLine extends StatelessWidget {
-  const HomeCoverageLine({super.key, required this.view, this.onTap});
-
+  const HomeCoverageLine({
+    super.key,
+    required this.view,
+    this.onTap,
+    this.progress = 0,
+  });
   final DayLedgerView view;
   final VoidCallback? onTap;
-
+  final double progress;
   @override
-  Widget build(BuildContext context) => InkWell(
-    key: const ValueKey('home-coverage'),
-    onTap: onTap,
-    child: DecoratedBox(
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: HomePalette.hairline),
-          bottom: BorderSide(color: HomePalette.hairline),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 10, 14, 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: _CoverageMetric(
-                label: '已交代',
-                text: formatDerivedDuration(view.accountedDuration),
-                valueKey: const ValueKey('coverage-已交代'),
+  Widget build(BuildContext context) {
+    final window = view.window.endedAt - view.window.startedAt;
+    final fraction = window == 0
+        ? 0.0
+        : view.accountedDuration.milliseconds / window;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: InkWell(
+        key: const ValueKey('home-coverage'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 48),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: HomePalette.tint.withValues(
+                alpha: lerpDouble(.5, .2, progress)!,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: lerpDouble(12, 8, progress)!,
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _CoverageMetric(
+                          label: '已交代',
+                          text: formatDerivedDuration(view.accountedDuration),
+                          valueKey: const ValueKey('coverage-已交代'),
+                          progress: progress,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _CoverageMetric(
+                          label: '尚未记录',
+                          text: formatDerivedDuration(view.unresolvedDuration),
+                          valueKey: const ValueKey('coverage-尚未记录'),
+                          progress: progress,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (progress < 1)
+                    ClipRect(
+                      child: Align(
+                        heightFactor: 1 - progress,
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: ExcludeSemantics(
+                            child: LinearProgressIndicator(
+                              key: const ValueKey('home-coverage-ratio'),
+                              value: fraction,
+                              minHeight: 4,
+                              borderRadius: BorderRadius.circular(8),
+                              color: HomePalette.accentDeep,
+                              backgroundColor: HomePalette.hairline,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: _CoverageMetric(
-                label: '尚未记录',
-                text: formatDerivedDuration(view.unresolvedDuration),
-                valueKey: const ValueKey('coverage-尚未记录'),
-              ),
-            ),
-            if (onTap != null)
-              const Icon(
-                Icons.arrow_outward,
-                size: 18,
-                color: HomePalette.muted,
-              ),
-          ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _CoverageMetric extends StatelessWidget {
@@ -64,80 +104,65 @@ class _CoverageMetric extends StatelessWidget {
     required this.label,
     required this.text,
     required this.valueKey,
+    required this.progress,
   });
-
   final String label;
   final String text;
   final Key valueKey;
-
+  final double progress;
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Text(label, style: _labelStyle),
-      const SizedBox(height: 2),
-      HomeValueTransition(
-        value: text,
-        height: MediaQuery.textScalerOf(context).scale(25) * 1.25,
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text.rich(
-            TextSpan(children: _spans(text)),
-            key: valueKey,
-            maxLines: 1,
-            softWrap: false,
-            // 合并样式与数字同色：整段是一块强调色文字，而不是默认墨色。
-            style: _numberStyle,
-          ),
-        ),
+  Widget build(BuildContext context) {
+    final numberStyle = TextStyle(
+      fontSize: lerpDouble(
+        HomeLedgerStyle.metricSize,
+        HomeLedgerStyle.compactMetricSize,
+        progress,
       ),
-    ],
-  );
-
-  /// 数字用大号衬线，单位保持小号，长时长时整体缩放。
-  List<InlineSpan> _spans(String value) {
+      height: 1.2,
+      fontWeight: FontWeight.w600,
+      color: HomePalette.accentDeep,
+    );
+    const unitStyle = TextStyle(
+      fontSize: 11,
+      height: 1.2,
+      color: HomePalette.accentDeep,
+    );
     final spans = <InlineSpan>[];
     var index = 0;
-    for (final match in RegExp(r'\d+').allMatches(value)) {
+    for (final match in RegExp(r'\d+').allMatches(text)) {
       if (match.start > index) {
         spans.add(
-          TextSpan(
-            text: value.substring(index, match.start),
-            style: _unitStyle,
-          ),
+          TextSpan(text: text.substring(index, match.start), style: unitStyle),
         );
       }
-      spans.add(TextSpan(text: match.group(0), style: _numberStyle));
+      spans.add(TextSpan(text: match.group(0), style: numberStyle));
       index = match.end;
     }
-    if (index < value.length) {
-      spans.add(TextSpan(text: value.substring(index), style: _unitStyle));
+    if (index < text.length) {
+      spans.add(TextSpan(text: text.substring(index), style: unitStyle));
     }
-    return spans;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            height: 1.2,
+            color: HomePalette.muted,
+          ),
+        ),
+        const SizedBox(height: 4),
+        HomeValueTransition(
+          value: text,
+          child: Text.rich(
+            TextSpan(children: spans),
+            key: valueKey,
+            style: numberStyle,
+          ),
+        ),
+      ],
+    );
   }
 }
-
-const _labelStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 12,
-  height: 1.4,
-  color: HomePalette.muted,
-);
-
-const _numberStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 25,
-  height: 1.25,
-  fontWeight: FontWeight.w600,
-  color: HomePalette.accentDeep,
-);
-
-const _unitStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 13,
-  height: 1.25,
-  fontWeight: FontWeight.w600,
-  color: HomePalette.accentDeep,
-);

@@ -81,6 +81,8 @@ final class LedgerFeedController extends ChangeNotifier {
   bool _refreshFailed = false;
   CivilDate? _requestedDate;
   CivilDate? _revealRequest;
+  bool _requestedResetReading = true;
+  bool revealResetsReading = true;
 
   /// 显式跳转（日历 / 滑动 / 回到今天）要求时间轴把该日滚到阅读区顶部。
   CivilDate? takeRevealRequest() {
@@ -136,13 +138,15 @@ final class LedgerFeedController extends ChangeNotifier {
   }
 
   /// 日历跳转 / 滑动切日 / 回到今天：目标日成为窗口最新一天。
-  Future<bool> showDate(CivilDate date) {
+  Future<bool> showDate(CivilDate date, {bool resetReading = true}) {
     if (_disposed) return Future.value(false);
     _requestedDate = date;
+    _requestedResetReading = resetReading;
     return _load(
       start: _startFor(date, windowDays),
       end: date,
       revealDate: date,
+      resetReading: resetReading,
     );
   }
 
@@ -151,7 +155,7 @@ final class LedgerFeedController extends ChangeNotifier {
     final requested = _requestedDate;
     return requested == null
         ? _load(start: _start, end: _end)
-        : showDate(requested);
+        : showDate(requested, resetReading: _requestedResetReading);
   }
 
   /// 向上滚动到窗口最早一天后继续向前装载；不改变浏览日期。
@@ -191,6 +195,7 @@ final class LedgerFeedController extends ChangeNotifier {
     required CivilDate start,
     required CivilDate end,
     CivilDate? revealDate,
+    bool resetReading = false,
   }) async {
     if (_disposed) return false;
     final request = ++_request;
@@ -209,6 +214,7 @@ final class LedgerFeedController extends ChangeNotifier {
       if (revealDate != null) {
         _focus = revealDate;
         _revealRequest = revealDate;
+        revealResetsReading = resetReading;
       }
       _views
         ..clear()

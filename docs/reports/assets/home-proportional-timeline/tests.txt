@@ -1,0 +1,138 @@
+00:00 +0: loading /kiyodata/Projects/21-TimePetLedger/test/app/home_proportional_timeline_test.dart
+00:00 +0: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:00 +1: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:00 +2: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:00 +3: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:00 +4: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:00 +5: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:00 +6: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:00 +7: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:00 +8: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:00 +9: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +10: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +11: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +12: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +13: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +14: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +15: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +16: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +17: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +18: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +19: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +20: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +21: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:01 +22: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +23: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +24: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +25: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +26: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +27: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +28: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +29: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +30: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +31: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +32: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +33: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +34: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:02 +35: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:03 +36: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:03 +37: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:03 +38: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:03 +39: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+HOME_TIME_DENSITY_DEBUG 14x96 intervals: initial=1628ms, 30 pointer frames=1802ms
+00:03 +40: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:03 +41: /kiyodata/Projects/21-TimePetLedger/test/app/home_timeline_density_test.dart: 14 dense days keep a temporal position through continuous reading
+00:04 +42: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: summary and review inherit the home date, manage their own, and the home keeps its reading place
+00:04 +43: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: summary and review inherit the home date, manage their own, and the home keeps its reading place
+00:04 +44: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: summary and review inherit the home date, manage their own, and the home keeps its reading place
+00:04 +45: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: summary and review inherit the home date, manage their own, and the home keeps its reading place
+00:04 +46: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: summary and review inherit the home date, manage their own, and the home keeps its reading place
+00:04 +47: /kiyodata/Projects/21-TimePetLedger/test/app/home_proportional_timeline_test.dart: resize recomputes temporal anchor under the effective scale; short large-text viewport retains controls
+00:04 +48: /kiyodata/Projects/21-TimePetLedger/test/app/home_feed_flow_test.dart: cross-day sleep keeps identity and full interval on both days
+00:04 +48: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: review input survives within the session, resumes by choice and saves for real
+WARNING (drift): It looks like you've created the database class _PreferencesDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _PreferencesDatabase (package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart)
+#4      DriftAppPreferencesStore.open (package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart:11:22)
+#5      openAppPreferencesStore (package:time_pet_ledger/app/bootstrap/app_preferences.dart:8:43)
+<asynchronous suspension>
+#6      AppPreferencesSession._resolve (package:time_pet_ledger/app/bootstrap/app_preferences.dart:46:21)
+<asynchronous suspension>
+#7      AppPreferencesSession._use.<anonymous closure> (package:time_pet_ledger/app/bootstrap/app_preferences.dart:35:21)
+<asynchronous suspension>
+#8      _RecordingHomeState._loadPreferences.<anonymous closure>.<anonymous closure> (package:time_pet_ledger/app/main_app.dart:222:25)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:04 +49: /kiyodata/Projects/21-TimePetLedger/test/app/home_feed_flow_test.dart: cross-day sleep keeps identity and full interval on both days
+00:04 +50: /kiyodata/Projects/21-TimePetLedger/test/app/home_feed_flow_test.dart: cross-day sleep keeps identity and full interval on both days
+00:04 +51: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: review input survives within the session, resumes by choice and saves for real
+00:04 +52: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: review input survives within the session, resumes by choice and saves for real
+00:05 +53: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: review input survives within the session, resumes by choice and saves for real
+00:05 +54: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: review input survives within the session, resumes by choice and saves for real
+00:05 +55: /kiyodata/Projects/21-TimePetLedger/test/app/home_proportional_timeline_test.dart: visual matrix preserves geometry across widths/text scales and both header states
+00:05 +55: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: resuming the home refreshes today without changing reading position
+WARNING (drift): It looks like you've created the database class _PreferencesDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _PreferencesDatabase (package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart)
+#4      DriftAppPreferencesStore.open (package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart:11:22)
+#5      openAppPreferencesStore (package:time_pet_ledger/app/bootstrap/app_preferences.dart:8:43)
+<asynchronous suspension>
+#6      AppPreferencesSession._resolve (package:time_pet_ledger/app/bootstrap/app_preferences.dart:46:21)
+<asynchronous suspension>
+#7      AppPreferencesSession._use.<anonymous closure> (package:time_pet_ledger/app/bootstrap/app_preferences.dart:35:21)
+<asynchronous suspension>
+#8      _RecordingHomeState._loadPreferences.<anonymous closure>.<anonymous closure> (package:time_pet_ledger/app/main_app.dart:222:25)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:06 +56: /kiyodata/Projects/21-TimePetLedger/test/app/home_proportional_timeline_test.dart: visual matrix preserves geometry across widths/text scales and both header states
+00:06 +57: /kiyodata/Projects/21-TimePetLedger/test/app/home_proportional_timeline_test.dart: visual matrix preserves geometry across widths/text scales and both header states
+00:06 +57: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: resuming after midnight follows today but preserves a historical day
+WARNING (drift): It looks like you've created the database class _PreferencesDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _PreferencesDatabase (package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart)
+#4      DriftAppPreferencesStore.open (package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart:11:22)
+#5      openAppPreferencesStore (package:time_pet_ledger/app/bootstrap/app_preferences.dart:8:43)
+<asynchronous suspension>
+#6      AppPreferencesSession._resolve (package:time_pet_ledger/app/bootstrap/app_preferences.dart:46:21)
+<asynchronous suspension>
+#7      AppPreferencesSession._use.<anonymous closure> (package:time_pet_ledger/app/bootstrap/app_preferences.dart:35:21)
+<asynchronous suspension>
+#8      _RecordingHomeState._loadPreferences.<anonymous closure>.<anonymous closure> (package:time_pet_ledger/app/main_app.dart:222:25)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:06 +58: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: resuming after midnight follows today but preserves a historical day
+00:06 +59: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: resuming after midnight follows today but preserves a historical day
+00:06 +60: /kiyodata/Projects/21-TimePetLedger/test/app/home_feed_flow_test.dart: historical reading stays on its day after midnight refresh
+00:06 +60: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: resuming across midnight keeps the review editor date and draft
+WARNING (drift): It looks like you've created the database class _PreferencesDatabase multiple times. When these two databases use the same QueryExecutor, race conditions will occur and might corrupt the database. 
+Try to follow the advice at https://drift.simonbinder.eu/faq/#using-the-database or, if you know what you're doing, set driftRuntimeOptions.dontWarnAboutMultipleDatabases = true
+Here is the stacktrace from when the database was opened a second time:
+#0      GeneratedDatabase._handleInstantiated (package:drift/src/runtime/api/db_base.dart:96:30)
+#1      GeneratedDatabase._whenConstructed (package:drift/src/runtime/api/db_base.dart:73:12)
+#2      new GeneratedDatabase (package:drift/src/runtime/api/db_base.dart:64:5)
+#3      new _PreferencesDatabase (package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart)
+#4      DriftAppPreferencesStore.open (package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart:11:22)
+#5      openAppPreferencesStore (package:time_pet_ledger/app/bootstrap/app_preferences.dart:8:43)
+<asynchronous suspension>
+#6      AppPreferencesSession._resolve (package:time_pet_ledger/app/bootstrap/app_preferences.dart:46:21)
+<asynchronous suspension>
+#7      AppPreferencesSession._use.<anonymous closure> (package:time_pet_ledger/app/bootstrap/app_preferences.dart:35:21)
+<asynchronous suspension>
+#8      _RecordingHomeState._loadPreferences.<anonymous closure>.<anonymous closure> (package:time_pet_ledger/app/main_app.dart:222:25)
+<asynchronous suspension>
+This warning will only appear on debug builds.
+00:06 +61: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: resuming across midnight keeps the review editor date and draft
+00:07 +62: /kiyodata/Projects/21-TimePetLedger/test/app/home_navigation_flow_test.dart: resuming across midnight keeps the review editor date and draft
+00:07 +63: All tests passed!

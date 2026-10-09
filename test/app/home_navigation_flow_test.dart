@@ -173,68 +173,76 @@ void main() {
     },
   );
 
-  testWidgets('review drafts survive leaving the page and save for real', (
-    tester,
-  ) async {
-    final app = await openApp(tester, clock: DateTime(2026, 10, 2, 20));
+  testWidgets(
+    'review input survives within the session, resumes by choice and saves for real',
+    (tester) async {
+      final app = await openApp(tester, clock: DateTime(2026, 10, 2, 20));
 
-    await tapText(tester, '打开按日复盘');
-    expect(find.text('10月2日'), findsWidgets);
-    await tester.tap(find.byKey(const ValueKey('review-open-form')));
-    await settleNative(tester);
-    expect(find.byType(ReviewForm), findsOneWidget);
+      await tapText(tester, '打开按日复盘');
+      expect(find.text('10月2日'), findsWidgets);
+      await tester.tap(find.byKey(const ValueKey('review-open-form')));
+      await settleNative(tester);
+      expect(find.byType(ReviewForm), findsOneWidget);
 
-    await tester.enterText(
-      find.byKey(const ValueKey('review-step')),
-      '明天先写五分钟',
-    );
-    await tester.pump();
-    await tester.tap(find.text('再写几句 ＋'));
-    await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const ValueKey('review-summary')),
-      '这一天的概述',
-    );
-    await tester.pump();
+      await tester.enterText(
+        find.byKey(const ValueKey('review-step')),
+        '明天先写五分钟',
+      );
+      await tester.pump();
+      await tester.tap(find.text('再写几句 ＋'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('review-summary')),
+        '这一天的概述',
+      );
+      await tester.pump();
 
-    // 离开页面保留本机草稿，不写入正式复盘。
-    await tapText(tester, '返回');
-    await settleNative(tester);
-    final draft = await tester.runAsync(
-      () => app.drafts.read(ReviewDraftContext.newEntry(date: day2)),
-    );
-    expect(draft!.tomorrowFirstStepText, '明天先写五分钟');
-    expect(draft.summary, '这一天的概述');
-    expect(
-      (await tester.runAsync(
+      // Q-012：离开页面保留当前会话输入，不写入正式复盘或旧持久化草稿库。
+      final sessionStore = tester
+          .widget<ReviewForm>(find.byType(ReviewForm))
+          .controller
+          .store;
+      await tapText(tester, '返回');
+      await settleNative(tester);
+      final draft = await tester.runAsync(
+        () => sessionStore.read(ReviewDraftContext.newEntry(date: day2)),
+      );
+      expect(draft!.tomorrowFirstStepText, '明天先写五分钟');
+      expect(draft.summary, '这一天的概述');
+      expect(
+        (await tester.runAsync(
+          () => app.db.customSelect('SELECT * FROM daily_reviews').get(),
+        ))!.length,
+        1,
+      );
+
+      // 重新进入明确选择继续填写，再用真实保存动作写入 DailyReview。
+      await tester.tap(find.byKey(const ValueKey('review-open-form')));
+      await settleNative(tester);
+      expect(find.text('继续上次填写？'), findsOneWidget);
+      await tester.tap(find.text('继续填写'));
+      await settleNative(tester);
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const ValueKey('review-step')))
+            .controller!
+            .text,
+        '明天先写五分钟',
+      );
+      await tester.tap(find.text('保存复盘'));
+      await settleNative(tester);
+      final rows = await tester.runAsync(
         () => app.db.customSelect('SELECT * FROM daily_reviews').get(),
-      ))!.length,
-      1,
-    );
-
-    // 重新进入恢复草稿，并用真实保存动作写入 DailyReview。
-    await tester.tap(find.byKey(const ValueKey('review-open-form')));
-    await settleNative(tester);
-    expect(
-      tester
-          .widget<TextField>(find.byKey(const ValueKey('review-step')))
-          .controller!
-          .text,
-      '明天先写五分钟',
-    );
-    await tester.tap(find.text('保存复盘'));
-    await settleNative(tester);
-    final rows = await tester.runAsync(
-      () => app.db.customSelect('SELECT * FROM daily_reviews').get(),
-    );
-    expect(rows!.length, 2);
-    expect(
-      rows.map((row) => row.data['review_date']).contains('2026-10-02'),
-      isTrue,
-    );
-    expect(find.text('已有复盘'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      );
+      expect(rows!.length, 2);
+      expect(
+        rows.map((row) => row.data['review_date']).contains('2026-10-02'),
+        isTrue,
+      );
+      expect(find.text('已有复盘'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
     'resuming the home refreshes today without changing reading position',

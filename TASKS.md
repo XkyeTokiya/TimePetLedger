@@ -1,5 +1,20 @@
 # Tasks
 
+**2026-10-09当前交付：按用户九点反馈细化首页字阶、信息组、标尺间距、短条及顶部 / 底部布局。** HOME-TIME-VISUAL-01完成；采用[局部视觉规格](design.md#首页视觉细化2026-10-09用户九点反馈)，保留72dp / 小时、32dp短段规则、滞回与时刻锚点。64项相关测试、格式 / 分析、Android / Web真实引擎集成和两平台构建通过；22张截图及实际命令见[视觉细化报告](docs/reports/HOME_TIMELINE_VISUAL_REFINEMENT_REPORT.md)。人工读屏 / 实机误触仍待补，不推进其他功能。
+
+| Task | Depends on | Scope | Status |
+| --- | --- | --- | --- |
+| HOME-TIME-VISUAL-01 — 首页视觉细化 | HOME-TIME-01–03，用户九点反馈 | 字阶、4/8间距、图标 / 节点 / 短条对齐、双态页头、指标与底部；矩阵及相关回归 | COMPLETE |
+
+**2026-10-09首页比例时间轴与双态布局已实施：[方案](docs/planning/HOME_PROPORTIONAL_TIMELINE_DESIGN.md) / [实施报告](docs/reports/HOME_PROPORTIONAL_TIMELINE_REPORT.md)。** 用户定案Q-039并明确开始执行；Q-040选择今天靠近当前时刻、历史第一条正式事实。首页72dp / 小时、双态滞回、时间锚点与短段选择已落地，63项相关测试、格式 / 静态分析、Android模拟器与Web真实引擎 + 独立SQLite集成、两平台构建通过。人工读屏 / 误触验收未执行，04保持PARTIAL。不改领域对象、schema、依赖、提醒 / 初始化算法或其他任务状态。
+
+| Task | Depends on | Scope | Status |
+| --- | --- | --- | --- |
+| HOME-TIME-01 — 固定设计合同 | Q-039 / Q-040，用户实施授权 | 参考构图、72比例、双态、短段及默认定位合同同步 | COMPLETE |
+| HOME-TIME-02 — 比例日轴与四类状态 | HOME-TIME-01 | 真实几何、刻度 / 节点、事实 / Gap、短段簇及无障碍访问路径 | COMPLETE |
+| HOME-TIME-03 — 双态壳与阅读定位 | HOME-TIME-02 | 滞回状态机、时间锚点、切日 / 返回 / 刷新 / 补偿及窄屏大字 | COMPLETE |
+| HOME-TIME-04 — 应用回归与平台验收 | HOME-TIME-03 | 工程与Android / Web集成通过；人工读屏 / 实机误触未验收 | PARTIAL |
+
 **2026-10-08当前授权：[取消“草稿”、改为会话内输入恢复](docs/planning/SESSION_INPUT_RECOVERY.md)。** 用户要求完整实施Q-012新决定；跨关闭 / 跨刷新恢复合同已被取代，历史COMPLETE报告只保留为当时证据。本轮只执行下列四个顺序任务，不改正式领域模型、五表schema、时间算法或冲突规则。
 
 | Task | Depends on | Scope | Status |

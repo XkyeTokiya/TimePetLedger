@@ -8,7 +8,9 @@ import '../../domain/projection/ledger_segment.dart';
 import '../day_ledger_date_dialog.dart';
 import 'home_coverage_line.dart';
 import 'home_day_header.dart';
+import 'home_ledger_style.dart';
 import 'home_feed_transition.dart';
+import 'home_reading_state.dart';
 import 'home_timeline_tab.dart';
 import 'ledger_feed_controller.dart';
 
@@ -75,6 +77,7 @@ class HomeShell extends StatefulWidget {
 
 class HomeShellState extends State<HomeShell> {
   late final LedgerFeedController feed;
+  final reading = HomeReadingState();
   final _scaffold = GlobalKey<ScaffoldState>();
   Offset? _dragStart;
   Offset _dragDelta = Offset.zero;
@@ -105,6 +108,7 @@ class HomeShellState extends State<HomeShell> {
   @override
   void dispose() {
     feed.dispose();
+    reading.dispose();
     super.dispose();
   }
 
@@ -125,9 +129,31 @@ class HomeShellState extends State<HomeShell> {
         onDeleteTimeBlock: widget.onDeleteTimeBlock,
         onFillGap: widget.onFillGap,
         onDayTap: (date) => _chooseDate(initial: date),
-        bottomInset: widget.floatingCard == null ? 0 : 88,
+        reading: reading,
+        a11yFactor: _timelineA11yFactor(),
+        allowUserReading: () => _pointers.length <= 1,
       ),
     );
+  }
+
+  double _timelineA11yFactor() {
+    // A 20-minute state has 24dp at 72dp/h. Measure the current short-state
+    // style (now readable at 320dp / 2×) before opting into
+    // the single allowed whole-axis enlargement; no scale tiers/min-heights.
+    if (MediaQuery.sizeOf(context).width > 320 ||
+        MediaQuery.textScalerOf(context)
+                .scale(HomeLedgerStyle.state.fontSize!) <
+            HomeLedgerStyle.state.fontSize! * 2) {
+      return 1;
+    }
+    final stateLine = TextPainter(
+      text: const TextSpan(text: '尚未记录', style: HomeLedgerStyle.state),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final unreadable = stateLine.height > 24;
+    stateLine.dispose();
+    return unreadable ? 1.25 : 1;
   }
 
   /// 侧边栏：时间账本 / 当日摘要 / 每日复盘 + 我的目标 / 设置。
@@ -188,9 +214,11 @@ class HomeShellState extends State<HomeShell> {
   }
 
   /// 日历 / 前后一天 / 滑动切日 / 回到今天共用：目标日成为浏览日期与窗口末端。
-  Future<void> _showDate(CivilDate date) async {
+  Future<void> _showDate(CivilDate date, {bool resetReading = true}) async {
     final today = _today();
-    if (await feed.showDate(date)) _lastToday = today;
+    if (await feed.showDate(date, resetReading: resetReading)) {
+      _lastToday = today;
+    }
   }
 
   /// 显式跳到某一天；日历、滑动切日与“回到今天”共用同一规则。
@@ -206,7 +234,7 @@ class HomeShellState extends State<HomeShell> {
     final today = _today();
     final following = _lastToday != null && feed.focusDate == _lastToday;
     if (following && feed.focusDate != today) {
-      await _showDate(today);
+      await _showDate(today, resetReading: false);
       return;
     }
     await _refresh();
@@ -294,123 +322,115 @@ class HomeShellState extends State<HomeShell> {
         body: SafeArea(
           bottom: false,
           child: LayoutBuilder(
-            builder: (context, constraints) {
-              // 高度不足（如横屏）时压缩头部；覆盖行在短视口收起。
-              final tight = constraints.maxHeight < 520;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  MediaQuery.withClampedTextScaling(
-                    maxScaleFactor: 1.5,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        HomeTopBar(
-                          busy: widget.busy,
-                          onMenu: () => _scaffold.currentState?.openDrawer(),
-                        ),
-                        ?widget.banner,
-                        ListenableBuilder(
-                          listenable: feed,
-                          builder: (context, _) => Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              HomeDateTitle(
-                                date: feed.focusDate,
-                                today: today,
+            builder: (context, constraints) => ListenableBuilder(
+              listenable: Listenable.merge([feed, reading]),
+              builder: (context, _) {
+                final progress = reading.progress;
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: constraints.maxHeight * .6,
+                      ),
+                      child: SingleChildScrollView(
+                        key: const ValueKey('home-header-scroll'),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (progress < 1)
+                              HomeTopBar(
                                 busy: widget.busy,
-                                compact: tight,
-                                onChooseDate: _chooseDate,
-                                onShiftDay: _shiftDay,
-                                onToday: () => _showDate(today),
+                                onToday: feed.focusDate == today
+                                    ? null
+                                    : () => _showDate(today),
+                                onMenu: () =>
+                                    _scaffold.currentState?.openDrawer(),
                               ),
-                              if (!tight)
-                                if (feed.focusView case final view?)
-                                  HomeCoverageLine(
-                                    view: view,
-                                    onTap: widget.busy
-                                        ? null
-                                        : widget.onOpenSummary,
-                                  ),
-                              if (feed.refreshFailed)
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    20,
-                                    6,
-                                    20,
-                                    0,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Expanded(
-                                        child: Text(
-                                          '账本刷新失败，当前仍显示上一次读取结果。',
-                                          style: TextStyle(fontSize: 13),
-                                        ),
-                                      ),
-                                      TextButton(
-                                        onPressed: widget.busy
-                                            ? null
-                                            : _refresh,
-                                        child: const Text('重试读取'),
-                                      ),
-                                    ],
-                                  ),
+                            ?widget.banner,
+                            HomeDateTitle(
+                              date: feed.focusDate,
+                              today: today,
+                              busy: widget.busy,
+                              progress: progress,
+                              onMenu: () =>
+                                  _scaffold.currentState?.openDrawer(),
+                              onChooseDate: _chooseDate,
+                              onShiftDay: _shiftDay,
+                              onToday: () => _showDate(today),
+                            ),
+                            if (feed.focusView case final view?)
+                              HomeCoverageLine(
+                                view: view,
+                                progress: progress,
+                                onTap: widget.busy
+                                    ? null
+                                    : widget.onOpenSummary,
+                              ),
+                            if (feed.refreshFailed)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
                                 ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Stack(
-                      children: [
-                        Positioned.fill(
-                          child: Listener(
-                            behavior: HitTestBehavior.opaque,
-                            onPointerDown: _pointerDown,
-                            onPointerMove: _recordPointerPosition,
-                            onPointerUp: _pointerUp,
-                            onPointerCancel: _pointerCancel,
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onHorizontalDragEnd: _dragEnd,
-                              onHorizontalDragCancel: _cancelDrag,
-                              child: ListenableBuilder(
-                                listenable: feed,
-                                builder: (context, _) =>
-                                    MediaQuery.withClampedTextScaling(
-                                      maxScaleFactor: 1.5,
-                                      child: _timeline(today),
+                                child: Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Text(
+                                        '账本刷新失败，当前仍显示上一次读取结果。',
+                                        style: TextStyle(fontSize: 13),
+                                      ),
                                     ),
+                                    TextButton(
+                                      onPressed: widget.busy ? null : _refresh,
+                                      child: const Text('重试读取'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      key: const ValueKey('home-reading-surface'),
+                      child: Listener(
+                        behavior: HitTestBehavior.opaque,
+                        onPointerDown: _pointerDown,
+                        onPointerMove: _recordPointerPosition,
+                        onPointerUp: _pointerUp,
+                        onPointerCancel: _pointerCancel,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onHorizontalDragEnd: _dragEnd,
+                          onHorizontalDragCancel: _cancelDrag,
+                          child: _timeline(today),
+                        ),
+                      ),
+                    ),
+                    if (widget.floatingCard != null && progress < 1)
+                      ConstrainedBox(
+                        constraints: BoxConstraints(
+                          maxHeight: constraints.maxHeight * .25,
+                        ),
+                        child: SingleChildScrollView(
+                          child: ClipRect(
+                            child: Align(
+                              heightFactor: 1 - progress,
+                              child: IgnorePointer(
+                                ignoring: progress > 0,
+                                child: ExcludeSemantics(
+                                  excluding: progress > 0,
+                                  child: widget.floatingCard!(feed),
+                                ),
                               ),
                             ),
                           ),
                         ),
-                        // Floats above the action bar without joining the
-                        // timeline's scroll extent, so it never pushes the
-                        // action bar off screen or changes the reading surface.
-                        if (widget.floatingCard != null)
-                          Positioned(
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            child: MediaQuery.withClampedTextScaling(
-                              maxScaleFactor: 1.3,
-                              child: ListenableBuilder(
-                                listenable: feed,
-                                builder: (context, _) =>
-                                    widget.floatingCard!(feed),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
+                      ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
         bottomNavigationBar: _HomeBottomBar(
@@ -435,50 +455,82 @@ class _HomeBottomBar extends StatelessWidget {
   final VoidCallback onRecordActivity;
 
   @override
-  Widget build(BuildContext context) => MediaQuery.withClampedTextScaling(
-    maxScaleFactor: 1.3,
-    child: Material(
-      color: HomePalette.paper,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: HomePalette.hairline)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 5,
-                  child: OutlinedButton.icon(
-                    key: const ValueKey('home-record-sleep'),
-                    onPressed: busy ? null : onRecordSleep,
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+  Widget build(BuildContext context) => Material(
+    color: HomePalette.paper,
+    child: DecoratedBox(
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: HomePalette.hairline)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  key: const ValueKey('home-record-sleep'),
+                  onPressed: busy ? null : onRecordSleep,
+                  style: OutlinedButton.styleFrom(
+                    textStyle: HomeLedgerStyle.button,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
                     ),
-                    icon: const Icon(Icons.bedtime_outlined, size: 20),
-                    label: const Text('记录睡眠', maxLines: 1, softWrap: false),
+                  ),
+                  child: const _RecordButtonContents(
+                    icon: Icons.bedtime_outlined,
+                    label: '记录睡眠',
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 7,
-                  child: FilledButton.icon(
-                    key: const ValueKey('home-record-activity'),
-                    onPressed: busy ? null : onRecordActivity,
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  key: const ValueKey('home-record-activity'),
+                  onPressed: busy ? null : onRecordActivity,
+                  style: FilledButton.styleFrom(
+                    textStyle: HomeLedgerStyle.button,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
                     ),
-                    icon: const Icon(Icons.edit_outlined, size: 20),
-                    label: const Text('记录一笔', maxLines: 1, softWrap: false),
+                  ),
+                  child: const _RecordButtonContents(
+                    icon: Icons.edit_outlined,
+                    label: '记录一笔',
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     ),
+  );
+}
+
+class _RecordButtonContents extends StatelessWidget {
+  const _RecordButtonContents({required this.icon, required this.label});
+  final IconData icon;
+  final String label;
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final measure = TextPainter(
+        text: TextSpan(text: label, style: HomeLedgerStyle.button),
+        textDirection: Directionality.of(context),
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout();
+      final showIcon = constraints.maxWidth >= measure.width + 24;
+      measure.dispose();
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (showIcon) ...[Icon(icon, size: 16), const SizedBox(width: 8)],
+          Flexible(child: Text(label, textAlign: TextAlign.center)),
+        ],
+      );
+    },
   );
 }
