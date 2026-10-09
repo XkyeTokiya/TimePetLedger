@@ -15,7 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/legacy_input_stores.dart';
 
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
-import 'package:time_pet_ledger/app/theme/home_theme.dart';
+import 'package:time_pet_ledger/app/theme/app_theme.dart';
 import 'package:time_pet_ledger/app/theme/time_ledger_theme.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_recording_draft_store.dart';
@@ -202,8 +202,11 @@ void main() {
           await tester.pumpAndSettle();
           expect(find.text('日账本'), findsOneWidget);
           expect(
-            tester.widget<MaterialApp>(find.byType(MaterialApp)).theme,
-            same(homeTheme),
+            tester
+                .widget<MaterialApp>(find.byType(MaterialApp))
+                .theme
+                ?.colorScheme,
+            defaultM3ColorScheme(Brightness.light),
           );
           await capture(tester, 'ready-$width-$scale');
           await guidelines(tester);
