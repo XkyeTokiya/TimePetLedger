@@ -98,6 +98,10 @@ class HomeShellState extends State<HomeShell>
   double _panelWidth = 0;
   bool _dragAccepted = false;
   bool _panelActionPending = false;
+
+  /// 正在收合 / 展开的目标（0 或 1）；拖动接管时清空。
+  /// 纵向滚动等取消手势时沿此目标继续，而不是按当前值弹回最近端。
+  double? _panelSettleTarget;
   CivilDate? _panelDate;
   final _pointers = <int>{};
   int? _dragPointer;
@@ -441,7 +445,6 @@ class HomeShellState extends State<HomeShell>
       _cancelDrag();
       return;
     }
-    _panel.stop();
     _dragPointer = event.pointer;
     _dragStart = event.position;
     _dragDelta = Offset.zero;
@@ -481,6 +484,11 @@ class HomeShellState extends State<HomeShell>
       if (dx.abs() < _intentSlop || dx.abs() < dy.abs() * 1.6) return;
       _dragAccepted = true;
       _timelineInteraction.stop();
+      // 只有横向拖动真正成立才接管面板动画：普通触摸不得取消收合，
+      // 否则面板会停在半开，遮罩挡住时间轴。
+      _panel.stop();
+      _panelSettleTarget = null;
+      _dragStartProgress = _panel.value;
       if (_dragStartProgress == 0) {
         _focusBeforePanel = FocusManager.instance.primaryFocus;
         _panelDate = feed.focusDate;
@@ -512,7 +520,9 @@ class HomeShellState extends State<HomeShell>
   }
 
   void _cancelAndSettle() {
-    final open = _panel.value >= .5;
+    // 动画进行中沿原目标收束：收合过程中纵向滚动不应把面板弹回打开。
+    final settleTarget = _panel.isAnimating ? _panelSettleTarget : null;
+    final open = settleTarget != null ? settleTarget >= .5 : _panel.value >= .5;
     _cancelDrag();
     unawaited(_settlePanel(open));
   }
@@ -528,6 +538,7 @@ class HomeShellState extends State<HomeShell>
     }
     if (open) _timelineInteraction.stop();
     final target = open ? 1.0 : 0.0;
+    _panelSettleTarget = target;
     if (MediaQuery.disableAnimationsOf(context)) {
       _panel.value = target;
     } else {
@@ -564,6 +575,10 @@ class HomeShellState extends State<HomeShell>
               builder: (context, _) {
                 final panelProgress = _panel.value;
                 final panelVisible = panelProgress > 0;
+                // 收合动画进行中让指针透传到时间轴：拖动可立即滚动，
+                // 点按仍由遮罩（命中路径在前）优先关闭面板。
+                final panelClosing =
+                    _panel.isAnimating && _panelSettleTarget == 0;
                 final offset = panelWidth * panelProgress;
                 final signedOffset =
                     widget.quickPanelSide == HomeQuickPanelSide.left
@@ -683,11 +698,19 @@ class HomeShellState extends State<HomeShell>
                                             key: const ValueKey(
                                               'home-quick-panel-scrim',
                                             ),
-                                            behavior: HitTestBehavior.opaque,
+                                            behavior: panelClosing
+                                                ? HitTestBehavior.translucent
+                                                : HitTestBehavior.opaque,
                                             onTap: () => _settlePanel(false),
-                                            child: ColoredBox(
-                                              color: Colors.black.withValues(
-                                                alpha: .32 * panelProgress,
+                                            // 收合动画进行时让指针透传到时间轴
+                                            //（拖动可立即滚动）；点按仍由本
+                                            // GestureDetector 优先处理。
+                                            child: IgnorePointer(
+                                              ignoring: panelClosing,
+                                              child: ColoredBox(
+                                                color: Colors.black.withValues(
+                                                  alpha: .32 * panelProgress,
+                                                ),
                                               ),
                                             ),
                                           ),
