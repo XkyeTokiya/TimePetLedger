@@ -119,6 +119,9 @@ class _HomeFeedTransitionState extends State<HomeFeedTransition>
     LedgerFeedFrame frame, {
     required bool outgoing,
   }) {
+    // 失败帧不会走定位回调（onPositioned），但错误页的重试必须可点、可读屏；
+    // 只有 ready 帧需要等定位完成后再接管指针。
+    final interactive = _ready || frame.status == LedgerFeedStatus.failed;
     return SlideTransition(
       key: ValueKey(frame.endDate),
       position: _previous == null
@@ -131,9 +134,9 @@ class _HomeFeedTransitionState extends State<HomeFeedTransition>
         child: ColoredBox(
           color: Theme.of(context).colorScheme.surface,
           child: IgnorePointer(
-            ignoring: outgoing || !_ready,
+            ignoring: outgoing || !interactive,
             child: ExcludeSemantics(
-              excluding: outgoing || !_ready,
+              excluding: outgoing || !interactive,
               child: child,
             ),
           ),

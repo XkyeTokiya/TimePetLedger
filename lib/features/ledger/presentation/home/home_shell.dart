@@ -178,13 +178,14 @@ class HomeShellState extends State<HomeShell>
   CivilDate _today() => widget.dateOfInstant(widget.now());
 
   Widget _timeline(CivilDate today) {
-    final frame = feed.captureFrame();
     final active = widget.active && _panel.value == 0;
     final a11yFactor = _timelineA11yFactor();
     final key = (
       today,
-      frame.endDate,
-      frame.version,
+      feed.endDate,
+      feed.dataVersion,
+      // status 变化不 bump version；不进键会让首载失败停留在旧帧。
+      feed.status,
       active,
       a11yFactor,
       MediaQuery.sizeOf(context).width,
@@ -193,6 +194,7 @@ class HomeShellState extends State<HomeShell>
     if (_timelineCache != null && _timelineCacheKey == key) {
       return _timelineCache!;
     }
+    final frame = feed.captureFrame();
     _timelineCacheKey = key;
     return _timelineCache = HomeFeedTransition(
       key: const ValueKey('home-timeline-transition'),
@@ -558,7 +560,7 @@ class HomeShellState extends State<HomeShell>
             final panelWidth = math.min(360.0, constraints.maxWidth - 64);
             _panelWidth = panelWidth;
             return AnimatedBuilder(
-              animation: Listenable.merge([feed, reading, _panel]),
+              animation: Listenable.merge([feed, _panel]),
               builder: (context, _) {
                 final panelProgress = _panel.value;
                 final panelVisible = panelProgress > 0;

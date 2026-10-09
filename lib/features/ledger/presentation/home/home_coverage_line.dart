@@ -9,7 +9,7 @@ import 'home_value_transition.dart';
 
 /// Both states show the real durations from one committed projection. System
 /// text is allowed to wrap; the coverage bar describes time, never a score.
-class HomeCoverageLine extends StatelessWidget {
+class HomeCoverageLine extends StatefulWidget {
   const HomeCoverageLine({
     super.key,
     required this.view,
@@ -20,7 +20,24 @@ class HomeCoverageLine extends StatelessWidget {
   final VoidCallback? onTap;
   final double progress;
   @override
+  State<HomeCoverageLine> createState() => _HomeCoverageLineState();
+}
+
+class _HomeCoverageLineState extends State<HomeCoverageLine> {
+  DayLedgerView? _measuredView;
+  String? _accountedText;
+  String? _unresolvedText;
+
+  @override
   Widget build(BuildContext context) {
+    final view = widget.view;
+    final onTap = widget.onTap;
+    final progress = widget.progress;
+    if (!identical(_measuredView, view)) {
+      _measuredView = view;
+      _accountedText = formatDerivedDuration(view.accountedDuration);
+      _unresolvedText = formatDerivedDuration(view.unresolvedDuration);
+    }
     final window = view.window.endedAt - view.window.startedAt;
     final fraction = window == 0
         ? 0.0
@@ -54,7 +71,7 @@ class HomeCoverageLine extends StatelessWidget {
                       Expanded(
                         child: _CoverageMetric(
                           label: '已交代',
-                          text: formatDerivedDuration(view.accountedDuration),
+                          text: _accountedText!,
                           valueKey: const ValueKey('coverage-已交代'),
                           progress: progress,
                         ),
@@ -63,7 +80,7 @@ class HomeCoverageLine extends StatelessWidget {
                       Expanded(
                         child: _CoverageMetric(
                           label: '尚未记录',
-                          text: formatDerivedDuration(view.unresolvedDuration),
+                          text: _unresolvedText!,
                           valueKey: const ValueKey('coverage-尚未记录'),
                           progress: progress,
                         ),

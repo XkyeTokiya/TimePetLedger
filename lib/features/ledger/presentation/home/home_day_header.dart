@@ -72,7 +72,7 @@ class HomeTopBar extends StatelessWidget {
 }
 
 /// Compact layout keeps all date controls, even when text requires two lines.
-class HomeDateTitle extends StatelessWidget {
+class HomeDateTitle extends StatefulWidget {
   const HomeDateTitle({
     super.key,
     required this.date,
@@ -100,7 +100,39 @@ class HomeDateTitle extends StatelessWidget {
   final double progress;
 
   @override
+  State<HomeDateTitle> createState() => _HomeDateTitleState();
+}
+
+class _HomeDateTitleState extends State<HomeDateTitle> {
+  _DateTitleMetrics? _metrics;
+
+  @override
+  void didUpdateWidget(HomeDateTitle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.date != oldWidget.date || widget.today != oldWidget.today) {
+      _metrics = null;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _metrics = null;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final date = widget.date;
+    final today = widget.today;
+    final busy = widget.busy;
+    final onChooseDate = widget.onChooseDate;
+    final onShiftDay = widget.onShiftDay;
+    final onToday = widget.onToday;
+    final onMenu = widget.onMenu;
+    final side = widget.side;
+    final menuFocusNode = widget.menuFocusNode;
+    final canShiftNext = widget.canShiftNext;
+    final progress = widget.progress;
     final colors = Theme.of(context).colorScheme;
     final compact = progress == 1;
     final largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
@@ -138,51 +170,24 @@ class HomeDateTitle extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final todayMeasure = TextPainter(
-            text: TextSpan(
-              text: '返回今天',
-              style: withThemeFont(context, HomeLedgerStyle.button),
-            ),
-            textDirection: Directionality.of(context),
-            textScaler: MediaQuery.textScalerOf(context),
-          )..layout();
-          final weekdayFullMeasure = TextPainter(
-            text: TextSpan(text: weekdayText, style: weekdayStyle),
-            textDirection: Directionality.of(context),
-            textScaler: MediaQuery.textScalerOf(context),
-          )..layout();
-          final weekdayShortMeasure = TextPainter(
-            text: TextSpan(text: weekdayName, style: weekdayStyle),
-            textDirection: Directionality.of(context),
-            textScaler: MediaQuery.textScalerOf(context),
-          )..layout();
-          final expandedDateMeasure = TextPainter(
-            text: TextSpan(
-              text: dateText,
-              style: dateStyle.copyWith(fontSize: base),
-            ),
-            textDirection: Directionality.of(context),
-            textScaler: MediaQuery.textScalerOf(context),
-          )..layout();
-          final compactDateMeasure = TextPainter(
-            text: TextSpan(
-              text: dateText,
-              style: dateStyle.copyWith(
-                fontSize: HomeLedgerStyle.compactDateSize,
-              ),
-            ),
-            textDirection: Directionality.of(context),
-            textScaler: MediaQuery.textScalerOf(context),
-          )..layout();
+          final metrics = _metrics ??= _measure(
+            context,
+            dateText: dateText,
+            weekdayText: weekdayText,
+            weekdayName: weekdayName,
+            weekdayStyle: weekdayStyle,
+            dateStyle: dateStyle,
+            base: base,
+          );
           // 展开与紧凑两个稳定态的行宽（外层左右内边距随进度插值）。
           final widthExpanded = constraints.maxWidth - 12 * progress;
           final widthCollapsed = constraints.maxWidth + 12 * (1 - progress);
           final weekdayWidths = [
-            weekdayFullMeasure.width,
-            weekdayShortMeasure.width,
+            metrics.weekdayFullWidth,
+            metrics.weekdayShortWidth,
             0.0,
           ];
-          final buttonWidths = [todayMeasure.width + 24, homeTapTarget, 0.0];
+          final buttonWidths = [metrics.todayWidth + 24, homeTapTarget, 0.0];
           // 页头只有日期行：星期与返回今天都在同一行内取舍。按优先级选择
           // 同时放进展开与紧凑两个稳定态的组合：星期完整 → 缩短；按钮先
           // 文字、再图标；空间确实放不下时先隐藏星期以保住按钮，最后两者
@@ -204,11 +209,11 @@ class HomeDateTitle extends StatelessWidget {
               final weekdayWidth = weekdayWidths[combo.weekday];
               final group = weekdayWidth > 0 ? 8 + weekdayWidth : 0.0;
               if (widthExpanded - 2 * homeTapTarget <
-                  expandedDateMeasure.width + group) {
+                  metrics.expandedDateWidth + group) {
                 continue;
               }
               if (widthCollapsed - 3 * homeTapTarget <
-                  compactDateMeasure.width +
+                  metrics.compactDateWidth +
                       group +
                       buttonWidths[combo.button]) {
                 continue;
@@ -226,11 +231,6 @@ class HomeDateTitle extends StatelessWidget {
             1 => weekdayName,
             _ => null,
           };
-          todayMeasure.dispose();
-          weekdayFullMeasure.dispose();
-          weekdayShortMeasure.dispose();
-          expandedDateMeasure.dispose();
-          compactDateMeasure.dispose();
           final menu = IconButton(
             key: compact ? const ValueKey('home-menu') : null,
             focusNode: compact ? menuFocusNode : null,
@@ -332,6 +332,43 @@ class HomeDateTitle extends StatelessWidget {
     );
   }
 
+  _DateTitleMetrics _measure(
+    BuildContext context, {
+    required String dateText,
+    required String weekdayText,
+    required String weekdayName,
+    required TextStyle weekdayStyle,
+    required TextStyle dateStyle,
+    required double base,
+  }) {
+    final scale = MediaQuery.textScalerOf(context);
+    final direction = Directionality.of(context);
+    double widthOf(String text, TextStyle style) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: direction,
+        textScaler: scale,
+      )..layout();
+      final width = painter.width;
+      painter.dispose();
+      return width;
+    }
+
+    return _DateTitleMetrics(
+      todayWidth: widthOf(
+        '返回今天',
+        withThemeFont(context, HomeLedgerStyle.button),
+      ),
+      weekdayFullWidth: widthOf(weekdayText, weekdayStyle),
+      weekdayShortWidth: widthOf(weekdayName, weekdayStyle),
+      expandedDateWidth: widthOf(dateText, dateStyle.copyWith(fontSize: base)),
+      compactDateWidth: widthOf(
+        dateText,
+        dateStyle.copyWith(fontSize: HomeLedgerStyle.compactDateSize),
+      ),
+    );
+  }
+
   Widget _dateGroup({
     required String dateText,
     required TextStyle dateStyle,
@@ -416,4 +453,21 @@ class _CompactSlot extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// 日期行的静态测量（与收放进度无关），按日期/主题/字号失效。
+class _DateTitleMetrics {
+  const _DateTitleMetrics({
+    required this.todayWidth,
+    required this.weekdayFullWidth,
+    required this.weekdayShortWidth,
+    required this.expandedDateWidth,
+    required this.compactDateWidth,
+  });
+
+  final double todayWidth;
+  final double weekdayFullWidth;
+  final double weekdayShortWidth;
+  final double expandedDateWidth;
+  final double compactDateWidth;
 }

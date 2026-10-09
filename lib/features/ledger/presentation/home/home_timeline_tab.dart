@@ -109,6 +109,9 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
   int _restoredVersion = -1;
   Size? _layoutSize;
   double _bottomFill = 0;
+  bool _passActive = false;
+  List<({Object id, RenderBox box})>? _passAnchors;
+  final _dayCache = <CivilDate, _CachedDay>{};
 
   HomeReadPosition? get readingPosition => _lastVisible;
   HomeReadPosition? get readingOrigin => _origin;
@@ -178,68 +181,77 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
     _layoutQueued = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _layoutQueued = false;
-      if (!mounted || !_current || !_scroll.hasClients) return;
-      if (!widget.active) {
-        _restoring = false;
-        return;
+      _passActive = true;
+      try {
+        _runLayoutPass();
+      } finally {
+        _passActive = false;
+        _passAnchors = null;
       }
-      if (_resetReveal) {
-        _resetReveal = false;
-        widget.reading.reset();
-
-        _requestLayout(restore: true);
-        return;
-      }
-      if (_syncBottomFill()) {
-        _requestLayout();
-        return;
-      }
-      var moved = false;
-      if (_pendingReveal case final date?) {
-        final entry = _axisEntries()
-            .where((entry) => entry.anchor.date == date)
-            .firstOrNull;
-        if (entry != null) {
-          final view = widget.frame.viewFor(date)!;
-          final axisY =
-              entry.box.localToGlobal(Offset.zero).dy - _viewportTop();
-          final geometry = entry.anchor.geometry;
-          final double targetY;
-          if (date == widget.today && !view.window.isEmpty) {
-            // Leave the same-read "now" marker near the bottom, with room for
-            // its label. Small windows still start at their real midnight.
-            targetY =
-                (geometry.y(view.window.endedAt) -
-                        _scroll.position.viewportDimension +
-                        40)
-                    .clamp(0.0, double.infinity);
-          } else if (view.segments.isNotEmpty) {
-            targetY = geometry.y(view.segments.first.startedAt) - 8;
-          } else {
-            targetY = -8;
-          }
-          moved = _jumpTo(_scroll.offset + axisY + targetY);
-        }
-      } else if (_restoring) {
-        moved = _restorePosition();
-      }
-      if (moved) {
-        _requestLayout();
-        return;
-      }
-
-      _pendingReveal = null;
-      _restoring = false;
-      if (!_positioned) setState(() => _positioned = true);
-      _lastVisible = _capture();
-      widget.reading.rememberOrigin(_lastVisible);
-      _syncAxisViewport();
-      _syncVisibleDay();
-      if (!_userScrolling) _readDirection = null;
-      widget.onPositioned?.call();
-      _extendWhenAtStart();
     });
     WidgetsBinding.instance.ensureVisualUpdate();
+  }
+
+  void _runLayoutPass() {
+    if (!mounted || !_current || !_scroll.hasClients) return;
+    if (!widget.active) {
+      _restoring = false;
+      return;
+    }
+    if (_resetReveal) {
+      _resetReveal = false;
+      widget.reading.reset();
+
+      _requestLayout(restore: true);
+      return;
+    }
+    if (_syncBottomFill()) {
+      _requestLayout();
+      return;
+    }
+    var moved = false;
+    if (_pendingReveal case final date?) {
+      final entry = _axisEntries()
+          .where((entry) => entry.anchor.date == date)
+          .firstOrNull;
+      if (entry != null) {
+        final view = widget.frame.viewFor(date)!;
+        final axisY = entry.box.localToGlobal(Offset.zero).dy - _viewportTop();
+        final geometry = entry.anchor.geometry;
+        final double targetY;
+        if (date == widget.today && !view.window.isEmpty) {
+          // Leave the same-read "now" marker near the bottom, with room for
+          // its label. Small windows still start at their real midnight.
+          targetY =
+              (geometry.y(view.window.endedAt) -
+                      _scroll.position.viewportDimension +
+                      40)
+                  .clamp(0.0, double.infinity);
+        } else if (view.segments.isNotEmpty) {
+          targetY = geometry.y(view.segments.first.startedAt) - 8;
+        } else {
+          targetY = -8;
+        }
+        moved = _jumpTo(_scroll.offset + axisY + targetY);
+      }
+    } else if (_restoring) {
+      moved = _restorePosition();
+    }
+    if (moved) {
+      _requestLayout();
+      return;
+    }
+
+    _pendingReveal = null;
+    _restoring = false;
+    if (!_positioned) setState(() => _positioned = true);
+    _lastVisible = _capture();
+    widget.reading.rememberOrigin(_lastVisible);
+    _syncAxisViewport();
+    _syncVisibleDay();
+    if (!_userScrolling) _readDirection = null;
+    widget.onPositioned?.call();
+    _extendWhenAtStart();
   }
 
   double _viewportTop() {
@@ -271,6 +283,16 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
   }
 
   List<({Object id, RenderBox box})> _anchors() {
+    final source = _passActive
+        ? (_passAnchors ??= _walkAnchors())
+        : _walkAnchors();
+    return [
+      for (final entry in source)
+        if (entry.box.attached && entry.box.hasSize) entry,
+    ];
+  }
+
+  List<({Object id, RenderBox box})> _walkAnchors() {
     final result = <({Object id, RenderBox box})>[];
     void visit(Element element) {
       if (element.widget case final ReadScrollAnchor anchor) {
@@ -406,15 +428,16 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
     // 不得反向改写它。只有真实阅读手势及其同次惯性推进顶部日期。
     if (!_userScrolling && _readDirection == null) return;
     CivilDate? date;
+    final viewportTop = _viewportTop();
     for (final entry in _anchors()) {
       if (entry.id case final DayAnchor day) {
-        final y = entry.box.localToGlobal(Offset.zero).dy - _viewportTop();
+        final y = entry.box.localToGlobal(Offset.zero).dy - viewportTop;
         // 顶部日期与回展共用日期横线穿过时间轴窗口上沿的断点。
         // 横线只在窗口底部露头时不得提前切日或回展。
         if (y <= 1) {
           date = day.date;
-        } else if (date == null) {
-          date = day.date;
+        } else {
+          date ??= day.date;
           break;
         }
       }
@@ -489,6 +512,7 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
             _requestLayout(restore: true);
           }
           _layoutSize = size;
+          _pruneDayCache(frame.dates);
           return NotificationListener<ScrollNotification>(
             onNotification: _notification,
             child: SingleChildScrollView(
@@ -500,12 +524,7 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
                 children: [
                   for (final date in frame.dates)
                     if (frame.viewFor(date) case final view?)
-                      _day(
-                        date,
-                        view,
-                        padding,
-                        date == frame.dates.last ? _lastDayKey : ValueKey(date),
-                      ),
+                      _cachedDay(date, view, date == frame.dates.last, padding),
                 ],
               ),
             ),
@@ -555,6 +574,50 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
         ),
       ],
     );
+  }
+
+  /// 按天复用已建子树：尺寸变化（如顶部收放）只重排不重建；
+  /// 数据、几何、回调或"末日归属"变化时重建该天。
+  Widget _cachedDay(
+    CivilDate date,
+    DayLedgerView view,
+    bool isLast,
+    double padding,
+  ) {
+    final cached = _dayCache[date];
+    if (cached != null &&
+        identical(cached.view, view) &&
+        cached.isLast == isLast &&
+        cached.a11yFactor == widget.a11yFactor &&
+        cached.today == widget.today &&
+        cached.onEditFact == widget.onEditFact &&
+        cached.onDeleteTimeBlock == widget.onDeleteTimeBlock &&
+        cached.onFillGap == widget.onFillGap) {
+      return cached.widget;
+    }
+    final built = _day(
+      date,
+      view,
+      padding,
+      isLast ? _lastDayKey : ValueKey(date),
+    );
+    _dayCache[date] = _CachedDay(
+      view: view,
+      isLast: isLast,
+      a11yFactor: widget.a11yFactor,
+      today: widget.today,
+      onEditFact: widget.onEditFact,
+      onDeleteTimeBlock: widget.onDeleteTimeBlock,
+      onFillGap: widget.onFillGap,
+      widget: built,
+    );
+    return built;
+  }
+
+  void _pruneDayCache(List<CivilDate> dates) {
+    if (_dayCache.length <= dates.length) return;
+    final live = dates.toSet();
+    _dayCache.removeWhere((date, _) => !live.contains(date));
   }
 }
 
@@ -663,4 +726,27 @@ class _TemporalScrollPosition extends ScrollPositionWithSingleContext {
   }
 
   void stopMotion() => goIdle();
+}
+
+/// 单日子树缓存条目；任一输入变化即重建该天。
+class _CachedDay {
+  const _CachedDay({
+    required this.view,
+    required this.isLast,
+    required this.a11yFactor,
+    required this.today,
+    required this.onEditFact,
+    required this.onDeleteTimeBlock,
+    required this.onFillGap,
+    required this.widget,
+  });
+
+  final DayLedgerView view;
+  final bool isLast;
+  final double a11yFactor;
+  final CivilDate today;
+  final Future<bool> Function(CivilDate, LedgerSegment)? onEditFact;
+  final ValueChanged<TimeBlockSegment>? onDeleteTimeBlock;
+  final void Function(CivilDate, UnresolvedSpan)? onFillGap;
+  final Widget widget;
 }

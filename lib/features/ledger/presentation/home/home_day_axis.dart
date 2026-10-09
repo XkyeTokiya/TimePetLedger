@@ -66,6 +66,7 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
   Object? _hovered;
   Object? _focused;
   Widget? _cachedAxis;
+  _AxisMetrics? _metrics;
 
   @override
   void didUpdateWidget(HomeDayAxis oldWidget) {
@@ -75,6 +76,7 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
         widget.geometry.a11yFactor != oldWidget.geometry.a11yFactor ||
         widget.isToday != oldWidget.isToday) {
       _cachedAxis = null;
+      _metrics = null;
     }
   }
 
@@ -82,6 +84,7 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _cachedAxis = null;
+    _metrics = null;
   }
 
   @override
@@ -261,14 +264,6 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
       HomeLedgerStyle.tick.copyWith(color: colors.onSurfaceVariant),
     );
     final geometry = widget.geometry;
-    final intervals = TimelineInterval.fromView(view);
-    final clusters = geometry.shortClusters(intervals);
-    final clusterFor = <Object, List<TimelineInterval>>{
-      for (final cluster in clusters)
-        if (cluster.length >= 2)
-          for (final item in cluster) item.id: cluster,
-    };
-    final height = geometry.y(view.window.endedAt);
     if (view.window.isEmpty) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
@@ -278,27 +273,16 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
         ),
       );
     }
-    final scale = MediaQuery.textScalerOf(context);
-    final ticks = _ticks(view).toList();
-    var tickWidth = 0.0;
-    for (final tick in ticks) {
-      final measure = TextPainter(
-        text: TextSpan(text: tick.$2, style: tickStyle),
-        textDirection: Directionality.of(context),
-        textScaler: scale,
-      )..layout();
-      tickWidth = math.max(tickWidth, measure.width);
-      measure.dispose();
-    }
-    final labelRight = math.max(40.0, (tickWidth / 4).ceil() * 4.0 + 4);
-    // Label → 8dp → 4dp tick → 8dp → rail → 24dp → card.
-    final railX = labelRight + TimeLedgerSpacing.xs * 2 + 4;
-    final cardLeft = railX + TimeLedgerSpacing.xl;
-    final tickHeight = scale.scale(HomeLedgerStyle.tick.fontSize!);
-    final tickLabels = [
-      for (final tick in ticks)
-        (tick.$2, math.max(0.0, geometry.y(tick.$1) - tickHeight / 2)),
-    ];
+    final metrics = _metrics ??= _measure(context, view, tickStyle);
+    final intervals = metrics.intervals;
+    final clusters = metrics.clusters;
+    final clusterFor = metrics.clusterFor;
+    final height = metrics.height;
+    final labelRight = metrics.labelRight;
+    final railX = metrics.railX;
+    final cardLeft = metrics.cardLeft;
+    final tickHeight = metrics.tickHeight;
+    final tickLabels = metrics.tickLabels;
     return FocusTraversalGroup(
       policy: WidgetOrderTraversalPolicy(),
       child: AnimatedBuilder(
@@ -439,6 +423,54 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
           );
         },
       ),
+    );
+  }
+
+  /// 与可见窗口无关的轴度量：只在数据 / 几何 / 主题字体变化时重算。
+  /// 尺寸变化（如顶部收起）只重建可见日的标签层，不重跑这些计算。
+  _AxisMetrics _measure(
+    BuildContext context,
+    DayLedgerView view,
+    TextStyle tickStyle,
+  ) {
+    final geometry = widget.geometry;
+    final intervals = TimelineInterval.fromView(view);
+    final clusters = geometry.shortClusters(intervals);
+    final clusterFor = <Object, List<TimelineInterval>>{
+      for (final cluster in clusters)
+        if (cluster.length >= 2)
+          for (final item in cluster) item.id: cluster,
+    };
+    final scale = MediaQuery.textScalerOf(context);
+    final ticks = _ticks(view).toList();
+    var tickWidth = 0.0;
+    for (final tick in ticks) {
+      final measure = TextPainter(
+        text: TextSpan(text: tick.$2, style: tickStyle),
+        textDirection: Directionality.of(context),
+        textScaler: scale,
+      )..layout();
+      tickWidth = math.max(tickWidth, measure.width);
+      measure.dispose();
+    }
+    final labelRight = math.max(40.0, (tickWidth / 4).ceil() * 4.0 + 4);
+    // Label → 8dp → 4dp tick → 8dp → rail → 24dp → card.
+    final railX = labelRight + TimeLedgerSpacing.xs * 2 + 4;
+    final cardLeft = railX + TimeLedgerSpacing.xl;
+    final tickHeight = scale.scale(HomeLedgerStyle.tick.fontSize!);
+    return _AxisMetrics(
+      intervals: intervals,
+      clusters: clusters,
+      clusterFor: clusterFor,
+      height: geometry.y(view.window.endedAt),
+      labelRight: labelRight,
+      railX: railX,
+      cardLeft: cardLeft,
+      tickHeight: tickHeight,
+      tickLabels: [
+        for (final tick in ticks)
+          (tick.$2, math.max(0.0, geometry.y(tick.$1) - tickHeight / 2)),
+      ],
     );
   }
 
@@ -946,4 +978,29 @@ class _AxisPainter extends CustomPainter {
       windowEnd != old.windowEnd ||
       scheme != old.scheme ||
       semantics != old.semantics;
+}
+
+/// 单日轴的静态度量（与可见窗口无关），按数据 / 几何 / 主题失效。
+class _AxisMetrics {
+  const _AxisMetrics({
+    required this.intervals,
+    required this.clusters,
+    required this.clusterFor,
+    required this.height,
+    required this.labelRight,
+    required this.railX,
+    required this.cardLeft,
+    required this.tickHeight,
+    required this.tickLabels,
+  });
+
+  final List<TimelineInterval> intervals;
+  final List<List<TimelineInterval>> clusters;
+  final Map<Object, List<TimelineInterval>> clusterFor;
+  final double height;
+  final double labelRight;
+  final double railX;
+  final double cardLeft;
+  final double tickHeight;
+  final List<(String, double)> tickLabels;
 }
