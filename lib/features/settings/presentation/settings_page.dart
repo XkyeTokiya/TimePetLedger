@@ -256,7 +256,7 @@ class _SettingsPageState extends State<SettingsPage> {
           _entry(
             _View.display,
             '界面设置',
-            '目标热力图 · ${_rangeText(prefs)}',
+            '快捷区${_quickPanelSideText(prefs)} · 目标热力图 · ${_rangeText(prefs)}',
             Icons.tune,
           ),
           _entry(
@@ -270,6 +270,27 @@ class _SettingsPageState extends State<SettingsPage> {
         ];
       case _View.display:
         return [
+          _sectionHeader(
+            '快捷区位置',
+            value: _quickPanelSideText(prefs),
+            valueKey: const ValueKey('settings-quick-panel-current'),
+          ),
+          for (final side in HomeQuickPanelSide.values)
+            _choice(
+              key: 'settings-quick-panel-${side.name}',
+              selected:
+                  (prefs.homeQuickPanelSide ?? HomeQuickPanelSide.left) == side,
+              title: side == HomeQuickPanelSide.left ? '左侧' : '右侧',
+              description: side == HomeQuickPanelSide.left
+                  ? '向右滑打开，菜单在左上'
+                  : '向左滑打开，菜单在右上',
+              onTap: busy
+                  ? null
+                  : () => _savePreference(
+                      (c) => c.copyWith(homeQuickPanelSide: side),
+                    ),
+            ),
+          const SizedBox(height: TimeLedgerSpacing.xl),
           _sectionHeader(
             '目标热力图',
             value: _rangeText(prefs),
@@ -817,4 +838,10 @@ class _SettingsPageState extends State<SettingsPage> {
       (prefs.fontChoice ?? AppFontChoice.system) == AppFontChoice.system
       ? '系统字体'
       : '衬线';
+
+  String _quickPanelSideText(AppPreferences prefs) =>
+      (prefs.homeQuickPanelSide ?? HomeQuickPanelSide.left) ==
+          HomeQuickPanelSide.left
+      ? '左侧'
+      : '右侧';
 }

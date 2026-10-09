@@ -35,7 +35,7 @@ final class LedgerFeedFrame {
 /// 每一天仍由既有 [DayLedgerLoader] 做单日投影，窗口只决定一次装载哪些
 /// 自然日：不在午夜拆分事实、不重复统计，也不写入事实、偏好或草稿。
 /// [focusDate] 是“当前浏览日期”，驱动顶部日期与当日覆盖统计；跨日滚动、
-/// 滑动切日和日历跳转都通过同一套方法更新它。
+/// 按钮切日和日历跳转都通过同一套方法更新它。
 final class LedgerFeedController extends ChangeNotifier {
   LedgerFeedController({
     required this.loader,
@@ -79,12 +79,13 @@ final class LedgerFeedController extends ChangeNotifier {
   bool _extending = false;
   bool _loading = false;
   bool _refreshFailed = false;
+  CivilDate? _futureNavigationLimit;
   CivilDate? _requestedDate;
   CivilDate? _revealRequest;
   bool _requestedResetReading = true;
   bool revealResetsReading = true;
 
-  /// 显式跳转（日历 / 滑动 / 回到今天）要求时间轴把该日滚到阅读区顶部。
+  /// 显式跳转（日历 / 按钮 / 返回今天）要求时间轴定位到该日。
   CivilDate? takeRevealRequest() {
     final request = _revealRequest;
     _revealRequest = null;
@@ -97,9 +98,17 @@ final class LedgerFeedController extends ChangeNotifier {
   CivilDate get startDate => _start;
   CivilDate get endDate => _end;
   CivilDate get focusDate => _focus;
+  CivilDate? get futureNavigationLimit => _futureNavigationLimit;
 
   /// 连续切日基于尚在装载的目标；读取失败后重新以可见日期导航。
   CivilDate get navigationDate => _loading ? _requestedDate ?? _focus : _focus;
+
+  /// 普通浏览默认以今天为上限；成功手选未来日后，该日在
+  /// 返回今天前作为本次会话的临时上限（Q-044）。
+  CivilDate navigationLimit(CivilDate today) => _futureNavigationLimit ?? today;
+
+  bool canNavigateTo(CivilDate date, CivilDate today) =>
+      !_isBefore(navigationLimit(today), date);
 
   /// 已装载内容存在时保持 ready，刷新失败不清空正在阅读的时间轴。
   LedgerFeedStatus get status =>
@@ -137,7 +146,7 @@ final class LedgerFeedController extends ChangeNotifier {
     return dates;
   }
 
-  /// 日历跳转 / 滑动切日 / 回到今天：目标日成为窗口最新一天。
+  /// 日历跳转 / 按钮切日 / 返回今天：目标日成为窗口最新一天。
   Future<bool> showDate(CivilDate date, {bool resetReading = true}) {
     if (_disposed) return Future.value(false);
     _requestedDate = date;
@@ -148,6 +157,33 @@ final class LedgerFeedController extends ChangeNotifier {
       revealDate: date,
       resetReading: resetReading,
     );
+  }
+
+  /// 日历主动选日；只有未来日读取成功才建立临时上限。
+  Future<bool> showSelectedDate(
+    CivilDate date, {
+    required CivilDate today,
+    bool resetReading = true,
+  }) async {
+    final loaded = await showDate(date, resetReading: resetReading);
+    if (loaded && _isBefore(today, date)) {
+      _futureNavigationLimit = date;
+      notifyListeners();
+    }
+    return loaded;
+  }
+
+  /// 返回今天成功后才清除手选未来上限；失败保留原状态。
+  Future<bool> returnToToday(
+    CivilDate today, {
+    bool resetReading = true,
+  }) async {
+    final loaded = await showDate(today, resetReading: resetReading);
+    if (loaded && _futureNavigationLimit != null) {
+      _futureNavigationLimit = null;
+      notifyListeners();
+    }
+    return loaded;
   }
 
   /// 编辑记录返回后的数据刷新；保持窗口与当前浏览日期。

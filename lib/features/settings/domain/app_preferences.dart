@@ -15,6 +15,9 @@ enum AppThemeMode { system, light, dark }
 /// 字体选项（Q-041）；读取时 null 按 [AppFontChoice.system] 解析。
 enum AppFontChoice { system, serif }
 
+/// 首页快捷区所在侧（Q-042）；读取时 null 按左侧解析。
+enum HomeQuickPanelSide { left, right }
+
 /// 本机偏好，不是正式领域事实，也不代表已提交的业务数据。
 ///
 /// 字段可为 null 表示"用户尚未选择"；调用方不得用默认值替产品决定
@@ -30,6 +33,7 @@ final class AppPreferences {
     this.themeScheme,
     this.themeMode,
     this.fontChoice,
+    this.homeQuickPanelSide,
   });
 
   /// 用户显式指定的常用目标；归档 / 删除后清除（Q-025）。
@@ -59,6 +63,9 @@ final class AppPreferences {
   /// 字体选项（Q-041）；null 按系统字体解析。
   final AppFontChoice? fontChoice;
 
+  /// 首页快捷区位置；是本机界面偏好，不进入账本事实。
+  final HomeQuickPanelSide? homeQuickPanelSide;
+
   AppPreferences copyWith({
     EntityId? commonGoalId,
     bool clearCommonGoal = false,
@@ -70,6 +77,7 @@ final class AppPreferences {
     ThemeScheme? themeScheme,
     AppThemeMode? themeMode,
     AppFontChoice? fontChoice,
+    HomeQuickPanelSide? homeQuickPanelSide,
   }) => AppPreferences(
     commonGoalId: clearCommonGoal ? null : (commonGoalId ?? this.commonGoalId),
     heatRange: heatRange ?? this.heatRange,
@@ -80,6 +88,7 @@ final class AppPreferences {
     themeScheme: themeScheme ?? this.themeScheme,
     themeMode: themeMode ?? this.themeMode,
     fontChoice: fontChoice ?? this.fontChoice,
+    homeQuickPanelSide: homeQuickPanelSide ?? this.homeQuickPanelSide,
   );
 }
 

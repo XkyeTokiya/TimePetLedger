@@ -1,10 +1,16 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../app/theme/theme_text.dart';
 import '../../../../core/time/civil_date.dart';
 import '../../application/day_ledger_loader.dart';
 import '../../domain/projection/ledger_coverage.dart';
 import '../../domain/projection/ledger_segment.dart';
+import '../../../settings/domain/app_preferences.dart';
 import '../day_ledger_date_dialog.dart';
 import 'home_coverage_line.dart';
 import 'home_day_header.dart';
@@ -14,10 +20,10 @@ import 'home_reading_state.dart';
 import 'home_timeline_tab.dart';
 import 'ledger_feed_controller.dart';
 
-/// 首页外壳：菜单 / 侧边栏、当前浏览日期、当日覆盖与跨日期连续时间轴。
+/// 首页外壳：快捷区、当前浏览日期、当日覆盖与跨日期连续时间轴。
 ///
-/// 首页只保留时间账本；摘要与每日复盘改为侧边栏中的独立页面。顶部日期
-/// 与覆盖统计始终对应当前浏览日期，跨日滚动、滑动切日与日历跳转共用同一
+/// 首页只保留时间账本；摘要与每日复盘改为快捷区中的独立页面。顶部日期
+/// 与覆盖统计始终对应当前浏览日期，跨日滚动、按钮切日与日历跳转共用同一
 /// 次日期更新。
 class HomeShell extends StatefulWidget {
   const HomeShell({
@@ -39,6 +45,7 @@ class HomeShell extends StatefulWidget {
     this.floatingCard,
     this.banner,
     this.active = true,
+    this.quickPanelSide = HomeQuickPanelSide.left,
   });
 
   final DayLedgerLoader ledgerLoader;
@@ -49,11 +56,11 @@ class HomeShell extends StatefulWidget {
   final CivilDate initialDate;
   final bool busy;
 
-  /// 侧边栏入口；为空时不显示对应项。
+  /// 快捷区入口；为空时不显示对应项。
   final VoidCallback? onGoals;
   final VoidCallback? onSettings;
-  final VoidCallback onOpenSummary;
-  final VoidCallback onOpenReview;
+  final ValueChanged<CivilDate> onOpenSummary;
+  final ValueChanged<CivilDate> onOpenReview;
   final VoidCallback onRecordActivity;
   final VoidCallback onRecordSleep;
 
@@ -70,36 +77,61 @@ class HomeShell extends StatefulWidget {
 
   /// 首页是否为当前阅读面；压在编辑器或独立页下时为 false。
   final bool active;
+  final HomeQuickPanelSide quickPanelSide;
 
   @override
   State<HomeShell> createState() => HomeShellState();
 }
 
-class HomeShellState extends State<HomeShell> {
+class HomeShellState extends State<HomeShell>
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late final LedgerFeedController feed;
-  final reading = HomeReadingState();
-  final _scaffold = GlobalKey<ScaffoldState>();
+  late final HomeReadingState reading;
+  final _timelineInteraction = HomeTimelineInteractionController();
+  late final AnimationController _panel;
+  final _menuFocus = FocusNode(debugLabel: 'home-menu');
+  final _panelFirstFocus = FocusNode(debugLabel: 'quick-panel-close');
+  FocusNode? _focusBeforePanel;
   Offset? _dragStart;
   Offset _dragDelta = Offset.zero;
+  double _dragStartProgress = 0;
+  double _panelWidth = 0;
+  bool _dragAccepted = false;
+  bool _panelActionPending = false;
+  CivilDate? _panelDate;
   final _pointers = <int>{};
   int? _dragPointer;
 
-  /// 侧边栏打开时的左边缘 / 右边缘保留区，避免与抽屉和系统返回手势冲突。
+  /// 快捷区的左右边缘保留区，避免与系统返回手势冲突。
   static const _edgeGuard = 32.0;
+  static const _intentSlop = 24.0;
+  static const _flingVelocity = 400.0;
+  static final _panelSpring = SpringDescription.withDampingRatio(
+    mass: 1,
+    stiffness: 700,
+    ratio: 1,
+  );
 
   CivilDate? _lastToday;
 
   /// 顶部日期代表的当前浏览日期；记录入口与摘要 / 复盘入口都沿用它。
-  CivilDate get browsingDate => feed.focusDate;
+  CivilDate get browsingDate => _panelDate ?? feed.focusDate;
+  double get quickPanelProgress => _panel.value;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    reading = HomeReadingState(vsync: this);
     feed = LedgerFeedController(
       loader: widget.ledgerLoader,
       now: widget.now,
       dateOfInstant: widget.dateOfInstant,
       initialDate: widget.initialDate,
+    );
+    _panel = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 280),
     );
     _lastToday = _today();
     _showDate(widget.initialDate);
@@ -107,9 +139,34 @@ class HomeShellState extends State<HomeShell> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     feed.dispose();
     reading.dispose();
+    _panel.dispose();
+    _menuFocus.dispose();
+    _panelFirstFocus.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed ||
+        (_dragStart == null && !_panel.isAnimating)) {
+      return;
+    }
+    _panel.stop();
+    _panel.value = _panel.value >= .5 ? 1 : 0;
+    if (_panel.value == 0) _panelDate = null;
+    _cancelDrag();
+  }
+
+  @override
+  void didUpdateWidget(HomeShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.quickPanelSide != widget.quickPanelSide) {
+      _panel.value = 0;
+      _panelDate = null;
+    }
   }
 
   CivilDate _today() => widget.dateOfInstant(widget.now());
@@ -124,7 +181,7 @@ class HomeShellState extends State<HomeShell> {
         frame: frame,
         onPositioned: positioned,
         today: today,
-        active: widget.active && !widget.busy,
+        active: widget.active && !widget.busy && _panel.value == 0,
         onEditFact: widget.onEditFact,
         onDeleteTimeBlock: widget.onDeleteTimeBlock,
         onFillGap: widget.onFillGap,
@@ -132,6 +189,7 @@ class HomeShellState extends State<HomeShell> {
         reading: reading,
         a11yFactor: _timelineA11yFactor(),
         allowUserReading: () => _pointers.length <= 1,
+        interactionController: _timelineInteraction,
       ),
     );
   }
@@ -159,64 +217,116 @@ class HomeShellState extends State<HomeShell> {
     return unreadable ? 1.25 : 1;
   }
 
-  /// 侧边栏：时间账本 / 当日摘要 / 每日复盘 + 我的目标 / 设置。
-  Widget _menuDrawer() {
-    final entries = <({Widget destination, VoidCallback? action})>[
-      (
-        destination: const NavigationDrawerDestination(
-          key: ValueKey('menu-ledger'),
-          icon: Icon(Icons.list_alt_outlined),
-          label: Text('时间账本'),
+  Widget _quickPanel(CivilDate today) {
+    final date = _panelDate ?? feed.focusDate;
+    return Material(
+      key: const ValueKey('home-quick-panel'),
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      child: FocusTraversalGroup(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+          children: [
+            Align(
+              alignment: widget.quickPanelSide == HomeQuickPanelSide.left
+                  ? Alignment.centerLeft
+                  : Alignment.centerRight,
+              child: IconButton(
+                key: const ValueKey('home-quick-panel-close'),
+                focusNode: _panelFirstFocus,
+                tooltip: '关闭快捷区',
+                onPressed: () => _settlePanel(false),
+                icon: const Icon(Icons.close),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    date.year == today.year
+                        ? '${date.month}月${date.day}日'
+                        : '${date.year}年${date.month}月${date.day}日',
+                    key: const ValueKey('home-quick-panel-date'),
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    ledgerWeekdayText(date, today),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const Divider(),
+            _panelEntry(
+              key: 'menu-summary',
+              icon: Icons.donut_small_outlined,
+              label: '当日概览',
+              action: () => widget.onOpenSummary(date),
+            ),
+            _panelEntry(
+              key: 'menu-review',
+              icon: Icons.menu_book_outlined,
+              label: '当日复盘',
+              action: () => widget.onOpenReview(date),
+            ),
+            if (date != today)
+              _panelEntry(
+                key: 'menu-today',
+                icon: Icons.today_outlined,
+                label: '返回今天',
+                action: _returnToToday,
+              ),
+            const Divider(),
+            if (widget.onGoals case final onGoals?)
+              _panelEntry(
+                key: 'menu-goals',
+                icon: Icons.flag_outlined,
+                label: '我的目标',
+                action: onGoals,
+              ),
+            if (widget.onSettings case final onSettings?)
+              _panelEntry(
+                key: 'menu-settings',
+                icon: Icons.settings_outlined,
+                label: '设置',
+                action: onSettings,
+              ),
+          ],
         ),
-        action: null,
       ),
-      (
-        destination: const NavigationDrawerDestination(
-          key: ValueKey('menu-summary'),
-          icon: Icon(Icons.donut_small_outlined),
-          label: Text('当日摘要'),
-        ),
-        action: widget.onOpenSummary,
-      ),
-      (
-        destination: const NavigationDrawerDestination(
-          key: ValueKey('menu-review'),
-          icon: Icon(Icons.menu_book_outlined),
-          label: Text('每日复盘'),
-        ),
-        action: widget.onOpenReview,
-      ),
-      if (widget.onGoals case final onGoals?)
-        (
-          destination: const NavigationDrawerDestination(
-            key: ValueKey('menu-goals'),
-            icon: Icon(Icons.flag_outlined),
-            label: Text('我的目标'),
-          ),
-          action: onGoals,
-        ),
-      if (widget.onSettings case final onSettings?)
-        (
-          destination: const NavigationDrawerDestination(
-            key: ValueKey('menu-settings'),
-            icon: Icon(Icons.settings_outlined),
-            label: Text('设置'),
-          ),
-          action: onSettings,
-        ),
-    ];
-    return NavigationDrawer(
-      key: const ValueKey('home-drawer'),
-      selectedIndex: 0,
-      onDestinationSelected: (index) {
-        Navigator.of(context).pop();
-        entries[index].action?.call();
-      },
-      children: [for (final entry in entries) entry.destination],
     );
   }
 
-  /// 日历 / 前后一天 / 滑动切日 / 回到今天共用：目标日成为浏览日期与窗口末端。
+  Widget _panelEntry({
+    required String key,
+    required IconData icon,
+    required String label,
+    required VoidCallback action,
+  }) => ConstrainedBox(
+    constraints: const BoxConstraints(minHeight: 56),
+    child: ListTile(
+      key: ValueKey(key),
+      leading: Icon(icon),
+      title: Text(label),
+      onTap: widget.busy || _panelActionPending
+          ? null
+          : () => _activatePanelEntry(action),
+    ),
+  );
+
+  Future<void> _activatePanelEntry(VoidCallback action) async {
+    setState(() => _panelActionPending = true);
+    try {
+      await _settlePanel(false);
+      if (mounted) action();
+    } finally {
+      if (mounted) setState(() => _panelActionPending = false);
+    }
+  }
+
+  /// 普通日期导航：目标日成为浏览日期与窗口末端。
   Future<void> _showDate(CivilDate date, {bool resetReading = true}) async {
     final today = _today();
     if (await feed.showDate(date, resetReading: resetReading)) {
@@ -224,8 +334,18 @@ class HomeShellState extends State<HomeShell> {
     }
   }
 
-  /// 显式跳到某一天；日历、滑动切日与“回到今天”共用同一规则。
-  Future<void> openDate(CivilDate date) => _showDate(date);
+  Future<void> _showSelectedDate(CivilDate date) async {
+    final today = _today();
+    if (await feed.showSelectedDate(date, today: today)) _lastToday = today;
+  }
+
+  Future<void> _returnToToday() async {
+    final today = _today();
+    if (await feed.returnToToday(today)) _lastToday = today;
+  }
+
+  /// 显式日历跳转；测试 / 宿主调用与真实日历入口使用同一合同。
+  Future<void> openDate(CivilDate date) => _showSelectedDate(date);
 
   Future<void> _refresh() async {
     final today = _today();
@@ -237,7 +357,9 @@ class HomeShellState extends State<HomeShell> {
     final today = _today();
     final following = _lastToday != null && feed.focusDate == _lastToday;
     if (following && feed.focusDate != today) {
-      await _showDate(today, resetReading: false);
+      if (await feed.returnToToday(today, resetReading: false)) {
+        _lastToday = today;
+      }
       return;
     }
     await _refresh();
@@ -253,32 +375,38 @@ class HomeShellState extends State<HomeShell> {
     );
     if (!mounted) return;
     if (followToday) {
-      await _showDate(_today());
+      await _returnToToday();
     } else if (selected != null) {
-      await _showDate(selected);
+      await _showSelectedDate(selected);
     }
   }
 
   Future<void> _shiftDay(int direction) {
     final target = adjacentLedgerDate(feed.navigationDate, direction);
+    if (!feed.canNavigateTo(target, _today())) return Future.value();
     return _showDate(target);
   }
 
   void _pointerDown(PointerDownEvent event) {
     _pointers.add(event.pointer);
     if (_pointers.length != 1 || widget.busy) {
-      _cancelDrag();
+      _cancelAndSettle();
       return;
     }
     final width = MediaQuery.sizeOf(context).width;
+    final insets = MediaQuery.of(context).systemGestureInsets;
     final x = event.position.dx;
-    if (x < _edgeGuard || x > width - _edgeGuard) {
+    if (x < math.max(_edgeGuard, insets.left) ||
+        x > width - math.max(_edgeGuard, insets.right)) {
       _cancelDrag();
       return;
     }
+    _panel.stop();
     _dragPointer = event.pointer;
     _dragStart = event.position;
     _dragDelta = Offset.zero;
+    _dragStartProgress = _panel.value;
+    _dragAccepted = false;
   }
 
   void _recordPointerPosition(PointerEvent event) {
@@ -294,150 +422,373 @@ class HomeShellState extends State<HomeShell> {
 
   void _pointerCancel(PointerCancelEvent event) {
     _pointers.remove(event.pointer);
-    if (event.pointer == _dragPointer) _cancelDrag();
+    if (event.pointer == _dragPointer) _cancelAndSettle();
   }
 
   void _cancelDrag() {
     _dragPointer = null;
     _dragStart = null;
     _dragDelta = Offset.zero;
+    _dragStartProgress = _panel.value;
+    _dragAccepted = false;
+  }
+
+  void _dragUpdate(DragUpdateDetails details) {
+    if (_dragStart == null || widget.busy || _panelWidth <= 0) return;
+    final dx = _dragDelta.dx;
+    final dy = _dragDelta.dy;
+    if (!_dragAccepted) {
+      if (dx.abs() < _intentSlop || dx.abs() < dy.abs() * 1.6) return;
+      _dragAccepted = true;
+      _timelineInteraction.stop();
+      if (_dragStartProgress == 0) {
+        _focusBeforePanel = FocusManager.instance.primaryFocus;
+        _panelDate = feed.focusDate;
+      }
+    }
+    final signed = widget.quickPanelSide == HomeQuickPanelSide.left ? dx : -dx;
+    if (_dragStartProgress == 0 && signed <= 0) return;
+    final effective = signed == 0
+        ? 0.0
+        : signed - math.min(signed.abs(), _intentSlop) * signed.sign;
+    _panel.value = (_dragStartProgress + effective / _panelWidth).clamp(
+      0.0,
+      1.0,
+    );
   }
 
   void _dragEnd(DragEndDetails details) {
-    final started = _dragStart != null;
-    final dx = _dragDelta.dx;
-    final dy = _dragDelta.dy;
+    final accepted = _dragStart != null && _dragAccepted;
+    final velocity = details.primaryVelocity ?? 0;
+    final signedVelocity = widget.quickPanelSide == HomeQuickPanelSide.left
+        ? velocity
+        : -velocity;
     _cancelDrag();
-    if (!started || widget.busy) return;
-    // 明确的横向意图才切日，轻微斜滑不会误触记录或换日。
-    if (dx.abs() < 64 || dx.abs() <= dy.abs() * 1.6) return;
-    _shiftDay(dx < 0 ? 1 : -1);
+    if (!accepted || widget.busy) return;
+    final open = signedVelocity.abs() >= _flingVelocity
+        ? signedVelocity > 0
+        : _panel.value >= .5;
+    unawaited(_settlePanel(open, velocity: signedVelocity / _panelWidth));
+  }
+
+  void _cancelAndSettle() {
+    final open = _panel.value >= .5;
+    _cancelDrag();
+    unawaited(_settlePanel(open));
+  }
+
+  Future<void> _settlePanel(bool open, {double velocity = 0}) async {
+    if (open && _panel.value == 0) {
+      _focusBeforePanel = FocusManager.instance.primaryFocus;
+      _panelDate = feed.focusDate;
+    }
+    if (open) _timelineInteraction.stop();
+    final target = open ? 1.0 : 0.0;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _panel.value = target;
+    } else {
+      try {
+        await _panel.animateWith(
+          SpringSimulation(_panelSpring, _panel.value, target, velocity),
+        );
+        _panel.value = target;
+      } on TickerCanceled {
+        return;
+      }
+    }
+    if (!mounted) return;
+    if (open) {
+      _panelFirstFocus.requestFocus();
+    } else {
+      _panelDate = null;
+      final previous = _focusBeforePanel;
+      _focusBeforePanel = null;
+      if (previous != null && previous.canRequestFocus) {
+        previous.requestFocus();
+      } else {
+        _menuFocus.requestFocus();
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final today = _today();
     return Scaffold(
-      key: _scaffold,
-      drawer: _menuDrawer(),
       body: SafeArea(
         bottom: false,
         child: LayoutBuilder(
-          builder: (context, constraints) => ListenableBuilder(
-            listenable: Listenable.merge([feed, reading]),
-            builder: (context, _) {
-              final progress = reading.progress;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxHeight: constraints.maxHeight * .6,
-                    ),
-                    child: SingleChildScrollView(
-                      key: const ValueKey('home-header-scroll'),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
+          builder: (context, constraints) {
+            final panelWidth = math.min(360.0, constraints.maxWidth - 64);
+            _panelWidth = panelWidth;
+            return AnimatedBuilder(
+              animation: Listenable.merge([feed, reading, _panel]),
+              builder: (context, _) {
+                final panelProgress = _panel.value;
+                final panelVisible = panelProgress > 0;
+                final offset = panelWidth * panelProgress;
+                final signedOffset =
+                    widget.quickPanelSide == HomeQuickPanelSide.left
+                    ? offset
+                    : -offset;
+                final nextDate = adjacentLedgerDate(feed.navigationDate, 1);
+                final canShiftNext = feed.canNavigateTo(nextDate, today);
+                final panelAlignment =
+                    widget.quickPanelSide == HomeQuickPanelSide.left
+                    ? Alignment.centerLeft
+                    : Alignment.centerRight;
+                return PopScope(
+                  canPop: !panelVisible,
+                  onPopInvokedWithResult: (didPop, _) {
+                    if (!didPop && panelVisible) {
+                      unawaited(_settlePanel(false));
+                    }
+                  },
+                  child: Shortcuts(
+                    shortcuts: const {
+                      SingleActivator(LogicalKeyboardKey.escape):
+                          DismissIntent(),
+                    },
+                    child: Actions(
+                      actions: {
+                        DismissIntent: CallbackAction<DismissIntent>(
+                          onInvoke: (_) {
+                            if (panelVisible) unawaited(_settlePanel(false));
+                            return null;
+                          },
+                        ),
+                      },
+                      child: Stack(
                         children: [
-                          if (progress < 1)
-                            HomeTopBar(
-                              busy: widget.busy,
-                              onToday: feed.focusDate == today
-                                  ? null
-                                  : () => _showDate(today),
-                              onMenu: () =>
-                                  _scaffold.currentState?.openDrawer(),
-                            ),
-                          ?widget.banner,
-                          HomeDateTitle(
-                            date: feed.focusDate,
-                            today: today,
-                            busy: widget.busy,
-                            progress: progress,
-                            onMenu: () => _scaffold.currentState?.openDrawer(),
-                            onChooseDate: _chooseDate,
-                            onShiftDay: _shiftDay,
-                            onToday: () => _showDate(today),
-                          ),
-                          if (feed.focusView case final view?)
-                            HomeCoverageLine(
-                              view: view,
-                              progress: progress,
-                              onTap: widget.busy ? null : widget.onOpenSummary,
-                            ),
-                          if (feed.refreshFailed)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              child: Row(
-                                children: [
-                                  const Expanded(
-                                    child: Text(
-                                      '账本刷新失败，当前仍显示上一次读取结果。',
-                                      style: TextStyle(fontSize: 13),
+                          Listener(
+                            behavior: HitTestBehavior.translucent,
+                            onPointerDown: _pointerDown,
+                            onPointerMove: _recordPointerPosition,
+                            onPointerUp: _pointerUp,
+                            onPointerCancel: _pointerCancel,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.translucent,
+                              onHorizontalDragUpdate: _dragUpdate,
+                              onHorizontalDragEnd: _dragEnd,
+                              onHorizontalDragCancel: _cancelAndSettle,
+                              child: Align(
+                                alignment: panelAlignment,
+                                child: SizedBox(
+                                  width: panelWidth,
+                                  height: constraints.maxHeight,
+                                  child: IgnorePointer(
+                                    ignoring: panelProgress < 1,
+                                    child: ExcludeFocus(
+                                      excluding: panelProgress < 1,
+                                      child: ExcludeSemantics(
+                                        excluding: panelProgress < 1,
+                                        child: _quickPanel(today),
+                                      ),
                                     ),
                                   ),
-                                  TextButton(
-                                    onPressed: widget.busy ? null : _refresh,
-                                    child: const Text('重试读取'),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
+                          ),
+                          Transform.translate(
+                            offset: Offset(signedOffset, 0),
+                            child: Listener(
+                              behavior: HitTestBehavior.opaque,
+                              onPointerDown: _pointerDown,
+                              onPointerMove: _recordPointerPosition,
+                              onPointerUp: _pointerUp,
+                              onPointerCancel: _pointerCancel,
+                              child: GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onHorizontalDragUpdate: _dragUpdate,
+                                onHorizontalDragEnd: _dragEnd,
+                                onHorizontalDragCancel: _cancelAndSettle,
+                                child: Stack(
+                                  children: [
+                                    Positioned.fill(
+                                      child: ExcludeFocus(
+                                        excluding: panelVisible,
+                                        child: ExcludeSemantics(
+                                          excluding: panelVisible,
+                                          child: Material(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .surface,
+                                            child: Column(
+                                              children: [
+                                                Expanded(
+                                                  child: _homeContent(
+                                                    constraints,
+                                                    today,
+                                                    canShiftNext,
+                                                  ),
+                                                ),
+                                                _HomeBottomBar(
+                                                  busy: widget.busy,
+                                                  onRecordSleep:
+                                                      widget.onRecordSleep,
+                                                  onRecordActivity:
+                                                      widget.onRecordActivity,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    if (panelVisible)
+                                      Positioned.fill(
+                                        child: Semantics(
+                                          button: true,
+                                          label: '关闭快捷区',
+                                          child: GestureDetector(
+                                            key: const ValueKey(
+                                              'home-quick-panel-scrim',
+                                            ),
+                                            behavior: HitTestBehavior.opaque,
+                                            onTap: () => _settlePanel(false),
+                                            child: ColoredBox(
+                                              color: Colors.black.withValues(
+                                                alpha: .32 * panelProgress,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  Expanded(
-                    key: const ValueKey('home-reading-surface'),
-                    child: Listener(
-                      behavior: HitTestBehavior.opaque,
-                      onPointerDown: _pointerDown,
-                      onPointerMove: _recordPointerPosition,
-                      onPointerUp: _pointerUp,
-                      onPointerCancel: _pointerCancel,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onHorizontalDragEnd: _dragEnd,
-                        onHorizontalDragCancel: _cancelDrag,
-                        child: _timeline(today),
-                      ),
-                    ),
-                  ),
-                  if (widget.floatingCard != null && progress < 1)
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: constraints.maxHeight * .25,
-                      ),
-                      child: SingleChildScrollView(
-                        child: ClipRect(
-                          child: Align(
-                            heightFactor: 1 - progress,
-                            child: IgnorePointer(
-                              ignoring: progress > 0,
-                              child: ExcludeSemantics(
-                                excluding: progress > 0,
-                                child: widget.floatingCard!(feed),
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _homeContent(
+    BoxConstraints constraints,
+    CivilDate today,
+    bool canShiftNext,
+  ) => ListenableBuilder(
+    listenable: Listenable.merge([feed, reading]),
+    builder: (context, _) {
+      final progress = reading.progress;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: constraints.maxHeight * .6),
+            child: SingleChildScrollView(
+              key: const ValueKey('home-header-scroll'),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (progress < 1)
+                    ClipRect(
+                      child: Align(
+                        heightFactor: 1 - progress,
+                        child: Opacity(
+                          opacity: 1 - progress,
+                          child: IgnorePointer(
+                            ignoring: progress > 0,
+                            child: ExcludeSemantics(
+                              excluding: progress > 0,
+                              child: HomeTopBar(
+                                busy: widget.busy,
+                                side: widget.quickPanelSide,
+                                menuFocusNode: _menuFocus,
+                                onToday: feed.focusDate == today
+                                    ? null
+                                    : _returnToToday,
+                                onMenu: () => _settlePanel(true),
                               ),
                             ),
                           ),
                         ),
                       ),
                     ),
+                  ?widget.banner,
+                  HomeDateTitle(
+                    date: feed.focusDate,
+                    today: today,
+                    busy: widget.busy,
+                    progress: progress,
+                    side: widget.quickPanelSide,
+                    menuFocusNode: _menuFocus,
+                    canShiftNext: canShiftNext,
+                    onMenu: () => _settlePanel(true),
+                    onChooseDate: _chooseDate,
+                    onShiftDay: _shiftDay,
+                    onToday: _returnToToday,
+                  ),
+                  if (feed.focusView case final view?)
+                    HomeCoverageLine(
+                      view: view,
+                      progress: progress,
+                      onTap: widget.busy
+                          ? null
+                          : () => widget.onOpenSummary(feed.focusDate),
+                    ),
+                  if (feed.refreshFailed)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              '账本刷新失败，当前仍显示上一次读取结果。',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: widget.busy ? null : _refresh,
+                            child: const Text('重试读取'),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
-              );
-            },
+              ),
+            ),
           ),
-        ),
-      ),
-      bottomNavigationBar: _HomeBottomBar(
-        busy: widget.busy,
-        onRecordSleep: widget.onRecordSleep,
-        onRecordActivity: widget.onRecordActivity,
-      ),
-    );
-  }
+          Expanded(
+            key: const ValueKey('home-reading-surface'),
+            child: _timeline(today),
+          ),
+          if (widget.floatingCard != null &&
+              feed.focusDate == today &&
+              progress < 1)
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: constraints.maxHeight * .25,
+              ),
+              child: SingleChildScrollView(
+                child: ClipRect(
+                  child: Align(
+                    heightFactor: 1 - progress,
+                    child: IgnorePointer(
+                      ignoring: progress > 0,
+                      child: ExcludeSemantics(
+                        excluding: progress > 0,
+                        child: widget.floatingCard!(feed),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      );
+    },
+  );
 }
 
 class _HomeBottomBar extends StatelessWidget {

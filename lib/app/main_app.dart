@@ -21,6 +21,7 @@ import '../features/ledger/presentation/home/home_suggestion_card.dart';
 import '../features/ledger/presentation/home/ledger_feed_controller.dart';
 import '../features/ledger/domain/projection/ledger_coverage.dart';
 import '../features/ledger/domain/projection/ledger_segment.dart';
+import '../features/ledger/domain/projection/reconciliation_window.dart';
 import '../features/ledger/application/home_suggestion.dart';
 import '../features/settings/domain/app_preferences.dart';
 
@@ -378,10 +379,10 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  /// 侧边栏入口：进入独立「我的目标」整页。
+  /// 快捷区入口：进入独立「我的目标」整页。
   Future<void> _openGoals() => _pushMenuEntry(widget.goalEntry);
 
-  /// 侧边栏入口：进入独立「设置」整页。
+  /// 快捷区入口：进入独立「设置」整页。
   Future<void> _openSettings() => _pushMenuEntry(widget.settingsEntry);
 
   Future<void> _pushMenuEntry(Widget Function()? entry) async {
@@ -393,6 +394,7 @@ class _RecordingHomeState extends State<_RecordingHome>
     } finally {
       if (mounted) {
         setState(() => opening = false);
+        _loadPreferences();
         await _refreshHome();
         await _refreshSuggestionState();
       }
@@ -412,10 +414,11 @@ class _RecordingHomeState extends State<_RecordingHome>
     onInteraction: (value) => _interaction(value, review: true),
   );
 
-  /// 侧边栏入口：独立「当日摘要」页，继承首页当前浏览日期。
-  Future<void> _openSummary() async {
+  /// 快捷区入口：独立「当日概览」页，继承打开快捷区时的日期。
+  Future<void> _openSummary([CivilDate? requestedDate]) async {
     final loader = widget.dayLedger;
     if (busy || loader == null) return;
+    final date = requestedDate ?? selectedDate;
     setState(() => opening = true);
     try {
       await Navigator.of(context).push<void>(
@@ -425,7 +428,7 @@ class _RecordingHomeState extends State<_RecordingHome>
             now: () => widget.now().millisecondsSinceEpoch,
             dateOfInstant: deviceDateOfInstant,
             routeObserver: widget.dayRoutes,
-            initialDate: selectedDate,
+            initialDate: date,
             reviewEntry: widget.reviewContext == null ? null : _reviewPage,
             onEditSleep: widget.reviewContext == null
                 ? null
@@ -442,14 +445,15 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  /// 侧边栏入口：独立「每日复盘」页，继承首页当前浏览日期。
-  Future<void> _openReview() async {
+  /// 快捷区入口：独立「当日复盘」页，继承打开快捷区时的日期。
+  Future<void> _openReview([CivilDate? requestedDate]) async {
     if (busy || widget.reviewContext == null) return;
+    final date = requestedDate ?? selectedDate;
     setState(() => opening = true);
     try {
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(builder: (_) => _reviewPage(selectedDate)),
-      );
+      await Navigator.of(
+        context,
+      ).push<void>(MaterialPageRoute<void>(builder: (_) => _reviewPage(date)));
     } finally {
       if (mounted) {
         setState(() => opening = false);
@@ -590,7 +594,11 @@ class _RecordingHomeState extends State<_RecordingHome>
   Widget _suggestionCard(LedgerFeedController controller) {
     final view = controller.focusView;
     final dateContext = controller.focusContext;
-    if (view == null || dateContext == null) return const SizedBox.shrink();
+    if (view == null ||
+        dateContext == null ||
+        dateContext.relation != LedgerDateRelation.today) {
+      return const SizedBox.shrink();
+    }
     // 当地时刻用日边界与当前 instant 之差求得，不再次读取时区。
     final nowMinutes = (dateContext.now - dateContext.dayStartedAt) ~/ 60000;
     final suggestion = resolveHomeSuggestion(
@@ -615,7 +623,7 @@ class _RecordingHomeState extends State<_RecordingHome>
           HomeSuggestionKind.greeting => null,
           HomeSuggestionKind.sleep => busy ? null : _recordSleep,
           HomeSuggestionKind.record => busy ? null : _recordActivity,
-          HomeSuggestionKind.review => busy ? null : _openReview,
+          HomeSuggestionKind.review => busy ? null : () => _openReview(),
         },
       ),
     );
@@ -681,11 +689,13 @@ class _RecordingHomeState extends State<_RecordingHome>
       onRecordActivity: _recordActivity,
       onRecordSleep: _recordSleep,
       onOpenSummary: _openSummary,
-      onOpenReview: widget.reviewContext == null ? () {} : _openReview,
+      onOpenReview: widget.reviewContext == null ? (_) {} : _openReview,
       onEditFact: busy ? null : _openFact,
       onDeleteTimeBlock: busy ? null : _deleteTimeBlock,
       onFillGap: busy ? null : _openGap,
       floatingCard: (preferences?.reminders ?? true) ? _suggestionCard : null,
+      quickPanelSide:
+          preferences?.homeQuickPanelSide ?? HomeQuickPanelSide.left,
     );
   }
 }

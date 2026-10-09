@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter/services.dart';
 
 import '../../../../app/theme/home_theme.dart';
@@ -18,12 +19,15 @@ import '../summary_formatting.dart';
 import 'home_ledger_style.dart';
 import 'home_timeline_geometry.dart';
 
-/// Global viewport bounds are published after scrolling/layout, so a long
-/// interval's single visual label stays inside its visible intersection.
+/// The visible band of the feed viewport in scroll-content coordinates. The
+/// feed publishes it on every scroll update, so each axis places its one
+/// visual label against the same frame that is about to be painted instead of
+/// a previous frame's position.
 final class HomeAxisViewport extends ChangeNotifier {
   double top = 0;
   double bottom = 0;
   void update(double nextTop, double nextBottom) {
+    if (top == nextTop && bottom == nextBottom) return;
     top = nextTop;
     bottom = nextBottom;
     notifyListeners();
@@ -92,6 +96,42 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
       _tips.putIfAbsent(id, () => GlobalKey<TooltipState>());
 
   FocusNode _node(Object id) => _focus.putIfAbsent(id, FocusNode.new);
+
+  /// The published scroll band converted to this axis's local coordinates.
+  /// Offsets inside the scroll content are stable while the finger moves, so
+  /// the conversion stays exact for the frame currently being built.
+  ({double top, double bottom}) _visibleBand() {
+    final box = _axisKey.currentContext?.findRenderObject();
+    if (box is RenderBox && box.attached && box.hasSize) {
+      final contentTop = _contentOffset(box);
+      if (contentTop != null) {
+        return (
+          top: widget.viewport.top - contentTop,
+          bottom: widget.viewport.bottom - contentTop,
+        );
+      }
+      // No scroll viewport ancestor: the published band already is global.
+      final top = box.localToGlobal(Offset.zero).dy;
+      return (
+        top: widget.viewport.top - top,
+        bottom: widget.viewport.bottom - top,
+      );
+    }
+    return (top: widget.viewport.top, bottom: widget.viewport.bottom);
+  }
+
+  /// Distance from the scroll content's origin to this axis. Measured against
+  /// the viewport's direct child so the scrolling paint offset is excluded.
+  double? _contentOffset(RenderBox box) {
+    RenderObject content = box;
+    RenderObject? parent = content.parent;
+    while (parent != null && parent is! RenderAbstractViewport) {
+      content = parent;
+      parent = content.parent;
+    }
+    if (parent is! RenderAbstractViewport) return null;
+    return box.localToGlobal(Offset.zero, ancestor: content).dy;
+  }
 
   TimelineInterval? _currentCandidate(TimelineInterval candidate) {
     if (!mounted || !widget.isCurrent()) return null;
@@ -264,12 +304,9 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
       child: AnimatedBuilder(
         animation: widget.viewport,
         builder: (context, _) {
-          final box = _axisKey.currentContext?.findRenderObject();
-          final axisTop = box is RenderBox && box.hasSize
-              ? box.localToGlobal(Offset.zero).dy
-              : widget.viewport.top;
-          final visibleTop = widget.viewport.top - axisTop;
-          final visibleBottom = widget.viewport.bottom - axisTop;
+          final visible = _visibleBand();
+          final visibleTop = visible.top;
+          final visibleBottom = visible.bottom;
           // Offscreen days keep their individual focus/semantics nodes, but
           // need no label repositioning while another day is being read.
           if (_cachedAxis != null &&
@@ -540,16 +577,13 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                               HomeLedgerStyle.title.height!,
                         );
                         final fullHeight = metadataHeight * 2 + titleHeight + 8;
-                        final full =
-                            height >= fullHeight + 16 &&
-                            (visibleHeight == 0 ||
-                                visibleHeight >= fullHeight + 16);
+                        // Label form is a property of the interval: it must
+                        // not switch between heights while the feed scrolls,
+                        // or the same block visibly changes text, size and
+                        // line count every time it crosses a viewport edge.
+                        final full = height >= fullHeight + 16;
                         final compactRange =
-                            !full &&
-                            height >= metadataHeight + lineHeight + 20 &&
-                            (visibleHeight == 0 ||
-                                visibleHeight >=
-                                    metadataHeight + lineHeight + 20);
+                            !full && height >= metadataHeight + lineHeight + 20;
                         final labelHeight = full
                             ? fullHeight
                             : compactRange

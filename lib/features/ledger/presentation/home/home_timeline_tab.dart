@@ -40,6 +40,7 @@ class HomeTimelineTab extends StatefulWidget {
     this.onFillGap,
     this.onDayTap,
     this.allowUserReading,
+    this.interactionController,
     this.a11yFactor = 1,
   });
   final LedgerFeedController controller;
@@ -53,9 +54,23 @@ class HomeTimelineTab extends StatefulWidget {
   final void Function(CivilDate, UnresolvedSpan)? onFillGap;
   final void Function(CivilDate)? onDayTap;
   final bool Function()? allowUserReading;
+  final HomeTimelineInteractionController? interactionController;
   final double a11yFactor;
   @override
   State<HomeTimelineTab> createState() => HomeTimelineTabState();
+}
+
+/// 只暴露首页外壳需要的最小控制：快捷区开始打开时立即停止时间线惯性。
+final class HomeTimelineInteractionController {
+  VoidCallback? _stop;
+
+  void stop() => _stop?.call();
+
+  void _attach(VoidCallback stop) => _stop = stop;
+
+  void _detach(VoidCallback stop) {
+    if (_stop == stop) _stop = null;
+  }
 }
 
 final class DayAnchor {
@@ -74,6 +89,8 @@ final class _AxisAnchor {
   final int endedAt;
 }
 
+enum _ReadDirection { fingerUp, fingerDown }
+
 class HomeTimelineTabState extends State<HomeTimelineTab> {
   final _scroll = _TemporalScrollController();
   final _viewport = GlobalKey();
@@ -88,7 +105,7 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
   bool _positioned = false;
   bool _extendRequested = false;
   bool _userScrolling = false;
-  bool _userReadPending = false;
+  _ReadDirection? _readDirection;
   int _restoredVersion = -1;
   Size? _layoutSize;
   double _bottomFill = 0;
@@ -104,6 +121,7 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
     super.initState();
     _scroll.addListener(_onScroll);
     widget.reading.addListener(_onHeaderChanged);
+    widget.interactionController?._attach(_stopMotion);
     _acceptFrame();
   }
 
@@ -113,6 +131,10 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
     if (oldWidget.reading != widget.reading) {
       oldWidget.reading.removeListener(_onHeaderChanged);
       widget.reading.addListener(_onHeaderChanged);
+    }
+    if (oldWidget.interactionController != widget.interactionController) {
+      oldWidget.interactionController?._detach(_stopMotion);
+      widget.interactionController?._attach(_stopMotion);
     }
     if (widget.controller != oldWidget.controller ||
         widget.frame.version != _restoredVersion) {
@@ -125,10 +147,15 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
 
   @override
   void dispose() {
+    widget.interactionController?._detach(_stopMotion);
     widget.reading.removeListener(_onHeaderChanged);
     _scroll.dispose();
     _axisViewport.dispose();
     super.dispose();
+  }
+
+  void _stopMotion() {
+    if (_scroll.hasClients) _scroll.stopMotion();
   }
 
   void _onHeaderChanged() {
@@ -141,7 +168,7 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
     _pendingReveal = widget.controller.takeRevealRequest();
     _resetReveal =
         _pendingReveal != null && widget.controller.revealResetsReading;
-    _userReadPending = false;
+    if (!_userScrolling) _readDirection = null;
     _requestLayout(restore: true);
   }
 
@@ -206,15 +233,9 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
       if (!_positioned) setState(() => _positioned = true);
       _lastVisible = _capture();
       widget.reading.rememberOrigin(_lastVisible);
-      _publishViewport();
+      _syncAxisViewport();
       _syncVisibleDay();
-      if (_userReadPending) {
-        _userReadPending = false;
-        final originY = _positionY(_origin);
-        if (originY != null && _origin != null) {
-          widget.reading.updateDistance(originY - _origin!.relativeY);
-        }
-      }
+      if (!_userScrolling) _readDirection = null;
       widget.onPositioned?.call();
       _extendWhenAtStart();
     });
@@ -226,12 +247,16 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
     return box is RenderBox ? box.localToGlobal(Offset.zero).dy : 0;
   }
 
-  void _publishViewport() {
-    final box = _viewport.currentContext?.findRenderObject();
-    if (box is RenderBox && box.hasSize) {
-      final top = box.localToGlobal(Offset.zero).dy;
-      _axisViewport.update(top, top + box.size.height);
-    }
+  /// Publishes the visible band in scroll-content coordinates. Scroll updates
+  /// call it synchronously so axis labels use the geometry of the frame that
+  /// is about to be painted, not the position of the previous frame.
+  void _syncAxisViewport() {
+    if (!_scroll.hasClients) return;
+    final position = _scroll.position;
+    _axisViewport.update(
+      position.pixels,
+      position.pixels + position.viewportDimension,
+    );
   }
 
   bool _jumpTo(double target, {bool compensate = false}) {
@@ -270,21 +295,25 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
   ];
   HomeReadPosition? _capture() {
     final viewportTop = _viewportTop();
+    final breakpoint = _scroll.position.viewportDimension;
+    HomeReadPosition? nearest;
     for (final entry in _axisEntries()) {
       final top = entry.box.localToGlobal(Offset.zero).dy - viewportTop;
       final geometry = entry.anchor.geometry;
       final end = entry.anchor.endedAt;
       final temporalHeight = geometry.y(end);
+      if (top > breakpoint) break;
       if (top + entry.box.size.height > 0) {
-        final y = (-top).clamp(0.0, temporalHeight);
-        return HomeReadPosition(
+        final y = (breakpoint - top).clamp(0.0, temporalHeight);
+        nearest = HomeReadPosition(
           entry.anchor.date,
           geometry.instant(y).clamp(geometry.startedAt, end),
-          top + y,
+          top + y - breakpoint,
         );
+        if (top + temporalHeight >= breakpoint) return nearest;
       }
     }
-    return _lastVisible;
+    return nearest ?? _lastVisible;
   }
 
   double? _positionY(HomeReadPosition? saved) {
@@ -297,7 +326,8 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
     // the original instant, so changing today's end cannot redefine distance.
     return entry.box.localToGlobal(Offset.zero).dy -
         _viewportTop() +
-        entry.anchor.geometry.y(saved.instant);
+        entry.anchor.geometry.y(saved.instant) -
+        _scroll.position.viewportDimension;
   }
 
   bool _restorePosition() {
@@ -319,6 +349,7 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
   }
 
   void _onScroll() {
+    _syncAxisViewport();
     if (mounted && _current && !_restoring && _positioned && widget.active) {
       _requestLayout();
     }
@@ -334,6 +365,8 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
     if (notification is ScrollStartNotification &&
         notification.dragDetails != null) {
       _userScrolling = true;
+      _readDirection = null;
+      widget.reading.beginUserRead();
     }
     if (notification is ScrollUpdateNotification &&
         _userScrolling &&
@@ -341,22 +374,43 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
         notification.metrics.pixels >= notification.metrics.minScrollExtent &&
         notification.metrics.pixels <= notification.metrics.maxScrollExtent &&
         (notification.scrollDelta?.abs() ?? 0) > 0) {
+      final delta = notification.scrollDelta!;
+      if (notification.dragDetails != null) {
+        _readDirection = delta > 0
+            ? _ReadDirection.fingerUp
+            : _ReadDirection.fingerDown;
+      }
+      final direction = _readDirection;
+      if (direction != null) {
+        widget.reading.updateUserRead(
+          fingerUp: direction == _ReadDirection.fingerUp,
+          distance: delta.abs(),
+        );
+      }
       // A finger can move again before the header compensation frame. Keep
       // that real movement rather than restoring the previous frame over it.
       if (_restoring) _lastVisible = _capture();
-      _userReadPending = true;
       _requestLayout();
     }
-    if (notification is ScrollEndNotification) _userScrolling = false;
+    if (notification is ScrollEndNotification) {
+      _userScrolling = false;
+      widget.reading.endUserRead();
+      _requestLayout();
+    }
     return false;
   }
 
   void _syncVisibleDay() {
     if (!_current || _restoring || !_positioned || !widget.active) return;
+    // 显式导航已经由 controller 提交目标日期；布局、转场或测试用 jumpTo
+    // 不得反向改写它。只有真实阅读手势及其同次惯性推进顶部日期。
+    if (!_userScrolling && _readDirection == null) return;
     CivilDate? date;
     for (final entry in _anchors()) {
       if (entry.id case final DayAnchor day) {
         final y = entry.box.localToGlobal(Offset.zero).dy - _viewportTop();
+        // 顶部日期与回展共用日期横线穿过时间轴窗口上沿的断点。
+        // 横线只在窗口底部露头时不得提前切日或回展。
         if (y <= 1) {
           date = day.date;
         } else if (date == null) {
@@ -365,7 +419,12 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
         }
       }
     }
-    if (date != null) widget.controller.noteFocus(date);
+    if (date != null && date != widget.controller.focusDate) {
+      widget.controller.noteFocus(date);
+      if (_readDirection == _ReadDirection.fingerUp) {
+        widget.reading.expandForDayDividerAtTop();
+      }
+    }
   }
 
   void _extendWhenAtStart() {
@@ -587,6 +646,7 @@ class _TemporalScrollController extends ScrollController {
   );
   void compensateTo(double value) =>
       (position as _TemporalScrollPosition).compensateTo(value);
+  void stopMotion() => (position as _TemporalScrollPosition).stopMotion();
 }
 
 class _TemporalScrollPosition extends ScrollPositionWithSingleContext {
@@ -601,4 +661,6 @@ class _TemporalScrollPosition extends ScrollPositionWithSingleContext {
     forcePixels(value);
     if (ballistic) goBallistic(velocity);
   }
+
+  void stopMotion() => goIdle();
 }

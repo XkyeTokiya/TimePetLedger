@@ -42,6 +42,9 @@ final class DriftAppPreferencesStore implements AppPreferencesStore {
         themeScheme: _themeScheme(values['theme_scheme']),
         themeMode: _appThemeMode(values['theme_mode']),
         fontChoice: _fontChoice(values['font_choice']),
+        homeQuickPanelSide: _homeQuickPanelSide(
+          values['home_quick_panel_side'],
+        ),
       );
     } catch (error, stack) {
       Error.throwWithStackTrace(AppPreferencesStorageException(error), stack);
@@ -64,6 +67,7 @@ final class DriftAppPreferencesStore implements AppPreferencesStore {
           'theme_scheme': preferences.themeScheme?.name,
           'theme_mode': preferences.themeMode?.name,
           'font_choice': preferences.fontChoice?.name,
+          'home_quick_panel_side': preferences.homeQuickPanelSide?.name,
         }.entries) {
           final value = entry.value;
           if (value == null) {
@@ -106,6 +110,11 @@ final class DriftAppPreferencesStore implements AppPreferencesStore {
   static AppFontChoice? _fontChoice(String? value) => AppFontChoice.values
       .where((candidate) => candidate.name == value)
       .firstOrNull;
+
+  static HomeQuickPanelSide? _homeQuickPanelSide(String? value) =>
+      HomeQuickPanelSide.values
+          .where((candidate) => candidate.name == value)
+          .firstOrNull;
 
   static bool? _bool(String? value) => switch (value) {
     'true' => true,
