@@ -66,13 +66,28 @@ void main() {
     expect(saved, 0);
   }
 
-  testWidgets('display section offers theme, mode and font choices', (
+  testWidgets('display section exposes rows and hides unsupported dynamic', (
     tester,
   ) async {
     final store = _RecordingStore();
     await mount(tester, store);
 
-    expect(find.text('主题配色'), findsOneWidget);
+    expect(find.text('主题'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('settings-theme-mode-current')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('settings-theme-current')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('settings-font-current')), findsOneWidget);
+    // 测试环境没有动态取色插件：开关隐藏（合同 §2.5）。
+    expect(find.byKey(const ValueKey('settings-theme-dynamic')), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('settings-theme-picker')));
+    await tester.pumpAndSettle();
+    expect(find.text('自选主题色'), findsWidgets);
     expect(
       find.byKey(const ValueKey('settings-theme-defaultM3')),
       findsOneWidget,
@@ -81,40 +96,56 @@ void main() {
       find.byKey(const ValueKey('settings-theme-warmPaper')),
       findsOneWidget,
     );
-    // 测试环境没有动态取色插件：该项隐藏（合同 §2.5）。
     expect(find.byKey(const ValueKey('settings-theme-dynamic')), findsNothing);
-    expect(find.text('外观模式'), findsOneWidget);
-    expect(
-      find.byKey(const ValueKey('settings-theme-mode-system')),
-      findsOneWidget,
-    );
-    expect(find.text('字体'), findsOneWidget);
-    expect(find.byKey(const ValueKey('settings-font-serif')), findsOneWidget);
   });
 
-  testWidgets('choosing a theme and font writes preferences once each', (
+  testWidgets('theme, mode and font selections each write once', (
     tester,
   ) async {
     final store = _RecordingStore();
     await mount(tester, store);
 
+    await tester.tap(find.byKey(const ValueKey('settings-theme-picker')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('settings-theme-warmPaper')));
     await tester.pumpAndSettle();
     expect(store.value.themeScheme, ThemeScheme.warmPaper);
     expect(store.writes, 1);
 
-    await tester.tap(find.byKey(const ValueKey('settings-font-serif')));
+    await tester.tap(find.byKey(const ValueKey('settings-theme-mode')));
     await tester.pumpAndSettle();
-    expect(store.value.fontChoice, AppFontChoice.serif);
-    expect(store.writes, 2);
-
     await tester.tap(find.byKey(const ValueKey('settings-theme-mode-dark')));
     await tester.pumpAndSettle();
     expect(store.value.themeMode, AppThemeMode.dark);
+    expect(store.writes, 2);
+
+    await tester.tap(find.byKey(const ValueKey('settings-font')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('settings-font-serif')));
+    await tester.pumpAndSettle();
+    expect(store.value.fontChoice, AppFontChoice.serif);
     expect(store.writes, 3);
     expect(
       find.byKey(const ValueKey('settings-theme-current')),
       findsOneWidget,
     );
+  });
+
+  testWidgets('recording mode sheet writes the guided/form preference', (
+    tester,
+  ) async {
+    final store = _RecordingStore();
+    await mount(tester, store);
+    await tester.tap(find.byKey(const ValueKey('settings-back')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('settings-open-recording')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('settings-mode')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('settings-mode-guided')));
+    await tester.pumpAndSettle();
+    expect(store.value.recordingMode, RecordingMode.guided);
+    expect(store.writes, 1);
   });
 }

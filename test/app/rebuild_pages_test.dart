@@ -289,6 +289,11 @@ void main() {
 
     await t.tap(find.byKey(const ValueKey('settings-open-display')));
     await t.pumpAndSettle();
+    await t.scrollUntilVisible(
+      find.byKey(const ValueKey('settings-heat-month')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await t.tap(find.byKey(const ValueKey('settings-heat-month')));
     await t.pumpAndSettle();
     expect((await t.runAsync(prefsStore.read))!.heatRange, HeatRange.month);
@@ -344,7 +349,7 @@ void main() {
     await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey('settings-open-advanced')));
     await t.pumpAndSettle();
-    expect(find.text('目前还没有数据。'), findsOneWidget);
+    expect(find.textContaining('目前还没有数据'), findsOneWidget);
     await t.tap(find.byKey(const ValueKey('settings-seed')));
     await t.pumpAndSettle();
     await t.tap(find.byKey(const ValueKey('settings-confirm-seed')));

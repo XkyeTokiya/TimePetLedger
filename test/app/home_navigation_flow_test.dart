@@ -17,6 +17,7 @@ import 'package:time_pet_ledger/features/review/data/drift_review_repository.dar
 import 'package:time_pet_ledger/features/review/domain/review_draft_store.dart';
 import 'package:time_pet_ledger/features/review/presentation/review_context_page.dart';
 import 'package:time_pet_ledger/features/review/presentation/review_form.dart';
+import 'package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart';
 
 import '../support/home_feed.dart';
 import '../support/ledger_date_selection.dart';
@@ -49,6 +50,9 @@ Future<({AppDatabase db, ReviewDraftStore drafts})> openApp(
   ))!;
   final drafts = (await tester.runAsync(
     () => DriftReviewDraftStore.open(NativeDatabase.memory()),
+  ))!;
+  final preferences = (await tester.runAsync(
+    () => DriftAppPreferencesStore.open(NativeDatabase.memory()),
   ))!;
   // 内存库在测试进程结束时回收；这里只拆掉 widget 树，避免关闭未使用的
   // 草稿连接在 fake-async 收尾阶段等待永不发生的续体。
@@ -91,6 +95,7 @@ Future<({AppDatabase db, ReviewDraftStore drafts})> openApp(
       openSleepDrafts: () async => sleepDrafts,
       openSleepOpenings: () async => openings,
       openReviewDrafts: () async => drafts,
+      openPreferences: () async => preferences,
       now: () => changingClock?.call() ?? clock,
     ),
   );
@@ -311,6 +316,31 @@ void main() {
             .text,
         '先写五分钟',
       );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'quick-panel entries navigate directly without waiting for the close animation',
+    (tester) async {
+      await openApp(tester, clock: DateTime(2026, 10, 2, 12));
+      await tester.tap(find.byKey(const ValueKey('home-menu')));
+      await settleNative(tester);
+      await tester.tap(find.byKey(const ValueKey('menu-settings')));
+      // 用户要求直接跳转：设置页在快捷区完全收拢前就已出现（过渡重叠），
+      // 而不是等待收拢完成、回到首页之后才进入设置。
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(find.byKey(const ValueKey('settings-back')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('home-quick-panel-scrim')),
+        findsOneWidget,
+      );
+      await settleNative(tester);
+      expect(find.byKey(const ValueKey('settings-back')), findsOneWidget);
+      await tester.pageBack();
+      await settleNative(tester);
+      expect(find.byKey(const ValueKey('settings-back')), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );

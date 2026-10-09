@@ -80,6 +80,7 @@ void main() {
     Size size = const Size(360, 800),
     double textScale = 1,
     _PreferencesStore? preferences,
+    ThemeData? theme,
   }) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = size;
@@ -89,7 +90,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
     await tester.pumpWidget(
       MaterialApp(
-        theme: homeTheme,
+        theme: theme ?? homeTheme,
         builder: (context, child) =>
             RepaintBoundary(key: _captureKey, child: child!),
         home: SettingsPage(
@@ -135,6 +136,20 @@ void main() {
     expect(tester.takeException(), isNull);
     await capture(tester, '02-settings-display');
 
+    await tester.tap(find.byKey(const ValueKey('settings-theme-picker')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await capture(tester, '02b-theme-scheme-sheet');
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('settings-theme-mode')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await capture(tester, '02c-theme-mode-sheet');
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pumpAndSettle();
+
     await tester.tap(find.byKey(const ValueKey('settings-back')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('settings-open-recording')));
@@ -156,6 +171,45 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await capture(tester, '05-settings-about');
+  });
+
+  testWidgets('settings render under the default M3 theme', (tester) async {
+    await mount(tester, theme: ThemeData(useMaterial3: true));
+    expect(tester.takeException(), isNull);
+    await capture(tester, 'm3-01-settings-home');
+
+    await tester.tap(find.byKey(const ValueKey('settings-open-display')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await capture(tester, 'm3-02-settings-display');
+
+    await tester.tap(find.byKey(const ValueKey('settings-theme-picker')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await capture(tester, 'm3-02b-theme-scheme-sheet');
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('settings-back')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('settings-open-recording')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await capture(tester, 'm3-03-settings-recording');
+
+    await tester.tap(find.byKey(const ValueKey('settings-back')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('settings-open-advanced')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await capture(tester, 'm3-04-settings-advanced');
+
+    await tester.tap(find.byKey(const ValueKey('settings-back')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('settings-open-about')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await capture(tester, 'm3-05-settings-about');
   });
 
   testWidgets('settings remain scrollable without overflow across text sizes', (

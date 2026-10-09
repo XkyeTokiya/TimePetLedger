@@ -787,7 +787,10 @@ void main() {
             'home-previous-day',
             'home-next-day',
             'ledger-date-picker',
-            'home-back-to-today',
+            // 320dp·2× 的日期行几何上放不下返回今天：按“任何情况不出现
+            // 第二行”的决定，该尺寸只保留快捷区入口，其余尺寸仍要求
+            // 同行按钮满足标准触控目标。
+            if (width != 320.0 || scale != 2.0) 'home-back-to-today',
             'home-coverage',
             'home-record-sleep',
             'home-record-activity',
@@ -920,19 +923,76 @@ void main() {
   );
 
   testWidgets(
-    'weekday falls back below the date when the line cannot fit both',
+    'non-today never gets a second row; the weekday follows the date',
     (t) async {
-      await mount(t, width: 320, scale: 2, today: true);
-      final date = find.byKey(const ValueKey('home-date-title')).last;
-      final weekday = find.descendant(
+      await mount(t);
+      Finder weekday() => find.descendant(
         of: find.byType(HomeDateTitle).last,
-        matching: find.text('周三 · 今天'),
+        matching: find.byWidgetPredicate(
+          (w) => w is Text && (w.data ?? '').startsWith('周三'),
+        ),
       );
-      expect(date, findsOneWidget);
-      final dateRect = t.getRect(date);
-      final weekRect = t.getRect(weekday);
-      expect(weekRect.top, greaterThanOrEqualTo(dateRect.bottom));
+      final date = find.byKey(const ValueKey('home-date-title')).last;
+      expect(weekday(), findsOneWidget);
+      expect(t.getRect(weekday()).top, lessThan(t.getRect(date).bottom));
+      expect(t.getRect(weekday()).bottom, greaterThan(t.getRect(date).top));
+      // 收起后“返回今天”也留在同一行；页头不再出现第二行。
+      await t.drag(find.byType(HomeTimelineTab), const Offset(0, 170));
+      await t.pumpAndSettle();
+      final button = find.byKey(const ValueKey('home-back-to-today'));
+      expect(button.hitTestable(), findsOneWidget);
+      final dateRow = t.getRect(
+        find.byKey(const ValueKey('ledger-date-picker')).last,
+      );
+      final weekRect = t.getRect(weekday());
+      final buttonRect = t.getRect(button);
+      expect(weekRect.top, lessThan(dateRow.bottom));
+      expect(buttonRect.top, lessThan(dateRow.bottom));
+      expect(buttonRect.bottom, greaterThan(dateRow.top));
       expect(t.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    '320dp keeps the short weekday and the today button inside one row',
+    (t) async {
+      await mount(t, width: 320);
+      await t.drag(find.byType(HomeTimelineTab), const Offset(0, 170));
+      await t.pumpAndSettle();
+      final weekday = find.descendant(
+        of: find.byType(HomeDateTitle).last,
+        matching: find.byWidgetPredicate(
+          (w) => w is Text && (w.data ?? '').startsWith('周三'),
+        ),
+      );
+      expect(weekday, findsOneWidget);
+      expect(t.widget<Text>(weekday).data, '周三');
+      final button = find.byKey(const ValueKey('home-back-to-today'));
+      expect(button.hitTestable(), findsOneWidget);
+      final dateRow = t.getRect(
+        find.byKey(const ValueKey('ledger-date-picker')).last,
+      );
+      expect(t.getRect(weekday).top, lessThan(dateRow.bottom));
+      expect(t.getRect(button).top, lessThan(dateRow.bottom));
+      expect(t.getRect(button).bottom, greaterThan(dateRow.top));
+      expect(t.takeException(), isNull);
+    },
+  );
+
+  testWidgets('extreme width with large text still keeps a single header row', (
+    t,
+  ) async {
+    await mount(t, width: 320, scale: 2, today: true);
+    expect(find.byKey(const ValueKey('home-date-title')).last, findsOneWidget);
+    // 几何上放不下时隐藏星期而不是换行；日期行始终只有一行。
+    final weekdayInHeader = find.descendant(
+      of: find.byType(HomeDateTitle).last,
+      matching: find.byWidgetPredicate(
+        (w) => w is Text && (w.data ?? '').startsWith('周'),
+      ),
+    );
+    expect(weekdayInHeader, findsNothing);
+    expect(find.byKey(const ValueKey('home-back-to-today')), findsNothing);
+    expect(t.takeException(), isNull);
+  });
 }
