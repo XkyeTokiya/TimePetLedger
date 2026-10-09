@@ -38,7 +38,7 @@
 | [根 README](../README.md) | 持续维护 | 项目介绍及统一文档入口；原 Flutter 模板说明已由本次整理替换 |
 | [docs README](README.md) | 持续维护 | 文档目录入口；定性集中在本台账，避免重复维护阶段结论 |
 | [本台账](DOCUMENT_REGISTER.md) | 持续维护 | 文档定性、查阅与归档关系；不代替任务状态表 |
-| [design.md](../design.md) | 现行依据（视觉与界面实现） | 当前调色板、字阶、间距、组件与设置页规范；不定义产品功能或领域规则，冲突时仍按 AGENTS 的 Source of Truth Priority 处理 |
+| [design.md](../design.md) | 现行依据（视觉与界面实现） | 当前调色板、字阶、间距、组件、设置页与主题 / 配色合同；不定义产品功能或领域规则，冲突时仍按 AGENTS 的 Source of Truth Priority 处理 |
 | [AGENTS](../AGENTS.md) | 现行依据 | Agent 工作方式、范围、来源优先级及完成门槛；不定义产品功能 |
 | [领域源提案](../time-ledger-domain-model-v4-proposal.md) | 现行依据 | 产品 / 领域 Source of Truth；先读顶部后续决定，原章节保留历史表达，不能单凭标题含“proposal”归档 |
 | [DOMAIN_RULES](domain/DOMAIN_RULES.md) | 现行依据 | 不变量、合法性、校验与业务规则；稳定规则编号 |
@@ -56,7 +56,9 @@
 | [TASKS](../TASKS.md) | 持续维护（含历史索引） | 任务定义、完成入口及依赖；顶部设计阶段说明与正在变动的实现需由实施负责人对齐，本文不重判完成或授权 |
 | [COMPLETED_TASKS](planning/COMPLETED_TASKS.md) | 历史归档 | 已移出的 77 项完整任务定义；已归档，不重复搬迁；完成证据以 TASKS 和具体报告核对 |
 | [UI_REBUILD_PLAN](planning/UI_REBUILD_PLAN.md) | 持续维护（当前前端交接） | 当前设计入口，含轮次、确认、素材及待评审项；内部早期“未实施 Flutter”及 Q 状态不能直接代表正在变化的工作区 |
-| [HOME_PROPORTIONAL_TIMELINE_DESIGN](planning/HOME_PROPORTIONAL_TIMELINE_DESIGN.md) | 持续维护（已授权实施合同） | Q-039 / Q-040已决定；HOME-TIME-01–03完成，04工程及双平台集成通过，人工读屏 / 误触待补。初稿文档阶段记录保留；实际通过项以实施报告核验 |
+| [THEME_SYSTEM_CONTRACT](planning/THEME_SYSTEM_CONTRACT.md) | 持续维护（主题实施前合同） | Q-041预设清单、默认值、语义色 / 热力图映射、动态取色回退与根部管道要求；含隔离spike证据；暖纸深色视觉待确认，未实施 |
+| [HOME_INTERACTION_DESIGN](planning/HOME_INTERACTION_DESIGN.md) | 持续维护（新交互设计评审稿） | Q-042已定方向，Q-043 / Q-044待确认；一套左右可设置的滑盖、下拖含惯性跨日回展与今天上限。参数为建议，本轮未实施；替代旧首页交互部分 |
+| [HOME_PROPORTIONAL_TIMELINE_DESIGN](planning/HOME_PROPORTIONAL_TIMELINE_DESIGN.md) | 持续维护（几何 / 访问与历史交互合同） | Q-039比例 / 短段访问及Q-040定位继续适用；横滑、起点回展由HOME_INTERACTION_DESIGN承接。HOME-TIME-01–03完成，04人工读屏 / 误触待补，原实施证据与阶段记录保留 |
 | [比例首页参考包](planning/assets/home-proportional-timeline/) | 原型参考 | 用户两张原图及设计v1.0原文；图片1为初始、图片2为滚动状态，示例与建议不能覆盖现行规则 |
 | [TIME_RECORDING_AUTOMATION](planning/TIME_RECORDING_AUTOMATION.md) | 现行依据（当前实施任务） | 2026-10-07用户授权TIME-01，来源Q-032 / Q-035；时间初始化与直接组件编辑，状态和验证查正文 |
 | [DATE_TIME_EDITING](planning/DATE_TIME_EDITING.md) | 现行依据（本轮实施） | TIME-02用户授权补齐全应用日期 / 时间独立直达，Q-038覆盖手动串联；与时间初始化 / 学习算法分开 |
@@ -70,7 +72,7 @@
 | 文档 | 定性 | 被替代 / 承接关系与保留理由 |
 | --- | --- | --- |
 | [UI_DIRECTION_3_IMPLEMENTATION_PLAN](planning/UI_DIRECTION_3_IMPLEMENTATION_PLAN.md) | 历史归档 | 早期方案三与 UI-T 规划；当前前端设计由 UI_REBUILD_PLAN 承接，UI-T01–04 交付仍查原报告 |
-| [ui-direction-3-navigation-spec](planning/ui-direction-3-navigation-spec.md) | 历史归档 | 早期深蓝 / 青色主题标注和当时未确认项；不作为当前米色 / 砖红设计入口 |
+| [ui-direction-3-navigation-spec](planning/ui-direction-3-navigation-spec.md) | 历史归档 | 早期深蓝 / 青色主题标注和当时未确认项；不作为当前默认 Material 3 / 可切换主题方向的入口 |
 | [PRODUCT_PAGE_SYSTEM_DESIGN](planning/PRODUCT_PAGE_SYSTEM_DESIGN.md) | 历史归档 | 旧页面体系、流程与设计确认记录；文件明确暂停，当前整体设计转至 UI_REBUILD_PLAN |
 | [UI_IMPLEMENTATION_DESIGN](planning/UI_IMPLEMENTATION_DESIGN.md) | 历史归档 | 旧原型还原标准及展示修订；文件明确暂停，已登记的领域 / 展示决定仍需追溯保留 |
 | [UI_IMPLEMENTATION_TASKS](planning/UI_IMPLEMENTATION_TASKS.md) | 历史归档（含未完成任务） | PAGE-T01–T09 旧路线暂停；不继续自动执行，未通过、部分交付及待执行状态保留 |
@@ -191,6 +193,7 @@
 | [目标第一轮](planning/assets/goal-management-round-one/prototype-fragment.html)、[目标第二轮](planning/assets/goal-management-round-two/prototype-fragment.html) | 原型参考（分轮追溯） | 同时保留演变证据；日期范围等规则回到 Q-033，常用归档政策回到 Q-025 |
 | [设置第一轮](planning/assets/settings-round-one/prototype-fragment.html) | 原型参考 | 布局方向与高级操作模拟；真实清空 / 注入不由原型授权，合同查 Q-034 |
 | [贯通原型第一轮](planning/assets/app-flow-round-one/prototype-fragment.html) | 原型参考 | 跨页模拟数据、返回路径与设计评审；复盘占位不表示领域复盘未实现 |
+| [主题系统预览](planning/assets/theme-round-one/) | 原型参考（待评审） | Q-041候选：预设浅 / 深、暖纸深色候选、语义色与热力图；HTML由实际fromSeed输出生成，不构成验收 |
 | [reports/assets](reports/assets/)、[根 assets](../assets/) 及各原型的附属文件 | 随所属文档管理 | 报告截图、对照、图标或运行资产；按引用关系区分用途，不因目录叫 assets 就整体归档或删除 |
 
 ## 8. 本次发现的维护缺口

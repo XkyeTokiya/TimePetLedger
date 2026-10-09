@@ -1,6 +1,16 @@
 # Tasks
 
-**2026-10-09当前交付：按用户九点反馈细化首页字阶、信息组、标尺间距、短条及顶部 / 底部布局。** HOME-TIME-VISUAL-01完成；采用[局部视觉规格](design.md#首页视觉细化2026-10-09用户九点反馈)，保留72dp / 小时、32dp短段规则、滞回与时刻锚点。64项相关测试、格式 / 分析、Android / Web真实引擎集成和两平台构建通过；22张截图及实际命令见[视觉细化报告](docs/reports/HOME_TIMELINE_VISUAL_REFINEMENT_REPORT.md)。人工读屏 / 实机误触仍待补，不推进其他功能。
+**2026-10-09当前首页阶段：完整交互设计评审。** [HOME-INTERACTION-01](docs/planning/HOME_INTERACTION_DESIGN.md)整理一套滑盖、左右设置与按钮镜像、当日入口、下拖含惯性跨日回展、普通导航今天上限及手势 / 动效建议；已定行为见Q-042，Q-043 / Q-044待确认。本轮只同步文档，未创建或授权新实施任务，旧任务状态与验证证据保留。
+
+**2026-10-09主题系统实施（用户已授权）：[实施前合同与spike](docs/planning/THEME_SYSTEM_CONTRACT.md)与四步实施已完成。** 生产代码已零 `HomePalette` / `homeSerifFamily` / `Theme(data: homeTheme)` 直引；主题系统含预设配色 + Android 动态取色 + 暖纸浅深 + 字体选项、根部管道与设置页入口，依赖接入 `dynamic_color 1.9.0`。新增矩阵 / 回退 / 持久化 / 对比度测试通过；全量测试 `+756 ~11 -141` 与基线（`+748 ~11 -141`）失败集合逐条一致、无新增；Android 调试 APK 与 Web 构建通过。暖纸深色视觉确认、Android 真机动态取色 / 系统栏与人工读屏未执行，03 记 PARTIAL；不推进其他功能。
+
+| Task | Depends on | Scope | Status |
+| --- | --- | --- | --- |
+| THEME-01 — 取色与字体解耦 | Q-041合同 | 7处Theme硬绑定、~270 HomePalette直引、105处fontFamily、painter重绘与取色面清单；暖纸视觉等价验证 | COMPLETE |
+| THEME-02 — 主题系统与设置切换 | THEME-01 | 预设配色+动态取色+暖纸深色+字体选项；根部管道；设置UI与偏好键；dynamic_color 1.9.0接入 | COMPLETE |
+| THEME-03 — 测试与平台验证 | THEME-02 | 矩阵/回退/持久化测试、对比度测试、Android构建与Web、构建与既有失败基线对比 | PARTIAL |
+
+**2026-10-09上轮视觉交付：按用户九点反馈细化首页字阶、信息组、标尺间距、短条及顶部 / 底部布局。** HOME-TIME-VISUAL-01完成；采用[局部视觉规格](design.md#首页视觉细化2026-10-09用户九点反馈)，保留72dp / 小时、32dp短段规则、滞回与时刻锚点。64项相关测试、格式 / 分析、Android / Web真实引擎集成和两平台构建通过；22张截图及实际命令见[视觉细化报告](docs/reports/HOME_TIMELINE_VISUAL_REFINEMENT_REPORT.md)。人工读屏 / 实机误触仍待补，不推进其他功能。
 
 | Task | Depends on | Scope | Status |
 | --- | --- | --- | --- |
