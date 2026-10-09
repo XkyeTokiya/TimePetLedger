@@ -100,7 +100,7 @@
 | 报告 | 内容入口 |
 | --- | --- |
 | [HOME_INTERACTION_IMPLEMENTATION_REPORT](reports/HOME_INTERACTION_IMPLEMENTATION_REPORT.md) | 2026-10-09滑盖快捷区、方向跨日回展、日期上限与左右偏好的实施；回归、构建、截图与真机 / 人工限制 |
-| [HOME_SCROLL_HEADER_POLISH_REPORT](reports/HOME_SCROLL_HEADER_POLISH_REPORT.md) | 2026-10-10用户反馈：滚动标签稳定性（逐帧波段、按块高定形态）与星期并入日期行；回归、全量基线与限制 |
+| [HOME_SCROLL_HEADER_POLISH_REPORT](reports/HOME_SCROLL_HEADER_POLISH_REPORT.md) | 2026-10-10用户反馈两轮：滚动标签稳定性（逐帧波段、按块高定形态）与页头单行化（星期始终同行、第二行取消）；回归、全量基线与限制 |
 | [HOME_PROPORTIONAL_TIMELINE_REPORT](reports/HOME_PROPORTIONAL_TIMELINE_REPORT.md) | 2026-10-09比例日轴、双态、短段选择与Q-040定位；工程 / 两平台集成通过，人工读屏 / 误触未验收；截图与原始验证日志 |
 | [HOME_TIMELINE_VISUAL_REFINEMENT_REPORT](reports/HOME_TIMELINE_VISUAL_REFINEMENT_REPORT.md) | 2026-10-09用户九点反馈后的首页字阶、间距、对齐与短条细化；实际截图 / 回归证据，原实施报告保留 |
 | [TIME-01_TIME_AUTOMATION_REPORT](reports/TIME-01_TIME_AUTOMATION_REPORT.md) | 2026-10-07 活动 / 睡眠时间日期自动化；实现交付与平台验收限制 |
@@ -196,6 +196,7 @@
 | [设置第一轮](planning/assets/settings-round-one/prototype-fragment.html) | 原型参考 | 布局方向与高级操作模拟；真实清空 / 注入不由原型授权，合同查 Q-034 |
 | [贯通原型第一轮](planning/assets/app-flow-round-one/prototype-fragment.html) | 原型参考 | 跨页模拟数据、返回路径与设计评审；复盘占位不表示领域复盘未实现 |
 | [主题系统预览](planning/assets/theme-round-one/) | 原型参考（待评审） | Q-041候选：预设浅 / 深、暖纸深色候选、语义色与热力图；HTML由实际fromSeed输出生成，不构成验收 |
+| [设置重设计素材](planning/assets/settings-redesign-round/) | 实现截图（有用户参考稿） | 2026-10-10 用户参考稿重设计后的暖纸 / 默认 M3 截图；范围与验证查 UI_REBUILD_PLAN，不构成逐像素验收 |
 | [reports/assets](reports/assets/)、[根 assets](../assets/) 及各原型的附属文件 | 随所属文档管理 | 报告截图、对照、图标或运行资产；按引用关系区分用途，不因目录叫 assets 就整体归档或删除 |
 
 ## 8. 本次发现的维护缺口
