@@ -281,6 +281,62 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'vertical scrolling during the panel close keeps it closing, not stuck',
+    (tester) async {
+      final db = await openLedger(tester);
+      final shell = await mountHome(
+        tester,
+        db,
+        initialDate: oct2,
+        now: at(3, 9),
+      );
+      final timeline = find.byType(HomeTimelineTab).last;
+      final scroll = tester
+          .state<ScrollableState>(
+            find
+                .descendant(of: timeline, matching: find.byType(Scrollable))
+                .first,
+          )
+          .position;
+
+      await tester.tap(find.byKey(const ValueKey('home-menu')));
+      await settleNative(tester);
+      expect(shell.quickPanelProgress, 1);
+
+      // 点遮罩开始收合，收合途中立刻尝试纵向滚动。
+      await tester.tapAt(const Offset(350, 400));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 30));
+      final mid = shell.quickPanelProgress;
+      expect(mid, allOf(greaterThan(0), lessThan(1)));
+      final beforeMid = scroll.pixels;
+      final gesture = await tester.startGesture(const Offset(350, 400));
+      for (var i = 0; i < 6; i++) {
+        await gesture.moveBy(const Offset(0, 30));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      // 收合窗口内的拖动必须立即滚动，而不是被遮罩吞掉。
+      expect((scroll.pixels - beforeMid).abs(), greaterThan(50));
+      await gesture.up();
+      await settleNative(tester);
+
+      // 滚动尝试不得冻结收合、也不得把它弹回打开。
+      expect(shell.quickPanelProgress, 0);
+      expect(
+        find.byKey(const ValueKey('home-quick-panel-scrim')),
+        findsNothing,
+      );
+
+      // 收合完成后时间轴恢复正常滚动。
+      final before = scroll.pixels;
+      await tester.drag(timeline, const Offset(0, 200));
+      await settleNative(tester);
+      expect((scroll.pixels - before).abs(), greaterThan(50));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('calendar jump and back-to-today use the same date rules', (
     tester,
   ) async {
