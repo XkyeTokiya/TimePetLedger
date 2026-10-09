@@ -613,4 +613,40 @@ void main() {
     expect(shell.feed.endDate, target);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'first load failure surfaces a working retry entry instead of a stuck spinner',
+    (tester) async {
+      final db = await openLedger(tester);
+      final base = createDayLedgerLoader(db);
+      var attempts = 0;
+      await mountHome(
+        tester,
+        db,
+        initialDate: oct2,
+        now: at(3, 9),
+        loader: DayLedgerLoader(
+          resolveDate: base.resolveDate,
+          readFacts: (_) async {
+            attempts += 1;
+            throw Exception('first load failed');
+          },
+        ),
+      );
+      // 首载失败不 bump version；status 必须参与时间轴缓存键，
+      // 否则页面会永久停在旧帧的转圈上且没有重试入口。
+      expect(find.text('账本读取失败。'), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(attempts, 1);
+      // 失败帧没有定位回调，但重试必须真的可点、可读屏。
+      final semantics = tester.ensureSemantics();
+      expect(find.bySemanticsLabel('重试读取'), findsOneWidget);
+      await tester.tap(find.text('重试读取'));
+      await settleNative(tester);
+      expect(attempts, 2);
+      expect(find.text('账本读取失败。'), findsOneWidget);
+      semantics.dispose();
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
