@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/home_theme.dart';
 import '../../application/home_suggestion.dart';
 import 'home_value_transition.dart';
 
@@ -21,10 +20,11 @@ class HomeSuggestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final action = suggestion.action;
     return Material(
       key: const ValueKey('home-suggestion-card'),
-      color: HomePalette.tint,
+      color: colors.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(14),
       child: AnimatedSize(
         duration: MediaQuery.disableAnimationsOf(context)
@@ -55,16 +55,16 @@ class HomeSuggestionCard extends StatelessWidget {
                               Icon(
                                 _iconFor(suggestion.kind),
                                 size: 26,
-                                color: HomePalette.accent,
+                                color: colors.primary,
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
                                   suggestion.title,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600,
-                                    color: HomePalette.ink,
+                                    color: colors.onSurface,
                                   ),
                                 ),
                               ),
@@ -80,15 +80,15 @@ class HomeSuggestionCard extends StatelessWidget {
                                   children: [
                                     Text(
                                       action,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 14,
-                                        color: HomePalette.accentDeep,
+                                        color: colors.primary,
                                       ),
                                     ),
-                                    const Icon(
+                                    Icon(
                                       Icons.chevron_right,
                                       size: 18,
-                                      color: HomePalette.accentDeep,
+                                      color: colors.primary,
                                     ),
                                   ],
                                 ),
@@ -103,7 +103,7 @@ class HomeSuggestionCard extends StatelessWidget {
                         Icon(
                           _iconFor(suggestion.kind),
                           size: 26,
-                          color: HomePalette.accent,
+                          color: colors.primary,
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -111,11 +111,10 @@ class HomeSuggestionCard extends StatelessWidget {
                             suggestion.title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontFamily: homeSerifFamily,
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: HomePalette.ink,
+                              color: colors.onSurface,
                             ),
                           ),
                         ),
@@ -123,16 +122,15 @@ class HomeSuggestionCard extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             action,
-                            style: const TextStyle(
-                              fontFamily: homeSerifFamily,
+                            style: TextStyle(
                               fontSize: 14,
-                              color: HomePalette.accentDeep,
+                              color: colors.primary,
                             ),
                           ),
-                          const Icon(
+                          Icon(
                             Icons.chevron_right,
                             size: 18,
-                            color: HomePalette.accentDeep,
+                            color: colors.primary,
                           ),
                         ],
                       ],

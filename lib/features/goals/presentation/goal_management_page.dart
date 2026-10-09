@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/home_theme.dart';
+import '../../../app/theme/semantic_colors.dart';
+import '../../../app/theme/theme_text.dart';
 import '../../../core/identity/entity_id.dart';
 import '../../../core/time/time_contract.dart';
 import '../../ledger/domain/rhythm_state.dart';
@@ -152,7 +154,7 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
       children: [
         Text('我的目标', style: _heading),
         const SizedBox(height: 6),
-        const Text('点名称看投入，点书签设为常用。', style: _muted),
+        Text('点名称看投入，点书签设为常用。', style: _muted),
         if (status != null) ...[const SizedBox(height: 12), _note(status!)],
         if (error != null) ...[const SizedBox(height: 12), _error(error!)],
         const SizedBox(height: 18),
@@ -188,12 +190,42 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
     );
   }
 
+  ColorScheme get _colors => Theme.of(context).colorScheme;
+  TimeLedgerSemanticColors get _semantics => context.semanticColors;
+
+  TextStyle get _heading => TextStyle(
+    fontSize: 30,
+    height: 1.4,
+    fontWeight: FontWeight.w600,
+    color: _colors.onSurface,
+  );
+  TextStyle get _sectionHeading => TextStyle(
+    fontSize: 22,
+    height: 1.5,
+    fontWeight: FontWeight.w600,
+    color: _colors.onSurface,
+  );
+  TextStyle get _entryName =>
+      TextStyle(fontSize: 22, height: 1.5, color: _colors.onSurface);
+  TextStyle get _nameStyle => TextStyle(
+    fontSize: 30,
+    height: 1.4,
+    color: _colors.primary,
+    decoration: TextDecoration.underline,
+    decorationStyle: TextDecorationStyle.dashed,
+    decorationColor: _colors.outlineVariant,
+    decorationThickness: 1,
+  );
+  TextStyle get _value => TextStyle(fontSize: 18, color: _colors.onSurface);
+  TextStyle get _muted =>
+      TextStyle(fontSize: 14, height: 1.6, color: _colors.onSurfaceVariant);
+
   GoalStatus get _tabGoalStatus =>
       tab == _GoalTab.active ? GoalStatus.active : GoalStatus.archived;
 
   Widget _tabs() => Container(
-    decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+    decoration: BoxDecoration(
+      border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
     ),
     child: Row(
       children: [
@@ -208,7 +240,7 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
                   border: Border(
                     bottom: BorderSide(
                       color: tab == value
-                          ? HomePalette.accentDeep
+                          ? _colors.primary
                           : Colors.transparent,
                       width: 3,
                     ),
@@ -218,11 +250,10 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
                   value == _GoalTab.active ? '当前' : '已归档',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontFamily: homeSerifFamily,
                     fontSize: 18,
                     color: tab == value
-                        ? HomePalette.accentDeep
-                        : HomePalette.muted,
+                        ? _colors.primary
+                        : _colors.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -240,13 +271,13 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
         commonGoalId == goal.id && goal.status == GoalStatus.active;
     return Container(
       decoration: BoxDecoration(
-        color: isCommon ? HomePalette.tint : HomePalette.paper,
+        color: isCommon ? _colors.surfaceContainerHighest : _colors.surface,
         border: Border(
           left: BorderSide(
-            color: isCommon ? HomePalette.accentDeep : Colors.transparent,
+            color: isCommon ? _colors.primary : Colors.transparent,
             width: 3,
           ),
-          bottom: const BorderSide(color: HomePalette.hairline),
+          bottom: BorderSide(color: _colors.outlineVariant),
         ),
       ),
       child: Row(
@@ -277,12 +308,11 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
                         children: [
                           Text(goal.name, style: _entryName),
                           if (isCommon)
-                            const Text(
+                            Text(
                               '常用',
                               style: TextStyle(
-                                fontFamily: homeSerifFamily,
                                 fontSize: 13,
-                                color: HomePalette.accentDeep,
+                                color: _colors.primary,
                               ),
                             ),
                           if (_duplicate(goal))
@@ -293,7 +323,7 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: HomePalette.muted),
+                    Icon(Icons.chevron_right, color: _colors.onSurfaceVariant),
                   ],
                 ),
               ),
@@ -305,7 +335,7 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
               onPressed: busy ? null : () => _setCommon(goal),
               style: TextButton.styleFrom(
                 minimumSize: const Size(50, homeTapTarget),
-                foregroundColor: HomePalette.accentDeep,
+                foregroundColor: _colors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 6),
               ),
               child: Column(
@@ -317,9 +347,9 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
                   ),
                   Text(
                     isCommon ? '已常用' : '设常用',
-                    style: const TextStyle(
-                      fontFamily: homeSerifFamily,
-                      fontSize: 12,
+                    style: withThemeFont(
+                      context,
+                      const TextStyle(fontSize: 12),
                     ),
                   ),
                 ],
@@ -357,8 +387,8 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
               ),
             ),
             if (goal.status == GoalStatus.active && commonGoalId == goal.id)
-              const Padding(
-                padding: EdgeInsets.only(left: 12),
+              Padding(
+                padding: const EdgeInsets.only(left: 12),
                 child: Text('常用目标', style: _muted),
               ),
           ],
@@ -367,7 +397,7 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
         Text('创建于${_dateText(goal.createdAt)}', style: _muted),
         if (goal.status == GoalStatus.archived) ...[
           const SizedBox(height: 6),
-          const Text('以前的记录还在，恢复后可用于新记录。', style: _muted),
+          Text('以前的记录还在，恢复后可用于新记录。', style: _muted),
         ],
         if (error != null) ...[const SizedBox(height: 12), _error(error!)],
         const SizedBox(height: 24),
@@ -390,15 +420,15 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
     );
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 20),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Expanded(child: Text('时间投入', style: _sectionHeading)),
+              Expanded(child: Text('时间投入', style: _sectionHeading)),
               _chartToggle('柱状图', _ChartKind.bar),
               const SizedBox(width: 6),
               _chartToggle('热力图', _ChartKind.heat),
@@ -414,11 +444,7 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
                   widget.history == null
                       ? '读取中…'
                       : (total <= 0 ? '尚无相关记录' : _compactDuration(total)),
-                  style: const TextStyle(
-                    fontFamily: homeSerifFamily,
-                    fontSize: 30,
-                    color: HomePalette.ink,
-                  ),
+                  style: TextStyle(fontSize: 30, color: _colors.onSurface),
                 ),
               ),
               const SizedBox(width: 10),
@@ -469,11 +495,10 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
       child: Text(
         label,
         style: TextStyle(
-          fontFamily: homeSerifFamily,
           fontSize: 15,
-          color: chart == value ? HomePalette.accentDeep : HomePalette.muted,
+          color: chart == value ? _colors.primary : _colors.onSurfaceVariant,
           decoration: chart == value ? TextDecoration.underline : null,
-          decorationColor: HomePalette.accentDeep,
+          decorationColor: _colors.primary,
         ),
       ),
     ),
@@ -528,7 +553,7 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
                                         .clamp(0.01, 1.0),
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: HomePalette.accent.withValues(
+                                  color: _colors.primary.withValues(
                                     alpha: day.day == selectedDay ? 1 : .65,
                                   ),
                                   borderRadius: const BorderRadius.vertical(
@@ -584,7 +609,7 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
           ],
         ),
         const SizedBox(height: 10),
-        const Text('深浅表示时长。今天只计已经发生的时间。', style: _muted),
+        Text('深浅表示时长。今天只计已经发生的时间。', style: _muted),
         const SizedBox(height: 6),
         _heatLegend(),
       ],
@@ -593,35 +618,34 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
 
   /// 色阶对应的时长范围，避免只从颜色猜测投入量。
   /// 分档与 [_heatCell] 一致：<1h、1–2h、2–4h、≥4h。
-  Widget _heatLegend() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          for (final (color, label) in const [
-            (Color(0xFFEEE0D8), '＜1h'),
-            (Color(0xFFDFB6A5), '1–2h'),
-            (Color(0xFFBF765E), '2–4h'),
-            (Color(0xFF914C3A), '≥4h'),
-          ]) ...[
-            Container(
-              width: 18,
-              height: 14,
-              margin: const EdgeInsets.only(right: 4),
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(3),
+  Widget _heatLegend() {
+    const labels = ['＜1h', '1–2h', '2–4h', '≥4h'];
+    final levels = _semantics.heatmapLevels;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            for (var i = 0; i < labels.length; i++) ...[
+              Container(
+                width: 18,
+                height: 14,
+                margin: const EdgeInsets.only(right: 4),
+                decoration: BoxDecoration(
+                  color: levels[i],
+                  borderRadius: BorderRadius.circular(3),
+                ),
               ),
-            ),
-            Text(label, style: _muted),
-            const SizedBox(width: 10),
+              Text(labels[i], style: _muted),
+              const SizedBox(width: 10),
+            ],
           ],
-        ],
-      ),
-      const SizedBox(height: 4),
-      const Text('空白＝当天没有投入；淡格＝尚未到来的日期', style: _muted),
-    ],
-  );
+        ),
+        const SizedBox(height: 4),
+        Text('空白＝当天没有投入；淡格＝尚未到来的日期', style: _muted),
+      ],
+    );
+  }
 
   Widget _heatCell(_DayInvestment day) {
     final level = day.future
@@ -635,13 +659,8 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
         : day.milliseconds < 14400000
         ? 3
         : 4;
-    final colors = [
-      HomePalette.tint,
-      const Color(0xFFEEE0D8),
-      const Color(0xFFDFB6A5),
-      const Color(0xFFBF765E),
-      const Color(0xFF914C3A),
-    ];
+    final levels = _semantics.heatmapLevels;
+    final labels = _semantics.heatmapLabels;
     return InkWell(
       key: ValueKey('goal-heat-${day.day}'),
       onTap: day.future ? null : () => setState(() => selectedDay = day.day),
@@ -649,13 +668,13 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: day.future
-              ? HomePalette.tint.withValues(alpha: .45)
+              ? _colors.primaryContainer.withValues(alpha: .45)
               : day.milliseconds <= 0
               ? Colors.transparent
-              : colors[level],
+              : levels[level - 1],
           border: day.milliseconds <= 0 && !day.future
               ? Border.all(
-                  color: HomePalette.hairline,
+                  color: _colors.outlineVariant,
                   style: BorderStyle.solid,
                 )
               : null,
@@ -664,9 +683,8 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
         child: Text(
           '${DateTime.fromMillisecondsSinceEpoch(day.day).day}',
           style: TextStyle(
-            fontFamily: homeSerifFamily,
             fontSize: 15,
-            color: level >= 3 ? const Color(0xFFFFF8F0) : HomePalette.ink,
+            color: day.future ? _colors.onSurfaceVariant : labels[level - 1],
             decoration: day.day == selectedDay
                 ? TextDecoration.underline
                 : null,
@@ -701,14 +719,14 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
           ),
           const SizedBox(height: 8),
           if (widget.history == null)
-            const Text('目标历史读取尚未配置。', style: _muted)
+            Text('目标历史读取尚未配置。', style: _muted)
           else if (records == null)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 12),
               child: Center(child: CircularProgressIndicator()),
             )
           else if (sorted.isEmpty)
-            const Text('还没有关联这个目标的记录。', style: _muted)
+            Text('还没有关联这个目标的记录。', style: _muted)
           else ...[
             for (final record in shown) _historyRow(record),
             if (!showAllRecords && sorted.length > 5)
@@ -737,8 +755,8 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
       label: '$title，$interval，$duration',
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -749,16 +767,12 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      fontFamily: homeSerifFamily,
-                      fontSize: 19,
-                      color: HomePalette.ink,
-                    ),
+                    style: TextStyle(fontSize: 19, color: _colors.onSurface),
                   ),
                   const SizedBox(height: 2),
                   Text(interval, style: _muted),
                   if (unknown)
-                    const Text('已交代 · 想不起来', style: _muted)
+                    Text('已交代 · 想不起来', style: _muted)
                   else if (record.annotation?.state case final state?)
                     Text(_rhythmLabel(state), style: _muted),
                 ],
@@ -782,7 +796,7 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('热力图设置', style: _sectionHeading),
+              Text('热力图设置', style: _sectionHeading),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -800,7 +814,7 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
                         },
                         style: OutlinedButton.styleFrom(
                           backgroundColor: heatRange == range
-                              ? HomePalette.tint
+                              ? _colors.surfaceContainerHighest
                               : null,
                         ),
                         child: Text(range == HeatRange.week ? '本周' : '本月'),
@@ -948,70 +962,67 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
   @override
   Widget build(BuildContext context) {
     final goal = selected;
-    return Theme(
-      data: homeTheme,
-      child: Scaffold(
-        appBar: AppBar(
-          leading: BackButton(
-            key: const ValueKey('goal-back'),
-            onPressed: () {
-              if (goal != null) {
-                setState(() {
-                  selected = null;
-                  records = null;
-                  showAllRecords = false;
-                  error = null;
-                  status = null;
-                });
-              } else {
-                Navigator.pop(context);
-              }
-            },
-          ),
-          title: const Text('目标'),
+    return Scaffold(
+      appBar: AppBar(
+        leading: BackButton(
+          key: const ValueKey('goal-back'),
+          onPressed: () {
+            if (goal != null) {
+              setState(() {
+                selected = null;
+                records = null;
+                showAllRecords = false;
+                error = null;
+                status = null;
+              });
+            } else {
+              Navigator.pop(context);
+            }
+          },
         ),
-        // 桌面视口下限制正文最大宽度，避免列表、图表与按钮被横向拉满。
-        body: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
-            child: goal == null ? _list() : _detail(goal),
-          ),
+        title: const Text('目标'),
+      ),
+      // 桌面视口下限制正文最大宽度，避免列表、图表与按钮被横向拉满。
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: goal == null ? _list() : _detail(goal),
         ),
-        bottomNavigationBar: goal == null
-            ? SafeArea(
-                top: false,
-                child: Center(
-                  heightFactor: 1,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 640),
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-                      child: FilledButton.icon(
-                        key: const ValueKey('goal-new'),
-                        onPressed: busy ? null : () => _form(null),
-                        icon: const Icon(Icons.add, size: 19),
-                        label: const Text('新建目标'),
-                      ),
-                    ),
-                  ),
-                ),
-              )
-            : Center(
+      ),
+      bottomNavigationBar: goal == null
+          ? SafeArea(
+              top: false,
+              child: Center(
                 heightFactor: 1,
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 640),
-                  child: _detailFooter(goal),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                    child: FilledButton.icon(
+                      key: const ValueKey('goal-new'),
+                      onPressed: busy ? null : () => _form(null),
+                      icon: const Icon(Icons.add, size: 19),
+                      label: const Text('新建目标'),
+                    ),
+                  ),
                 ),
               ),
-      ),
+            )
+          : Center(
+              heightFactor: 1,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: _detailFooter(goal),
+              ),
+            ),
     );
   }
 
   Widget _detailFooter(Goal goal) => SafeArea(
     top: false,
     child: Container(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: HomePalette.hairline)),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: _colors.outlineVariant)),
       ),
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
       child: goal.status == GoalStatus.archived
@@ -1055,7 +1066,7 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
                         ? null
                         : () => _confirm(goal, _Pending.delete),
                     style: TextButton.styleFrom(
-                      foregroundColor: HomePalette.accentDeep,
+                      foregroundColor: _colors.primary,
                     ),
                     child: const Text('删除'),
                   ),
@@ -1167,27 +1178,17 @@ class _GoalManagementPageState extends State<GoalManagementPage> {
     width: double.infinity,
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: HomePalette.tint,
+      color: _colors.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(10),
     ),
     child: Text(
       text,
-      style: const TextStyle(
-        fontFamily: homeSerifFamily,
-        fontSize: 15,
-        color: HomePalette.recovery,
-      ),
+      style: TextStyle(fontSize: 15, color: _semantics.recovery),
     ),
   );
 
-  Widget _error(String text) => Text(
-    text,
-    style: const TextStyle(
-      fontFamily: homeSerifFamily,
-      fontSize: 15,
-      color: HomePalette.error,
-    ),
-  );
+  Widget _error(String text) =>
+      Text(text, style: TextStyle(fontSize: 15, color: _colors.error));
 }
 
 class _DayInvestment {
@@ -1267,45 +1268,3 @@ class _GoalNameDialogState extends State<_GoalNameDialog> {
     ],
   );
 }
-
-const _heading = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 30,
-  height: 1.4,
-  fontWeight: FontWeight.w600,
-  color: HomePalette.ink,
-);
-const _sectionHeading = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 22,
-  height: 1.5,
-  fontWeight: FontWeight.w600,
-  color: HomePalette.ink,
-);
-const _entryName = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 22,
-  height: 1.5,
-  color: HomePalette.ink,
-);
-const _nameStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 30,
-  height: 1.4,
-  color: HomePalette.accentDeep,
-  decoration: TextDecoration.underline,
-  decorationStyle: TextDecorationStyle.dashed,
-  decorationColor: HomePalette.hairline,
-  decorationThickness: 1,
-);
-const _value = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 18,
-  color: HomePalette.ink,
-);
-const _muted = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 14,
-  height: 1.6,
-  color: HomePalette.muted,
-);

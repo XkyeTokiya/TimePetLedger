@@ -2,7 +2,6 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/home_theme.dart';
 import '../../domain/projection/day_ledger_view.dart';
 import '../summary_formatting.dart';
 import 'home_ledger_style.dart';
@@ -26,6 +25,7 @@ class HomeCoverageLine extends StatelessWidget {
     final fraction = window == 0
         ? 0.0
         : view.accountedDuration.milliseconds / window;
+    final colors = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: InkWell(
@@ -36,7 +36,7 @@ class HomeCoverageLine extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 48),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              color: HomePalette.tint.withValues(
+              color: colors.surfaceContainerHighest.withValues(
                 alpha: lerpDouble(.5, .2, progress)!,
               ),
               borderRadius: BorderRadius.circular(12),
@@ -82,8 +82,8 @@ class HomeCoverageLine extends StatelessWidget {
                               value: fraction,
                               minHeight: 4,
                               borderRadius: BorderRadius.circular(8),
-                              color: HomePalette.accentDeep,
-                              backgroundColor: HomePalette.hairline,
+                              color: colors.primary,
+                              backgroundColor: colors.outlineVariant,
                             ),
                           ),
                         ),
@@ -112,6 +112,7 @@ class _CoverageMetric extends StatelessWidget {
   final double progress;
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final numberStyle = TextStyle(
       fontSize: lerpDouble(
         HomeLedgerStyle.metricSize,
@@ -120,12 +121,12 @@ class _CoverageMetric extends StatelessWidget {
       ),
       height: 1.2,
       fontWeight: FontWeight.w600,
-      color: HomePalette.accentDeep,
+      color: colors.primary,
     );
-    const unitStyle = TextStyle(
+    final unitStyle = TextStyle(
       fontSize: 11,
       height: 1.2,
-      color: HomePalette.accentDeep,
+      color: colors.primary,
     );
     final spans = <InlineSpan>[];
     var index = 0;
@@ -147,10 +148,10 @@ class _CoverageMetric extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 11,
             height: 1.2,
-            color: HomePalette.muted,
+            color: colors.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 4),

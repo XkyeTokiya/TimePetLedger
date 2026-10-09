@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/home_theme.dart';
+import '../../../../app/theme/theme_text.dart';
 import '../recording_form_controller.dart';
 
 /// 目标选择的临时结果。`id == null` 表示“不关联”，与取消（返回 null）不同。
@@ -27,6 +27,7 @@ Future<ActivityGoalChoice?> showActivityGoalSheet(
         builder: (context, _) {
           Widget row(String? id, String name) {
             final selected = model.goalId == id;
+            final colors = Theme.of(context).colorScheme;
             return InkWell(
               key: ValueKey('activity-goal-${id ?? 'none'}'),
               onTap: () => Navigator.pop(sheetContext, ActivityGoalChoice(id)),
@@ -38,20 +39,13 @@ Future<ActivityGoalChoice?> showActivityGoalSheet(
                       child: Text(
                         name,
                         style: TextStyle(
-                          fontFamily: homeSerifFamily,
                           fontSize: 17,
-                          color: selected
-                              ? HomePalette.accentDeep
-                              : HomePalette.ink,
+                          color: selected ? colors.primary : colors.onSurface,
                         ),
                       ),
                     ),
                     if (selected)
-                      const Icon(
-                        Icons.check,
-                        size: 22,
-                        color: HomePalette.accentDeep,
-                      ),
+                      Icon(Icons.check, size: 22, color: colors.primary),
                   ],
                 ),
               ),
@@ -61,22 +55,25 @@ Future<ActivityGoalChoice?> showActivityGoalSheet(
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
             children: [
-              Text('这笔关联哪个目标？', style: _sheetTitle),
+              Text('这笔关联哪个目标？', style: _sheetTitle(context)),
               const SizedBox(height: 4),
-              const Text('只调整这一笔。', style: _sheetHint),
+              Text('只调整这一笔。', style: _sheetHint(context)),
               const SizedBox(height: 12),
               if (model.goalsLoading) const LinearProgressIndicator(),
               if (model.goalsError != null) ...[
-                Text(model.goalsError!, style: _errorText),
+                Text(model.goalsError!, style: _errorText(context)),
                 TextButton(
                   onPressed: model.loadGoals,
                   child: const Text('重试读取目标'),
                 ),
               ] else if (!model.goalsLoading) ...[
                 if (model.activeGoals.isEmpty)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20),
-                    child: Text('还没有可关联的目标。也可以不关联，继续记录。', style: _sheetHint),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: Text(
+                      '还没有可关联的目标。也可以不关联，继续记录。',
+                      style: _sheetHint(context),
+                    ),
                   ),
                 row(null, '不关联目标'),
                 for (final goal in model.activeGoals) row(goal.id, goal.name),
@@ -152,9 +149,9 @@ class _DetailsSheetState extends State<_DetailsSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('再补充一点', style: _sheetTitle),
+            Text('再补充一点', style: _sheetTitle(context)),
             const SizedBox(height: 4),
-            const Text('都可以留空。', style: _sheetHint),
+            Text('都可以留空。', style: _sheetHint(context)),
             if (widget.rhythmLabel != null) ...[
               const SizedBox(height: 20),
               TextField(
@@ -192,20 +189,23 @@ class _DetailsSheetState extends State<_DetailsSheet> {
   );
 }
 
-const _sheetTitle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 22,
-  fontWeight: FontWeight.w600,
-  color: HomePalette.ink,
+TextStyle _sheetTitle(BuildContext context) => withThemeFont(
+  context,
+  TextStyle(
+    fontSize: 22,
+    fontWeight: FontWeight.w600,
+    color: Theme.of(context).colorScheme.onSurface,
+  ),
 );
-const _sheetHint = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 14,
-  height: 1.5,
-  color: HomePalette.muted,
+TextStyle _sheetHint(BuildContext context) => withThemeFont(
+  context,
+  TextStyle(
+    fontSize: 14,
+    height: 1.5,
+    color: Theme.of(context).colorScheme.onSurfaceVariant,
+  ),
 );
-const _errorText = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 14,
-  color: HomePalette.error,
+TextStyle _errorText(BuildContext context) => withThemeFont(
+  context,
+  TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.error),
 );

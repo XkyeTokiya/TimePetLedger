@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../app/theme/home_theme.dart';
+import '../../../../app/theme/semantic_colors.dart';
+import '../../../../app/theme/theme_text.dart';
 import '../../../../core/time/civil_date.dart';
 import '../../domain/block_knowledge_state.dart';
 import '../../domain/projection/day_ledger_view.dart';
@@ -178,7 +180,14 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                   key: ValueKey(('time-choice', candidate.id)),
                   minTileHeight: 48,
                   contentPadding: const EdgeInsets.symmetric(vertical: 6),
-                  leading: Icon(_icon(candidate), color: _color(candidate)),
+                  leading: Icon(
+                    _icon(candidate),
+                    color: _color(
+                      candidate,
+                      context.semanticColors,
+                      Theme.of(context).colorScheme,
+                    ),
+                  ),
                   title: Text(
                     '${_range(candidate, widget.view)} · ${_title(candidate)}',
                   ),
@@ -205,6 +214,12 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
   @override
   Widget build(BuildContext context) {
     final view = widget.view;
+    final colors = Theme.of(context).colorScheme;
+    final semantics = context.semanticColors;
+    final tickStyle = withThemeFont(
+      context,
+      HomeLedgerStyle.tick.copyWith(color: colors.onSurfaceVariant),
+    );
     final geometry = widget.geometry;
     final intervals = TimelineInterval.fromView(view);
     final clusters = geometry.shortClusters(intervals);
@@ -215,11 +230,11 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
     };
     final height = geometry.y(view.window.endedAt);
     if (view.window.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.fromLTRB(20, 8, 20, 20),
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
         child: Text(
           '这一天还没有已发生的时间。',
-          style: TextStyle(fontSize: 13, color: HomePalette.muted),
+          style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant),
         ),
       );
     }
@@ -228,7 +243,7 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
     var tickWidth = 0.0;
     for (final tick in ticks) {
       final measure = TextPainter(
-        text: TextSpan(text: tick.$2, style: HomeLedgerStyle.tick),
+        text: TextSpan(text: tick.$2, style: tickStyle),
         textDirection: Directionality.of(context),
         textScaler: scale,
       )..layout();
@@ -276,6 +291,8 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                           intervals: intervals,
                           railX: railX,
                           windowEnd: view.window.endedAt,
+                          scheme: colors,
+                          semantics: semantics,
                         ),
                       ),
                     ),
@@ -292,7 +309,7 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                           child: Text(
                             label,
                             textAlign: TextAlign.right,
-                            style: HomeLedgerStyle.tick,
+                            style: tickStyle,
                           ),
                         ),
                       ),
@@ -324,7 +341,7 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                           ),
                           24,
                         ),
-                        child: const IgnorePointer(
+                        child: IgnorePointer(
                           child: ExcludeSemantics(
                             child: Center(
                               child: RotatedBox(
@@ -334,7 +351,7 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                                   style: TextStyle(
                                     fontSize: 10,
                                     height: 1,
-                                    color: HomePalette.accentDeep,
+                                    color: colors.primary,
                                   ),
                                 ),
                               ),
@@ -357,24 +374,21 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                                   ? _clock(view.window.endedAt)
                                   : '24:00',
                               textAlign: TextAlign.right,
-                              style: HomeLedgerStyle.tick,
+                              style: tickStyle,
                             ),
                           ),
                           const SizedBox(width: 8),
-                          const Expanded(
-                            child: Divider(
-                              color: HomePalette.accent,
-                              height: 1,
-                            ),
+                          Expanded(
+                            child: Divider(color: colors.primary, height: 1),
                           ),
                           if (widget.isToday)
-                            const Padding(
-                              padding: EdgeInsets.only(left: 8),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 8),
                               child: Text(
                                 '现在',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: HomePalette.accentDeep,
+                                  color: colors.primary,
                                 ),
                               ),
                             ),
@@ -401,7 +415,11 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
     final geometry = widget.geometry;
     final height = geometry.height(item.startedAt, item.endedAt);
     final title = _title(item);
-    final color = _color(item);
+    final color = _color(
+      item,
+      context.semanticColors,
+      Theme.of(context).colorScheme,
+    );
     final action = cluster != null
         ? '打开时段选择'
         : item.gap != null
@@ -490,6 +508,9 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final scale = MediaQuery.textScalerOf(context);
+                        final mutedStyle = HomeLedgerStyle.metadata.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        );
                         final lineHeight =
                             scale.scale(HomeLedgerStyle.state.fontSize!) *
                             HomeLedgerStyle.state.height!;
@@ -575,7 +596,7 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                                       _range(item, widget.view),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: HomeLedgerStyle.metadata,
+                                      style: mutedStyle,
                                     ),
                                   if (full || compactRange)
                                     const SizedBox(height: 4),
@@ -612,7 +633,7 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                                             formatDerivedDuration(
                                               item.duration,
                                             ),
-                                            style: HomeLedgerStyle.metadata,
+                                            style: mutedStyle,
                                           ),
                                         ),
                                     ],
@@ -625,7 +646,7 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                                           : '${formatDerivedDuration(item.duration)}${_secondary(item, goal)}',
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: HomeLedgerStyle.metadata,
+                                      style: mutedStyle,
                                     ),
                                   ],
                                 ],
@@ -642,10 +663,12 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                                 child: Text(
                                   action,
                                   maxLines: 1,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 10,
                                     height: 1,
-                                    color: HomePalette.accentDeep,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary,
                                   ),
                                 ),
                               ),
@@ -679,13 +702,17 @@ String _type(TimelineInterval item) => switch (item.fact) {
   SleepSessionSegment() => '睡眠',
   null => '未记录时段',
 };
-Color _color(TimelineInterval item) => switch (item.fact) {
+Color _color(
+  TimelineInterval item,
+  TimeLedgerSemanticColors semantics,
+  ColorScheme colors,
+) => switch (item.fact) {
   TimeBlockSegment(:final source) =>
     source.knowledgeState == BlockKnowledgeState.unknown
-        ? HomePalette.unknown
-        : HomePalette.accent,
-  SleepSessionSegment() => HomePalette.sleep,
-  null => HomePalette.accentDeep,
+        ? semantics.unknown
+        : semantics.activity,
+  SleepSessionSegment() => semantics.sleep,
+  null => semantics.gap,
 };
 IconData _icon(TimelineInterval item) => switch (item.fact) {
   TimeBlockSegment(:final source) =>
@@ -811,11 +838,15 @@ class _AxisPainter extends CustomPainter {
     required this.intervals,
     required this.railX,
     required this.windowEnd,
+    required this.scheme,
+    required this.semantics,
   });
   final HomeTimelineGeometry geometry;
   final List<TimelineInterval> intervals;
   final double railX;
   final int windowEnd;
+  final ColorScheme scheme;
+  final TimeLedgerSemanticColors semantics;
   @override
   void paint(Canvas canvas, Size size) {
     for (var t = geometry.startedAt; t < windowEnd; t += 3600000) {
@@ -824,14 +855,14 @@ class _AxisPainter extends CustomPainter {
         Offset(railX - 12, y),
         Offset(railX - 8, y),
         Paint()
-          ..color = HomePalette.faint
+          ..color = scheme.outline
           ..strokeWidth = 1,
       );
     }
     for (final item in intervals) {
       final y = geometry.y(item.startedAt);
       final end = geometry.y(item.endedAt);
-      final color = _color(item);
+      final color = _color(item, semantics, scheme);
       final paint = Paint()
         ..color = color.withValues(alpha: .65)
         ..strokeWidth = 1.5;
@@ -860,7 +891,7 @@ class _AxisPainter extends CustomPainter {
         canvas.drawCircle(
           Offset(railX, y),
           4,
-          Paint()..color = item.gap != null ? HomePalette.paper : color,
+          Paint()..color = item.gap != null ? scheme.surface : color,
         );
         if (item.gap != null) {
           canvas.drawCircle(
@@ -878,5 +909,7 @@ class _AxisPainter extends CustomPainter {
       geometry != old.geometry ||
       intervals != old.intervals ||
       railX != old.railX ||
-      windowEnd != old.windowEnd;
+      windowEnd != old.windowEnd ||
+      scheme != old.scheme ||
+      semantics != old.semantics;
 }

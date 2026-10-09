@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:dynamic_color/dynamic_color.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
-import 'theme/home_theme.dart';
+import 'theme/app_theme.dart';
 import '../features/ledger/presentation/day_summary_page.dart';
 import '../features/ledger/presentation/day_read_scroll.dart';
 import '../features/ledger/domain/sleep_session.dart';
@@ -54,6 +56,7 @@ class MainApp extends StatefulWidget {
     this.settingsEntry,
     this.goals,
     this.preferences,
+    this.themePreferences,
   });
   final Widget Function()? goalEntry;
   final Widget Function()? settingsEntry;
@@ -61,6 +64,9 @@ class MainApp extends StatefulWidget {
 
   /// 首页建议区域读取提醒开关与时点（Q-028 / Q-029）；不写入。
   final AppPreferencesStore? preferences;
+
+  /// 主题偏好（Q-041）：根 MaterialApp 随其变化即时重建；为 null 时用默认主题。
+  final ValueListenable<AppPreferences?>? themePreferences;
   final DayLedgerLoader? dayLedger;
   final ReviewContextLoader? reviewContext;
   final ReviewDraftStore? reviewDrafts;
@@ -80,29 +86,61 @@ class MainApp extends StatefulWidget {
 class _MainAppState extends State<MainApp> {
   final _dayRoutes = RouteObserver<ModalRoute<void>>();
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'Time Pet Ledger',
-    theme: homeTheme,
-    navigatorObservers: [_dayRoutes],
-    home: _RecordingHome(
-      goals: widget.goals,
-      goalEntry: widget.goalEntry,
-      settingsEntry: widget.settingsEntry,
-      preferences: widget.preferences,
-      dayLedger: widget.dayLedger,
-      reviewContext: widget.reviewContext,
-      reviewDrafts: widget.reviewDrafts,
-      reviewSaver: widget.reviewSaver,
-      dayRoutes: _dayRoutes,
-      ledger: widget.ledger,
-      drafts: widget.drafts,
-      now: widget.now,
-      entrySaver: widget.entrySaver,
-      entryEditor: widget.entryEditor,
-      sleepEntry: widget.sleepEntry,
-      sleepLedger: widget.sleepLedger,
-      firstSleepOpen: widget.firstSleepOpen,
-    ),
+  Widget build(BuildContext context) => DynamicColorBuilder(
+    builder: (dynamicLight, dynamicDark) {
+      Widget app(AppPreferences? preferences) {
+        final scheme = preferences?.themeScheme ?? ThemeScheme.defaultM3;
+        final mode = preferences?.themeMode ?? AppThemeMode.system;
+        final font = preferences?.fontChoice ?? AppFontChoice.system;
+        return MaterialApp(
+          title: 'Time Pet Ledger',
+          theme: buildAppTheme(
+            scheme: scheme,
+            brightness: Brightness.light,
+            fontChoice: font,
+            dynamicScheme: dynamicLight,
+          ),
+          darkTheme: buildAppTheme(
+            scheme: scheme,
+            brightness: Brightness.dark,
+            fontChoice: font,
+            dynamicScheme: dynamicDark,
+          ),
+          themeMode: switch (mode) {
+            AppThemeMode.system => ThemeMode.system,
+            AppThemeMode.light => ThemeMode.light,
+            AppThemeMode.dark => ThemeMode.dark,
+          },
+          navigatorObservers: [_dayRoutes],
+          home: _RecordingHome(
+            goals: widget.goals,
+            goalEntry: widget.goalEntry,
+            settingsEntry: widget.settingsEntry,
+            preferences: widget.preferences,
+            dayLedger: widget.dayLedger,
+            reviewContext: widget.reviewContext,
+            reviewDrafts: widget.reviewDrafts,
+            reviewSaver: widget.reviewSaver,
+            dayRoutes: _dayRoutes,
+            ledger: widget.ledger,
+            drafts: widget.drafts,
+            now: widget.now,
+            entrySaver: widget.entrySaver,
+            entryEditor: widget.entryEditor,
+            sleepEntry: widget.sleepEntry,
+            sleepLedger: widget.sleepLedger,
+            firstSleepOpen: widget.firstSleepOpen,
+          ),
+        );
+      }
+
+      final preferences = widget.themePreferences;
+      if (preferences == null) return app(null);
+      return ValueListenableBuilder<AppPreferences?>(
+        valueListenable: preferences,
+        builder: (context, value, _) => app(value),
+      );
+    },
   );
 }
 

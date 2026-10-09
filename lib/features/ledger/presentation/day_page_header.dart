@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/home_theme.dart';
 import '../../../core/time/civil_date.dart';
 import 'home/home_timeline_tab.dart' show ledgerWeekdayText;
 
@@ -53,21 +52,20 @@ class DayPageHeader extends StatelessWidget {
                               : '${date.year}年${date.month}月${date.day}日',
                           maxLines: 1,
                           softWrap: false,
-                          style: const TextStyle(
-                            fontFamily: homeSerifFamily,
+                          style: TextStyle(
                             fontSize: 28,
                             height: 1.15,
                             fontWeight: FontWeight.w600,
-                            color: HomePalette.ink,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
                     ),
                     const SizedBox(width: 6),
-                    const Icon(
+                    Icon(
                       Icons.expand_more,
                       size: 18,
-                      color: HomePalette.muted,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: 10),
                     Flexible(
@@ -75,10 +73,9 @@ class DayPageHeader extends StatelessWidget {
                         ledgerWeekdayText(date, today),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontFamily: homeSerifFamily,
+                        style: TextStyle(
                           fontSize: 13,
-                          color: HomePalette.muted,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ),

@@ -515,6 +515,7 @@ class _DayDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final isToday = date == today;
     return Padding(
       padding: EdgeInsets.fromLTRB(padding, 6, padding, 4),
@@ -540,23 +541,19 @@ class _DayDivider extends StatelessWidget {
                       Text(
                         ledgerDayText(date),
                         style: TextStyle(
-                          fontFamily: homeSerifFamily,
                           fontSize: 16,
                           height: 1.2,
                           fontWeight: FontWeight.w600,
-                          color: isToday
-                              ? HomePalette.accentDeep
-                              : HomePalette.ink,
+                          color: isToday ? colors.primary : colors.onSurface,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         ledgerWeekdayText(date, today),
-                        style: const TextStyle(
-                          fontFamily: homeSerifFamily,
+                        style: TextStyle(
                           fontSize: 12,
                           height: 1.2,
-                          color: HomePalette.muted,
+                          color: colors.onSurfaceVariant,
                         ),
                       ),
                     ],

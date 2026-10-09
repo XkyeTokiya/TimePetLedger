@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/home_theme.dart';
-
 import 'ledger_feed_controller.dart';
 
 /// 保留退出窗口，等新窗口定位后才启动过渡，避免绘制临时滚动位置。
@@ -115,7 +113,12 @@ class _HomeFeedTransitionState extends State<HomeFeedTransition>
     super.dispose();
   }
 
-  Widget _layer(Widget child, LedgerFeedFrame frame, {required bool outgoing}) {
+  Widget _layer(
+    BuildContext context,
+    Widget child,
+    LedgerFeedFrame frame, {
+    required bool outgoing,
+  }) {
     return SlideTransition(
       key: ValueKey(frame.endDate),
       position: _previous == null
@@ -126,7 +129,7 @@ class _HomeFeedTransitionState extends State<HomeFeedTransition>
             ).animate(_curve),
       child: ClipRect(
         child: ColoredBox(
-          color: HomePalette.paper,
+          color: Theme.of(context).colorScheme.surface,
           child: IgnorePointer(
             ignoring: outgoing || !_ready,
             child: ExcludeSemantics(
@@ -145,8 +148,8 @@ class _HomeFeedTransitionState extends State<HomeFeedTransition>
       fit: StackFit.expand,
       children: [
         if (_previous case final previous?)
-          _layer(previous, _previousFrame!, outgoing: true),
-        _layer(_current, widget.frame, outgoing: false),
+          _layer(context, previous, _previousFrame!, outgoing: true),
+        _layer(context, _current, widget.frame, outgoing: false),
       ],
     ),
   );

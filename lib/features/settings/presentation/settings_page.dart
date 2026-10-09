@@ -1,9 +1,11 @@
 import '../../ledger/presentation/recording_time_picker.dart'
     show showLedgerClockPicker;
 
+import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 
 import '../../../app/theme/home_theme.dart';
+import '../../../app/theme/semantic_colors.dart';
 import '../../../core/identity/entity_id.dart';
 import '../../ledger/application/home_suggestion.dart';
 import '../domain/app_preferences.dart';
@@ -23,6 +25,7 @@ class SettingsPage extends StatefulWidget {
     required this.newFactId,
     required this.now,
     this.versionLabel,
+    this.onSaved,
   });
 
   final AppPreferencesStore preferences;
@@ -32,6 +35,9 @@ class SettingsPage extends StatefulWidget {
   final int Function() now;
   final String? versionLabel;
 
+  /// 偏好保存成功后的通知（根主题即时重建用；Q-041）。
+  final ValueChanged<AppPreferences>? onSaved;
+
   @override
   State<SettingsPage> createState() => _SettingsPageState();
 }
@@ -39,6 +45,8 @@ class SettingsPage extends StatefulWidget {
 enum _View { home, display, recording, advanced, about }
 
 class _SettingsPageState extends State<SettingsPage> {
+  ColorScheme get _colors => Theme.of(context).colorScheme;
+  TimeLedgerSemanticColors get _semantics => context.semanticColors;
   _View view = _View.home;
   AppPreferences? prefs;
   DataCounts? counts;
@@ -85,6 +93,7 @@ class _SettingsPageState extends State<SettingsPage> {
     });
     try {
       await widget.preferences.write(next);
+      widget.onSaved?.call(next);
       if (!mounted) return;
       setState(() => status = '设置已保存。');
     } catch (_) {
@@ -187,48 +196,39 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Theme(
-    data: homeTheme,
-    child: Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          key: const ValueKey('settings-back'),
-          onPressed: () {
-            if (view == _View.home) {
-              Navigator.pop(context);
-            } else {
-              setState(() {
-                view = _View.home;
-                error = null;
-                status = null;
-              });
-            }
-          },
-        ),
-        title: Text(_title),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      leading: BackButton(
+        key: const ValueKey('settings-back'),
+        onPressed: () {
+          if (view == _View.home) {
+            Navigator.pop(context);
+          } else {
+            setState(() {
+              view = _View.home;
+              error = null;
+              status = null;
+            });
+          }
+        },
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 560),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              TimeLedgerSpacing.page,
-              TimeLedgerSpacing.xxs,
-              TimeLedgerSpacing.page,
-              TimeLedgerSpacing.xl,
-            ),
-            children: [
-              if (error != null) ...[
-                _error(error!),
-                const SizedBox(height: 12),
-              ],
-              if (status != null) ...[
-                _note(status!),
-                const SizedBox(height: 12),
-              ],
-              ..._body(),
-            ],
+      title: Text(_title),
+    ),
+    body: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            TimeLedgerSpacing.page,
+            TimeLedgerSpacing.xxs,
+            TimeLedgerSpacing.page,
+            TimeLedgerSpacing.xl,
           ),
+          children: [
+            if (error != null) ...[_error(error!), const SizedBox(height: 12)],
+            if (status != null) ...[_note(status!), const SizedBox(height: 12)],
+            ..._body(),
+          ],
         ),
       ),
     ),
@@ -284,6 +284,71 @@ class _SettingsPageState extends State<SettingsPage> {
               onTap: busy
                   ? null
                   : () => _savePreference((c) => c.copyWith(heatRange: range)),
+            ),
+          const SizedBox(height: TimeLedgerSpacing.xl),
+          _sectionHeader(
+            '主题配色',
+            value: _themeText(prefs),
+            valueKey: const ValueKey('settings-theme-current'),
+          ),
+          DynamicColorBuilder(
+            builder: (lightDynamic, darkDynamic) {
+              final dynamicAvailable =
+                  lightDynamic != null && darkDynamic != null;
+              return Column(
+                children: [
+                  for (final scheme in ThemeScheme.values)
+                    if (scheme != ThemeScheme.dynamic || dynamicAvailable)
+                      _choice(
+                        key: 'settings-theme-${scheme.name}',
+                        selected:
+                            (prefs.themeScheme ?? ThemeScheme.defaultM3) ==
+                            scheme,
+                        title: _schemeTitle(scheme),
+                        description: _schemeDescription(scheme),
+                        onTap: busy
+                            ? null
+                            : () => _savePreference(
+                                (c) => c.copyWith(themeScheme: scheme),
+                              ),
+                      ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: TimeLedgerSpacing.xl),
+          _sectionHeader(
+            '外观模式',
+            value: _themeModeText(prefs),
+            valueKey: const ValueKey('settings-theme-mode-current'),
+          ),
+          for (final mode in AppThemeMode.values)
+            _choice(
+              key: 'settings-theme-mode-${mode.name}',
+              selected: (prefs.themeMode ?? AppThemeMode.system) == mode,
+              title: _modeTitle(mode),
+              description: _modeDescription(mode),
+              onTap: busy
+                  ? null
+                  : () => _savePreference((c) => c.copyWith(themeMode: mode)),
+            ),
+          const SizedBox(height: TimeLedgerSpacing.xl),
+          _sectionHeader(
+            '字体',
+            value: _fontText(prefs),
+            valueKey: const ValueKey('settings-font-current'),
+          ),
+          for (final font in AppFontChoice.values)
+            _choice(
+              key: 'settings-font-${font.name}',
+              selected: (prefs.fontChoice ?? AppFontChoice.system) == font,
+              title: font == AppFontChoice.system ? '系统字体' : '衬线（NotoSerifSC）',
+              description: font == AppFontChoice.system
+                  ? '跟随平台默认字体'
+                  : '暖纸主题使用的衬线字体',
+              onTap: busy
+                  ? null
+                  : () => _savePreference((c) => c.copyWith(fontChoice: font)),
             ),
         ];
       case _View.recording:
@@ -420,12 +485,12 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Container(
         constraints: const BoxConstraints(minHeight: 72),
         padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.sm),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
         ),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: HomePalette.muted),
+            Icon(icon, size: 22, color: _colors.onSurfaceVariant),
             const SizedBox(width: TimeLedgerSpacing.sm),
             Expanded(
               child: Column(
@@ -441,7 +506,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right, size: 20, color: HomePalette.muted),
+            Icon(
+              Icons.chevron_right,
+              size: 20,
+              color: _colors.onSurfaceVariant,
+            ),
           ],
         ),
       ),
@@ -460,7 +529,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 value,
                 key: valueKey,
                 style: Theme.of(context).textTheme.labelMedium
-                    ?.copyWith(color: HomePalette.accentDeep),
+                    ?.copyWith(color: _colors.primary),
               ),
             ],
           ],
@@ -482,15 +551,15 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Container(
         constraints: const BoxConstraints(minHeight: 64),
         padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
         ),
         child: Row(
           children: [
             Icon(
               selected ? Icons.radio_button_checked : Icons.radio_button_off,
               size: 20,
-              color: selected ? HomePalette.accentDeep : HomePalette.muted,
+              color: selected ? _colors.primary : _colors.onSurfaceVariant,
             ),
             const SizedBox(width: TimeLedgerSpacing.sm),
             Expanded(
@@ -519,8 +588,8 @@ class _SettingsPageState extends State<SettingsPage> {
     required String title,
     required String subtitle,
   }) => DecoratedBox(
-    decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+    decoration: BoxDecoration(
+      border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
     ),
     child: SwitchListTile.adaptive(
       key: key,
@@ -545,8 +614,8 @@ class _SettingsPageState extends State<SettingsPage> {
     child: Container(
       constraints: const BoxConstraints(minHeight: 56),
       padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
       ),
       child: Row(
         children: [
@@ -562,7 +631,7 @@ class _SettingsPageState extends State<SettingsPage> {
           Icon(
             Icons.schedule,
             size: 20,
-            color: enabled ? HomePalette.accentDeep : HomePalette.muted,
+            color: enabled ? _colors.primary : _colors.onSurfaceVariant,
           ),
         ],
       ),
@@ -597,8 +666,8 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _countRow(String label, String value) => Container(
     constraints: const BoxConstraints(minHeight: homeTapTarget),
     padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
-    decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+    decoration: BoxDecoration(
+      border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
     ),
     child: Row(
       children: [
@@ -613,8 +682,8 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget _aboutRow(String label, String value) => Container(
     constraints: const BoxConstraints(minHeight: homeTapTarget),
     padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
-    decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+    decoration: BoxDecoration(
+      border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
     ),
     child: Row(
       children: [
@@ -644,8 +713,8 @@ class _SettingsPageState extends State<SettingsPage> {
     child: Container(
       constraints: const BoxConstraints(minHeight: 56),
       padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
       ),
       child: Row(
         children: [
@@ -653,20 +722,20 @@ class _SettingsPageState extends State<SettingsPage> {
             icon,
             size: 22,
             color: onTap == null
-                ? HomePalette.faint
+                ? _colors.outline
                 : destructive
-                ? HomePalette.error
-                : HomePalette.accentDeep,
+                ? _colors.error
+                : _colors.primary,
           ),
           const SizedBox(width: TimeLedgerSpacing.sm),
           Text(
             label,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: onTap == null
-                  ? HomePalette.faint
+                  ? _colors.outline
                   : destructive
-                  ? HomePalette.error
-                  : HomePalette.accentDeep,
+                  ? _colors.error
+                  : _colors.primary,
             ),
           ),
         ],
@@ -678,20 +747,20 @@ class _SettingsPageState extends State<SettingsPage> {
     width: double.infinity,
     padding: const EdgeInsets.all(TimeLedgerSpacing.sm),
     decoration: BoxDecoration(
-      color: HomePalette.tint,
+      color: _colors.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(TimeLedgerRadius.panel),
     ),
     child: Text(
       text,
       style: Theme.of(context).textTheme.bodyMedium
-          ?.copyWith(color: HomePalette.recovery),
+          ?.copyWith(color: _semantics.recovery),
     ),
   );
 
   Widget _error(String text) => Text(
     text,
     style: Theme.of(context).textTheme.bodyMedium
-        ?.copyWith(color: HomePalette.error),
+        ?.copyWith(color: _colors.error),
   );
 
   String _rangeText(AppPreferences prefs) => switch (prefs.heatRange) {
@@ -705,4 +774,47 @@ class _SettingsPageState extends State<SettingsPage> {
     RecordingMode.form => '表单',
     null => '未设置',
   };
+
+  String _themeText(AppPreferences prefs) =>
+      _schemeTitle(prefs.themeScheme ?? ThemeScheme.defaultM3);
+
+  String _schemeTitle(ThemeScheme scheme) => switch (scheme) {
+    ThemeScheme.defaultM3 => '默认（紫）',
+    ThemeScheme.blue => '蓝',
+    ThemeScheme.green => '绿',
+    ThemeScheme.orange => '橙',
+    ThemeScheme.teal => '青',
+    ThemeScheme.warmPaper => '暖纸',
+    ThemeScheme.dynamic => '跟随壁纸',
+  };
+
+  String _schemeDescription(ThemeScheme scheme) => switch (scheme) {
+    ThemeScheme.defaultM3 => 'Google 默认 Material 3 配色',
+    ThemeScheme.blue ||
+    ThemeScheme.green ||
+    ThemeScheme.orange ||
+    ThemeScheme.teal => '以该色为种子生成的成套配色',
+    ThemeScheme.warmPaper => '浅米色 / 砖红 / 衬线的原有主题',
+    ThemeScheme.dynamic => 'Android 12+ 从壁纸取色',
+  };
+
+  String _themeModeText(AppPreferences prefs) =>
+      _modeTitle(prefs.themeMode ?? AppThemeMode.system);
+
+  String _modeTitle(AppThemeMode mode) => switch (mode) {
+    AppThemeMode.system => '跟随系统',
+    AppThemeMode.light => '浅色',
+    AppThemeMode.dark => '深色',
+  };
+
+  String _modeDescription(AppThemeMode mode) => switch (mode) {
+    AppThemeMode.system => '随系统明暗自动切换',
+    AppThemeMode.light => '始终使用浅色',
+    AppThemeMode.dark => '始终使用深色',
+  };
+
+  String _fontText(AppPreferences prefs) =>
+      (prefs.fontChoice ?? AppFontChoice.system) == AppFontChoice.system
+      ? '系统字体'
+      : '衬线';
 }

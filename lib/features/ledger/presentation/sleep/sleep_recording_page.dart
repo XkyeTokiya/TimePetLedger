@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/home_theme.dart';
+import '../../../../app/theme/semantic_colors.dart';
+import '../../../../app/theme/theme_text.dart';
 import '../../domain/projection/derived_duration.dart';
 import '../../domain/sleep_type.dart';
 import '../../domain/time_precision.dart';
@@ -275,106 +277,132 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
       ) ??
       false;
 
+  ColorScheme get _colors => Theme.of(context).colorScheme;
+
+  TextStyle get _question => TextStyle(
+    fontSize: 32,
+    height: 1.35,
+    letterSpacing: -0.5,
+    color: _colors.onSurface,
+  );
+  TextStyle get _muted =>
+      TextStyle(fontSize: 14, height: 1.5, color: _colors.onSurfaceVariant);
+  TextStyle get _label =>
+      TextStyle(fontSize: 14, color: _colors.onSurfaceVariant);
+  TextStyle get _fieldLabel =>
+      TextStyle(fontSize: 15, color: _colors.onSurface);
+  TextStyle get _dateStyle => TextStyle(fontSize: 16, color: _colors.onSurface);
+  TextStyle get _timeStyle => TextStyle(
+    fontSize: 36,
+    height: 1.25,
+    letterSpacing: -1,
+    color: _colors.onSurface,
+  );
+  TextStyle get _emptyTimeStyle =>
+      TextStyle(fontSize: 23, height: 1.4, color: _colors.onSurfaceVariant);
+  TextStyle get _durationLabel =>
+      TextStyle(fontSize: 16, color: _colors.onSurfaceVariant);
+  TextStyle get _durationValue =>
+      TextStyle(fontSize: 25, color: _colors.onSurface);
+  TextStyle get _error => TextStyle(fontSize: 14, color: _colors.error);
+
   @override
-  Widget build(BuildContext context) => Theme(
-    data: homeTheme,
-    child: PopScope(
-      canPop: allowPop,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _leave();
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: BackButton(
-            key: const ValueKey('sleep-exit'),
-            onPressed: model.submitting ? null : _leave,
-          ),
-          title: Text(_editing ? '编辑睡眠' : '记录睡眠'),
+  Widget build(BuildContext context) => PopScope(
+    canPop: allowPop,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) _leave();
+    },
+    child: Scaffold(
+      appBar: AppBar(
+        leading: BackButton(
+          key: const ValueKey('sleep-exit'),
+          onPressed: model.submitting ? null : _leave,
         ),
-        body: model.loading
-            ? const Center(child: CircularProgressIndicator())
-            : model.loadError != null
-            ? _loadFailure()
-            : AbsorbPointer(
-                absorbing: exiting || model.submitting || model.discarding,
-                child: Column(
-                  children: [
-                    Expanded(
-                      child: ListView(
-                        controller: scroll,
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                        children: [
-                          if (model.storageError != null) ...[
-                            _notice(model.storageError!, error: true),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: TextButton(
-                                onPressed: model.editable
-                                    ? model.retrySave
-                                    : null,
-                                child: const Text('重试保留本次填写'),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                          if (model.committedMessage case final message?) ...[
-                            _notice(message, success: true),
-                            const SizedBox(height: 12),
-                          ],
-                          if (model.submitError != null &&
-                              model.conflicts.isEmpty) ...[
-                            _notice(model.submitError!, error: true),
-                            const SizedBox(height: 12),
-                          ],
-                          for (final conflict in model.conflicts) ...[
-                            _notice(
-                              '已有记录：${formatSleepTime(conflict.startedAt)} — '
-                              '${formatSleepTime(conflict.endedAt)}',
-                              error: true,
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                          Text('几点睡，\n几点醒？', style: _question),
-                          const SizedBox(height: 20),
-                          _typeSegment(),
-                          const SizedBox(height: 24),
-                          _endpoint('入睡', model.startedAt, 'sleep-start'),
-                          _endpoint('醒来', model.endedAt, 'sleep-end'),
-                          const SizedBox(height: 16),
-                          _duration(),
-                          const SizedBox(height: 16),
-                          _note(),
-                          if (showErrors && model.type == null) ...[
-                            const SizedBox(height: 12),
-                            Text('先选择主睡眠或小睡。', style: _error),
-                          ],
-                          if (showErrors && model.timeError != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              model.timeError!,
-                              key: const ValueKey('sleep-time-error'),
-                              style: _error,
-                            ),
-                          ],
-                          if (_editing && model.committed == null) ...[
-                            const SizedBox(height: 12),
-                            const Text('保存后才会更新这条睡眠。', style: _muted),
-                          ],
-                        ],
-                      ),
-                    ),
-                    _footer(),
-                  ],
-                ),
-              ),
+        title: Text(_editing ? '编辑睡眠' : '记录睡眠'),
       ),
+      body: model.loading
+          ? const Center(child: CircularProgressIndicator())
+          : model.loadError != null
+          ? _loadFailure()
+          : AbsorbPointer(
+              absorbing: exiting || model.submitting || model.discarding,
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      controller: scroll,
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                      children: [
+                        if (model.storageError != null) ...[
+                          _notice(model.storageError!, error: true),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: TextButton(
+                              onPressed: model.editable
+                                  ? model.retrySave
+                                  : null,
+                              child: const Text('重试保留本次填写'),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        if (model.committedMessage case final message?) ...[
+                          _notice(message, success: true),
+                          const SizedBox(height: 12),
+                        ],
+                        if (model.submitError != null &&
+                            model.conflicts.isEmpty) ...[
+                          _notice(model.submitError!, error: true),
+                          const SizedBox(height: 12),
+                        ],
+                        for (final conflict in model.conflicts) ...[
+                          _notice(
+                            '已有记录：${formatSleepTime(conflict.startedAt)} — '
+                            '${formatSleepTime(conflict.endedAt)}',
+                            error: true,
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        Text('几点睡，\n几点醒？', style: _question),
+                        const SizedBox(height: 20),
+                        _typeSegment(),
+                        const SizedBox(height: 24),
+                        _endpoint('入睡', model.startedAt, 'sleep-start'),
+                        _endpoint('醒来', model.endedAt, 'sleep-end'),
+                        const SizedBox(height: 16),
+                        _duration(),
+                        const SizedBox(height: 16),
+                        _note(),
+                        if (showErrors && model.type == null) ...[
+                          const SizedBox(height: 12),
+                          Text('先选择主睡眠或小睡。', style: _error),
+                        ],
+                        if (showErrors && model.timeError != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            model.timeError!,
+                            key: const ValueKey('sleep-time-error'),
+                            style: _error,
+                          ),
+                        ],
+                        if (_editing && model.committed == null) ...[
+                          const SizedBox(height: 12),
+                          Text('保存后才会更新这条睡眠。', style: _muted),
+                        ],
+                      ],
+                    ),
+                  ),
+                  _footer(),
+                ],
+              ),
+            ),
     ),
   );
 
   Widget _loadFailure() => ListView(
     padding: const EdgeInsets.all(20),
     children: [
-      Text(model.loadError!, style: const TextStyle(color: HomePalette.error)),
+      Text(model.loadError!, style: TextStyle(color: _colors.error)),
       if (model.missingOriginal)
         TextButton(onPressed: model.restartInput, child: const Text('清除未完成输入'))
       else
@@ -395,7 +423,7 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: HomePalette.tint,
+        color: _colors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(26),
       ),
       child: Stack(
@@ -414,7 +442,7 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
                 heightFactor: 1,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: HomePalette.paper,
+                    color: _colors.surface,
                     borderRadius: BorderRadius.circular(24),
                   ),
                 ),
@@ -472,11 +500,7 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
       duration: duration,
       curve: Curves.easeInOutCubic,
       builder: (context, value, _) {
-        final color = Color.lerp(
-          HomePalette.ink,
-          HomePalette.accentDeep,
-          value,
-        )!;
+        final color = Color.lerp(_colors.onSurface, _colors.primary, value)!;
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -491,7 +515,6 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
             Text(
               type == SleepType.mainSleep ? '主睡眠' : '小睡',
               style: TextStyle(
-                fontFamily: homeSerifFamily,
                 fontSize: 16,
                 color: color,
                 fontWeight: FontWeight.lerp(
@@ -508,8 +531,8 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
   }
 
   Widget _endpoint(String name, int? value, String key) => Container(
-    decoration: const BoxDecoration(
-      border: Border(top: BorderSide(color: HomePalette.hairline)),
+    decoration: BoxDecoration(
+      border: Border(top: BorderSide(color: _colors.outlineVariant)),
     ),
     padding: const EdgeInsets.symmetric(vertical: 10),
     child: Column(
@@ -533,10 +556,10 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
                   children: [
                     Text(_dateLabel(value), style: _dateStyle),
                     const SizedBox(width: 6),
-                    const Icon(
+                    Icon(
                       Icons.keyboard_arrow_down,
                       size: 15,
-                      color: HomePalette.muted,
+                      color: _colors.onSurfaceVariant,
                     ),
                   ],
                 ),
@@ -591,7 +614,7 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Column(
         children: [
-          const Text('这次睡眠', style: _durationLabel),
+          Text('这次睡眠', style: _durationLabel),
           const SizedBox(height: 4),
           TextButton(
             onPressed: model.editable && (start != null || end != null)
@@ -634,20 +657,17 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
             icon: Icon(open ? Icons.remove : Icons.add, size: 16),
             label: Text(label),
             style: TextButton.styleFrom(
-              foregroundColor: HomePalette.accentDeep,
+              foregroundColor: _colors.primary,
               padding: const EdgeInsets.symmetric(vertical: 7),
               minimumSize: const Size(0, 44),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              textStyle: const TextStyle(
-                fontFamily: homeSerifFamily,
-                fontSize: 15,
-              ),
+              textStyle: withThemeFont(context, const TextStyle(fontSize: 15)),
             ),
           ),
         ),
         if (open) ...[
           const SizedBox(height: 9),
-          const Text('还有什么想记下的？', style: _fieldLabel),
+          Text('还有什么想记下的？', style: _fieldLabel),
           const SizedBox(height: 8),
           TextField(
             key: const ValueKey('sleep-note'),
@@ -694,8 +714,8 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
     return SafeArea(
       top: false,
       child: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: HomePalette.hairline)),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: _colors.outlineVariant)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
         child: Column(
@@ -723,7 +743,7 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
                       key: const ValueKey('sleep-delete'),
                       onPressed: exiting ? null : _delete,
                       style: TextButton.styleFrom(
-                        foregroundColor: HomePalette.accentDeep,
+                        foregroundColor: _colors.primary,
                       ),
                       child: const Text('删除睡眠'),
                     ),
@@ -756,23 +776,22 @@ class _Notice extends StatelessWidget {
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
       color: error
-          ? HomePalette.errorSurface
+          ? Theme.of(context).colorScheme.errorContainer
           : success
-          ? HomePalette.tint
-          : HomePalette.paper,
+          ? Theme.of(context).colorScheme.surfaceContainerHighest
+          : Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(10),
     ),
     child: Text(
       text,
       style: TextStyle(
-        fontFamily: homeSerifFamily,
         fontSize: 14,
         height: 1.5,
         color: error
-            ? HomePalette.error
+            ? Theme.of(context).colorScheme.error
             : success
-            ? HomePalette.recovery
-            : HomePalette.muted,
+            ? context.semanticColors.recovery
+            : Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     ),
   );
@@ -781,60 +800,4 @@ class _Notice extends StatelessWidget {
 Widget _notice(String text, {bool error = false, bool success = false}) =>
     _Notice(text, error: error, success: success);
 
-const _question = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 32,
-  height: 1.35,
-  letterSpacing: -0.5,
-  color: HomePalette.ink,
-);
-const _muted = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 14,
-  height: 1.5,
-  color: HomePalette.muted,
-);
-const _label = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 14,
-  color: HomePalette.muted,
-);
-const _fieldLabel = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 15,
-  color: HomePalette.ink,
-);
-const _dateStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 16,
-  color: HomePalette.ink,
-);
-const _timeStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 36,
-  height: 1.25,
-  letterSpacing: -1,
-  color: HomePalette.ink,
-);
-const _emptyTimeStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 23,
-  height: 1.4,
-  color: HomePalette.muted,
-);
-const _durationLabel = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 16,
-  color: HomePalette.muted,
-);
-const _durationValue = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 25,
-  color: HomePalette.ink,
-);
-const _error = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 14,
-  color: HomePalette.error,
-);
 const _segmentSlide = Duration(milliseconds: 200);

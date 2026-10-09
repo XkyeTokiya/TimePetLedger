@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../features/settings/domain/app_preferences.dart';
+import 'semantic_colors.dart';
+
 /// App-wide visual tokens taken from the confirmed home reference
 /// (docs/planning/assets/home-summary-round-one/home-reference.png).
 ///
 /// The historical `Home` name is retained to avoid a repository-wide rename.
-/// New production UI should treat these values and [homeTheme] as the shared
-/// app theme; see `design.md` for the usage contract.
+/// [homeTheme] is the warm-paper default; [buildWarmPaperTheme] renders the
+/// optional warm-paper light / dark pair. See `design.md` for the contract.
 class HomePalette {
   const HomePalette._();
 
@@ -56,133 +59,190 @@ const String homeSerifFamily = 'NotoSerifSC';
 /// semantics, keyboard focus and a 48dp-row disambiguation panel.
 const double homeTapTarget = 48;
 
-final ThemeData homeTheme = _buildHomeTheme();
+/// 暖纸浅色语义色：沿用 design.md §3 / 实施前合同 §2.3 的固定值。
+const warmPaperSemanticColors = TimeLedgerSemanticColors(
+  activity: HomePalette.activity,
+  sleep: HomePalette.sleep,
+  unknown: HomePalette.unknown,
+  gap: HomePalette.gap,
+  recovery: HomePalette.recovery,
+  heatmapLevels: [
+    Color(0xFFEEE0D8),
+    Color(0xFFDFB6A5),
+    Color(0xFFBF765E),
+    Color(0xFF914C3A),
+  ],
+  heatmapLabels: [
+    HomePalette.ink,
+    HomePalette.ink,
+    Color(0xFFFFF8F0),
+    Color(0xFFFFF8F0),
+  ],
+);
 
-ThemeData _buildHomeTheme() {
-  const colors = ColorScheme.light(
-    primary: HomePalette.accentDeep,
-    onPrimary: Color(0xFFFFF8F4),
-    primaryContainer: HomePalette.tint,
-    onPrimaryContainer: HomePalette.ink,
-    secondary: HomePalette.sleep,
-    onSecondary: Color(0xFFFFF8F4),
-    secondaryContainer: HomePalette.tint,
-    onSecondaryContainer: HomePalette.ink,
-    tertiary: HomePalette.unknown,
-    onTertiary: Color(0xFFFFF8F4),
-    surface: HomePalette.paper,
-    onSurface: HomePalette.ink,
-    onSurfaceVariant: HomePalette.muted,
-    surfaceDim: HomePalette.paper,
-    surfaceBright: HomePalette.paper,
-    surfaceContainerLowest: HomePalette.paper,
-    surfaceContainerLow: HomePalette.paper,
-    surfaceContainer: HomePalette.tint,
-    surfaceContainerHigh: HomePalette.tint,
-    surfaceContainerHighest: HomePalette.tint,
-    outline: HomePalette.faint,
-    outlineVariant: HomePalette.hairline,
-    error: HomePalette.error,
-    onError: Color(0xFFFFF8F4),
-    errorContainer: HomePalette.errorSurface,
-    onErrorContainer: HomePalette.error,
-    inverseSurface: HomePalette.ink,
-    onInverseSurface: HomePalette.paper,
-    inversePrimary: HomePalette.tint,
-    surfaceTint: Colors.transparent,
+/// 暖纸浅色配色方案；暖纸主题的唯一来源（Q-041 保留主题）。
+const _warmLightScheme = ColorScheme.light(
+  primary: HomePalette.accentDeep,
+  onPrimary: Color(0xFFFFF8F4),
+  primaryContainer: HomePalette.tint,
+  onPrimaryContainer: HomePalette.ink,
+  secondary: HomePalette.sleep,
+  onSecondary: Color(0xFFFFF8F4),
+  secondaryContainer: HomePalette.tint,
+  onSecondaryContainer: HomePalette.ink,
+  tertiary: HomePalette.unknown,
+  onTertiary: Color(0xFFFFF8F4),
+  surface: HomePalette.paper,
+  onSurface: HomePalette.ink,
+  onSurfaceVariant: HomePalette.muted,
+  surfaceDim: HomePalette.paper,
+  surfaceBright: HomePalette.paper,
+  surfaceContainerLowest: HomePalette.paper,
+  surfaceContainerLow: HomePalette.paper,
+  surfaceContainer: HomePalette.tint,
+  surfaceContainerHigh: HomePalette.tint,
+  surfaceContainerHighest: HomePalette.tint,
+  outline: HomePalette.faint,
+  outlineVariant: HomePalette.hairline,
+  error: HomePalette.error,
+  onError: Color(0xFFFFF8F4),
+  errorContainer: HomePalette.errorSurface,
+  onErrorContainer: HomePalette.error,
+  inverseSurface: HomePalette.ink,
+  onInverseSurface: HomePalette.paper,
+  inversePrimary: HomePalette.tint,
+  surfaceTint: Colors.transparent,
+);
+
+/// 暖纸深色语义色（合同 §2.3 候选）：固定主题色 + 派生热力图档位。
+TimeLedgerSemanticColors _warmDarkSemantics(ColorScheme colors) {
+  final derived = colors.defaultSemanticColors;
+  return TimeLedgerSemanticColors(
+    activity: const Color(0xFFD9AE86),
+    sleep: const Color(0xFFA9B9CA),
+    unknown: const Color(0xFFB3A79C),
+    gap: const Color(0xFF94897E),
+    recovery: const Color(0xFF9FB891),
+    heatmapLevels: derived.heatmapLevels,
+    heatmapLabels: derived.heatmapLabels,
   );
+}
+
+/// 默认应用主题：暖纸浅色 + 衬线（历史名称保留，现有测试与页面继续使用）。
+final ThemeData homeTheme = buildWarmPaperTheme(
+  brightness: Brightness.light,
+  fontChoice: AppFontChoice.serif,
+);
+
+/// 构建暖纸主题（浅 / 深），字体随 [fontChoice] 切换（Q-041）。
+ThemeData buildWarmPaperTheme({
+  required Brightness brightness,
+  required AppFontChoice fontChoice,
+}) {
+  final light = brightness == Brightness.light;
+  final colors = light
+      ? _warmLightScheme
+      : ColorScheme.fromSeed(
+          seedColor: const Color(0xFFB65F48),
+          brightness: Brightness.dark,
+        );
+  final semantics = light
+      ? warmPaperSemanticColors
+      : _warmDarkSemantics(colors);
+  final family = fontChoice == AppFontChoice.serif ? homeSerifFamily : null;
   final base = ThemeData(
     useMaterial3: true,
     colorScheme: colors,
-    scaffoldBackgroundColor: HomePalette.paper,
-    fontFamily: homeSerifFamily,
+    scaffoldBackgroundColor: colors.surface,
+    fontFamily: family,
     visualDensity: VisualDensity.standard,
     materialTapTargetSize: MaterialTapTargetSize.padded,
+    extensions: [semantics],
   );
   final text = base.textTheme
       .apply(
-        fontFamily: homeSerifFamily,
-        bodyColor: HomePalette.ink,
-        displayColor: HomePalette.ink,
+        fontFamily: family,
+        bodyColor: colors.onSurface,
+        displayColor: colors.onSurface,
       )
       .copyWith(
-        displayLarge: const TextStyle(
-          fontFamily: homeSerifFamily,
+        displayLarge: TextStyle(
+          fontFamily: family,
           fontSize: 48,
           height: 1.16,
-          color: HomePalette.ink,
+          color: colors.onSurface,
         ),
-        headlineLarge: const TextStyle(
-          fontFamily: homeSerifFamily,
+        headlineLarge: TextStyle(
+          fontFamily: family,
           fontSize: 32,
           height: 1.25,
-          color: HomePalette.ink,
+          color: colors.onSurface,
         ),
-        headlineMedium: const TextStyle(
-          fontFamily: homeSerifFamily,
+        headlineMedium: TextStyle(
+          fontFamily: family,
           fontSize: 28,
           height: 1.3,
-          color: HomePalette.ink,
+          color: colors.onSurface,
         ),
-        headlineSmall: const TextStyle(
-          fontFamily: homeSerifFamily,
+        headlineSmall: TextStyle(
+          fontFamily: family,
           fontSize: 24,
           height: 1.35,
-          color: HomePalette.ink,
+          color: colors.onSurface,
         ),
-        bodyLarge: const TextStyle(
-          fontFamily: homeSerifFamily,
+        bodyLarge: TextStyle(
+          fontFamily: family,
           fontSize: 17,
           height: 1.5,
-          color: HomePalette.ink,
+          color: colors.onSurface,
         ),
-        bodyMedium: const TextStyle(
-          fontFamily: homeSerifFamily,
+        bodyMedium: TextStyle(
+          fontFamily: family,
           fontSize: 15,
           height: 1.5,
-          color: HomePalette.ink,
+          color: colors.onSurface,
         ),
-        bodySmall: const TextStyle(
-          fontFamily: homeSerifFamily,
+        bodySmall: TextStyle(
+          fontFamily: family,
           fontSize: 13,
           height: 1.5,
-          color: HomePalette.muted,
+          color: colors.onSurfaceVariant,
         ),
-        titleMedium: const TextStyle(
-          fontFamily: homeSerifFamily,
+        titleMedium: TextStyle(
+          fontFamily: family,
           fontSize: 16,
           fontWeight: FontWeight.w600,
-          color: HomePalette.ink,
+          color: colors.onSurface,
         ),
-        titleLarge: const TextStyle(
-          fontFamily: homeSerifFamily,
+        titleLarge: TextStyle(
+          fontFamily: family,
           fontSize: 20,
           fontWeight: FontWeight.w600,
-          color: HomePalette.ink,
+          color: colors.onSurface,
         ),
-        titleSmall: const TextStyle(
-          fontFamily: homeSerifFamily,
+        titleSmall: TextStyle(
+          fontFamily: family,
           fontSize: 14,
           fontWeight: FontWeight.w600,
-          color: HomePalette.ink,
+          color: colors.onSurface,
         ),
-        labelLarge: const TextStyle(
-          fontFamily: homeSerifFamily,
+        labelLarge: TextStyle(
+          fontFamily: family,
           fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: HomePalette.ink,
+          color: colors.onSurface,
         ),
-        labelMedium: const TextStyle(
-          fontFamily: homeSerifFamily,
+        labelMedium: TextStyle(
+          fontFamily: family,
           fontSize: 13,
           fontWeight: FontWeight.w600,
-          color: HomePalette.ink,
+          color: colors.onSurface,
         ),
-        labelSmall: const TextStyle(
-          fontFamily: homeSerifFamily,
+        labelSmall: TextStyle(
+          fontFamily: family,
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: HomePalette.muted,
+          color: colors.onSurfaceVariant,
         ),
       );
   const pill = StadiumBorder();
@@ -191,124 +251,121 @@ ThemeData _buildHomeTheme() {
   );
   return base.copyWith(
     textTheme: text,
-    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: homeSerifFamily),
-    iconTheme: const IconThemeData(color: HomePalette.muted, size: 26),
-    dividerColor: HomePalette.hairline,
-    dividerTheme: const DividerThemeData(
-      color: HomePalette.hairline,
+    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: family),
+    iconTheme: IconThemeData(color: colors.onSurfaceVariant, size: 26),
+    dividerColor: colors.outlineVariant,
+    dividerTheme: DividerThemeData(
+      color: colors.outlineVariant,
       thickness: 1,
       space: 1,
     ),
-    appBarTheme: const AppBarThemeData(
-      backgroundColor: HomePalette.paper,
-      foregroundColor: HomePalette.ink,
+    appBarTheme: AppBarThemeData(
+      backgroundColor: colors.surface,
+      foregroundColor: colors.onSurface,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
       centerTitle: false,
       titleTextStyle: TextStyle(
-        fontFamily: homeSerifFamily,
+        fontFamily: family,
         fontSize: 20,
         fontWeight: FontWeight.w600,
-        color: HomePalette.ink,
+        color: colors.onSurface,
       ),
     ),
-    tabBarTheme: const TabBarThemeData(
-      labelColor: HomePalette.accentDeep,
-      unselectedLabelColor: HomePalette.muted,
-      indicatorColor: HomePalette.accentDeep,
+    tabBarTheme: TabBarThemeData(
+      labelColor: colors.primary,
+      unselectedLabelColor: colors.onSurfaceVariant,
+      indicatorColor: colors.primary,
       indicatorSize: TabBarIndicatorSize.label,
-      dividerColor: HomePalette.hairline,
+      dividerColor: colors.outlineVariant,
       labelStyle: TextStyle(
-        fontFamily: homeSerifFamily,
+        fontFamily: family,
         fontSize: 16,
         fontWeight: FontWeight.w600,
       ),
-      unselectedLabelStyle: TextStyle(
-        fontFamily: homeSerifFamily,
-        fontSize: 16,
-      ),
+      unselectedLabelStyle: TextStyle(fontFamily: family, fontSize: 16),
     ),
-    cardTheme: const CardThemeData(
-      color: HomePalette.paper,
+    cardTheme: CardThemeData(
+      color: colors.surface,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
     ),
-    dialogTheme: const DialogThemeData(
-      backgroundColor: HomePalette.paper,
+    dialogTheme: DialogThemeData(
+      backgroundColor: colors.surface,
       surfaceTintColor: Colors.transparent,
     ),
-    bottomSheetTheme: const BottomSheetThemeData(
-      backgroundColor: HomePalette.paper,
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: colors.surface,
       surfaceTintColor: Colors.transparent,
     ),
-    snackBarTheme: const SnackBarThemeData(
-      backgroundColor: HomePalette.ink,
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: colors.inverseSurface,
       contentTextStyle: TextStyle(
-        fontFamily: homeSerifFamily,
-        color: HomePalette.paper,
+        fontFamily: family,
+        color: colors.onInverseSurface,
       ),
     ),
     listTileTheme: ListTileThemeData(
-      textColor: HomePalette.ink,
-      iconColor: HomePalette.muted,
+      textColor: colors.onSurface,
+      iconColor: colors.onSurfaceVariant,
       subtitleTextStyle: text.bodySmall,
     ),
     switchTheme: SwitchThemeData(
       materialTapTargetSize: MaterialTapTargetSize.padded,
       thumbColor: WidgetStateProperty.resolveWith(
         (states) => states.contains(WidgetState.selected)
-            ? HomePalette.paper
-            : HomePalette.faint,
+            ? colors.onPrimary
+            : colors.outline,
       ),
       trackColor: WidgetStateProperty.resolveWith(
         (states) => states.contains(WidgetState.selected)
-            ? HomePalette.accentDeep
-            : HomePalette.tint,
+            ? colors.primary
+            : colors.surfaceContainerHighest,
       ),
       trackOutlineColor: WidgetStateProperty.resolveWith(
         (states) => states.contains(WidgetState.selected)
             ? Colors.transparent
-            : HomePalette.faint,
+            : colors.outline,
       ),
     ),
-    inputDecorationTheme: const InputDecorationThemeData(
+    inputDecorationTheme: InputDecorationThemeData(
       filled: true,
-      fillColor: HomePalette.tint,
-      labelStyle: TextStyle(color: HomePalette.muted),
-      hintStyle: TextStyle(color: HomePalette.muted),
+      fillColor: colors.surfaceContainerHighest,
+      labelStyle: TextStyle(color: colors.onSurfaceVariant),
+      hintStyle: TextStyle(color: colors.onSurfaceVariant),
       border: OutlineInputBorder(
-        borderSide: BorderSide(color: HomePalette.hairline),
+        borderSide: BorderSide(color: colors.outlineVariant),
       ),
       enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: HomePalette.hairline),
+        borderSide: BorderSide(color: colors.outlineVariant),
       ),
       focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: HomePalette.accent, width: 2),
+        borderSide: BorderSide(color: colors.primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: HomePalette.error),
+        borderSide: BorderSide(color: colors.error),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: HomePalette.error, width: 2),
+        borderSide: BorderSide(color: colors.error, width: 2),
       ),
-      errorStyle: TextStyle(color: HomePalette.error),
+      errorStyle: TextStyle(color: colors.error),
       errorMaxLines: 8,
     ),
-    textSelectionTheme: const TextSelectionThemeData(
-      cursorColor: HomePalette.accentDeep,
-      selectionColor: HomePalette.tint,
-      selectionHandleColor: HomePalette.accentDeep,
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: colors.primary,
+      selectionColor: colors.surfaceContainerHighest,
+      selectionHandleColor: colors.primary,
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: ButtonStyle(
         minimumSize: minimumTarget,
         shape: const WidgetStatePropertyAll(pill),
-        backgroundColor: const WidgetStatePropertyAll(HomePalette.accentDeep),
-        foregroundColor: const WidgetStatePropertyAll(Color(0xFFFFF8F4)),
-        textStyle: const WidgetStatePropertyAll(
+        backgroundColor: WidgetStatePropertyAll(colors.primary),
+        foregroundColor: WidgetStatePropertyAll(colors.onPrimary),
+        textStyle: WidgetStatePropertyAll(
           TextStyle(
-            fontFamily: homeSerifFamily,
+            fontFamily: family,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -319,13 +376,11 @@ ThemeData _buildHomeTheme() {
       style: ButtonStyle(
         minimumSize: minimumTarget,
         shape: const WidgetStatePropertyAll(pill),
-        foregroundColor: const WidgetStatePropertyAll(HomePalette.ink),
-        side: const WidgetStatePropertyAll(
-          BorderSide(color: HomePalette.faint),
-        ),
-        textStyle: const WidgetStatePropertyAll(
+        foregroundColor: WidgetStatePropertyAll(colors.onSurface),
+        side: WidgetStatePropertyAll(BorderSide(color: colors.outline)),
+        textStyle: WidgetStatePropertyAll(
           TextStyle(
-            fontFamily: homeSerifFamily,
+            fontFamily: family,
             fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
@@ -335,16 +390,16 @@ ThemeData _buildHomeTheme() {
     textButtonTheme: TextButtonThemeData(
       style: ButtonStyle(
         minimumSize: minimumTarget,
-        foregroundColor: const WidgetStatePropertyAll(HomePalette.accentDeep),
-        textStyle: const WidgetStatePropertyAll(
-          TextStyle(fontFamily: homeSerifFamily, fontSize: 15),
+        foregroundColor: WidgetStatePropertyAll(colors.primary),
+        textStyle: WidgetStatePropertyAll(
+          TextStyle(fontFamily: family, fontSize: 15),
         ),
       ),
     ),
     iconButtonTheme: IconButtonThemeData(
       style: ButtonStyle(
         minimumSize: minimumTarget,
-        foregroundColor: const WidgetStatePropertyAll(HomePalette.ink),
+        foregroundColor: WidgetStatePropertyAll(colors.onSurface),
       ),
     ),
   );

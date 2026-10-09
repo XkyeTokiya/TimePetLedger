@@ -39,6 +39,9 @@ final class DriftAppPreferencesStore implements AppPreferencesStore {
         reminders: _bool(values['reminders']),
         sleepReminderMinutes: _int(values['sleep_reminder_minutes']),
         reviewReminderMinutes: _int(values['review_reminder_minutes']),
+        themeScheme: _themeScheme(values['theme_scheme']),
+        themeMode: _appThemeMode(values['theme_mode']),
+        fontChoice: _fontChoice(values['font_choice']),
       );
     } catch (error, stack) {
       Error.throwWithStackTrace(AppPreferencesStorageException(error), stack);
@@ -58,6 +61,9 @@ final class DriftAppPreferencesStore implements AppPreferencesStore {
               ?.toString(),
           'review_reminder_minutes': preferences.reviewReminderMinutes
               ?.toString(),
+          'theme_scheme': preferences.themeScheme?.name,
+          'theme_mode': preferences.themeMode?.name,
+          'font_choice': preferences.fontChoice?.name,
         }.entries) {
           final value = entry.value;
           if (value == null) {
@@ -86,6 +92,18 @@ final class DriftAppPreferencesStore implements AppPreferencesStore {
       .firstOrNull;
 
   static RecordingMode? _recordingMode(String? value) => RecordingMode.values
+      .where((candidate) => candidate.name == value)
+      .firstOrNull;
+
+  static ThemeScheme? _themeScheme(String? value) => ThemeScheme.values
+      .where((candidate) => candidate.name == value)
+      .firstOrNull;
+
+  static AppThemeMode? _appThemeMode(String? value) => AppThemeMode.values
+      .where((candidate) => candidate.name == value)
+      .firstOrNull;
+
+  static AppFontChoice? _fontChoice(String? value) => AppFontChoice.values
       .where((candidate) => candidate.name == value)
       .firstOrNull;
 

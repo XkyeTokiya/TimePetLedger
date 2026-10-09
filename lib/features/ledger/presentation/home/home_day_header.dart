@@ -3,6 +3,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/home_theme.dart';
+import '../../../../app/theme/theme_text.dart';
 import '../../../../core/time/civil_date.dart';
 import 'home_ledger_style.dart';
 import 'home_timeline_tab.dart' show ledgerWeekdayText;
@@ -66,6 +67,7 @@ class HomeDateTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final compact = progress == 1;
     final largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
     final base = largeText ? 24.0 : HomeLedgerStyle.dateSize;
@@ -77,12 +79,14 @@ class HomeDateTitle extends StatelessWidget {
     final dateText = date.year == today.year
         ? '${date.month}月${date.day}日'
         : '${date.year}年${date.month}月${date.day}日';
-    final dateStyle = TextStyle(
-      fontFamily: homeSerifFamily,
-      fontSize: fontSize,
-      height: 1.15,
-      fontWeight: FontWeight.w600,
-      color: compact ? HomePalette.ink : HomePalette.accentDeep,
+    final dateStyle = withThemeFont(
+      context,
+      TextStyle(
+        fontSize: fontSize,
+        height: 1.15,
+        fontWeight: FontWeight.w600,
+        color: compact ? colors.onSurface : colors.primary,
+      ),
     );
     return Padding(
       key: ValueKey(compact ? 'home-header-collapsed' : 'home-header-expanded'),
@@ -97,7 +101,10 @@ class HomeDateTitle extends StatelessWidget {
             textScaler: MediaQuery.textScalerOf(context),
           )..layout();
           final todayMeasure = TextPainter(
-            text: const TextSpan(text: '回到今天', style: HomeLedgerStyle.button),
+            text: TextSpan(
+              text: '回到今天',
+              style: withThemeFont(context, HomeLedgerStyle.button),
+            ),
             textDirection: Directionality.of(context),
             textScaler: MediaQuery.textScalerOf(context),
           )..layout();
@@ -169,10 +176,10 @@ class HomeDateTitle extends StatelessWidget {
                     child: Text(
                       ledgerWeekdayText(date, today),
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         height: 1.2,
-                        color: HomePalette.muted,
+                        color: colors.onSurfaceVariant,
                       ),
                     ),
                   ),
@@ -193,15 +200,18 @@ class _TodayButton extends StatelessWidget {
   final bool busy;
   final VoidCallback onToday;
   @override
-  Widget build(BuildContext context) => TextButton(
-    key: const ValueKey('home-back-to-today'),
-    onPressed: busy ? null : onToday,
-    style: TextButton.styleFrom(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      textStyle: HomeLedgerStyle.button,
-      backgroundColor: HomePalette.tint,
-      foregroundColor: HomePalette.accentDeep,
-    ),
-    child: const Text('回到今天'),
-  );
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return TextButton(
+      key: const ValueKey('home-back-to-today'),
+      onPressed: busy ? null : onToday,
+      style: TextButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        textStyle: withThemeFont(context, HomeLedgerStyle.button),
+        backgroundColor: colors.surfaceContainerHighest,
+        foregroundColor: colors.primary,
+      ),
+      child: const Text('回到今天'),
+    );
+  }
 }

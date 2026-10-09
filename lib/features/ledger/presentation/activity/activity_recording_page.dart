@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/theme/home_theme.dart';
+import '../../../../app/theme/semantic_colors.dart';
 import '../../../goals/domain/goal_status.dart';
 import '../../domain/block_knowledge_state.dart';
 import '../../domain/projection/derived_duration.dart';
@@ -282,85 +283,95 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
       ) ??
       false;
 
+  ColorScheme get _colors => Theme.of(context).colorScheme;
+
+  TextStyle get _question => TextStyle(
+    fontSize: 30,
+    height: 1.35,
+    fontWeight: FontWeight.w600,
+    color: _colors.onSurface,
+  );
+  TextStyle get _hint =>
+      TextStyle(fontSize: 14, height: 1.5, color: _colors.onSurfaceVariant);
+  TextStyle get _label =>
+      TextStyle(fontSize: 12, color: _colors.onSurfaceVariant);
+  TextStyle get _fieldLabel =>
+      TextStyle(fontSize: 15, color: _colors.onSurface);
+
   @override
-  Widget build(BuildContext context) => Theme(
-    data: homeTheme,
-    child: PopScope(
-      canPop: allowPop,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _leave();
-      },
-      child: Scaffold(
-        appBar: AppBar(
-          leading: BackButton(
-            key: const ValueKey('activity-exit'),
-            onPressed: model.submitting ? null : _leave,
-          ),
-          title: Text(_editing ? '更正记录' : '记录一笔'),
+  Widget build(BuildContext context) => PopScope(
+    canPop: allowPop,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) _leave();
+    },
+    child: Scaffold(
+      appBar: AppBar(
+        leading: BackButton(
+          key: const ValueKey('activity-exit'),
+          onPressed: model.submitting ? null : _leave,
         ),
-        body: model.loading
-            ? const Center(child: CircularProgressIndicator())
-            : model.loadError != null
-            ? _loadFailure()
-            : Column(
-                children: [
-                  Expanded(
-                    child: ListView(
-                      controller: scroll,
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-                      children: [
-                        _goalBar(),
-                        if (model.storageError != null) ...[
-                          const SizedBox(height: 12),
-                          _notice(model.storageError!, error: true),
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: TextButton(
-                              onPressed: model.editable
-                                  ? model.retrySave
-                                  : null,
-                              child: const Text('重试保留本次填写'),
-                            ),
-                          ),
-                        ],
-                        if (_committedNotice() case final notice?) ...[
-                          const SizedBox(height: 12),
-                          notice,
-                        ],
-                        if (model.submitError != null &&
-                            model.conflicts.isEmpty) ...[
-                          const SizedBox(height: 12),
-                          _notice(model.submitError!, error: true),
-                        ],
-                        for (final conflict in model.conflicts) ...[
-                          const SizedBox(height: 12),
-                          _notice(
-                            '已有记录：${formatSleepTime(conflict.startedAt)} — '
-                            '${formatSleepTime(conflict.endedAt)}',
-                            error: true,
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                        switch (step) {
-                          0 => _rhythmStep(),
-                          1 => _detailsStep(),
-                          2 => _activityStep(),
-                          _ => _timeStep(),
-                        },
-                      ],
-                    ),
-                  ),
-                  _footer(),
-                ],
-              ),
+        title: Text(_editing ? '更正记录' : '记录一笔'),
       ),
+      body: model.loading
+          ? const Center(child: CircularProgressIndicator())
+          : model.loadError != null
+          ? _loadFailure()
+          : Column(
+              children: [
+                Expanded(
+                  child: ListView(
+                    controller: scroll,
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+                    children: [
+                      _goalBar(),
+                      if (model.storageError != null) ...[
+                        const SizedBox(height: 12),
+                        _notice(model.storageError!, error: true),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton(
+                            onPressed: model.editable ? model.retrySave : null,
+                            child: const Text('重试保留本次填写'),
+                          ),
+                        ),
+                      ],
+                      if (_committedNotice() case final notice?) ...[
+                        const SizedBox(height: 12),
+                        notice,
+                      ],
+                      if (model.submitError != null &&
+                          model.conflicts.isEmpty) ...[
+                        const SizedBox(height: 12),
+                        _notice(model.submitError!, error: true),
+                      ],
+                      for (final conflict in model.conflicts) ...[
+                        const SizedBox(height: 12),
+                        _notice(
+                          '已有记录：${formatSleepTime(conflict.startedAt)} — '
+                          '${formatSleepTime(conflict.endedAt)}',
+                          error: true,
+                        ),
+                      ],
+                      const SizedBox(height: 20),
+                      switch (step) {
+                        0 => _rhythmStep(),
+                        1 => _detailsStep(),
+                        2 => _activityStep(),
+                        _ => _timeStep(),
+                      },
+                    ],
+                  ),
+                ),
+                _footer(),
+              ],
+            ),
     ),
   );
 
   Widget _loadFailure() => ListView(
     padding: const EdgeInsets.all(20),
     children: [
-      Text(model.loadError!, style: const TextStyle(color: HomePalette.error)),
+      Text(model.loadError!, style: TextStyle(color: _colors.error)),
       if (model.missingOriginal)
         TextButton(onPressed: model.restartInput, child: const Text('清除未完成输入'))
       else
@@ -391,8 +402,8 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
     final archived = goal?.status == GoalStatus.archived;
     final name = model.goalId == null ? '暂不关联' : goal?.name ?? '目标信息暂不可用';
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
       ),
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -402,7 +413,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('这笔关联的目标', style: _label),
+                Text('这笔关联的目标', style: _label),
                 InkWell(
                   key: const ValueKey('activity-goal'),
                   onTap: model.editable ? _goal : null,
@@ -411,14 +422,13 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       archived ? '$name（已归档）' : name,
-                      style: const TextStyle(
-                        fontFamily: homeSerifFamily,
+                      style: TextStyle(
                         fontSize: 20,
                         height: 1.4,
-                        color: HomePalette.accentDeep,
+                        color: _colors.primary,
                         decoration: TextDecoration.underline,
                         decorationStyle: TextDecorationStyle.dashed,
-                        decorationColor: HomePalette.accentDeep,
+                        decorationColor: _colors.primary,
                         decorationThickness: 1,
                       ),
                     ),
@@ -443,7 +453,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
     children: [
       Text('这段时间，\n节奏怎么样？', style: _question),
       const SizedBox(height: 6),
-      const Text('可以不选，直接继续。', style: _hint),
+      Text('可以不选，直接继续。', style: _hint),
       const SizedBox(height: 20),
       for (final state in RhythmState.values)
         _rhythmOption(
@@ -471,10 +481,10 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: selected ? HomePalette.tint : HomePalette.paper,
+        color: selected ? _colors.surfaceContainerHighest : _colors.surface,
         shape: RoundedRectangleBorder(
           side: BorderSide(
-            color: selected ? HomePalette.accent : HomePalette.hairline,
+            color: selected ? _colors.primary : _colors.outlineVariant,
           ),
           borderRadius: BorderRadius.circular(12),
         ),
@@ -493,7 +503,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
                     RhythmState.recovery => Icons.spa_outlined,
                   },
                   size: 24,
-                  color: HomePalette.accent,
+                  color: _colors.primary,
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -502,10 +512,9 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
-                          fontFamily: homeSerifFamily,
+                        style: TextStyle(
                           fontSize: 20,
-                          color: HomePalette.ink,
+                          color: _colors.onSurface,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -514,11 +523,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
                   ),
                 ),
                 if (selected)
-                  const Icon(
-                    Icons.check,
-                    size: 20,
-                    color: HomePalette.accentDeep,
-                  ),
+                  Icon(Icons.check, size: 20, color: _colors.primary),
               ],
             ),
           ),
@@ -534,7 +539,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
       children: [
         Text(stuck ? '是什么让你卡住了？' : '怎么让自己缓一缓？', style: _question),
         const SizedBox(height: 6),
-        const Text('可以不选，直接继续。', style: _hint),
+        Text('可以不选，直接继续。', style: _hint),
         if (stuck) ...[
           const SizedBox(height: 20),
           ..._choices<StuckReasonCode>(
@@ -560,7 +565,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
           ),
         ] else ...[
           const SizedBox(height: 20),
-          const Text('休息方式', style: _fieldLabel),
+          Text('休息方式', style: _fieldLabel),
           const SizedBox(height: 8),
           ..._choices<RecoveryMethod>(
             RecoveryMethod.values,
@@ -570,7 +575,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
             keyPrefix: 'activity-method',
           ),
           const SizedBox(height: 20),
-          const Text('现在感觉怎么样？', style: _fieldLabel),
+          Text('现在感觉怎么样？', style: _fieldLabel),
           const SizedBox(height: 8),
           ..._choices<RecoveryQuality>(
             RecoveryQuality.values,
@@ -605,20 +610,17 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
                 ? (_) => change(selected == value ? null : value)
                 : null,
             labelStyle: TextStyle(
-              fontFamily: homeSerifFamily,
               fontSize: 15,
-              color: selected == value
-                  ? HomePalette.accentDeep
-                  : HomePalette.ink,
+              color: selected == value ? _colors.primary : _colors.onSurface,
             ),
-            backgroundColor: HomePalette.paper,
-            selectedColor: HomePalette.tint,
+            backgroundColor: _colors.surface,
+            selectedColor: _colors.surfaceContainerHighest,
             side: BorderSide(
               color: selected == value
-                  ? HomePalette.accent
-                  : HomePalette.hairline,
+                  ? _colors.primary
+                  : _colors.outlineVariant,
             ),
-            checkmarkColor: HomePalette.accentDeep,
+            checkmarkColor: _colors.primary,
           ),
       ],
     ),
@@ -631,7 +633,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
       children: [
         Text(_activityQuestion(), style: _question),
         const SizedBox(height: 6),
-        const Text('几个字就好。', style: _hint),
+        Text('几个字就好。', style: _hint),
         const SizedBox(height: 20),
         _knowledgeSegment(unknown),
         const SizedBox(height: 20),
@@ -640,22 +642,26 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 12),
             decoration: BoxDecoration(
-              color: HomePalette.paper,
-              border: Border.all(color: HomePalette.hairline),
+              color: _colors.surface,
+              border: Border.all(color: _colors.outlineVariant),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Column(
+            child: Column(
               children: [
-                Icon(Icons.cloud_outlined, size: 26, color: HomePalette.muted),
-                SizedBox(height: 10),
+                Icon(
+                  Icons.cloud_outlined,
+                  size: 26,
+                  color: _colors.onSurfaceVariant,
+                ),
+                const SizedBox(height: 10),
                 Text('想不起来，也可以记下来。', style: _hint),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text('目标和节奏会保留。', style: _hint),
               ],
             ),
           )
         else ...[
-          const Text('这段做的事', style: _fieldLabel),
+          Text('这段做的事', style: _fieldLabel),
           const SizedBox(height: 8),
           TextField(
             key: const ValueKey('activity'),
@@ -670,7 +676,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text('只写实际做过的事。', style: _hint),
+          Text('只写实际做过的事。', style: _hint),
         ],
       ],
     );
@@ -684,7 +690,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: HomePalette.tint,
+        color: _colors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(24),
       ),
       child: Stack(
@@ -701,7 +707,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
                 heightFactor: 1,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: HomePalette.paper,
+                    color: _colors.surface,
                     borderRadius: BorderRadius.circular(22),
                   ),
                 ),
@@ -757,9 +763,8 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
             duration: duration,
             curve: Curves.easeInOutCubic,
             style: TextStyle(
-              fontFamily: homeSerifFamily,
               fontSize: 16,
-              color: selected ? HomePalette.accentDeep : HomePalette.ink,
+              color: selected ? _colors.primary : _colors.onSurface,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
             ),
             child: Text(label),
@@ -791,7 +796,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
         ),
         if (model.candidates.isNotEmpty) ...[
           const SizedBox(height: 6),
-          const Text('这一天还有没记录的区间，先选一段。', style: _hint),
+          Text('这一天还有没记录的区间，先选一段。', style: _hint),
           const SizedBox(height: 12),
           for (final candidate in model.candidates)
             Padding(
@@ -839,11 +844,7 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
           Text(
             model.timeError!,
             key: const ValueKey('activity-time-error'),
-            style: const TextStyle(
-              fontFamily: homeSerifFamily,
-              fontSize: 14,
-              color: HomePalette.error,
-            ),
+            style: TextStyle(fontSize: 14, color: _colors.error),
           ),
         ],
         const SizedBox(height: 20),
@@ -864,8 +865,8 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
     VoidCallback onTap,
     VoidCallback onDate,
   ) => Container(
-    decoration: const BoxDecoration(
-      border: Border(top: BorderSide(color: HomePalette.hairline)),
+    decoration: BoxDecoration(
+      border: Border(top: BorderSide(color: _colors.outlineVariant)),
     ),
     padding: const EdgeInsets.symmetric(vertical: 10),
     child: Column(
@@ -885,12 +886,11 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
                     value == null
                         ? '选时间'
                         : formatRecordingTime(value).split(' ').last,
-                    style: const TextStyle(
-                      fontFamily: homeSerifFamily,
+                    style: TextStyle(
                       fontSize: 32,
                       height: 1.2,
                       fontWeight: FontWeight.w600,
-                      color: HomePalette.ink,
+                      color: _colors.onSurface,
                     ),
                   ),
                 ),
@@ -951,8 +951,8 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
     return SafeArea(
       top: false,
       child: Container(
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: HomePalette.hairline)),
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: _colors.outlineVariant)),
         ),
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
         child: Column(
@@ -1024,23 +1024,22 @@ class _Notice extends StatelessWidget {
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
       color: error
-          ? HomePalette.errorSurface
+          ? Theme.of(context).colorScheme.errorContainer
           : success
-          ? HomePalette.tint
-          : HomePalette.paper,
+          ? Theme.of(context).colorScheme.surfaceContainerHighest
+          : Theme.of(context).colorScheme.surface,
       borderRadius: BorderRadius.circular(10),
     ),
     child: Text(
       text,
       style: TextStyle(
-        fontFamily: homeSerifFamily,
         fontSize: 14,
         height: 1.5,
         color: error
-            ? HomePalette.error
+            ? Theme.of(context).colorScheme.error
             : success
-            ? HomePalette.recovery
-            : HomePalette.muted,
+            ? context.semanticColors.recovery
+            : Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     ),
   );
@@ -1084,27 +1083,4 @@ String _qualityLabel(RecoveryQuality value) => switch (value) {
   RecoveryQuality.readyToContinue => '可以继续了',
 };
 
-const _question = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 30,
-  height: 1.35,
-  fontWeight: FontWeight.w600,
-  color: HomePalette.ink,
-);
-const _hint = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 14,
-  height: 1.5,
-  color: HomePalette.muted,
-);
-const _label = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 12,
-  color: HomePalette.muted,
-);
-const _fieldLabel = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 15,
-  color: HomePalette.ink,
-);
 const _segmentSlide = Duration(milliseconds: 200);

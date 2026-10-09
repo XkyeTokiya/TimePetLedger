@@ -9,6 +9,7 @@ environment:
 dependencies:
   drift: 2.35.0
   drift_flutter: 0.3.1
+  dynamic_color: 1.9.0
   fl_chart: 1.2.0
   flutter:
     sdk: flutter
@@ -16,6 +17,7 @@ dependencies:
 dev_dependencies:
   drift_dev: 2.35.0
   build_runner: ^2.16.1
+  dynamic_color_testing: 0.1.0
   integration_test:
     sdk: flutter
   flutter_test:

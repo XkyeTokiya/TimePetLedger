@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/home_theme.dart';
+import '../../../app/theme/theme_text.dart';
 import '../../../core/time/civil_date.dart';
 import '../../goals/domain/goal_repository.dart';
 import '../../goals/domain/goal_status.dart';
@@ -199,15 +199,14 @@ class _ReviewContextPageState extends State<ReviewContextPage>
                 ready: controller.context != null,
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
                 children: [
-                  const Text('这一天，想留下什么？', style: _sectionStyle),
+                  Text('这一天，想留下什么？', style: _sectionStyle(context)),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     '几句话就好。',
                     style: TextStyle(
-                      fontFamily: homeSerifFamily,
                       fontSize: 13,
                       height: 1.5,
-                      color: HomePalette.muted,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
                   ),
                   if (controller.status == ReviewReadStatus.loading)
@@ -228,10 +227,10 @@ class _ReviewContextPageState extends State<ReviewContextPage>
                         order: 0,
                         child: Text(
                           '已存复盘日期：${_dateText(review.date)}',
-                          style: _metaStyle,
+                          style: _metaStyle(context),
                         ),
                       ),
-                      const Text('已有复盘', style: _sectionStyle),
+                      Text('已有复盘', style: _sectionStyle(context)),
                       const SizedBox(height: 8),
                       const _FactLabel('当天概述'),
                       Text(review.summary ?? '未填写概述'),
@@ -241,7 +240,7 @@ class _ReviewContextPageState extends State<ReviewContextPage>
                       const SizedBox(height: 10),
                       Text(
                         '下一自然日：${_dateText(review.tomorrowFirstStep.intendedDate)}',
-                        style: _metaStyle,
+                        style: _metaStyle(context),
                       ),
                       const _FactLabel('明天第一步'),
                       ReadScrollAnchor(
@@ -255,7 +254,7 @@ class _ReviewContextPageState extends State<ReviewContextPage>
                           child: Text(
                             '第一步目标：${goal.name}'
                             '${goal.status == GoalStatus.archived ? '（已归档）' : ''}',
-                            style: _metaStyle,
+                            style: _metaStyle(context),
                           ),
                         ),
                     ] else
@@ -287,7 +286,7 @@ class _ReviewContextPageState extends State<ReviewContextPage>
                       childrenPadding: const EdgeInsets.only(bottom: 8),
                       shape: const Border(),
                       collapsedShape: const Border(),
-                      title: const Text('回看当天记录', style: _sectionStyle),
+                      title: Text('回看当天记录', style: _sectionStyle(context)),
                       children: [
                         ReadScrollAnchor(
                           id: 'facts',
@@ -316,26 +315,32 @@ class _FactLabel extends StatelessWidget {
     padding: const EdgeInsets.only(bottom: 2),
     child: Text(
       text,
-      style: const TextStyle(
-        fontFamily: homeSerifFamily,
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: HomePalette.muted,
+      style: withThemeFont(
+        context,
+        TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
     ),
   );
 }
 
-const _sectionStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 18,
-  fontWeight: FontWeight.w600,
-  color: HomePalette.ink,
+TextStyle _sectionStyle(BuildContext context) => withThemeFont(
+  context,
+  TextStyle(
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
+    color: Theme.of(context).colorScheme.onSurface,
+  ),
 );
 
-const _metaStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 13,
-  height: 1.5,
-  color: HomePalette.muted,
+TextStyle _metaStyle(BuildContext context) => withThemeFont(
+  context,
+  TextStyle(
+    fontSize: 13,
+    height: 1.5,
+    color: Theme.of(context).colorScheme.onSurfaceVariant,
+  ),
 );

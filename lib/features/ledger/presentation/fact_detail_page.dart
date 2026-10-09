@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/home_theme.dart';
+import '../../../app/theme/theme_text.dart';
 import '../domain/block_knowledge_state.dart';
 import '../domain/projection/derived_duration.dart';
 import '../domain/projection/goal_rhythm_summary.dart';
@@ -113,40 +113,37 @@ class _FactDetailPageState extends State<FactDetailPage> {
   };
 
   @override
-  Widget build(BuildContext context) => Theme(
-    data: homeTheme,
-    child: Scaffold(
-      appBar: AppBar(
-        leading: BackButton(
-          key: const ValueKey('fact-detail-back'),
-          onPressed: () {
-            if (confirming) {
-              setState(() => confirming = false);
-            } else {
-              Navigator.pop(context);
-            }
-          },
-        ),
-        title: Text(confirming ? '删除记录' : '记录详情'),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      leading: BackButton(
+        key: const ValueKey('fact-detail-back'),
+        onPressed: () {
+          if (confirming) {
+            setState(() => confirming = false);
+          } else {
+            Navigator.pop(context);
+          }
+        },
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-            children: confirming ? _confirmBody() : _detailBody(),
-          ),
+      title: Text(confirming ? '删除记录' : '记录详情'),
+    ),
+    body: Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 640),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+          children: confirming ? _confirmBody() : _detailBody(),
         ),
       ),
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Container(
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: HomePalette.hairline)),
-          ),
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-          child: confirming ? _confirmFooter() : _detailFooter(),
+    ),
+    bottomNavigationBar: SafeArea(
+      top: false,
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: _colors.outlineVariant)),
         ),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+        child: confirming ? _confirmFooter() : _detailFooter(),
       ),
     ),
   );
@@ -240,8 +237,8 @@ class _FactDetailPageState extends State<FactDetailPage> {
 
   Widget _durationBlock() => Container(
     padding: const EdgeInsets.only(bottom: 20),
-    decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+    decoration: BoxDecoration(
+      border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
     ),
     child: MergeSemantics(
       child: Column(
@@ -275,8 +272,8 @@ class _FactDetailPageState extends State<FactDetailPage> {
         sourceStart != segment.startedAt || sourceEnd != segment.endedAt;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -318,8 +315,8 @@ class _FactDetailPageState extends State<FactDetailPage> {
   Widget _field(String label, String text) => MergeSemantics(
     child: Container(
       padding: const EdgeInsets.symmetric(vertical: 18),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -336,13 +333,13 @@ class _FactDetailPageState extends State<FactDetailPage> {
     width: double.infinity,
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: HomePalette.tint,
+      color: _colors.surfaceContainerHighest,
       borderRadius: BorderRadius.circular(10),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('这条记录还有未完成的修改。', style: _noteStyle),
+        Text('这条记录还有未完成的修改。', style: _noteStyle),
         if (widget.onDiscardDraft != null)
           Align(
             alignment: Alignment.centerLeft,
@@ -364,9 +361,7 @@ class _FactDetailPageState extends State<FactDetailPage> {
           child: TextButton(
             key: const ValueKey('fact-detail-delete'),
             onPressed: () => setState(() => confirming = true),
-            style: TextButton.styleFrom(
-              foregroundColor: HomePalette.accentDeep,
-            ),
+            style: TextButton.styleFrom(foregroundColor: _colors.primary),
             child: const Text('删除'),
           ),
         ),
@@ -412,11 +407,11 @@ class _FactDetailPageState extends State<FactDetailPage> {
       Text(sleep && cross ? '会删除整段跨夜睡眠，包括其他日期里显示的部分。' : '删除后，这段时间会重新显示为尚未记录。'),
       if (sleep && cross) ...[
         const SizedBox(height: 8),
-        const Text('相关日期的时间线会随之更新。', style: _mutedStyle),
+        Text('相关日期的时间线会随之更新。', style: _mutedStyle),
       ],
       if (widget.hasDraft) ...[
         const SizedBox(height: 8),
-        const Text('这条记录未保存的修改也会一并清除。', style: _mutedStyle),
+        Text('这条记录未保存的修改也会一并清除。', style: _mutedStyle),
       ],
     ];
   }
@@ -489,53 +484,49 @@ class _FactDetailPageState extends State<FactDetailPage> {
     RecoveryQuality.partlyRecovered => '缓过来一些',
     RecoveryQuality.readyToContinue => '可以继续了',
   };
-}
 
-const _eyebrowStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 14,
-  color: HomePalette.muted,
-);
-const _heading = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 30,
-  height: 1.35,
-  fontWeight: FontWeight.w600,
-  color: HomePalette.ink,
-);
-const _confirmHeading = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 24,
-  height: 1.4,
-  fontWeight: FontWeight.w600,
-  color: HomePalette.ink,
-);
-const _durationStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 30,
-  height: 1.3,
-  color: HomePalette.ink,
-);
-const _labelStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 13,
-  color: HomePalette.muted,
-);
-const _valueStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 18,
-  height: 1.6,
-  color: HomePalette.ink,
-);
-const _noteStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 16,
-  height: 1.7,
-  color: HomePalette.ink,
-);
-const _mutedStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 14,
-  height: 1.6,
-  color: HomePalette.muted,
-);
+  ColorScheme get _colors => Theme.of(context).colorScheme;
+
+  TextStyle get _eyebrowStyle => withThemeFont(
+    context,
+    TextStyle(fontSize: 14, color: _colors.onSurfaceVariant),
+  );
+  TextStyle get _heading => withThemeFont(
+    context,
+    TextStyle(
+      fontSize: 30,
+      height: 1.35,
+      fontWeight: FontWeight.w600,
+      color: _colors.onSurface,
+    ),
+  );
+  TextStyle get _confirmHeading => withThemeFont(
+    context,
+    TextStyle(
+      fontSize: 24,
+      height: 1.4,
+      fontWeight: FontWeight.w600,
+      color: _colors.onSurface,
+    ),
+  );
+  TextStyle get _durationStyle => withThemeFont(
+    context,
+    TextStyle(fontSize: 30, height: 1.3, color: _colors.onSurface),
+  );
+  TextStyle get _labelStyle => withThemeFont(
+    context,
+    TextStyle(fontSize: 13, color: _colors.onSurfaceVariant),
+  );
+  TextStyle get _valueStyle => withThemeFont(
+    context,
+    TextStyle(fontSize: 18, height: 1.6, color: _colors.onSurface),
+  );
+  TextStyle get _noteStyle => withThemeFont(
+    context,
+    TextStyle(fontSize: 16, height: 1.7, color: _colors.onSurface),
+  );
+  TextStyle get _mutedStyle => withThemeFont(
+    context,
+    TextStyle(fontSize: 14, height: 1.6, color: _colors.onSurfaceVariant),
+  );
+}

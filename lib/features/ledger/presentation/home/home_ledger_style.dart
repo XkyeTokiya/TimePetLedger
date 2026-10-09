@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/home_theme.dart';
-
 /// Local home typography in logical sp; capture resolution is independent.
 /// Spacing uses TimeLedgerSpacing. None of these values determine time height.
+///
+/// Family and color come from the active theme: [title] / [state] / [button]
+/// inherit the default text color (onSurface), while [metadata] / [tick] call
+/// sites copy with onSurfaceVariant where the weaker tone is required.
 class HomeLedgerStyle {
   const HomeLedgerStyle._();
 
@@ -12,33 +14,18 @@ class HomeLedgerStyle {
   static const metricSize = 18.0;
   static const compactMetricSize = 12.0;
   static const title = TextStyle(
-    fontFamily: homeSerifFamily,
     fontSize: 12,
     height: 1.25,
     fontWeight: FontWeight.w600,
-    color: HomePalette.ink,
   );
   static const state = TextStyle(
-    fontFamily: homeSerifFamily,
     fontSize: 10,
     height: 1.2,
     fontWeight: FontWeight.w600,
-    color: HomePalette.ink,
   );
-  static const metadata = TextStyle(
-    fontFamily: homeSerifFamily,
-    fontSize: 10,
-    height: 1.2,
-    color: HomePalette.muted,
-  );
-  static const tick = TextStyle(
-    fontFamily: homeSerifFamily,
-    fontSize: 10,
-    height: 1,
-    color: HomePalette.muted,
-  );
+  static const metadata = TextStyle(fontSize: 10, height: 1.2);
+  static const tick = TextStyle(fontSize: 10, height: 1);
   static const button = TextStyle(
-    fontFamily: homeSerifFamily,
     fontSize: 13,
     height: 1.2,
     fontWeight: FontWeight.w600,

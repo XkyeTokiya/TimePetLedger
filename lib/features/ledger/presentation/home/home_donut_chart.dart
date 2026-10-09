@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/home_theme.dart';
+import '../../../../app/theme/theme_text.dart';
 import '../../domain/projection/derived_duration.dart';
 import '../summary_formatting.dart';
 
@@ -65,13 +65,12 @@ class _HomeDonutChartState extends State<HomeDonutChart> {
       (sum, part) => sum + part.duration.milliseconds,
     );
     if (total <= 0) {
-      return const Text(
+      return Text(
         '当前窗口暂无可显示的时间构成。',
         style: TextStyle(
-          fontFamily: homeSerifFamily,
           fontSize: 14,
           height: 1.5,
-          color: HomePalette.muted,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       );
     }
@@ -151,14 +150,17 @@ class _Ring extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final thickness = diameter * 0.105;
     final centerRadius = diameter / 2 - thickness - 6;
-    const valueStyle = TextStyle(
-      fontFamily: homeSerifFamily,
-      fontSize: 20,
-      height: 1.3,
-      fontWeight: FontWeight.w600,
-      color: HomePalette.ink,
+    final valueStyle = withThemeFont(
+      context,
+      TextStyle(
+        fontSize: 20,
+        height: 1.3,
+        fontWeight: FontWeight.w600,
+        color: colors.onSurface,
+      ),
     );
     final valueMeasure = TextPainter(
       text: TextSpan(text: centerValue, style: valueStyle),
@@ -239,11 +241,10 @@ class _Ring extends StatelessWidget {
                       Text(
                         centerLabel,
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontFamily: homeSerifFamily,
+                        style: TextStyle(
                           fontSize: 13,
                           height: 1.3,
-                          color: HomePalette.muted,
+                          color: colors.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -279,15 +280,15 @@ class _LegendRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final durationText = formatDerivedDuration(part.duration);
     final percent = (part.duration.milliseconds * 100 / total).round();
     final duration = Text(
       durationText,
-      style: const TextStyle(
-        fontFamily: homeSerifFamily,
+      style: TextStyle(
         fontSize: 14,
         height: 1.5,
-        color: HomePalette.muted,
+        color: colors.onSurfaceVariant,
       ),
     );
     return LayoutBuilder(
@@ -307,7 +308,7 @@ class _LegendRow extends StatelessWidget {
               key: ValueKey('summary-part-${part.id}'),
               onTap: onTap,
               selected: selected,
-              selectedTileColor: HomePalette.tint,
+              selectedTileColor: colors.surfaceContainerHighest,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -317,11 +318,10 @@ class _LegendRow extends StatelessWidget {
               leading: _Swatch(color: part.color, dashed: part.dashed),
               title: Text(
                 part.label,
-                style: const TextStyle(
-                  fontFamily: homeSerifFamily,
+                style: TextStyle(
                   fontSize: 15,
                   height: 1.5,
-                  color: HomePalette.ink,
+                  color: colors.onSurface,
                 ),
               ),
               trailing: valuesBelow ? null : duration,
@@ -334,12 +334,11 @@ class _LegendRow extends StatelessWidget {
                           Text(
                             '$percent%',
                             key: ValueKey('summary-part-percent-${part.id}'),
-                            style: const TextStyle(
-                              fontFamily: homeSerifFamily,
+                            style: TextStyle(
                               fontSize: 14,
                               height: 1.5,
                               fontWeight: FontWeight.w600,
-                              color: HomePalette.accentDeep,
+                              color: colors.primary,
                             ),
                           ),
                       ],

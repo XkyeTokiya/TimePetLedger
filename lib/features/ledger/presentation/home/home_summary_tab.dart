@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../app/theme/home_theme.dart';
+import '../../../../app/theme/semantic_colors.dart';
 import '../../domain/projection/day_composition.dart';
 import '../../domain/projection/day_ledger_view.dart';
 import '../../domain/projection/derived_duration.dart';
@@ -31,20 +31,14 @@ class HomeSummaryTab extends StatelessWidget {
   /// 页面级入口（例如打开这一天的复盘）；为空时不显示。
   final Widget? footer;
 
-  static const _goalColors = [
-    HomePalette.accent,
-    HomePalette.activity,
-    HomePalette.recovery,
-    HomePalette.sleep,
-    HomePalette.unknown,
-  ];
-
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: controller,
     builder: (context, _) {
       final view = controller.view;
       final dateContext = controller.dateContext;
+      final colors = Theme.of(context).colorScheme;
+      final semantics = context.semanticColors;
       return ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
         children: [
@@ -67,18 +61,18 @@ class HomeSummaryTab extends StatelessWidget {
             Text(
               '已交代 ${formatDerivedDuration(view.accountedDuration)}'
               ' · 尚未记录 ${formatDerivedDuration(view.unresolvedDuration)}',
-              style: _sectionSubStyle,
+              style: _sectionSubStyle(colors),
             ),
             // 账本窗口本身是统计口径（23/25 小时日不同），保留为辅助说明。
             Text(
               '账本窗口：'
               '${formatDerivedDuration(DerivedDuration(milliseconds: view.window.milliseconds, hasApproximation: false))}',
-              style: _captionStyle,
+              style: _captionStyle(colors),
             ),
             const SizedBox(height: 10),
             HomeDonutChart(
               key: const ValueKey('summary-day-chart'),
-              parts: _dayParts(view),
+              parts: _dayParts(view, semantics),
               centerLabel: '已交代',
               centerValue: formatDerivedDuration(view.accountedDuration),
               semanticsLabel: _daySemantics(view),
@@ -88,7 +82,7 @@ class HomeSummaryTab extends StatelessWidget {
               const _SectionLabel('目标投入'),
               HomeDonutChart(
                 key: const ValueKey('summary-goal-chart'),
-                parts: _goalParts(view.goalSummaries),
+                parts: _goalParts(view.goalSummaries, colors, semantics),
                 centerLabel: '目标相关',
                 centerValue: formatDerivedDuration(
                   _goalTotal(view.goalSummaries),
@@ -102,7 +96,7 @@ class HomeSummaryTab extends StatelessWidget {
               childrenPadding: const EdgeInsets.only(bottom: 8),
               shape: const Border(),
               collapsedShape: const Border(),
-              title: const Text('目标与节奏明细', style: _sectionStyle),
+              title: Text('目标与节奏明细', style: _sectionStyle(colors)),
               children: [
                 GoalRhythmSummaryView(
                   goals: view.goalSummaries,
@@ -129,7 +123,7 @@ class HomeSummaryTab extends StatelessWidget {
     },
   );
 
-  List<DonutPart> _dayParts(DayLedgerView view) {
+  List<DonutPart> _dayParts(DayLedgerView view, TimeLedgerSemanticColors sem) {
     final composition = projectDayComposition(
       coverage: view.coverage,
       segments: view.segments,
@@ -138,25 +132,25 @@ class HomeSummaryTab extends StatelessWidget {
       DonutPart(
         id: 'sleep',
         label: '睡眠',
-        color: HomePalette.sleep,
+        color: sem.sleep,
         duration: composition.sleep,
       ),
       DonutPart(
         id: 'activity',
         label: '活动',
-        color: HomePalette.activity,
+        color: sem.activity,
         duration: composition.knownActivity,
       ),
       DonutPart(
         id: 'unknown',
         label: '想不起来',
-        color: HomePalette.unknown,
+        color: sem.unknown,
         duration: composition.unknown,
       ),
       DonutPart(
         id: 'gap',
         label: '尚未记录',
-        color: HomePalette.gap,
+        color: sem.gap,
         duration: composition.gap,
         dashed: true,
       ),
@@ -182,15 +176,28 @@ class HomeSummaryTab extends StatelessWidget {
         '尚未记录 ${formatDerivedDuration(composition.gap)}，${percent(composition.gap)}';
   }
 
-  List<DonutPart> _goalParts(List<GoalSummary> goals) => [
-    for (var i = 0; i < goals.length; i++)
-      DonutPart(
-        id: goals[i].goalId,
-        label: goals[i].name,
-        color: _goalColors[i % _goalColors.length],
-        duration: goals[i].totalDuration.duration,
-      ),
-  ];
+  List<DonutPart> _goalParts(
+    List<GoalSummary> goals,
+    ColorScheme colors,
+    TimeLedgerSemanticColors sem,
+  ) {
+    final palette = [
+      colors.primary,
+      sem.activity,
+      sem.recovery,
+      sem.sleep,
+      sem.unknown,
+    ];
+    return [
+      for (var i = 0; i < goals.length; i++)
+        DonutPart(
+          id: goals[i].goalId,
+          label: goals[i].name,
+          color: palette[i % palette.length],
+          duration: goals[i].totalDuration.duration,
+        ),
+    ];
+  }
 
   DerivedDuration _goalTotal(List<GoalSummary> goals) =>
       DerivedDuration.sum(goals.map((goal) => goal.totalDuration.duration));
@@ -216,27 +223,18 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.only(bottom: 6),
-    child: Text(text, style: _sectionStyle),
+    child: Text(text, style: _sectionStyle(Theme.of(context).colorScheme)),
   );
 }
 
-const _sectionStyle = TextStyle(
-  fontFamily: homeSerifFamily,
+TextStyle _sectionStyle(ColorScheme colors) => TextStyle(
   fontSize: 18,
   fontWeight: FontWeight.w600,
-  color: HomePalette.ink,
+  color: colors.onSurface,
 );
 
-const _sectionSubStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 13,
-  height: 1.5,
-  color: HomePalette.muted,
-);
+TextStyle _sectionSubStyle(ColorScheme colors) =>
+    TextStyle(fontSize: 13, height: 1.5, color: colors.onSurfaceVariant);
 
-const _captionStyle = TextStyle(
-  fontFamily: homeSerifFamily,
-  fontSize: 12,
-  height: 1.5,
-  color: HomePalette.muted,
-);
+TextStyle _captionStyle(ColorScheme colors) =>
+    TextStyle(fontSize: 12, height: 1.5, color: colors.onSurfaceVariant);

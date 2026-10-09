@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../app/theme/home_theme.dart';
 import '../../../core/time/civil_date.dart';
 import '../domain/time_precision.dart';
 
@@ -359,11 +358,10 @@ class _ChineseDatePickerState extends State<_ChineseDatePicker> {
                 child: Text(
                   '${month.year}年${month.month}月',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: homeSerifFamily,
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: HomePalette.ink,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
               ),
@@ -397,10 +395,10 @@ class _ChineseDatePickerState extends State<_ChineseDatePicker> {
       320.0,
     );
     final cell = (available / 7).floorToDouble();
-    return SizedBox(width: cell * 7, child: _grid(cell));
+    return SizedBox(width: cell * 7, child: _grid(context, cell));
   }
 
-  Widget _grid(double cell) {
+  Widget _grid(BuildContext context, double cell) {
     final weekday = DateTime.utc(month.year, month.month, 1).weekday - 1;
     final count = DateTime.utc(month.year, month.month + 1, 0).day;
     return Column(
@@ -413,10 +411,9 @@ class _ChineseDatePickerState extends State<_ChineseDatePicker> {
                 child: Text(
                   day,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontFamily: homeSerifFamily,
+                  style: TextStyle(
                     fontSize: 13,
-                    color: HomePalette.muted,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
@@ -426,16 +423,17 @@ class _ChineseDatePickerState extends State<_ChineseDatePicker> {
           Row(
             children: [
               for (var column = 0; column < 7; column++)
-                _cell(week * 7 + column - weekday + 1, count, cell),
+                _cell(context, week * 7 + column - weekday + 1, count, cell),
             ],
           ),
       ],
     );
   }
 
-  Widget _cell(int day, int count, double cell) {
+  Widget _cell(BuildContext context, int day, int count, double cell) {
     if (day < 1 || day > count) return SizedBox(width: cell, height: cell);
     final date = DateTime.utc(month.year, month.month, day);
+    final colors = Theme.of(context).colorScheme;
     final selectedDay =
         date.year == selected.year &&
         date.month == selected.month &&
@@ -446,14 +444,11 @@ class _ChineseDatePickerState extends State<_ChineseDatePicker> {
       child: TextButton(
         style: TextButton.styleFrom(
           padding: EdgeInsets.zero,
-          backgroundColor: selectedDay ? HomePalette.accentDeep : null,
-          foregroundColor: selectedDay ? Colors.white : HomePalette.ink,
+          backgroundColor: selectedDay ? colors.primary : null,
+          foregroundColor: selectedDay ? colors.onPrimary : colors.onSurface,
         ),
         onPressed: () => setState(() => selected = date),
-        child: Text(
-          '$day',
-          style: const TextStyle(fontFamily: homeSerifFamily, fontSize: 15),
-        ),
+        child: Text('$day', style: const TextStyle(fontSize: 15)),
       ),
     );
   }
@@ -490,6 +485,7 @@ class _ChineseTimePickerState extends State<_ChineseTimePicker> {
         children: [
           Expanded(
             child: _column(
+              context,
               24,
               hourScroll,
               (v) => setState(() => hour = v),
@@ -498,6 +494,7 @@ class _ChineseTimePickerState extends State<_ChineseTimePicker> {
           ),
           Expanded(
             child: _column(
+              context,
               60,
               minuteScroll,
               (v) => setState(() => minute = v),
@@ -522,6 +519,7 @@ class _ChineseTimePickerState extends State<_ChineseTimePicker> {
   );
 
   Widget _column(
+    BuildContext context,
     int count,
     FixedExtentScrollController controller,
     ValueChanged<int> onPick,
@@ -530,10 +528,9 @@ class _ChineseTimePickerState extends State<_ChineseTimePicker> {
     children: [
       Text(
         label,
-        style: const TextStyle(
-          fontFamily: homeSerifFamily,
+        style: TextStyle(
           fontSize: 14,
-          color: HomePalette.muted,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
       const SizedBox(height: 6),
@@ -548,10 +545,9 @@ class _ChineseTimePickerState extends State<_ChineseTimePicker> {
             builder: (context, index) => Center(
               child: Text(
                 index.toString().padLeft(2, '0'),
-                style: const TextStyle(
-                  fontFamily: homeSerifFamily,
+                style: TextStyle(
                   fontSize: 22,
-                  color: HomePalette.ink,
+                  color: Theme.of(context).colorScheme.onSurface,
                 ),
               ),
             ),

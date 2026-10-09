@@ -6,12 +6,13 @@ import '../../core/persistence/app_database.dart';
 import '../../core/persistence/database_connection.dart';
 import '../main_app.dart';
 import '../app_version.dart';
-import '../theme/home_theme.dart';
+import '../theme/app_theme.dart';
 import '../../features/goals/data/drift_goal_repository.dart';
 import '../../features/goals/data/drift_goal_history_reader.dart';
 import '../../features/goals/presentation/goal_management_page.dart';
 import '../../features/settings/data/drift_app_preferences_store.dart';
 import '../../features/settings/data/drift_data_maintenance.dart';
+import '../../features/settings/domain/app_preferences.dart';
 import '../../features/settings/presentation/settings_page.dart';
 import '../../features/ledger/data/drift_recording_draft_store.dart';
 import '../../features/ledger/data/session_recording_draft_store.dart';
@@ -85,6 +86,9 @@ class _AppBootstrapState extends State<AppBootstrap> {
     openStore: widget.openPreferences,
   );
 
+  /// 主题偏好：在首帧前预读（Q-041 合同 §2.7），设置保存成功后即时更新。
+  final _themePreferences = ValueNotifier<AppPreferences?>(null);
+
   /// 数据概况内部仍计入未完成输入，但设置页不单列其数量。
   Future<int> _openDrafts() async {
     return _drafts.count + _sleepDrafts.count + _reviewDrafts.count;
@@ -120,6 +124,13 @@ class _AppBootstrapState extends State<AppBootstrap> {
   void initState() {
     super.initState();
     _ready = _open();
+    // 主题偏好预读与数据库打开并行（Q-041 合同 §2.7）：先于就绪完成时
+    // 首帧即用所选主题，避免冷启动闪变；读取失败保持默认主题、不阻塞启动。
+    runZonedGuarded(() {
+      _preferences.read().then((preferences) {
+        if (mounted) _themePreferences.value = preferences;
+      }, onError: (Object _) {});
+    }, (Object _, StackTrace _) {});
   }
 
   Future<void> _open() async {
@@ -169,6 +180,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
 
   @override
   void dispose() {
+    _themePreferences.dispose();
     unawaited(
       _preferences.close().catchError((Object error, StackTrace stack) {
         FlutterError.reportError(
@@ -236,7 +248,10 @@ class _AppBootstrapState extends State<AppBootstrap> {
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return MaterialApp(
-            theme: homeTheme,
+            theme: buildAppTheme(
+              scheme: ThemeScheme.defaultM3,
+              brightness: Brightness.light,
+            ),
             home: const Scaffold(
               body: Center(child: Text('无法打开本地存储，请重新启动应用。')),
             ),
@@ -244,7 +259,10 @@ class _AppBootstrapState extends State<AppBootstrap> {
         }
         if (snapshot.connectionState != ConnectionState.done) {
           return MaterialApp(
-            theme: homeTheme,
+            theme: buildAppTheme(
+              scheme: ThemeScheme.defaultM3,
+              brightness: Brightness.light,
+            ),
             home: const Scaffold(
               body: Center(child: CircularProgressIndicator()),
             ),
@@ -270,6 +288,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
           ),
           settingsEntry: () => SettingsPage(
             preferences: _preferences,
+            onSaved: (preferences) => _themePreferences.value = preferences,
             maintenance: DriftDataMaintenance(
               _database!,
               draftCount: _openDrafts,
@@ -290,6 +309,7 @@ class _AppBootstrapState extends State<AppBootstrap> {
           ),
           reviewDrafts: _reviewDrafts,
           preferences: _preferences,
+          themePreferences: _themePreferences,
           firstSleepOpen: SleepFirstOpenCoordinator(
             ledger: sleepLedger,
             claimOpening: _claimSleepOpening,

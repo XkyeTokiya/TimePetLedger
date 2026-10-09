@@ -17,37 +17,34 @@ class HomeMenuPage extends StatelessWidget {
   final Widget Function()? settingsPage;
 
   @override
-  Widget build(BuildContext context) => Theme(
-    data: homeTheme,
-    child: Scaffold(
-      appBar: AppBar(
-        leading: BackButton(key: const ValueKey('menu-back')),
-        title: const Text('菜单'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-        children: [
-          if (goalsPage != null)
-            _Entry(
-              key: const ValueKey('menu-goals'),
-              icon: Icons.flag_outlined,
-              label: '我的目标',
-              // 菜单只是入口：目标 / 设置替换菜单路由，返回直接回首页。
-              onTap: () => Navigator.of(context).pushReplacement<void, void>(
-                MaterialPageRoute(builder: (_) => goalsPage!()),
-              ),
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      leading: BackButton(key: const ValueKey('menu-back')),
+      title: const Text('菜单'),
+    ),
+    body: ListView(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+      children: [
+        if (goalsPage != null)
+          _Entry(
+            key: const ValueKey('menu-goals'),
+            icon: Icons.flag_outlined,
+            label: '我的目标',
+            // 菜单只是入口：目标 / 设置替换菜单路由，返回直接回首页。
+            onTap: () => Navigator.of(context).pushReplacement<void, void>(
+              MaterialPageRoute(builder: (_) => goalsPage!()),
             ),
-          if (settingsPage != null)
-            _Entry(
-              key: const ValueKey('menu-settings'),
-              icon: Icons.settings_outlined,
-              label: '设置',
-              onTap: () => Navigator.of(context).pushReplacement<void, void>(
-                MaterialPageRoute(builder: (_) => settingsPage!()),
-              ),
+          ),
+        if (settingsPage != null)
+          _Entry(
+            key: const ValueKey('menu-settings'),
+            icon: Icons.settings_outlined,
+            label: '设置',
+            onTap: () => Navigator.of(context).pushReplacement<void, void>(
+              MaterialPageRoute(builder: (_) => settingsPage!()),
             ),
-        ],
-      ),
+          ),
+      ],
     ),
   );
 }
@@ -70,24 +67,34 @@ class _Entry extends StatelessWidget {
     child: Container(
       constraints: const BoxConstraints(minHeight: homeTapTarget + 8),
       padding: const EdgeInsets.symmetric(vertical: 18),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: HomePalette.hairline)),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 26, color: HomePalette.muted),
+          Icon(
+            icon,
+            size: 26,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(
-                fontFamily: homeSerifFamily,
+              style: TextStyle(
                 fontSize: 22,
-                color: HomePalette.ink,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ),
-          const Icon(Icons.chevron_right, color: HomePalette.muted),
+          Icon(
+            Icons.chevron_right,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ],
       ),
     ),
