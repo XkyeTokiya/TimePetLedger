@@ -1,6 +1,14 @@
 # Tasks
 
-**2026-10-09当前首页阶段：完整交互设计评审。** [HOME-INTERACTION-01](docs/planning/HOME_INTERACTION_DESIGN.md)整理一套滑盖、左右设置与按钮镜像、当日入口、下拖含惯性跨日回展、普通导航今天上限及手势 / 动效建议；已定行为见Q-042，Q-043 / Q-044待确认。本轮只同步文档，未创建或授权新实施任务，旧任务状态与验证证据保留。
+**2026-10-09当前首页阶段：[HOME-INTERACTION-01](docs/planning/HOME_INTERACTION_DESIGN.md)已按用户后续「开始实现」授权落地；2026-10-10纠正纸带方向、头部样式及收放触发。** 左右可设置滑盖快捷区、按钮镜像、当日入口、下沿阅读锚点、日期横线上沿切日 / 连续回展、下拖连续收起、首版展开 / 紧凑头部布局、今天专属提醒、未来日上限与设置持久化均已实现。左右截图已检查；真机系统边缘、人工读屏 / 误触及帧性能未验收，平台任务保持PARTIAL。详见[实施报告](docs/reports/HOME_INTERACTION_IMPLEMENTATION_REPORT.md)。
+
+**2026-10-10反馈修复（HOME-INTERACTION-IMPL-03）：** 用户报告滚动时时间轴文字闪烁、星期信息独占一行浪费空间。已修复：可见波段按滚动内容坐标逐帧同步，标签形态只由块高决定；星期默认并入日期行、放不下回退独立行，今天页头不再保留第二行。相关套件与新增3项回归通过；既有失败`home_feed_nav_capture`经HEAD复现为基线问题；全量比对与限制见[报告](docs/reports/HOME_SCROLL_HEADER_POLISH_REPORT.md)。不推进其他功能。
+
+| Task | Depends on | Scope | Status |
+| --- | --- | --- | --- |
+| HOME-INTERACTION-IMPL-01 — 滑盖、导航与设置 | Q-042–Q-044，用户实施授权 | 左右滑盖、镜像顶部、日期上限、方向回展、偏好持久化及行为回归 | COMPLETE |
+| HOME-INTERACTION-IMPL-02 — 平台与人工验收 | IMPL-01 | Web / Android构建与左右截图通过；真机边缘手势、读屏、误触与帧性能 | PARTIAL |
+| HOME-INTERACTION-IMPL-03 — 滚动标签稳定性与页头压缩 | 用户反馈 | 可见波段逐帧同步、标签形态按块高稳定；星期并入日期行与窄屏回退 | COMPLETE |
 
 **2026-10-09主题系统实施（用户已授权）：[实施前合同与spike](docs/planning/THEME_SYSTEM_CONTRACT.md)与四步实施已完成。** 生产代码已零 `HomePalette` / `homeSerifFamily` / `Theme(data: homeTheme)` 直引；主题系统含预设配色 + Android 动态取色 + 暖纸浅深 + 字体选项、根部管道与设置页入口，依赖接入 `dynamic_color 1.9.0`。新增矩阵 / 回退 / 持久化 / 对比度测试通过；全量测试 `+756 ~11 -141` 与基线（`+748 ~11 -141`）失败集合逐条一致、无新增；Android 调试 APK 与 Web 构建通过。暖纸深色视觉确认、Android 真机动态取色 / 系统栏与人工读屏未执行，03 记 PARTIAL；不推进其他功能。
 

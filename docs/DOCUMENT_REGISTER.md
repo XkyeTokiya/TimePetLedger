@@ -57,7 +57,7 @@
 | [COMPLETED_TASKS](planning/COMPLETED_TASKS.md) | 历史归档 | 已移出的 77 项完整任务定义；已归档，不重复搬迁；完成证据以 TASKS 和具体报告核对 |
 | [UI_REBUILD_PLAN](planning/UI_REBUILD_PLAN.md) | 持续维护（当前前端交接） | 当前设计入口，含轮次、确认、素材及待评审项；内部早期“未实施 Flutter”及 Q 状态不能直接代表正在变化的工作区 |
 | [THEME_SYSTEM_CONTRACT](planning/THEME_SYSTEM_CONTRACT.md) | 持续维护（主题实施前合同） | Q-041预设清单、默认值、语义色 / 热力图映射、动态取色回退与根部管道要求；含隔离spike证据；暖纸深色视觉待确认，未实施 |
-| [HOME_INTERACTION_DESIGN](planning/HOME_INTERACTION_DESIGN.md) | 持续维护（新交互设计评审稿） | Q-042已定方向，Q-043 / Q-044待确认；一套左右可设置的滑盖、下拖含惯性跨日回展与今天上限。参数为建议，本轮未实施；替代旧首页交互部分 |
+| [HOME_INTERACTION_DESIGN](planning/HOME_INTERACTION_DESIGN.md) | 持续维护（新交互设计与实施合同） | Q-042–Q-044已定；一套左右可设置的滑盖、下拖含惯性跨日回展、提醒卡收起联动、今天上限与手选未来日临时上限已实施；真机 / 人工验收边界查实施报告 |
 | [HOME_PROPORTIONAL_TIMELINE_DESIGN](planning/HOME_PROPORTIONAL_TIMELINE_DESIGN.md) | 持续维护（几何 / 访问与历史交互合同） | Q-039比例 / 短段访问及Q-040定位继续适用；横滑、起点回展由HOME_INTERACTION_DESIGN承接。HOME-TIME-01–03完成，04人工读屏 / 误触待补，原实施证据与阶段记录保留 |
 | [比例首页参考包](planning/assets/home-proportional-timeline/) | 原型参考 | 用户两张原图及设计v1.0原文；图片1为初始、图片2为滚动状态，示例与建议不能覆盖现行规则 |
 | [TIME_RECORDING_AUTOMATION](planning/TIME_RECORDING_AUTOMATION.md) | 现行依据（当前实施任务） | 2026-10-07用户授权TIME-01，来源Q-032 / Q-035；时间初始化与直接组件编辑，状态和验证查正文 |
@@ -99,6 +99,8 @@
 
 | 报告 | 内容入口 |
 | --- | --- |
+| [HOME_INTERACTION_IMPLEMENTATION_REPORT](reports/HOME_INTERACTION_IMPLEMENTATION_REPORT.md) | 2026-10-09滑盖快捷区、方向跨日回展、日期上限与左右偏好的实施；回归、构建、截图与真机 / 人工限制 |
+| [HOME_SCROLL_HEADER_POLISH_REPORT](reports/HOME_SCROLL_HEADER_POLISH_REPORT.md) | 2026-10-10用户反馈：滚动标签稳定性（逐帧波段、按块高定形态）与星期并入日期行；回归、全量基线与限制 |
 | [HOME_PROPORTIONAL_TIMELINE_REPORT](reports/HOME_PROPORTIONAL_TIMELINE_REPORT.md) | 2026-10-09比例日轴、双态、短段选择与Q-040定位；工程 / 两平台集成通过，人工读屏 / 误触未验收；截图与原始验证日志 |
 | [HOME_TIMELINE_VISUAL_REFINEMENT_REPORT](reports/HOME_TIMELINE_VISUAL_REFINEMENT_REPORT.md) | 2026-10-09用户九点反馈后的首页字阶、间距、对齐与短条细化；实际截图 / 回归证据，原实施报告保留 |
 | [TIME-01_TIME_AUTOMATION_REPORT](reports/TIME-01_TIME_AUTOMATION_REPORT.md) | 2026-10-07 活动 / 睡眠时间日期自动化；实现交付与平台验收限制 |
