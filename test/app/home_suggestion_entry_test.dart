@@ -173,10 +173,10 @@ void main() {
     expect(find.text('早上好。'), findsNothing);
   });
 
-  testWidgets('historical dates only greet and never suggest recording', (
+  testWidgets('historical dates do not show the bottom reminder region', (
     tester,
   ) async {
-    // 历史日期：即使有长尾 Gap 也不催补记。
+    // 底部提醒只属于今天；历史日连普通问候也不显示。
     await open(
       tester,
       at(29, 13),
@@ -195,9 +195,10 @@ void main() {
     );
     await selectLedgerDate(tester, '2026-09-28');
     await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('home-suggestion')), findsNothing);
     expect(
       find.byKey(const ValueKey('home-suggestion-greeting')),
-      findsOneWidget,
+      findsNothing,
     );
     expect(find.byKey(const ValueKey('home-suggestion-record')), findsNothing);
   });

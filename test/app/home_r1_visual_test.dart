@@ -10,6 +10,7 @@ import 'package:time_pet_ledger/app/time/device_recording_date.dart';
 import 'package:time_pet_ledger/core/time/civil_date.dart';
 import 'package:time_pet_ledger/features/ledger/application/day_ledger_loader.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
+import 'package:time_pet_ledger/features/settings/domain/app_preferences.dart';
 
 import '../features/ledger/presentation/day_ledger_overview_layout_test.dart'
     show mixedFacts;
@@ -53,6 +54,7 @@ void main() {
     VoidCallback? onSummary,
     VoidCallback? onReview,
     CivilDate? initialDate,
+    HomeQuickPanelSide quickPanelSide = HomeQuickPanelSide.left,
   }) async {
     t.view.devicePixelRatio = 1;
     t.view.physicalSize = size;
@@ -71,10 +73,11 @@ void main() {
           busy: false,
           onGoals: onGoals ?? () {},
           onSettings: onSettings ?? () {},
-          onOpenSummary: onSummary ?? () {},
-          onOpenReview: onReview ?? () {},
+          onOpenSummary: (_) => (onSummary ?? () {})(),
+          onOpenReview: (_) => (onReview ?? () {})(),
           onRecordActivity: () {},
           onRecordSleep: () {},
+          quickPanelSide: quickPanelSide,
         ),
       ),
     );
@@ -101,7 +104,7 @@ void main() {
     }
   });
 
-  testWidgets('top bar opens the sidebar with ledger, summary and review', (
+  testWidgets('top bar opens the quick panel with summary and review', (
     t,
   ) async {
     var summary = 0;
@@ -125,17 +128,17 @@ void main() {
 
     await t.tap(find.byKey(const ValueKey('home-menu')));
     await t.pumpAndSettle();
-    expect(find.byType(NavigationDrawer), findsOneWidget);
-    expect(find.text('时间账本'), findsWidgets);
-    expect(find.text('当日摘要'), findsOneWidget);
-    expect(find.text('每日复盘'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-quick-panel')), findsOneWidget);
+    expect(find.text('当日概览'), findsOneWidget);
+    expect(find.text('当日复盘'), findsOneWidget);
     expect(find.text('我的目标'), findsOneWidget);
     expect(find.text('设置'), findsOneWidget);
+    await capture(t, 'home-quick-panel-left');
 
     await t.tap(find.byKey(const ValueKey('menu-summary')));
     await t.pumpAndSettle();
     expect(summary, 1);
-    expect(find.byType(NavigationDrawer), findsNothing);
+    expect(find.byKey(const ValueKey('home-quick-panel-scrim')), findsNothing);
 
     await t.tap(find.byKey(const ValueKey('home-menu')));
     await t.pumpAndSettle();
@@ -154,6 +157,23 @@ void main() {
     await t.tap(find.byKey(const ValueKey('menu-settings')));
     await t.pumpAndSettle();
     expect(settings, 1);
+  });
+
+  testWidgets('right quick panel mirrors the complete home surface', (t) async {
+    await mount(
+      t,
+      const Size(390, 800),
+      sampleLoader(),
+      quickPanelSide: HomeQuickPanelSide.right,
+    );
+    await t.tap(find.byKey(const ValueKey('home-menu')));
+    await t.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('home-quick-panel-scrim')),
+      findsOneWidget,
+    );
+    await capture(t, 'home-quick-panel-right');
+    expect(t.takeException(), isNull);
   });
 
   testWidgets(

@@ -13,6 +13,7 @@ void main() {
         themeScheme: ThemeScheme.warmPaper,
         themeMode: AppThemeMode.dark,
         fontChoice: AppFontChoice.serif,
+        homeQuickPanelSide: HomeQuickPanelSide.right,
         reminders: true,
       ),
     );
@@ -20,6 +21,7 @@ void main() {
     expect(loaded.themeScheme, ThemeScheme.warmPaper);
     expect(loaded.themeMode, AppThemeMode.dark);
     expect(loaded.fontChoice, AppFontChoice.serif);
+    expect(loaded.homeQuickPanelSide, HomeQuickPanelSide.right);
     expect(loaded.reminders, isTrue);
 
     await store.write(const AppPreferences(reminders: false));
@@ -27,6 +29,7 @@ void main() {
     expect(cleared.themeScheme, isNull);
     expect(cleared.themeMode, isNull);
     expect(cleared.fontChoice, isNull);
+    expect(cleared.homeQuickPanelSide, isNull);
     expect(cleared.reminders, isFalse);
   });
 

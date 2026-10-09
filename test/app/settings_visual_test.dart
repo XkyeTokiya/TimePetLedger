@@ -79,6 +79,7 @@ void main() {
     WidgetTester tester, {
     Size size = const Size(360, 800),
     double textScale = 1,
+    _PreferencesStore? preferences,
   }) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = size;
@@ -92,7 +93,7 @@ void main() {
         builder: (context, child) =>
             RepaintBoundary(key: _captureKey, child: child!),
         home: SettingsPage(
-          preferences: _PreferencesStore(),
+          preferences: preferences ?? _PreferencesStore(),
           maintenance: _Maintenance(),
           newGoalId: () => '00000000-0000-4000-8000-000000000001',
           newFactId: () => '00000000-0000-4000-8000-000000000002',
@@ -103,6 +104,22 @@ void main() {
     );
     await tester.pumpAndSettle();
   }
+
+  testWidgets('display settings persist the quick-panel side', (tester) async {
+    final preferences = _PreferencesStore();
+    await mount(tester, preferences: preferences);
+    await tester.tap(find.byKey(const ValueKey('settings-open-display')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('settings-quick-panel-current')),
+      findsOneWidget,
+    );
+    await tester.tap(find.byKey(const ValueKey('settings-quick-panel-right')));
+    await tester.pumpAndSettle();
+    expect(preferences.value.homeQuickPanelSide, HomeQuickPanelSide.right);
+    expect(find.text('设置已保存。'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('settings visual states fit the 360 by 800 baseline', (
     tester,

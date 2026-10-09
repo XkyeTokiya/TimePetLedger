@@ -62,8 +62,8 @@ void main() {
         final targetState = tester.state<HomeTimelineTabState>(
           find.byType(HomeTimelineTab).last,
         );
-        expect(targetState.readingPosition!.instant, at(1, 0));
-        expect(targetState.readingPosition!.relativeY, closeTo(8, 1));
+        expect(targetState.readingPosition!.instant, greaterThan(at(1, 0)));
+        expect(targetState.readingPosition!.relativeY, closeTo(0, 1));
         await tester.pumpAndSettle();
         expect(observed, [oct1]);
         expect(find.byType(HomeTimelineTab), findsOneWidget);

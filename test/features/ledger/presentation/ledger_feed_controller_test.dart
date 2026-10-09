@@ -11,6 +11,7 @@ import 'package:time_pet_ledger/features/ledger/presentation/home/ledger_feed_co
 final day1 = CivilDate(year: 2026, month: 10, day: 1);
 final day2 = CivilDate(year: 2026, month: 10, day: 2);
 final day3 = CivilDate(year: 2026, month: 10, day: 3);
+final day4 = CivilDate(year: 2026, month: 10, day: 4);
 
 DayLedgerFacts emptyFacts() => DayLedgerFacts(
   ledger: SleepLedgerSnapshot(
@@ -40,6 +41,43 @@ LedgerFeedController feedWith(
 );
 
 void main() {
+  test(
+    'selected future date is a temporary upper bound until today succeeds',
+    () async {
+      var fail = false;
+      final feed = feedWith((_) async {
+        if (fail) throw StateError('unavailable');
+        return emptyFacts();
+      });
+      addTearDown(feed.dispose);
+      expect(await feed.showDate(day2), isTrue);
+      expect(feed.navigationLimit(day2), day2);
+      expect(feed.canNavigateTo(day3, day2), isFalse);
+
+      fail = true;
+      expect(await feed.showSelectedDate(day3, today: day2), isFalse);
+      expect(feed.futureNavigationLimit, isNull);
+      expect(feed.navigationLimit(day2), day2);
+
+      fail = false;
+      expect(await feed.showSelectedDate(day3, today: day2), isTrue);
+      expect(feed.futureNavigationLimit, day3);
+      expect(feed.canNavigateTo(day3, day2), isTrue);
+      expect(feed.canNavigateTo(day4, day2), isFalse);
+
+      fail = true;
+      expect(await feed.returnToToday(day2), isFalse);
+      expect(feed.focusDate, day3);
+      expect(feed.futureNavigationLimit, day3);
+
+      fail = false;
+      expect(await feed.returnToToday(day2), isTrue);
+      expect(feed.focusDate, day2);
+      expect(feed.futureNavigationLimit, isNull);
+      expect(feed.navigationLimit(day2), day2);
+    },
+  );
+
   test(
     'exiting frame retains its committed projection after a new date loads',
     () async {

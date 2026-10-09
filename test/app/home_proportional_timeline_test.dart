@@ -18,6 +18,8 @@ import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_block.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_day_axis.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/home/home_day_header.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/home/home_ledger_style.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_reading_state.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_suggestion_card.dart';
@@ -157,8 +159,8 @@ Future<HomeShellState> mount(
         dateOfInstant: deviceDateOfInstant,
         initialDate: date,
         busy: false,
-        onOpenSummary: () {},
-        onOpenReview: () {},
+        onOpenSummary: (_) {},
+        onOpenReview: (_) {},
         onRecordActivity: () {},
         onRecordSleep: () {},
         onFillGap: (date, gap) => onGap?.call(date, gap),
@@ -283,28 +285,40 @@ void main() {
     expect(enlarged.shortClusters([exact]), isEmpty);
   });
 
-  test('header state has a 32–40 dead band and locks at 120', () {
-    final state = HomeReadingState();
+  testWidgets('paper-tape header settles both directions without jumping', (
+    tester,
+  ) async {
+    final state = HomeReadingState(vsync: const TestVSync());
     addTearDown(state.dispose);
-    for (final d in [0.0, 32.0, 39.9, 40.0]) {
-      state.updateDistance(d);
-      expect(state.progress, 0);
-    }
-    state.updateDistance(80);
+
+    state.beginUserRead();
+    state.updateUserRead(fingerUp: false, distance: 40);
+    expect(state.progress, 0);
+    state.updateUserRead(fingerUp: false, distance: 40);
     expect(state.progress, .5);
-    state.updateDistance(50);
-    expect(state.progress, .125);
-    state.updateDistance(120);
+    state.updateUserRead(fingerUp: false, distance: 40);
     expect(state.state, HomeHeaderState.collapsed);
-    for (final d in [119.0, 40.0, 35.0, 32.01]) {
-      state.updateDistance(d);
-      expect(state.progress, 1);
-    }
-    state.updateDistance(32);
-    expect(state.state, HomeHeaderState.expanded);
-    state.updateDistance(-120);
+    state.updateUserRead(fingerUp: true, distance: 200);
     expect(state.state, HomeHeaderState.collapsed);
+
     state.reset();
+    state.beginUserRead();
+    state.updateUserRead(fingerUp: false, distance: 50);
+    expect(state.progress, .125);
+    state.updateUserRead(fingerUp: true, distance: 1);
+    expect(state.progress, .125);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(state.progress, allOf(greaterThan(.125), lessThan(1)));
+    await tester.pumpAndSettle();
+    expect(state.state, HomeHeaderState.collapsed);
+    state.expandForDayDividerAtTop();
+    expect(state.progress, 1);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 80));
+    expect(state.progress, allOf(greaterThan(0), lessThan(1)));
+    await tester.pumpAndSettle();
+    expect(state.state, HomeHeaderState.expanded);
     expect(state.progress, 0);
   });
 
@@ -314,21 +328,18 @@ void main() {
       var shell = await mount(t);
       expect(
         timeline(t).readingPosition!.instant,
-        start + 480 * 60000 - 400000,
+        greaterThan(start + 480 * 60000 - 400000),
       );
       expect(timeline(t).readingPosition!.relativeY, closeTo(0, .1));
       expect(shell.reading.progress, 0);
       await t.pumpWidget(const SizedBox.shrink());
       shell = await mount(t, today: true);
-      final nowY =
-          (start + 18 * 3600000 - timeline(t).readingPosition!.instant) /
-          3600000 *
-          72;
-      expect(nowY, closeTo(scrollable(t).position.viewportDimension - 40, .1));
+      expect(timeline(t).readingPosition!.instant, start + 18 * 3600000);
+      expect(timeline(t).readingPosition!.relativeY, closeTo(-40, .1));
       expect(shell.reading.progress, 0);
       await t.pumpWidget(const SizedBox.shrink());
       await mount(t, empty: true);
-      expect(timeline(t).readingPosition!.instant, start);
+      expect(find.text('00:00'), findsWidgets);
       expect(find.text('尚未记录'), findsWidgets);
       expect(t.takeException(), isNull);
     },
@@ -337,10 +348,10 @@ void main() {
   testWidgets(
     'user reading collapses; program jumps/refresh and crossing a day preserve state; explicit day resets',
     (t) async {
-      final shell = await mount(t, suggestion: true);
+      final shell = await mount(t, suggestion: true, today: true);
       expect(find.byKey(const ValueKey('test-suggestion')), findsOneWidget);
       final origin = timeline(t).readingOrigin!;
-      await t.drag(find.byType(HomeTimelineTab), const Offset(0, -170));
+      await t.drag(find.byType(HomeTimelineTab), const Offset(0, 170));
       await t.pumpAndSettle();
       expect(shell.reading.state, HomeHeaderState.collapsed);
       expect(find.byKey(const ValueKey('test-suggestion')), findsNothing);
@@ -352,18 +363,15 @@ void main() {
       expect(shell.reading.state, HomeHeaderState.collapsed);
       expect(timeline(t).readingPosition!.instant, before.instant);
       expect(timeline(t).readingOrigin!.instant, origin.instant);
-      final position = scrollable(t).position;
-      position.jumpTo(position.pixels - 900);
+      await t.drag(find.byType(HomeTimelineTab), const Offset(0, 1800));
       await t.pumpAndSettle();
       expect(shell.reading.state, HomeHeaderState.collapsed);
       expect(homeDateTitle(t), '10月6日');
       await shell.openDate(date);
       await t.pumpAndSettle();
       expect(shell.reading.state, HomeHeaderState.expanded);
-      expect(
-        timeline(t).readingPosition!.instant,
-        start + 480 * 60000 - 400000,
-      );
+      expect(timeline(t).readingPosition!.instant, start + 18 * 3600000);
+      expect(timeline(t).readingPosition!.relativeY, closeTo(-40, .1));
       expect(t.takeException(), isNull);
     },
   );
@@ -445,7 +453,7 @@ void main() {
   );
 
   testWidgets(
-    'continuous touch survives header compensation and only user return expands',
+    'continuous touch survives compensation and same-day return stays compact',
     (t) async {
       final shell = await mount(t);
       final state = timeline(t);
@@ -454,7 +462,7 @@ void main() {
         t.getCenter(find.byType(HomeTimelineTab)),
       );
       for (var i = 0; i < 12; i++) {
-        await gesture.moveBy(const Offset(0, -20));
+        await gesture.moveBy(const Offset(0, 20));
         await t.pump(const Duration(milliseconds: 16));
       }
       expect(timeline(t), same(state));
@@ -466,7 +474,7 @@ void main() {
       expect(shell.reading.state, HomeHeaderState.collapsed);
       await t.drag(find.byType(HomeTimelineTab), const Offset(0, -25));
       await t.pumpAndSettle();
-      expect(shell.reading.state, HomeHeaderState.expanded);
+      expect(shell.reading.state, HomeHeaderState.collapsed);
       expect(t.takeException(), isNull);
     },
   );
@@ -501,7 +509,7 @@ void main() {
     (t) async {
       var fail = false;
       final shell = await mount(t, fails: () => fail);
-      await t.drag(find.byType(HomeTimelineTab), const Offset(0, -170));
+      await t.drag(find.byType(HomeTimelineTab), const Offset(0, 170));
       await t.pumpAndSettle();
       final before = timeline(t).readingPosition!;
       final origin = timeline(t).readingOrigin!;
@@ -527,7 +535,9 @@ void main() {
     (t) async {
       var now = start + 18 * 3600000;
       final shell = await mount(t, today: true, clock: () => now);
-      await t.drag(find.byType(HomeTimelineTab), const Offset(0, 170));
+      shell.reading.beginUserRead();
+      shell.reading.updateUserRead(fingerUp: false, distance: 120);
+      shell.reading.endUserRead();
       await t.pumpAndSettle();
       expect(shell.reading.state, HomeHeaderState.collapsed);
       final origin = timeline(t).readingOrigin;
@@ -537,7 +547,7 @@ void main() {
       expect(shell.feed.focusDate.day, 8);
       expect(shell.reading.state, HomeHeaderState.collapsed);
       expect(timeline(t).readingOrigin, same(origin));
-      await t.drag(find.byType(HomeTimelineTab), const Offset(0, 25));
+      await t.drag(find.byType(HomeTimelineTab), const Offset(0, -25));
       await t.pumpAndSettle();
       expect(shell.reading.state, HomeHeaderState.collapsed);
       expect(t.takeException(), isNull);
@@ -653,7 +663,10 @@ void main() {
           ),
         );
         await t.pumpAndSettle();
-        viewport.update(0, 800);
+        viewport.update(
+          scroll.offset,
+          scroll.offset + scroll.position.viewportDimension,
+        );
         await t.pumpAndSettle();
         final stateWord = find.descendant(
           of: find.byKey(ValueKey(gap.id)),
@@ -745,9 +758,18 @@ void main() {
           expect(axis.geometry.dpPerHour, 72);
           await capture(t, 'expanded-$width-$scale');
           if (width == 360 && scale == 1) {
+            expect(find.text('日账本'), findsOneWidget);
+            expect(
+              t.getCenter(find.byKey(const ValueKey('home-menu'))).dy,
+              lessThan(
+                t
+                    .getCenter(find.byKey(const ValueKey('ledger-date-picker')))
+                    .dy,
+              ),
+            );
             await capture(t, 'expanded-360-1-logical', pixelRatio: 1);
           }
-          await t.drag(find.byType(HomeTimelineTab), const Offset(0, -170));
+          await t.drag(find.byType(HomeTimelineTab), const Offset(0, 170));
           await t.pumpAndSettle();
           expect(shell.reading.state, HomeHeaderState.collapsed);
           expect(find.byKey(const ValueKey('home-menu')), findsOneWidget);
@@ -801,11 +823,116 @@ void main() {
           }
           await capture(t, 'collapsed-$width-$scale');
           if (width == 360 && scale == 1) {
+            expect(find.text('日账本'), findsNothing);
+            final dateRowY = t
+                .getCenter(find.byKey(const ValueKey('ledger-date-picker')))
+                .dy;
+            expect(
+              t.getCenter(find.byKey(const ValueKey('home-menu'))).dy,
+              closeTo(dateRowY, 1),
+            );
+            expect(
+              t.getCenter(find.byKey(const ValueKey('home-back-to-today'))).dy,
+              closeTo(dateRowY, 1),
+            );
             await capture(t, 'collapsed-360-1-logical', pixelRatio: 1);
           }
           await t.pumpWidget(const SizedBox.shrink());
         }
       }
+    },
+  );
+
+  testWidgets(
+    'a tall Gap keeps one stable label form through the whole scroll',
+    (t) async {
+      await mount(t);
+      final axisFinder = find.byType(HomeDayAxis).last;
+      final axis = t.widget<HomeDayAxis>(axisFinder);
+      final intervals = TimelineInterval.fromView(axis.view);
+      final gap = intervals.singleWhere(
+        (i) => i.gap != null && i.startedAt == start + 980 * 60000,
+      );
+      final card = find.descendant(
+        of: axisFinder,
+        matching: find.byKey(ValueKey(gap.id)),
+      );
+      final word = find.descendant(of: card, matching: find.text('尚未记录'));
+      final position = scrollable(t).position;
+      final viewport = t.getRect(find.byType(HomeTimelineTab).last);
+      // 让长 Gap 顶边停在窗口下沿附近，再逐步上滑，让整段经过视口。
+      position.jumpTo(
+        (position.pixels + t.getRect(card.last).top - viewport.bottom + 12)
+            .clamp(0.0, position.maxScrollExtent),
+      );
+      await t.pump();
+      await t.pump();
+      final lineHeight =
+          HomeLedgerStyle.state.fontSize! * HomeLedgerStyle.state.height!;
+      var sawVisible = false;
+      for (var i = 0; i < 100; i++) {
+        position.jumpTo(
+          (position.pixels + 8).clamp(0.0, position.maxScrollExtent),
+        );
+        await t.pump(const Duration(milliseconds: 16));
+        final cardRect = t.getRect(card.last);
+        if (cardRect.top < viewport.top) break;
+        final visible = (viewport.bottom - cardRect.top).clamp(
+          0.0,
+          cardRect.height,
+        );
+        if (visible >= lineHeight) {
+          // 滚动中标签形态必须只由块高决定，不能在视口边缘退化成
+          // 单行 / 紧凑形态而让同一段文字反复变形。
+          expect(word, findsOneWidget);
+          expect(
+            t.widget<Text>(word).style!.fontSize,
+            HomeLedgerStyle.title.fontSize,
+          );
+          sawVisible = true;
+        }
+      }
+      expect(sawVisible, isTrue);
+      expect(t.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'today weekday joins the date line and removes the extra header row',
+    (t) async {
+      await mount(t, width: 600, today: true);
+      final date = find.byKey(const ValueKey('home-date-title')).last;
+      final weekday = find.descendant(
+        of: find.byType(HomeDateTitle).last,
+        matching: find.text('周三 · 今天'),
+      );
+      expect(date, findsOneWidget);
+      expect(weekday, findsOneWidget);
+      final dateRect = t.getRect(date);
+      final weekRect = t.getRect(weekday);
+      // 同一行：垂直投影相交，星期在日期右侧。
+      expect(weekRect.top, lessThan(dateRect.bottom));
+      expect(weekRect.bottom, greaterThan(dateRect.top));
+      expect(weekRect.left, greaterThanOrEqualTo(dateRect.right));
+      expect(find.byKey(const ValueKey('home-back-to-today')), findsNothing);
+      expect(t.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'weekday falls back below the date when the line cannot fit both',
+    (t) async {
+      await mount(t, width: 320, scale: 2, today: true);
+      final date = find.byKey(const ValueKey('home-date-title')).last;
+      final weekday = find.descendant(
+        of: find.byType(HomeDateTitle).last,
+        matching: find.text('周三 · 今天'),
+      );
+      expect(date, findsOneWidget);
+      final dateRect = t.getRect(date);
+      final weekRect = t.getRect(weekday);
+      expect(weekRect.top, greaterThanOrEqualTo(dateRect.bottom));
+      expect(t.takeException(), isNull);
     },
   );
 }

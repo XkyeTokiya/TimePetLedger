@@ -15,6 +15,7 @@ import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_timeline_tab.dart';
+import 'package:time_pet_ledger/features/settings/domain/app_preferences.dart';
 
 import '../support/home_feed.dart';
 
@@ -78,6 +79,7 @@ Future<HomeShellState> mountHome(
   DayLedgerLoader? loader,
   int Function()? changingClock,
   bool disableAnimations = false,
+  HomeQuickPanelSide quickPanelSide = HomeQuickPanelSide.left,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(390, 800);
@@ -97,10 +99,11 @@ Future<HomeShellState> mountHome(
         dateOfInstant: deviceDateOfInstant,
         initialDate: initialDate,
         busy: false,
-        onOpenSummary: () {},
-        onOpenReview: () {},
+        onOpenSummary: (_) {},
+        onOpenReview: (_) {},
         onRecordActivity: () {},
         onRecordSleep: () {},
+        quickPanelSide: quickPanelSide,
       ),
     ),
   );
@@ -110,7 +113,7 @@ Future<HomeShellState> mountHome(
 
 void main() {
   testWidgets(
-    'continuous feed keeps one projection per day and moves the top date while reading',
+    'continuous feed keeps one projection per day and moves the pinned date while reading',
     (tester) async {
       final db = await openLedger(tester);
       final shell = await mountHome(
@@ -139,49 +142,144 @@ void main() {
     },
   );
 
-  testWidgets('scrolling across the day boundary updates the pinned date', (
-    tester,
-  ) async {
-    final db = await openLedger(tester);
-    await mountHome(tester, db, initialDate: oct2, now: at(3, 9));
-    expect(homeDateTitle(tester), '10月2日');
+  testWidgets(
+    'date line reaches the timeline top before date and header change',
+    (tester) async {
+      final db = await openLedger(tester);
+      final shell = await mountHome(
+        tester,
+        db,
+        initialDate: oct2,
+        now: at(3, 9),
+      );
+      expect(homeDateTitle(tester), '10月2日');
 
-    // 主体向下拖动 = 读更早的时间；跨过日期分隔后顶部日期随之变化。
-    await tester.drag(find.byType(HomeTimelineTab), const Offset(0, 700));
-    await settleNative(tester);
-    expect(homeDateTitle(tester), isNot('10月2日'));
-    expect(find.byKey(const ValueKey('home-header-collapsed')), findsOneWidget);
-    expect(find.byKey(const ValueKey('home-sticky-day')), findsNothing);
-    expect(find.text('10月1日'), findsWidgets);
-    expect(tester.takeException(), isNull);
-  });
+      await tester.drag(find.byType(HomeTimelineTab), const Offset(0, 170));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('home-header-collapsed')),
+        findsOneWidget,
+      );
+
+      // 向下拖读更早的日期；跨日仍保持紧凑。
+      for (var i = 0; i < 3 && homeDateTitle(tester) == '10月2日'; i++) {
+        await tester.drag(find.byType(HomeTimelineTab), const Offset(0, 600));
+        await settleNative(tester);
+      }
+      expect(homeDateTitle(tester), isNot('10月2日'));
+      expect(
+        find.byKey(const ValueKey('home-header-collapsed')),
+        findsOneWidget,
+      );
+
+      final timeline = find.byType(HomeTimelineTab).last;
+      final position = tester
+          .state<ScrollableState>(
+            find
+                .descendant(of: timeline, matching: find.byType(Scrollable))
+                .first,
+          )
+          .position;
+      final timelineTop = tester.getTopLeft(timeline).dy;
+      final divider = dayDivider(oct2).last;
+      final dividerTop = tester.getTopLeft(divider).dy;
+      position.jumpTo(position.pixels + dividerTop - timelineTop - 30);
+      await tester.pumpAndSettle();
+
+      // 日期横线只在窗口底部出现、或仍在窗口内部时，不提前切日 / 回展。
+      expect(
+        tester.getTopLeft(divider).dy - tester.getTopLeft(timeline).dy,
+        closeTo(30, 1),
+      );
+      expect(homeDateTitle(tester), '10月1日');
+      expect(shell.reading.progress, 1);
+
+      // 横线越过时间轴窗口顶部的同一刻切换日期，并从紧凑态连续回展。
+      final gesture = await tester.startGesture(tester.getCenter(timeline));
+      for (var i = 0; i < 4; i++) {
+        await gesture.moveBy(const Offset(0, -20));
+        await tester.pump(const Duration(milliseconds: 16));
+      }
+      expect(homeDateTitle(tester), '10月2日');
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 32));
+      expect(shell.reading.progress, allOf(greaterThan(0), lessThan(1)));
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('home-header-collapsed')), findsNothing);
+      expect(find.byKey(const ValueKey('home-sticky-day')), findsNothing);
+      expect(find.text('10月1日'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
-    'horizontal swipe moves exactly one day and keeps edge gestures',
+    'horizontal swipe controls the quick panel without changing the day',
     (tester) async {
       final db = await openLedger(tester);
       await mountHome(tester, db, initialDate: oct2, now: at(3, 9));
 
-      await swipeFeed(tester, -120);
-      expect(homeDateTitle(tester), '10月3日');
-      expect(find.byKey(const ValueKey('home-back-to-today')), findsNothing);
-
-      await swipeFeed(tester, 120);
+      // 左侧快捷区只接受向右的明确水平意图。
+      await swipeFeed(tester, -240);
       expect(homeDateTitle(tester), '10月2日');
-      await swipeFeed(tester, 120);
-      expect(homeDateTitle(tester), '10月1日');
-      expect(find.byKey(const ValueKey('home-back-to-today')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('home-quick-panel-scrim')),
+        findsNothing,
+      );
 
-      // 左边缘属于侧边栏手势保留区：不切日。
-      await swipeFeed(tester, 120, startX: 8);
-      expect(homeDateTitle(tester), '10月1日');
-      if (find.byType(NavigationDrawer).evaluate().isNotEmpty) {
-        await tester.tapAt(const Offset(380, 400));
-        await tester.pumpAndSettle();
-      }
+      await swipeFeed(tester, 240);
+      expect(homeDateTitle(tester), '10月2日');
+      expect(
+        find.byKey(const ValueKey('home-quick-panel-scrim')),
+        findsOneWidget,
+      );
+      expect(find.text('当日概览'), findsOneWidget);
+      expect(find.text('当日复盘'), findsOneWidget);
+
+      await swipeFeed(tester, -240);
+      expect(
+        find.byKey(const ValueKey('home-quick-panel-scrim')),
+        findsNothing,
+      );
+      expect(homeDateTitle(tester), '10月2日');
+
+      // 系统手势边缘不起手；菜单按钮仍可打开。
+      await swipeFeed(tester, 240, startX: 8);
+      expect(
+        find.byKey(const ValueKey('home-quick-panel-scrim')),
+        findsNothing,
+      );
+      await tester.tap(find.byKey(const ValueKey('home-menu')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('home-quick-panel-scrim')),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('right-side quick panel mirrors its gesture direction', (
+    tester,
+  ) async {
+    final db = await openLedger(tester);
+    await mountHome(
+      tester,
+      db,
+      initialDate: oct2,
+      now: at(3, 9),
+      quickPanelSide: HomeQuickPanelSide.right,
+    );
+    await swipeFeed(tester, 240);
+    expect(find.byKey(const ValueKey('home-quick-panel-scrim')), findsNothing);
+    await swipeFeed(tester, -240);
+    expect(
+      find.byKey(const ValueKey('home-quick-panel-scrim')),
+      findsOneWidget,
+    );
+    expect(homeDateTitle(tester), '10月2日');
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('calendar jump and back-to-today use the same date rules', (
     tester,
@@ -221,6 +319,55 @@ void main() {
     expect(coverageText(tester, '尚未记录'), '9 小时');
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'selected future date bounds arrow browsing until returning today',
+    (tester) async {
+      final db = await openLedger(tester);
+      final shell = await mountHome(
+        tester,
+        db,
+        initialDate: oct2,
+        now: at(3, 9),
+      );
+      final future = CivilDate(year: 2026, month: 10, day: 5);
+      await shell.openDate(future);
+      await settleNative(tester);
+      expect(shell.feed.futureNavigationLimit, future);
+      expect(homeDateTitle(tester), '10月5日');
+      expect(
+        tester
+            .widget<IconButton>(find.byKey(const ValueKey('home-next-day')))
+            .onPressed,
+        isNull,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('home-previous-day')));
+      await settleNative(tester);
+      expect(homeDateTitle(tester), '10月4日');
+      expect(
+        tester
+            .widget<IconButton>(find.byKey(const ValueKey('home-next-day')))
+            .onPressed,
+        isNotNull,
+      );
+      await tester.tap(find.byKey(const ValueKey('home-next-day')));
+      await settleNative(tester);
+      expect(homeDateTitle(tester), '10月5日');
+
+      await tester.tap(find.byKey(const ValueKey('home-back-to-today')));
+      await settleNative(tester);
+      expect(homeDateTitle(tester), '10月3日');
+      expect(shell.feed.futureNavigationLimit, isNull);
+      expect(
+        tester
+            .widget<IconButton>(find.byKey(const ValueKey('home-next-day')))
+            .onPressed,
+        isNull,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('cross-day sleep keeps identity and full interval on both days', (
     tester,
@@ -292,7 +439,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('diagonal and short drags keep the day, clear swipes change it', (
+  testWidgets('diagonal and short drags do not open; clear swipe does', (
     tester,
   ) async {
     final db = await openLedger(tester);
@@ -305,15 +452,21 @@ void main() {
     await diagonal.up();
     await settleNative(tester);
     expect(homeDateTitle(tester), '10月2日');
+    expect(find.byKey(const ValueKey('home-quick-panel-scrim')), findsNothing);
 
-    await swipeFeed(tester, -60);
+    await swipeFeed(tester, 60);
     expect(homeDateTitle(tester), '10月2日');
+    expect(find.byKey(const ValueKey('home-quick-panel-scrim')), findsNothing);
     final horizontal = await tester.startGesture(const Offset(195, 350));
-    await horizontal.moveBy(const Offset(-80, 10));
-    await horizontal.moveBy(const Offset(-40, 10));
+    await horizontal.moveBy(const Offset(160, 10));
+    await horizontal.moveBy(const Offset(80, 10));
     await horizontal.up();
     await settleNative(tester);
-    expect(homeDateTitle(tester), '10月3日');
+    expect(homeDateTitle(tester), '10月2日');
+    expect(
+      find.byKey(const ValueKey('home-quick-panel-scrim')),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 
@@ -336,15 +489,9 @@ void main() {
           },
         ),
       );
-      final position = tester
-          .state<ScrollableState>(
-            find.descendant(
-              of: find.byType(HomeTimelineTab),
-              matching: find.byType(Scrollable),
-            ),
-          )
-          .position;
-      final offset = position.pixels;
+      final readingBefore = tester
+          .state<HomeTimelineTabState>(find.byType(HomeTimelineTab))
+          .readingPosition!;
       final dates = shell.feed.loadedDates;
       final context = shell.feed.focusContext;
       fail = true;
@@ -356,7 +503,11 @@ void main() {
       expect(find.text('十月二日活动'), findsOneWidget);
       expect(shell.feed.loadedDates, dates);
       expect(shell.feed.focusContext, same(context));
-      expect(position.pixels, closeTo(offset, 1));
+      final readingAfter = tester
+          .state<HomeTimelineTabState>(find.byType(HomeTimelineTab))
+          .readingPosition!;
+      expect(readingAfter.instant, readingBefore.instant);
+      expect(readingAfter.relativeY, closeTo(readingBefore.relativeY, 1));
       expect(find.text('账本刷新失败，当前仍显示上一次读取结果。'), findsOneWidget);
 
       fail = false;
@@ -427,7 +578,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('rapid buttons and swipes advance from the pending target', (
+  testWidgets('rapid day buttons advance from the pending target', (
     tester,
   ) async {
     final db = await openLedger(tester);
@@ -452,14 +603,13 @@ void main() {
     await tester.pump();
     await tester.tap(find.byKey(const ValueKey('home-next-day')));
     await tester.pump();
-    await swipeFeed(tester, -120);
-    final target = CivilDate(year: 2026, month: 10, day: 5);
+    final target = CivilDate(year: 2026, month: 10, day: 4);
     expect(shell.feed.navigationDate, target);
     expect(homeDateTitle(tester), '10月2日');
     block = false;
     gate.complete();
     await settleNative(tester);
-    expect(homeDateTitle(tester), '10月5日');
+    expect(homeDateTitle(tester), '10月4日');
     expect(shell.feed.endDate, target);
     expect(tester.takeException(), isNull);
   });
