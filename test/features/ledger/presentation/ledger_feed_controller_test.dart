@@ -251,4 +251,25 @@ void main() {
       expect(feed.loadedDates, [day2, day3]);
     },
   );
+
+  test('a failed date jump does not block extending earlier', () async {
+    var fail = false;
+    final feed = feedWith((_) async {
+      if (fail) throw StateError('unavailable');
+      return emptyFacts();
+    }, windowDays: 2);
+    addTearDown(feed.dispose);
+    expect(await feed.showDate(day2), isTrue);
+    final loadedBefore = feed.loadedDates.length;
+
+    fail = true;
+    expect(await feed.showDate(day3), isFalse);
+    fail = false;
+    // 失败跳转保留待重试目标（refresh 仍会重发），但不得阻塞向前装载。
+    expect(await feed.extendEarlier(), isTrue);
+    expect(feed.loadedDates.length, greaterThan(loadedBefore));
+
+    expect(await feed.refresh(), isTrue);
+    expect(feed.focusDate, day3);
+  });
 }

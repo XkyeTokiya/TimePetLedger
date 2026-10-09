@@ -495,6 +495,52 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('a failed earlier-window load retries at the timeline start', (
+    tester,
+  ) async {
+    final db = await openLedger(tester);
+    final base = createDayLedgerLoader(db);
+    var failEarlier = true;
+    await mountHome(
+      tester,
+      db,
+      initialDate: oct2,
+      now: at(3, 9),
+      loader: DayLedgerLoader(
+        resolveDate: base.resolveDate,
+        readFacts: (context) {
+          // 初始窗口从 9 月 19 日开始；更早的扩展装载先失败一次。
+          final date = deviceDateOfInstant(context.dayStartedAt);
+          if (failEarlier && date.month == 9 && date.day <= 18) {
+            throw StateError('injected extension error');
+          }
+          return base.readFacts(context);
+        },
+      ),
+    );
+    final scroll = tester
+        .state<ScrollableState>(
+          find
+              .descendant(
+                of: find.byType(HomeTimelineTab),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        )
+        .position;
+
+    scroll.jumpTo(0);
+    await settleNative(tester);
+    expect(find.byKey(const ValueKey('day-divider-2026-9-12')), findsNothing);
+
+    // 失败后停在顶部：下一次到达顶部（微小滚动也会触发）必须重试成功。
+    failEarlier = false;
+    scroll.jumpTo(0.2);
+    await settleNative(tester);
+    expect(find.byKey(const ValueKey('day-divider-2026-9-12')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('diagonal and short drags do not open; clear swipe does', (
     tester,
   ) async {
