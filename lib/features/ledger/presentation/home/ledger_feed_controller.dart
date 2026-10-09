@@ -195,15 +195,17 @@ final class LedgerFeedController extends ChangeNotifier {
   }
 
   /// 向上滚动到窗口最早一天后继续向前装载；不改变浏览日期。
-  Future<void> extendEarlier() async {
-    if (_disposed || _extending || _loading || _requestedDate != null) return;
+  /// 返回是否真正装载了新的一天；失败或本次未执行时返回 false，
+  /// 调用方据此解除重试闩锁（待重试的跳转目标不得阻塞向前装载）。
+  Future<bool> extendEarlier() async {
+    if (_disposed || _extending || _loading) return false;
     _extending = true;
     final request = ++_request;
     final start = _startFor(_start, earlierStep + 1);
     final end = adjacentLedgerDate(_start, -1);
     try {
       final loaded = await _readRange(start, end);
-      if (_disposed || request != _request) return;
+      if (_disposed || request != _request) return false;
       _views.addAll(loaded.views);
       _contexts.addAll(loaded.contexts);
       _start = start;
@@ -211,10 +213,12 @@ final class LedgerFeedController extends ChangeNotifier {
       _refreshFailed = false;
       _dataVersion++;
       notifyListeners();
+      return true;
     } catch (_) {
-      if (_disposed || request != _request) return;
+      if (_disposed || request != _request) return false;
       _refreshFailed = true;
       notifyListeners();
+      return false;
     } finally {
       _extending = false;
     }

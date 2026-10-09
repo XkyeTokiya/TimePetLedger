@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollDirection;
 
@@ -193,7 +195,11 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
   }
 
   void _runLayoutPass() {
-    if (!mounted || !_current || !_scroll.hasClients) return;
+    if (!mounted || !_current || !_scroll.hasClients) {
+      // 本次恢复无法执行：清掉恢复标记，避免后续滚动更新被 _restoring 抑制。
+      _restoring = false;
+      return;
+    }
     if (!widget.active) {
       _restoring = false;
       return;
@@ -378,7 +384,19 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
   }
 
   bool _notification(ScrollNotification notification) {
-    if (!_current || !widget.active || !_positioned || _pendingReveal != null) {
+    if (!_current || !widget.active || !_positioned) return false;
+    if (_pendingReveal != null) {
+      // 定位尚未完成时不推进阅读状态，但仍维护用户滚动的开始 / 结束簿记，
+      // 避免这段时间内开始的手势丢失 beginUserRead / endUserRead。
+      if (notification is ScrollStartNotification &&
+          notification.dragDetails != null) {
+        _userScrolling = true;
+        _readDirection = null;
+        widget.reading.beginUserRead();
+      } else if (notification is ScrollEndNotification) {
+        _userScrolling = false;
+        widget.reading.endUserRead();
+      }
       return false;
     }
     if (notification is UserScrollNotification) {
@@ -458,7 +476,12 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
     }
     if (_extendRequested) return;
     _extendRequested = true;
-    widget.controller.extendEarlier();
+    unawaited(
+      widget.controller.extendEarlier().then((extended) {
+        // 装载失败或本次未执行时解除闩锁，下一次到达顶部可以重试。
+        if (!extended && mounted) _extendRequested = false;
+      }),
+    );
   }
 
   bool _syncBottomFill() {
