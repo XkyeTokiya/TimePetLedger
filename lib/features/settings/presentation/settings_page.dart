@@ -4,6 +4,7 @@ import '../../ledger/presentation/recording_time_picker.dart'
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:flutter/material.dart';
 
+import '../../../app/theme/app_theme.dart';
 import '../../../app/theme/home_theme.dart';
 import '../../../app/theme/semantic_colors.dart';
 import '../../../core/identity/entity_id.dart';
@@ -13,9 +14,10 @@ import '../domain/data_overview.dart';
 
 /// 设置页：分组入口（界面设置 / 记录与提醒 / 高级设置 / 关于）。
 ///
-/// 版式按设置页第一轮原型（assets/settings-round-one）。偏好通过
-/// [AppPreferencesStore] 本机存取；高级操作通过 [DataMaintenance] 作用于
-/// 正式事实；两者失败都不表现为成功。版本号由宿主注入，不写模拟值。
+/// 视觉按用户 2026-10-10 参考稿重设计：分组圆角卡片、圆形图标、
+/// 行尾当前值 / 开关；多选在底部面板中完成（主题模式、自选主题色、
+/// 字体、记录方式）。偏好通过 [AppPreferencesStore] 本机存取；高级操作
+/// 通过 [DataMaintenance] 作用于正式事实；两者失败都不表现为成功。
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
     super.key,
@@ -46,6 +48,7 @@ enum _View { home, display, recording, advanced, about }
 
 class _SettingsPageState extends State<SettingsPage> {
   ColorScheme get _colors => Theme.of(context).colorScheme;
+  TextTheme get _text => Theme.of(context).textTheme;
   TimeLedgerSemanticColors get _semantics => context.semanticColors;
   _View view = _View.home;
   AppPreferences? prefs;
@@ -53,6 +56,9 @@ class _SettingsPageState extends State<SettingsPage> {
   bool busy = false;
   String? error;
   String? status;
+
+  /// 关闭动态色彩时恢复的上一次自选方案（仅会话内记忆）。
+  ThemeScheme? _lastPreset;
 
   @override
   void initState() {
@@ -74,6 +80,8 @@ class _SettingsPageState extends State<SettingsPage> {
         prefs = preferences;
         this.counts = counts;
       });
+      final saved = preferences.themeScheme;
+      if (saved != null && saved != ThemeScheme.dynamic) _lastPreset = saved;
     } catch (_) {
       if (mounted) setState(() => error = '设置暂时读不出来，再试一次吧。');
     }
@@ -222,7 +230,7 @@ class _SettingsPageState extends State<SettingsPage> {
             TimeLedgerSpacing.page,
             TimeLedgerSpacing.xxs,
             TimeLedgerSpacing.page,
-            TimeLedgerSpacing.xl,
+            TimeLedgerSpacing.xxl,
           ),
           children: [
             if (error != null) ...[_error(error!), const SizedBox(height: 12)],
@@ -245,195 +253,229 @@ class _SettingsPageState extends State<SettingsPage> {
   List<Widget> _body() {
     final prefs = this.prefs;
     if (prefs == null) {
-      return const [
-        SizedBox(height: 40),
-        Center(child: CircularProgressIndicator()),
+      return [
+        const SizedBox(height: 40),
+        // 读取失败时给出重试入口，不保留无限加载指示（失败可恢复）。
+        if (error == null)
+          const Center(child: CircularProgressIndicator())
+        else
+          Center(
+            child: TextButton(
+              key: const ValueKey('settings-retry'),
+              onPressed: _load,
+              child: const Text('重试读取'),
+            ),
+          ),
       ];
     }
     switch (view) {
       case _View.home:
         return [
-          _entry(
-            _View.display,
-            '界面设置',
-            '快捷区${_quickPanelSideText(prefs)} · 目标热力图 · ${_rangeText(prefs)}',
-            Icons.tune,
-          ),
-          _entry(
-            _View.recording,
-            '记录与提醒',
-            '${_modeText(prefs)} · 首页提醒${prefs.reminders == false ? '已关闭' : '已开启'}',
-            Icons.edit_note,
-          ),
-          _entry(_View.advanced, '高级设置', '测试数据与数据清空', Icons.settings),
-          _entry(_View.about, '关于', '日账本 · 版本信息', Icons.info_outline),
+          _card([
+            _navRow(
+              key: const ValueKey('settings-open-display'),
+              icon: Icons.tune,
+              title: '界面设置',
+              subtitle:
+                  '快捷区${_quickPanelSideText(prefs)} · 目标热力图 · ${_rangeText(prefs)}',
+              target: _View.display,
+            ),
+            _navRow(
+              key: const ValueKey('settings-open-recording'),
+              icon: Icons.edit_note,
+              title: '记录与提醒',
+              subtitle:
+                  '${_modeText(prefs)} · 首页提醒${prefs.reminders == false ? '已关闭' : '已开启'}',
+              target: _View.recording,
+            ),
+            _navRow(
+              key: const ValueKey('settings-open-advanced'),
+              icon: Icons.settings,
+              title: '高级设置',
+              subtitle: '测试数据与数据清空',
+              target: _View.advanced,
+            ),
+            _navRow(
+              key: const ValueKey('settings-open-about'),
+              icon: Icons.info_outline,
+              title: '关于',
+              subtitle: '日账本 · 版本信息',
+              target: _View.about,
+            ),
+          ]),
         ];
       case _View.display:
+        final scheme = prefs.themeScheme ?? ThemeScheme.defaultM3;
+        final isDynamic = scheme == ThemeScheme.dynamic;
         return [
-          _sectionHeader(
-            '快捷区位置',
-            value: _quickPanelSideText(prefs),
-            valueKey: const ValueKey('settings-quick-panel-current'),
-          ),
-          for (final side in HomeQuickPanelSide.values)
-            _choice(
-              key: 'settings-quick-panel-${side.name}',
-              selected:
-                  (prefs.homeQuickPanelSide ?? HomeQuickPanelSide.left) == side,
-              title: side == HomeQuickPanelSide.left ? '左侧' : '右侧',
-              description: side == HomeQuickPanelSide.left
-                  ? '向右滑打开，菜单在左上'
-                  : '向左滑打开，菜单在右上',
-              onTap: busy
-                  ? null
-                  : () => _savePreference(
-                      (c) => c.copyWith(homeQuickPanelSide: side),
-                    ),
-            ),
-          const SizedBox(height: TimeLedgerSpacing.xl),
-          _sectionHeader(
-            '目标热力图',
-            value: _rangeText(prefs),
-            valueKey: const ValueKey('settings-heat-current'),
-          ),
-          for (final range in HeatRange.values)
-            _choice(
-              key: 'settings-heat-${range.name}',
-              selected: prefs.heatRange == range,
-              title: range == HeatRange.week ? '本周' : '本月',
-              description: range == HeatRange.week ? '查看本自然周的投入' : '查看本自然月的投入',
-              onTap: busy
-                  ? null
-                  : () => _savePreference((c) => c.copyWith(heatRange: range)),
-            ),
-          const SizedBox(height: TimeLedgerSpacing.xl),
-          _sectionHeader(
-            '主题配色',
-            value: _themeText(prefs),
-            valueKey: const ValueKey('settings-theme-current'),
-          ),
+          _sectionLabel('主题'),
           DynamicColorBuilder(
             builder: (lightDynamic, darkDynamic) {
               final dynamicAvailable =
                   lightDynamic != null && darkDynamic != null;
-              return Column(
-                children: [
-                  for (final scheme in ThemeScheme.values)
-                    if (scheme != ThemeScheme.dynamic || dynamicAvailable)
-                      _choice(
-                        key: 'settings-theme-${scheme.name}',
-                        selected:
-                            (prefs.themeScheme ?? ThemeScheme.defaultM3) ==
-                            scheme,
-                        title: _schemeTitle(scheme),
-                        description: _schemeDescription(scheme),
-                        onTap: busy
-                            ? null
-                            : () => _savePreference(
-                                (c) => c.copyWith(themeScheme: scheme),
-                              ),
-                      ),
-                ],
-              );
+              return _card([
+                _row(
+                  key: const ValueKey('settings-theme-mode'),
+                  icon: Icons.brightness_6_outlined,
+                  title: '主题模式',
+                  subtitle: '浅色 / 深色 / 跟随系统',
+                  trailing: _navTrailing(
+                    _themeModeText(prefs),
+                    valueKey: const ValueKey('settings-theme-mode-current'),
+                  ),
+                  onTap: busy ? null : () => _pickThemeMode(prefs),
+                ),
+                if (dynamicAvailable)
+                  _row(
+                    icon: Icons.wallpaper_outlined,
+                    title: '动态色彩',
+                    subtitle: isDynamic ? '已根据壁纸生成主题色' : '未启用 · 使用自选主题色',
+                    trailing: Switch(
+                      key: const ValueKey('settings-theme-dynamic'),
+                      value: isDynamic,
+                      onChanged: busy
+                          ? null
+                          : (value) => _setDynamic(value, prefs),
+                    ),
+                  ),
+                _row(
+                  key: const ValueKey('settings-theme-picker'),
+                  icon: Icons.palette_outlined,
+                  title: '自选主题色',
+                  subtitle: isDynamic ? '选择后将关闭动态色彩' : '选择一款主题配色',
+                  trailing: _navTrailing(
+                    isDynamic ? '未选择' : _schemeTitle(scheme),
+                    valueKey: const ValueKey('settings-theme-current'),
+                  ),
+                  onTap: busy ? null : () => _pickThemeScheme(prefs),
+                ),
+              ]);
             },
           ),
-          const SizedBox(height: TimeLedgerSpacing.xl),
-          _sectionHeader(
-            '外观模式',
-            value: _themeModeText(prefs),
-            valueKey: const ValueKey('settings-theme-mode-current'),
-          ),
-          for (final mode in AppThemeMode.values)
-            _choice(
-              key: 'settings-theme-mode-${mode.name}',
-              selected: (prefs.themeMode ?? AppThemeMode.system) == mode,
-              title: _modeTitle(mode),
-              description: _modeDescription(mode),
-              onTap: busy
-                  ? null
-                  : () => _savePreference((c) => c.copyWith(themeMode: mode)),
+          _sectionLabel('字体'),
+          _card([
+            _row(
+              key: const ValueKey('settings-font'),
+              icon: Icons.text_fields,
+              title: '字体',
+              subtitle: '系统字体 / 衬线字体',
+              trailing: _navTrailing(
+                _fontText(prefs),
+                valueKey: const ValueKey('settings-font-current'),
+              ),
+              onTap: busy ? null : () => _pickFont(prefs),
             ),
-          const SizedBox(height: TimeLedgerSpacing.xl),
-          _sectionHeader(
-            '字体',
-            value: _fontText(prefs),
-            valueKey: const ValueKey('settings-font-current'),
+          ]),
+          _sectionLabel(
+            '快捷区位置',
+            value: _quickPanelSideText(prefs),
+            valueKey: const ValueKey('settings-quick-panel-current'),
           ),
-          for (final font in AppFontChoice.values)
-            _choice(
-              key: 'settings-font-${font.name}',
-              selected: (prefs.fontChoice ?? AppFontChoice.system) == font,
-              title: font == AppFontChoice.system ? '系统字体' : '衬线（NotoSerifSC）',
-              description: font == AppFontChoice.system
-                  ? '跟随平台默认字体'
-                  : '暖纸主题使用的衬线字体',
-              onTap: busy
-                  ? null
-                  : () => _savePreference((c) => c.copyWith(fontChoice: font)),
-            ),
+          _card([
+            for (final side in HomeQuickPanelSide.values)
+              _choiceRow(
+                key: 'settings-quick-panel-${side.name}',
+                selected:
+                    (prefs.homeQuickPanelSide ?? HomeQuickPanelSide.left) ==
+                    side,
+                title: side == HomeQuickPanelSide.left ? '左侧' : '右侧',
+                description: side == HomeQuickPanelSide.left
+                    ? '向右滑打开，菜单在左上'
+                    : '向左滑打开，菜单在右上',
+                onTap: busy
+                    ? null
+                    : () => _savePreference(
+                        (c) => c.copyWith(homeQuickPanelSide: side),
+                      ),
+              ),
+          ]),
+          _sectionLabel('目标热力图', value: _rangeText(prefs)),
+          _card([
+            for (final range in HeatRange.values)
+              _choiceRow(
+                key: 'settings-heat-${range.name}',
+                selected: prefs.heatRange == range,
+                title: range == HeatRange.week ? '本周' : '本月',
+                description: range == HeatRange.week
+                    ? '查看本自然周的投入'
+                    : '查看本自然月的投入',
+                onTap: busy
+                    ? null
+                    : () =>
+                          _savePreference((c) => c.copyWith(heatRange: range)),
+              ),
+          ]),
         ];
       case _View.recording:
         return [
-          _sectionHeader(
-            '记录方式',
-            value: _modeText(prefs),
-            valueKey: const ValueKey('settings-mode-current'),
-          ),
-          for (final mode in RecordingMode.values)
-            _choice(
-              key: 'settings-mode-${mode.name}',
-              selected: prefs.recordingMode == mode,
-              title: mode == RecordingMode.guided ? '问答引导' : '表单',
-              description: mode == RecordingMode.guided
-                  ? '一步步回想，再记下来'
-                  : '在一页中填写记录',
-              onTap: busy
-                  ? null
-                  : () =>
-                        _savePreference((c) => c.copyWith(recordingMode: mode)),
+          _sectionLabel('记录'),
+          _card([
+            _row(
+              key: const ValueKey('settings-mode'),
+              icon: Icons.edit_note,
+              title: '记录方式',
+              subtitle: '问答引导 / 一页表单',
+              trailing: _navTrailing(
+                _modeText(prefs),
+                valueKey: const ValueKey('settings-mode-current'),
+              ),
+              onTap: busy ? null : () => _pickRecordingMode(prefs),
             ),
-          const SizedBox(height: TimeLedgerSpacing.xl),
-          Text('提醒', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: TimeLedgerSpacing.xxs),
-          _toggleRow(
-            key: const ValueKey('settings-reminders'),
-            value: prefs.reminders ?? true,
-            onChanged: busy
-                ? null
-                : (value) =>
-                      _savePreference((c) => c.copyWith(reminders: value)),
-            title: '首页提醒',
-            subtitle: prefs.reminders == false
-                ? '首页不再显示提醒与问候区域。'
-                : '打开首页时，提醒睡眠、补记或复盘。',
-          ),
-          _timeRow(
-            key: 'settings-sleep-reminder',
-            label: '提醒记录睡眠',
-            minutes: prefs.sleepReminderMinutes ?? defaultSleepReminderMinutes,
-            enabled: prefs.reminders != false && !busy,
-            onTap: () => _pickReminderTime(
-              current:
-                  prefs.sleepReminderMinutes ?? defaultSleepReminderMinutes,
-              onPicked: (minutes) => _savePreference(
-                (c) => c.copyWith(sleepReminderMinutes: minutes),
+          ]),
+          _sectionLabel('提醒'),
+          _card([
+            _row(
+              icon: Icons.notifications_none,
+              title: '首页提醒',
+              subtitle: prefs.reminders == false
+                  ? '首页不再显示提醒与问候区域。'
+                  : '打开首页时，提醒睡眠、补记或复盘。',
+              trailing: Switch(
+                key: const ValueKey('settings-reminders'),
+                value: prefs.reminders ?? true,
+                onChanged: busy
+                    ? null
+                    : (value) =>
+                          _savePreference((c) => c.copyWith(reminders: value)),
               ),
             ),
-          ),
-          _timeRow(
-            key: 'settings-review-reminder',
-            label: '提醒复盘',
-            minutes:
-                prefs.reviewReminderMinutes ?? defaultReviewReminderMinutes,
-            enabled: prefs.reminders != false && !busy,
-            onTap: () => _pickReminderTime(
-              current:
-                  prefs.reviewReminderMinutes ?? defaultReviewReminderMinutes,
-              onPicked: (minutes) => _savePreference(
-                (c) => c.copyWith(reviewReminderMinutes: minutes),
+            _row(
+              key: const ValueKey('settings-sleep-reminder'),
+              icon: Icons.bedtime_outlined,
+              title: '提醒记录睡眠',
+              enabled: prefs.reminders != false && !busy,
+              trailing: _timeTrailing(
+                key: 'settings-sleep-reminder',
+                minutes:
+                    prefs.sleepReminderMinutes ?? defaultSleepReminderMinutes,
+              ),
+              onTap: () => _pickReminderTime(
+                current:
+                    prefs.sleepReminderMinutes ?? defaultSleepReminderMinutes,
+                onPicked: (minutes) => _savePreference(
+                  (c) => c.copyWith(sleepReminderMinutes: minutes),
+                ),
               ),
             ),
-          ),
+            _row(
+              key: const ValueKey('settings-review-reminder'),
+              icon: Icons.menu_book_outlined,
+              title: '提醒复盘',
+              enabled: prefs.reminders != false && !busy,
+              trailing: _timeTrailing(
+                key: 'settings-review-reminder',
+                minutes:
+                    prefs.reviewReminderMinutes ?? defaultReviewReminderMinutes,
+              ),
+              onTap: () => _pickReminderTime(
+                current:
+                    prefs.reviewReminderMinutes ?? defaultReviewReminderMinutes,
+                onPicked: (minutes) => _savePreference(
+                  (c) => c.copyWith(reviewReminderMinutes: minutes),
+                ),
+              ),
+            ),
+          ]),
         ];
       case _View.advanced:
         final counts = this.counts;
@@ -444,120 +486,512 @@ class _SettingsPageState extends State<SettingsPage> {
           ];
         }
         return [
-          _sectionHeader('当前数据'),
-          if (counts.isEmpty)
-            Text('目前还没有数据。', style: Theme.of(context).textTheme.bodySmall)
-          else
-            _countsList(counts),
-          const SizedBox(height: TimeLedgerSpacing.xl),
-          Text('数据操作', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: TimeLedgerSpacing.xxs),
-          _action(
-            key: 'settings-seed',
-            icon: Icons.storage,
-            label: '添加测试数据',
-            onTap: counts.isEmpty && !busy ? _confirmSeed : null,
+          _sectionLabel('当前数据'),
+          _card(
+            counts.isEmpty
+                ? [
+                    _row(
+                      icon: Icons.inbox_outlined,
+                      title: '目前还没有数据',
+                      subtitle: '添加测试数据后，这里会显示各类数量。',
+                    ),
+                  ]
+                : [
+                    _row(
+                      icon: Icons.schedule,
+                      title: '活动记录',
+                      trailing: _value('${counts.activities}条'),
+                    ),
+                    _row(
+                      icon: Icons.bedtime_outlined,
+                      title: '睡眠记录',
+                      trailing: _value('${counts.sleep}条'),
+                    ),
+                    _row(
+                      icon: Icons.flag_outlined,
+                      title: '目标',
+                      trailing: _value('${counts.goals}个'),
+                    ),
+                    _row(
+                      icon: Icons.menu_book_outlined,
+                      title: '每日复盘',
+                      trailing: _value('${counts.reviews}条'),
+                    ),
+                  ],
           ),
-          Text(
-            counts.isEmpty ? '添加今天及之前六天的示例记录，方便体验。' : '已有数据，暂时不能添加测试数据。',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: TimeLedgerSpacing.lg),
-          _action(
-            key: 'settings-clear',
-            icon: Icons.delete_outline,
-            label: '清空当前数据',
-            onTap: counts.isEmpty || busy ? null : _confirmClear,
-            destructive: true,
-          ),
-          Text(
-            counts.isEmpty ? '目前没有需要清空的数据。' : '清空记录、目标、复盘和未完成的填写，保留设置。',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
+          _sectionLabel('数据操作'),
+          _card([
+            _row(
+              key: const ValueKey('settings-seed'),
+              icon: Icons.storage,
+              title: '添加测试数据',
+              subtitle: counts.isEmpty
+                  ? '添加今天及之前六天的示例记录，方便体验。'
+                  : '已有数据，暂时不能添加测试数据。',
+              enabled: counts.isEmpty && !busy,
+              onTap: _confirmSeed,
+            ),
+            _row(
+              key: const ValueKey('settings-clear'),
+              icon: Icons.delete_outline,
+              title: '清空当前数据',
+              subtitle: counts.isEmpty
+                  ? '目前没有需要清空的数据。'
+                  : '清空记录、目标、复盘和未完成的填写，保留设置。',
+              destructive: true,
+              enabled: !counts.isEmpty && !busy,
+              onTap: _confirmClear,
+            ),
+          ]),
         ];
       case _View.about:
         return [
-          Text('日账本', style: Theme.of(context).textTheme.headlineLarge),
-          const SizedBox(height: TimeLedgerSpacing.xxs),
-          Text('把一天慢慢记清楚。', style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: TimeLedgerSpacing.lg),
-          _aboutRow('应用名称', 'Time Pet Ledger'),
-          _aboutRow('版本', widget.versionLabel ?? '—'),
+          const SizedBox(height: 8),
+          Column(
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: _colors.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.menu_book_outlined,
+                  size: 30,
+                  color: _colors.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text('日账本', style: _text.headlineSmall),
+              const SizedBox(height: 4),
+              Text(
+                '把一天慢慢记清楚。',
+                style: _text.bodySmall?.copyWith(
+                  color: _colors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _card([
+            _row(
+              icon: Icons.badge_outlined,
+              title: '应用名称',
+              trailing: _value('Time Pet Ledger'),
+            ),
+            _row(
+              icon: Icons.tag,
+              title: '版本',
+              trailing: _value(widget.versionLabel ?? '—'),
+            ),
+          ]),
         ];
     }
   }
 
-  Widget _entry(
-    _View target,
-    String title,
-    String description,
-    IconData icon,
-  ) => Semantics(
-    button: true,
-    child: InkWell(
-      key: ValueKey('settings-open-${target.name}'),
-      onTap: busy
-          ? null
-          : () => setState(() {
-              view = target;
-              error = null;
-              status = null;
-            }),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 72),
-        padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.sm),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
+  // ----- navigation -----
+
+  Widget _navRow({
+    required Key key,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required _View target,
+  }) => _row(
+    key: key,
+    icon: icon,
+    title: title,
+    subtitle: subtitle,
+    trailing: _navTrailing(null),
+    onTap: busy
+        ? null
+        : () => setState(() {
+            view = target;
+            error = null;
+            status = null;
+          }),
+  );
+
+  // ----- bottom sheets -----
+
+  Future<void> _pickThemeMode(AppPreferences prefs) => _showOptionsSheet(
+    title: '主题模式',
+    subtitle: '切换浅色 / 深色 / 跟随系统',
+    children: [
+      for (final mode in AppThemeMode.values)
+        _sheetTile(
+          key: 'settings-theme-mode-${mode.name}',
+          selected: (prefs.themeMode ?? AppThemeMode.system) == mode,
+          title: _modeTitle(mode),
+          description: _modeDescription(mode),
+          onTap: () {
+            Navigator.pop(context);
+            _savePreference((c) => c.copyWith(themeMode: mode));
+          },
         ),
-        child: Row(
+    ],
+  );
+
+  Future<void> _pickFont(AppPreferences prefs) => _showOptionsSheet(
+    title: '字体',
+    subtitle: '与任意配色自由组合',
+    children: [
+      for (final font in AppFontChoice.values)
+        _sheetTile(
+          key: 'settings-font-${font.name}',
+          selected: (prefs.fontChoice ?? AppFontChoice.system) == font,
+          title: font == AppFontChoice.system ? '系统字体' : '衬线（NotoSerifSC）',
+          description: font == AppFontChoice.system
+              ? '跟随平台默认字体'
+              : '暖纸主题使用的衬线字体',
+          onTap: () {
+            Navigator.pop(context);
+            _savePreference((c) => c.copyWith(fontChoice: font));
+          },
+        ),
+    ],
+  );
+
+  Future<void> _pickRecordingMode(AppPreferences prefs) => _showOptionsSheet(
+    title: '记录方式',
+    subtitle: '既有未完成的填写保留自身方式',
+    children: [
+      for (final mode in RecordingMode.values)
+        _sheetTile(
+          key: 'settings-mode-${mode.name}',
+          selected: prefs.recordingMode == mode,
+          title: mode == RecordingMode.guided ? '问答引导' : '表单',
+          description: mode == RecordingMode.guided ? '一步步回想，再记下来' : '在一页中填写记录',
+          onTap: () {
+            Navigator.pop(context);
+            _savePreference((c) => c.copyWith(recordingMode: mode));
+          },
+        ),
+    ],
+  );
+
+  void _setDynamic(bool value, AppPreferences prefs) {
+    if (value) {
+      final current = prefs.themeScheme;
+      if (current != null && current != ThemeScheme.dynamic) {
+        _lastPreset = current;
+      }
+      _savePreference((c) => c.copyWith(themeScheme: ThemeScheme.dynamic));
+      return;
+    }
+    _savePreference(
+      (c) => c.copyWith(themeScheme: _lastPreset ?? ThemeScheme.defaultM3),
+    );
+  }
+
+  Future<void> _pickThemeScheme(AppPreferences prefs) async {
+    final current = prefs.themeScheme ?? ThemeScheme.defaultM3;
+    await _showOptionsSheet(
+      title: '自选主题色',
+      subtitle: current == ThemeScheme.dynamic ? '选择后将关闭动态色彩' : '选择一款主题配色',
+      children: [
+        GridView.count(
+          crossAxisCount: 3,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 0.72,
           children: [
-            Icon(icon, size: 22, color: _colors.onSurfaceVariant),
-            const SizedBox(width: TimeLedgerSpacing.sm),
-            Expanded(
+            for (final scheme in const [
+              ThemeScheme.defaultM3,
+              ThemeScheme.blue,
+              ThemeScheme.green,
+              ThemeScheme.orange,
+              ThemeScheme.teal,
+              ThemeScheme.warmPaper,
+            ])
+              _schemeCell(scheme, current),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _schemeCell(ThemeScheme scheme, ThemeScheme current) {
+    final preview = previewLightScheme(scheme);
+    final selected = current == scheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: InkWell(
+            key: ValueKey('settings-theme-${scheme.name}'),
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              Navigator.pop(context);
+              _lastPreset = scheme;
+              _savePreference((c) => c.copyWith(themeScheme: scheme));
+            },
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: preview.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: selected ? _colors.primary : preview.outlineVariant,
+                  width: selected ? 2 : 1,
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(title, style: Theme.of(context).textTheme.bodyLarge),
-                  const SizedBox(height: TimeLedgerSpacing.xxs),
                   Text(
-                    description,
-                    style: Theme.of(context).textTheme.bodySmall,
+                    'Abc',
+                    style: TextStyle(
+                      color: preview.primary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    height: 5,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: preview.primary,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Container(
+                    height: 5,
+                    width: 36,
+                    decoration: BoxDecoration(
+                      color: preview.secondary,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: preview.primary,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_right,
-              size: 20,
-              color: _colors.onSurfaceVariant,
-            ),
-          ],
+          ),
         ),
+        const SizedBox(height: 6),
+        Text(
+          _schemeTitle(scheme),
+          textAlign: TextAlign.center,
+          style: _text.bodySmall?.copyWith(
+            color: selected ? _colors.primary : _colors.onSurfaceVariant,
+            fontWeight: selected ? FontWeight.w600 : null,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showOptionsSheet({
+    required String title,
+    required String subtitle,
+    required List<Widget> children,
+  }) => showModalBottomSheet<void>(
+    context: context,
+    showDragHandle: true,
+    useSafeArea: true,
+    builder: (sheetContext) => Padding(
+      padding: const EdgeInsets.fromLTRB(
+        TimeLedgerSpacing.page,
+        0,
+        TimeLedgerSpacing.page,
+        TimeLedgerSpacing.xl,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title, style: _text.titleLarge),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: _text.bodySmall?.copyWith(color: _colors.onSurfaceVariant),
+          ),
+          const SizedBox(height: 12),
+          ...children,
+        ],
       ),
     ),
   );
 
-  Widget _sectionHeader(String title, {String? value, Key? valueKey}) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: TimeLedgerSpacing.xs),
-        child: Row(
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            if (value != null) ...[
-              const Spacer(),
-              Text(
-                value,
-                key: valueKey,
-                style: Theme.of(context).textTheme.labelMedium
-                    ?.copyWith(color: _colors.primary),
-              ),
-            ],
-          ],
-        ),
-      );
+  Widget _sheetTile({
+    required String key,
+    required bool selected,
+    required String title,
+    required String description,
+    required VoidCallback onTap,
+  }) => InkWell(
+    key: ValueKey(key),
+    borderRadius: BorderRadius.circular(12),
+    onTap: onTap,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: TimeLedgerSpacing.xxs,
+        vertical: TimeLedgerSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            selected ? Icons.radio_button_checked : Icons.radio_button_off,
+            size: 22,
+            color: selected ? _colors.primary : _colors.onSurfaceVariant,
+          ),
+          const SizedBox(width: TimeLedgerSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: _text.titleMedium),
+                const SizedBox(height: 2),
+                Text(description, style: _text.bodySmall),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 
-  Widget _choice({
+  // ----- components -----
+
+  Widget _sectionLabel(String title, {String? value, Key? valueKey}) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      TimeLedgerSpacing.xxs,
+      TimeLedgerSpacing.md,
+      TimeLedgerSpacing.xxs,
+      TimeLedgerSpacing.xs,
+    ),
+    child: Row(
+      children: [
+        Text(title, style: _text.titleSmall?.copyWith(color: _colors.primary)),
+        if (value != null) ...[
+          const Spacer(),
+          Text(
+            value,
+            key: valueKey,
+            style: _text.labelMedium?.copyWith(color: _colors.onSurfaceVariant),
+          ),
+        ],
+      ],
+    ),
+  );
+
+  Widget _card(List<Widget> children) => Container(
+    margin: const EdgeInsets.only(bottom: TimeLedgerSpacing.xxs),
+    decoration: BoxDecoration(
+      color: _colors.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: Column(
+      children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0)
+            Divider(
+              height: 1,
+              thickness: 1,
+              indent: TimeLedgerSpacing.md,
+              endIndent: TimeLedgerSpacing.md,
+              color: _colors.outlineVariant,
+            ),
+          children[i],
+        ],
+      ],
+    ),
+  );
+
+  Widget _row({
+    Key? key,
+    IconData? icon,
+    required String title,
+    String? subtitle,
+    Widget? trailing,
+    VoidCallback? onTap,
+    bool destructive = false,
+    bool enabled = true,
+  }) {
+    final active = enabled && onTap != null;
+    final titleColor = !enabled
+        ? _colors.outline
+        : destructive
+        ? _colors.error
+        : _colors.onSurface;
+    return InkWell(
+      key: key,
+      onTap: active ? onTap : null,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 64),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: TimeLedgerSpacing.md,
+            vertical: TimeLedgerSpacing.sm,
+          ),
+          child: Row(
+            children: [
+              if (icon != null) ...[
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _colors.surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 22,
+                    color: !enabled
+                        ? _colors.outline
+                        : destructive
+                        ? _colors.error
+                        : _colors.primary,
+                  ),
+                ),
+                const SizedBox(width: TimeLedgerSpacing.md),
+              ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: _text.titleMedium?.copyWith(color: titleColor),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(subtitle, style: _text.bodySmall),
+                    ],
+                  ],
+                ),
+              ),
+              if (trailing != null) ...[
+                const SizedBox(width: TimeLedgerSpacing.sm),
+                trailing,
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _choiceRow({
     required String key,
     required bool selected,
     required String title,
@@ -569,95 +1003,67 @@ class _SettingsPageState extends State<SettingsPage> {
     child: InkWell(
       key: ValueKey(key),
       onTap: onTap,
-      child: Container(
+      child: ConstrainedBox(
         constraints: const BoxConstraints(minHeight: 64),
-        padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              selected ? Icons.radio_button_checked : Icons.radio_button_off,
-              size: 20,
-              color: selected ? _colors.primary : _colors.onSurfaceVariant,
-            ),
-            const SizedBox(width: TimeLedgerSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: TimeLedgerSpacing.xxs),
-                  Text(
-                    description,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: TimeLedgerSpacing.md,
+            vertical: TimeLedgerSpacing.sm,
+          ),
+          child: Row(
+            children: [
+              Icon(
+                selected ? Icons.radio_button_checked : Icons.radio_button_off,
+                size: 20,
+                color: selected ? _colors.primary : _colors.onSurfaceVariant,
               ),
-            ),
-          ],
+              const SizedBox(width: TimeLedgerSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(title, style: _text.titleMedium),
+                    const SizedBox(height: 2),
+                    Text(description, style: _text.bodySmall),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     ),
   );
 
-  Widget _toggleRow({
-    required Key key,
-    required bool value,
-    required ValueChanged<bool>? onChanged,
-    required String title,
-    required String subtitle,
-  }) => DecoratedBox(
-    decoration: BoxDecoration(
-      border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
-    ),
-    child: SwitchListTile.adaptive(
-      key: key,
-      value: value,
-      onChanged: onChanged,
-      title: Text(title, style: Theme.of(context).textTheme.titleMedium),
-      subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
-      contentPadding: EdgeInsets.zero,
-    ),
+  Widget _navTrailing(String? value, {Key? valueKey}) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (value != null)
+        Text(
+          value,
+          key: valueKey,
+          style: _text.labelLarge?.copyWith(color: _colors.onSurfaceVariant),
+        ),
+      const SizedBox(width: TimeLedgerSpacing.xxs),
+      Icon(Icons.chevron_right, size: 20, color: _colors.onSurfaceVariant),
+    ],
   );
 
-  /// 可编辑的提醒时点行：显示当前时分，点击打开时间选择（Q-029）。
-  Widget _timeRow({
-    required String key,
-    required String label,
-    required int minutes,
-    required bool enabled,
-    required VoidCallback onTap,
-  }) => InkWell(
-    key: ValueKey(key),
-    onTap: enabled ? onTap : null,
-    child: Container(
-      constraints: const BoxConstraints(minHeight: 56),
-      padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
+  Widget _timeTrailing({required String key, required int minutes}) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(
+        _formatMinutes(minutes),
+        key: ValueKey('$key-value'),
+        style: _text.labelLarge?.copyWith(color: _colors.onSurfaceVariant),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(label, style: Theme.of(context).textTheme.titleMedium),
-          ),
-          Text(
-            _formatMinutes(minutes),
-            key: ValueKey('$key-value'),
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
-          const SizedBox(width: TimeLedgerSpacing.xs),
-          Icon(
-            Icons.schedule,
-            size: 20,
-            color: enabled ? _colors.primary : _colors.onSurfaceVariant,
-          ),
-        ],
-      ),
-    ),
+      const SizedBox(width: TimeLedgerSpacing.xxs),
+      Icon(Icons.chevron_right, size: 20, color: _colors.onSurfaceVariant),
+    ],
   );
+
+  Widget _value(String text) => Text(text, style: _text.bodyMedium);
 
   Future<void> _pickReminderTime({
     required int current,
@@ -675,95 +1081,6 @@ class _SettingsPageState extends State<SettingsPage> {
       '${(minutes ~/ 60).toString().padLeft(2, '0')}:'
       '${(minutes % 60).toString().padLeft(2, '0')}';
 
-  Widget _countsList(DataCounts counts) => Column(
-    children: [
-      _countRow('活动记录', '${counts.activities}条'),
-      _countRow('睡眠记录', '${counts.sleep}条'),
-      _countRow('目标', '${counts.goals}个'),
-      _countRow('每日复盘', '${counts.reviews}条'),
-    ],
-  );
-
-  Widget _countRow(String label, String value) => Container(
-    constraints: const BoxConstraints(minHeight: homeTapTarget),
-    padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
-    decoration: BoxDecoration(
-      border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(label, style: Theme.of(context).textTheme.bodySmall),
-        ),
-        Text(value, style: Theme.of(context).textTheme.bodyMedium),
-      ],
-    ),
-  );
-
-  Widget _aboutRow(String label, String value) => Container(
-    constraints: const BoxConstraints(minHeight: homeTapTarget),
-    padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
-    decoration: BoxDecoration(
-      border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(label, style: Theme.of(context).textTheme.bodySmall),
-        ),
-        Flexible(
-          child: Text(
-            value,
-            style: Theme.of(context).textTheme.bodyMedium,
-            textAlign: TextAlign.right,
-          ),
-        ),
-      ],
-    ),
-  );
-
-  Widget _action({
-    required String key,
-    required IconData icon,
-    required String label,
-    required VoidCallback? onTap,
-    bool destructive = false,
-  }) => InkWell(
-    key: ValueKey(key),
-    onTap: onTap,
-    child: Container(
-      constraints: const BoxConstraints(minHeight: 56),
-      padding: const EdgeInsets.symmetric(vertical: TimeLedgerSpacing.xs),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: _colors.outlineVariant)),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 22,
-            color: onTap == null
-                ? _colors.outline
-                : destructive
-                ? _colors.error
-                : _colors.primary,
-          ),
-          const SizedBox(width: TimeLedgerSpacing.sm),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: onTap == null
-                  ? _colors.outline
-                  : destructive
-                  ? _colors.error
-                  : _colors.primary,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-
   Widget _note(String text) => Container(
     width: double.infinity,
     padding: const EdgeInsets.all(TimeLedgerSpacing.sm),
@@ -773,16 +1090,12 @@ class _SettingsPageState extends State<SettingsPage> {
     ),
     child: Text(
       text,
-      style: Theme.of(context).textTheme.bodyMedium
-          ?.copyWith(color: _semantics.recovery),
+      style: _text.bodyMedium?.copyWith(color: _semantics.recovery),
     ),
   );
 
-  Widget _error(String text) => Text(
-    text,
-    style: Theme.of(context).textTheme.bodyMedium
-        ?.copyWith(color: _colors.error),
-  );
+  Widget _error(String text) =>
+      Text(text, style: _text.bodyMedium?.copyWith(color: _colors.error));
 
   String _rangeText(AppPreferences prefs) => switch (prefs.heatRange) {
     HeatRange.week => '本周',
@@ -796,9 +1109,6 @@ class _SettingsPageState extends State<SettingsPage> {
     null => '未设置',
   };
 
-  String _themeText(AppPreferences prefs) =>
-      _schemeTitle(prefs.themeScheme ?? ThemeScheme.defaultM3);
-
   String _schemeTitle(ThemeScheme scheme) => switch (scheme) {
     ThemeScheme.defaultM3 => '默认（紫）',
     ThemeScheme.blue => '蓝',
@@ -807,16 +1117,6 @@ class _SettingsPageState extends State<SettingsPage> {
     ThemeScheme.teal => '青',
     ThemeScheme.warmPaper => '暖纸',
     ThemeScheme.dynamic => '跟随壁纸',
-  };
-
-  String _schemeDescription(ThemeScheme scheme) => switch (scheme) {
-    ThemeScheme.defaultM3 => 'Google 默认 Material 3 配色',
-    ThemeScheme.blue ||
-    ThemeScheme.green ||
-    ThemeScheme.orange ||
-    ThemeScheme.teal => '以该色为种子生成的成套配色',
-    ThemeScheme.warmPaper => '浅米色 / 砖红 / 衬线的原有主题',
-    ThemeScheme.dynamic => 'Android 12+ 从壁纸取色',
   };
 
   String _themeModeText(AppPreferences prefs) =>

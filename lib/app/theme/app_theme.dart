@@ -42,6 +42,20 @@ ColorScheme schemeForTheme({
   }
 }
 
+/// 预览用的浅色方案（含暖纸；动态返回默认 M3 基线）。
+ColorScheme previewLightScheme(ThemeScheme scheme) {
+  if (scheme == ThemeScheme.warmPaper) {
+    return buildWarmPaperTheme(
+      brightness: Brightness.light,
+      fontChoice: AppFontChoice.system,
+    ).colorScheme;
+  }
+  if (scheme == ThemeScheme.dynamic) {
+    return defaultM3ColorScheme(Brightness.light);
+  }
+  return schemeForTheme(scheme: scheme, brightness: Brightness.light);
+}
+
 /// 构建应用主题：配色 + 明暗 + 字体（Q-041 合同 §2）。
 ///
 /// M3 预设使用默认组件样式并附派生语义色；暖纸复用固定主题规格。

@@ -690,9 +690,9 @@ class _RecordingHomeState extends State<_RecordingHome>
       onRecordSleep: _recordSleep,
       onOpenSummary: _openSummary,
       onOpenReview: widget.reviewContext == null ? (_) {} : _openReview,
-      onEditFact: busy ? null : _openFact,
-      onDeleteTimeBlock: busy ? null : _deleteTimeBlock,
-      onFillGap: busy ? null : _openGap,
+      onEditFact: _openFact,
+      onDeleteTimeBlock: _deleteTimeBlock,
+      onFillGap: _openGap,
       floatingCard: (preferences?.reminders ?? true) ? _suggestionCard : null,
       quickPanelSide:
           preferences?.homeQuickPanelSide ?? HomeQuickPanelSide.left,

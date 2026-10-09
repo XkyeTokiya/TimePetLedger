@@ -102,6 +102,12 @@ class HomeShellState extends State<HomeShell>
   final _pointers = <int>{};
   int? _dragPointer;
 
+  /// 时间轴子树的构建缓存：`busy`（导航中）变化时复用同一实例，
+  /// 避免整条账本在路由过渡帧重建；其余输入（帧版本、日期、面板 / 活跃态、
+  /// 字号与宽度）变化时照常重建。
+  Widget? _timelineCache;
+  Object? _timelineCacheKey;
+
   /// 快捷区的左右边缘保留区，避免与系统返回手势冲突。
   static const _edgeGuard = 32.0;
   static const _intentSlop = 24.0;
@@ -172,22 +178,38 @@ class HomeShellState extends State<HomeShell>
   CivilDate _today() => widget.dateOfInstant(widget.now());
 
   Widget _timeline(CivilDate today) {
-    return HomeFeedTransition(
+    final frame = feed.captureFrame();
+    final active = widget.active && _panel.value == 0;
+    final a11yFactor = _timelineA11yFactor();
+    final key = (
+      today,
+      frame.endDate,
+      frame.version,
+      active,
+      a11yFactor,
+      MediaQuery.sizeOf(context).width,
+      MediaQuery.textScalerOf(context).scale(14),
+    );
+    if (_timelineCache != null && _timelineCacheKey == key) {
+      return _timelineCache!;
+    }
+    _timelineCacheKey = key;
+    return _timelineCache = HomeFeedTransition(
       key: const ValueKey('home-timeline-transition'),
-      frame: feed.captureFrame(),
+      frame: frame,
       builder: (frame, positioned) => HomeTimelineTab(
         key: ValueKey(frame.endDate),
         controller: feed,
         frame: frame,
         onPositioned: positioned,
         today: today,
-        active: widget.active && !widget.busy && _panel.value == 0,
+        active: active,
         onEditFact: widget.onEditFact,
         onDeleteTimeBlock: widget.onDeleteTimeBlock,
         onFillGap: widget.onFillGap,
         onDayTap: (date) => _chooseDate(initial: date),
         reading: reading,
-        a11yFactor: _timelineA11yFactor(),
+        a11yFactor: a11yFactor,
         allowUserReading: () => _pointers.length <= 1,
         interactionController: _timelineInteraction,
       ),
@@ -316,13 +338,29 @@ class HomeShellState extends State<HomeShell>
     ),
   );
 
+  /// 入口直跳：点击立即提交目标页导航，快捷区在路由过渡后同步收拢；
+  /// 不再等待收拢完成再进入（用户 2026-10-10 明确要求直接跳转）。
+  /// 焦点先同步交还菜单入口，路由接管后再执行收拢动画，避免节外生枝。
   Future<void> _activatePanelEntry(VoidCallback action) async {
+    if (_panelActionPending) return;
     setState(() => _panelActionPending = true);
+    _restorePanelFocus();
+    action();
     try {
-      await _settlePanel(false);
-      if (mounted) action();
+      await _settlePanel(false, restoreFocus: false);
     } finally {
       if (mounted) setState(() => _panelActionPending = false);
+    }
+  }
+
+  /// 关闭收拢时的焦点交还：回到开盖前焦点，否则回到菜单入口。
+  void _restorePanelFocus() {
+    final previous = _focusBeforePanel;
+    _focusBeforePanel = null;
+    if (previous != null && previous.canRequestFocus) {
+      previous.requestFocus();
+    } else {
+      _menuFocus.requestFocus();
     }
   }
 
@@ -477,7 +515,11 @@ class HomeShellState extends State<HomeShell>
     unawaited(_settlePanel(open));
   }
 
-  Future<void> _settlePanel(bool open, {double velocity = 0}) async {
+  Future<void> _settlePanel(
+    bool open, {
+    double velocity = 0,
+    bool restoreFocus = true,
+  }) async {
     if (open && _panel.value == 0) {
       _focusBeforePanel = FocusManager.instance.primaryFocus;
       _panelDate = feed.focusDate;
@@ -501,13 +543,7 @@ class HomeShellState extends State<HomeShell>
       _panelFirstFocus.requestFocus();
     } else {
       _panelDate = null;
-      final previous = _focusBeforePanel;
-      _focusBeforePanel = null;
-      if (previous != null && previous.canRequestFocus) {
-        previous.requestFocus();
-      } else {
-        _menuFocus.requestFocus();
-      }
+      if (restoreFocus) _restorePanelFocus();
     }
   }
 

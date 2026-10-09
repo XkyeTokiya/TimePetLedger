@@ -114,6 +114,7 @@ class HomeDateTitle extends StatelessWidget {
         ? '${date.month}月${date.day}日'
         : '${date.year}年${date.month}月${date.day}日';
     final weekdayText = ledgerWeekdayText(date, today);
+    final weekdayName = weekdayText.split(' · ').first;
     final weekdayStyle = TextStyle(
       fontSize: 12,
       height: 1.2,
@@ -137,11 +138,6 @@ class HomeDateTitle extends StatelessWidget {
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final dateMeasure = TextPainter(
-            text: TextSpan(text: dateText, style: dateStyle),
-            textDirection: Directionality.of(context),
-            textScaler: MediaQuery.textScalerOf(context),
-          )..layout();
           final todayMeasure = TextPainter(
             text: TextSpan(
               text: '返回今天',
@@ -150,8 +146,13 @@ class HomeDateTitle extends StatelessWidget {
             textDirection: Directionality.of(context),
             textScaler: MediaQuery.textScalerOf(context),
           )..layout();
-          final weekdayMeasure = TextPainter(
+          final weekdayFullMeasure = TextPainter(
             text: TextSpan(text: weekdayText, style: weekdayStyle),
+            textDirection: Directionality.of(context),
+            textScaler: MediaQuery.textScalerOf(context),
+          )..layout();
+          final weekdayShortMeasure = TextPainter(
+            text: TextSpan(text: weekdayName, style: weekdayStyle),
             textDirection: Directionality.of(context),
             textScaler: MediaQuery.textScalerOf(context),
           )..layout();
@@ -173,32 +174,61 @@ class HomeDateTitle extends StatelessWidget {
             textDirection: Directionality.of(context),
             textScaler: MediaQuery.textScalerOf(context),
           )..layout();
-          final inlineToday =
-              date != today &&
-              constraints.maxWidth >=
-                  3 * homeTapTarget +
-                      dateMeasure.width +
-                      todayMeasure.width +
-                      32;
-          // 星期默认并入日期行；展开与紧凑两个稳定头部状态都放得下才并入，
-          // 避免收放动画中途在日期行和独立行之间来回切换。
+          // 展开与紧凑两个稳定态的行宽（外层左右内边距随进度插值）。
           final widthExpanded = constraints.maxWidth - 12 * progress;
           final widthCollapsed = constraints.maxWidth + 12 * (1 - progress);
-          final buttonWidth = date != today ? todayMeasure.width + 24 : 0.0;
-          final inlineWeekday =
-              widthExpanded - 2 * homeTapTarget >=
-                  expandedDateMeasure.width +
-                      8 +
-                      weekdayMeasure.width +
-                      buttonWidth &&
-              widthCollapsed - 3 * homeTapTarget >=
+          final weekdayWidths = [
+            weekdayFullMeasure.width,
+            weekdayShortMeasure.width,
+            0.0,
+          ];
+          final buttonWidths = [todayMeasure.width + 24, homeTapTarget, 0.0];
+          // 页头只有日期行：星期与返回今天都在同一行内取舍。按优先级选择
+          // 同时放进展开与紧凑两个稳定态的组合：星期完整 → 缩短；按钮先
+          // 文字、再图标；空间确实放不下时先隐藏星期以保住按钮，最后两者
+          // 都省略（快捷区保留“返回今天”入口）。任何情况都不再出现第二
+          // 行，也不在收放动画中途改变形态。
+          ({int weekday, int button})? pick() {
+            final preference = <({int weekday, int button})>[
+              (weekday: 0, button: 0),
+              (weekday: 0, button: 1),
+              (weekday: 1, button: 0),
+              (weekday: 1, button: 1),
+              (weekday: 2, button: 1),
+              (weekday: 0, button: 2),
+              (weekday: 1, button: 2),
+              (weekday: 2, button: 2),
+            ];
+            for (final combo in preference) {
+              if (date == today && combo.button != 2) continue;
+              final weekdayWidth = weekdayWidths[combo.weekday];
+              final group = weekdayWidth > 0 ? 8 + weekdayWidth : 0.0;
+              if (widthExpanded - 2 * homeTapTarget <
+                  expandedDateMeasure.width + group) {
+                continue;
+              }
+              if (widthCollapsed - 3 * homeTapTarget <
                   compactDateMeasure.width +
-                      8 +
-                      weekdayMeasure.width +
-                      buttonWidth;
-          dateMeasure.dispose();
+                      group +
+                      buttonWidths[combo.button]) {
+                continue;
+              }
+              return combo;
+            }
+            return null;
+          }
+
+          final choice = pick();
+          final weekdayForm = choice?.weekday ?? 2;
+          final buttonForm = choice?.button ?? 2;
+          final weekdayMessage = switch (weekdayForm) {
+            0 => weekdayText,
+            1 => weekdayName,
+            _ => null,
+          };
           todayMeasure.dispose();
-          weekdayMeasure.dispose();
+          weekdayFullMeasure.dispose();
+          weekdayShortMeasure.dispose();
           expandedDateMeasure.dispose();
           compactDateMeasure.dispose();
           final menu = IconButton(
@@ -208,11 +238,23 @@ class HomeDateTitle extends StatelessWidget {
             onPressed: busy ? null : onMenu,
             icon: const Icon(Icons.menu, size: 24),
           );
-          final todayButton = _TodayButton(
-            busy: busy,
-            onToday: onToday,
-            buttonKey: compact ? const ValueKey('home-back-to-today') : null,
-          );
+          final buttonKey = compact
+              ? const ValueKey('home-back-to-today')
+              : null;
+          final todayButton = switch (buttonForm) {
+            0 => _TodayButton(
+              busy: busy,
+              onToday: onToday,
+              buttonKey: buttonKey,
+            ),
+            1 => _TodayButton(
+              busy: busy,
+              onToday: onToday,
+              buttonKey: buttonKey,
+              iconOnly: true,
+            ),
+            _ => null,
+          };
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -225,7 +267,7 @@ class HomeDateTitle extends StatelessWidget {
                 children: [
                   if (side == HomeQuickPanelSide.left)
                     _CompactSlot(progress: progress, child: menu),
-                  if (inlineToday && side == HomeQuickPanelSide.right)
+                  if (side == HomeQuickPanelSide.right && todayButton != null)
                     _CompactSlot(progress: progress, child: todayButton),
                   IconButton(
                     key: const ValueKey('home-previous-day'),
@@ -248,22 +290,21 @@ class HomeDateTitle extends StatelessWidget {
                               // Wrap keeps transient wider content (date
                               // switch, retained outgoing child) from
                               // overflowing: it wraps instead of erroring.
-                              child: Wrap(
-                                alignment: WrapAlignment.center,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: [
-                                  Text(
-                                    dateText,
-                                    key: const ValueKey('home-date-title'),
-                                    textAlign: TextAlign.center,
-                                    style: dateStyle,
-                                  ),
-                                  if (inlineWeekday)
-                                    Text(weekdayText, style: weekdayStyle),
-                                ],
-                              ),
+                              child: weekdayMessage == null
+                                  ? Semantics(
+                                      label: weekdayText,
+                                      child: _dateGroup(
+                                        dateText: dateText,
+                                        dateStyle: dateStyle,
+                                        weekdayStyle: weekdayStyle,
+                                      ),
+                                    )
+                                  : _dateGroup(
+                                      dateText: dateText,
+                                      dateStyle: dateStyle,
+                                      weekdayStyle: weekdayStyle,
+                                      weekdayMessage: weekdayMessage,
+                                    ),
                             ),
                           ),
                         ),
@@ -278,44 +319,39 @@ class HomeDateTitle extends StatelessWidget {
                         : () => onShiftDay(1),
                     icon: const Icon(Icons.chevron_right, size: 24),
                   ),
-                  if (inlineToday && side == HomeQuickPanelSide.left)
+                  if (side == HomeQuickPanelSide.left && todayButton != null)
                     _CompactSlot(progress: progress, child: todayButton),
                   if (side == HomeQuickPanelSide.right)
                     _CompactSlot(progress: progress, child: menu),
                 ],
               ),
-              // 星期并入日期行后，第二行只在仍需独立容纳“返回今天”时保留。
-              if (!inlineWeekday || (date != today && !inlineToday)) ...[
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    if (date != today &&
-                        !inlineToday &&
-                        side == HomeQuickPanelSide.right)
-                      _CompactSlot(progress: progress, child: todayButton),
-                    if (inlineWeekday)
-                      const Spacer()
-                    else
-                      Expanded(
-                        child: Text(
-                          weekdayText,
-                          textAlign: TextAlign.center,
-                          style: weekdayStyle,
-                        ),
-                      ),
-                    if (date != today &&
-                        !inlineToday &&
-                        side == HomeQuickPanelSide.left)
-                      _CompactSlot(progress: progress, child: todayButton),
-                  ],
-                ),
-              ],
             ],
           );
         },
       ),
     );
   }
+
+  Widget _dateGroup({
+    required String dateText,
+    required TextStyle dateStyle,
+    required TextStyle weekdayStyle,
+    String? weekdayMessage,
+  }) => Wrap(
+    alignment: WrapAlignment.center,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    spacing: 8,
+    runSpacing: 4,
+    children: [
+      Text(
+        dateText,
+        key: const ValueKey('home-date-title'),
+        textAlign: TextAlign.center,
+        style: dateStyle,
+      ),
+      if (weekdayMessage != null) Text(weekdayMessage, style: weekdayStyle),
+    ],
+  );
 }
 
 class _TodayButton extends StatelessWidget {
@@ -323,13 +359,28 @@ class _TodayButton extends StatelessWidget {
     required this.busy,
     required this.onToday,
     this.buttonKey = const ValueKey('home-back-to-today'),
+    this.iconOnly = false,
   });
   final bool busy;
   final VoidCallback onToday;
   final Key? buttonKey;
+  final bool iconOnly;
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    if (iconOnly) {
+      return SizedBox(
+        width: homeTapTarget,
+        height: homeTapTarget,
+        child: IconButton(
+          key: buttonKey,
+          tooltip: '返回今天',
+          onPressed: busy ? null : onToday,
+          padding: EdgeInsets.zero,
+          icon: Icon(Icons.today_outlined, color: colors.primary),
+        ),
+      );
+    }
     return TextButton(
       key: buttonKey,
       onPressed: busy ? null : onToday,
