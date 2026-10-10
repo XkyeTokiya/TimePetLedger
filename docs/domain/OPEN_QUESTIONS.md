@@ -20,6 +20,8 @@
 
 当前补充（2026-10-10）：Q-047已由用户决定：活动添加主流程改为事实优先（做什么 → 系统建议时间 → 保存事实），Goal与Rhythm移至保存后轻量理解层；Q-026的“第一幕节奏、第二幕事项、第三幕时间”顺序要求被取代，问答优先、表单共存、无键盘时间与MD3基线保留。已选择目标后，“回头看，这段时间整体是什么状态？”（推进 / 卡住 / 恢复 / 暂时说不清）要求必选；用户明确该必选仅为交互要求，“暂时说不清”不写入解释、不改变数据模型与领域合同。旧三幕规格继续仅作历史参考。
 
+当前补充（2026-10-11）：Q-004 经用户修订：`RhythmAnnotation.state=progress` 必须关联 Goal（“推进永远是针对目标的推进”）；`stuck` / `recovery` 仍不强制要求 Goal，`known` / `unknown` 与 Goal、解释的其余组合不变。规则已同步 DOMAIN_RULES RH-003、DOMAIN_MODEL 与 DOMAIN_STATE_MACHINES；实现（领域校验 + 活动理解层“推进了哪个目标？”询问）见 TASKS REVIEW-R2-01 / REVIEW-R2-02。同日另收口每日复盘四步设计（旧两屏表单舍弃、下一步保留可选目标且文本必填），制作计划见 UI_REBUILD_PLAN。
+
 ## Q-001
 
 **Question:** TomorrowFirstStep 的 intendedDate 如何确定与保存？
@@ -82,11 +84,13 @@
 
 **Related domain objects:** TimeBlock、Goal、RhythmAnnotation
 
-**Possible options:** progress / stuck 必须显式关联 Goal而 recovery 可不关联；允许目标相关语义不绑定 Goal 实体。另需分别决定 unknown 的目标与解释组合。
+**Possible options:** progress / stuck 必须显式关联 Goal 而 recovery 可不关联；允许目标相关语义不绑定 Goal 实体。另需分别决定 unknown 的目标与解释组合。
 
-**Decision:** `knowledgeState`、`goalId` 和 `RhythmAnnotation` 不设额外组合限制。`known` / `unknown` 均可有或无 `Goal`，均可有或无节奏解释；`progress`、`stuck`、`recovery` 均不强制要求 `Goal`。仍遵守 annotation 必须附属于 TimeBlock、一个 TimeBlock 最多一份 annotation，以及 Q-006 对 archived Goal 不得新增关联的约束。
+**Decision:** `knowledgeState`、`goalId` 和 `RhythmAnnotation` 不设额外组合限制。`known` / `unknown` 均可有或无 `Goal`，均可有或无节奏解释；`stuck`、`recovery` 不强制要求 `Goal`。仍遵守 annotation 必须附属于 TimeBlock、一个 TimeBlock 最多一份 annotation，以及 Q-006 对 archived Goal 不得新增关联的约束。
 
-**Decision source:** 产品负责人于 2026-09-25 逐项确认。
+**2026-10-11 修订（产品负责人明确决定）：** `progress` 必须关联一个 `Goal`——“推进永远是针对目标的推进”；没有目标归属的 TimeBlock 不能保存 progress。本条原决定中“`progress` 不强制要求 `Goal`”不再有效；`stuck` / `recovery` 与无解释的组合保持原样。规则同步见 DOMAIN_RULES RH-003、DOMAIN_MODEL。
+
+**Decision source:** 产品负责人于 2026-09-25 逐项确认；2026-10-11 修订 progress 的目标关联要求。
 
 **Current status:** DECIDED
 
@@ -954,7 +958,7 @@
 - 主流程改为事实优先：“这段大概在做什么” → 系统建议时间（可调整）→ 保存事实；Goal 与 Rhythm 移至保存后的轻量理解层。Q-026 中“第一幕节奏、第二幕事项、第三幕时间”的顺序要求被取代；问答优先、原表单可在设置切换、时间调整不依赖键盘、基础组件优先 Material 3 继续有效。
 - 从时间轴具体 Gap 进入时直接带入该区间并显示于顶部；普通“记录一笔”入口沿用 Q-036 / Q-037 的完整可改建议（含尾部连续 Gap ≥5 小时给 60 分钟的分支），明确点击的超长 Gap 表现列入验证。known 须填写合法活动名称，“想不起来”保存为合法 Unknown（Q-003、P-05 不变）。
 - 保存不要求 Goal、Rhythm、Category、Notes；保存成功即事实成立并定位该笔。
-- 保存后轻量理解层（非阻塞、紧贴新记录的行内轻卡）：提问一“这段时间和某个目标有关吗？”可选，可一点关闭，不选不影响事实；常用目标初值沿 Q-025，本笔调整不隐式改写常用设置；archived 目标不得新增关联（Q-006）。已选择目标后，提问二“回头看，这段时间整体是什么状态？”要求必选 推进 / 卡住 / 恢复 / 暂时说不清，不提供“不选”或跳过，完成选择后可收起卡片；“暂时说不清”仅表示本次不做节奏判断：不写入 RhythmAnnotation、不新增第四种枚举、不改变数据模型，之后可随时从详情补充或修改（Q-005 任意双向更正不变）。必选仅为交互要求，不改变领域合同、持久化结构或校验。未选择目标时，状态判断保留可达入口（次级入口 / 详情编辑），保持可选（Q-004 组合合法性不变）。保存为 Unknown 时默认不弹出理解层，稍后可从详情补充。选择 stuck / recovery 后的原因、恢复细节与接续点全部可选（RH-006 / RH-007 / RH-008 不变）；顺序为 目标 → 状态 → 原因 / 方式与感受 → 接续点。
+- 保存后轻量理解层（非阻塞、紧贴新记录的行内轻卡）：提问一“这段时间和某个目标有关吗？”可选，可一点关闭，不选不影响事实；常用目标初值沿 Q-025，本笔调整不隐式改写常用设置；archived 目标不得新增关联（Q-006）。已选择目标后，提问二“回头看，这段时间整体是什么状态？”要求必选 推进 / 卡住 / 恢复 / 暂时说不清，不提供“不选”或跳过，完成选择后可收起卡片；“暂时说不清”仅表示本次不做节奏判断：不写入 RhythmAnnotation、不新增第四种枚举、不改变数据模型，之后可随时从详情补充或修改（Q-005 任意双向更正不变）。必选仅为交互要求，不改变领域合同、持久化结构或校验。未选择目标时，状态判断保留可达入口（次级入口 / 详情编辑）；选择“推进”时须先关联目标（2026-10-11 Q-004 修订：无 Goal 不得保存 progress，解除关联对推进记录同样拦截），其余组合合法性不变。保存为 Unknown 时默认不弹出理解层，稍后可从详情补充。选择 stuck / recovery 后的原因、恢复细节与接续点全部可选（RH-006 / RH-007 / RH-008 不变）；顺序为 目标 → 状态 → 原因 / 方式与感受 → 接续点。
 - 写入语义：事实先原子保存；目标关联为 TimeBlock 编辑、状态为 RhythmAnnotation 的 add / edit，各自独立即时写入；单项失败不回滚事实、可重试；会话内已答不丢失；已有解释再次作答走 edit，不静默覆盖（Q-013）。
 - 系统不得由活动名称、目标或历史自动判定节奏；不得生成第四种节奏或“待补”语义；账本不为“暂时说不清”显示缺口或待办。
 - 最短路径（Gap → 一句话 → 保存）与完整路径（+ 目标、状态、原因、接续点）并存；睡眠流程不变（P-11）。

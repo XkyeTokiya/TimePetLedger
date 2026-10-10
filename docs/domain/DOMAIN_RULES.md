@@ -181,7 +181,7 @@
 
 **Applies to:** TimeBlock.goalId
 
-**Rule:** TimeBlock 可以不关联 Goal；有 goalId 时表达一个目标归属，不是活动类别。Goal 和 RhythmAnnotation 都是可选的，known / unknown 与解释之间不设额外组合限制。archived Goal 不得用于新增关联，见 Q-006。
+**Rule:** TimeBlock 可以不关联 Goal；有 goalId 时表达一个目标归属，不是活动类别。Goal 和 RhythmAnnotation 都是可选的，known / unknown 与解释之间不设额外组合限制；例外：state=progress 的 RhythmAnnotation 必须关联 Goal（RH-003）。archived Goal 不得用于新增关联，见 Q-006。
 
 **Reason:** 普通生活事实也属于账本。
 
@@ -276,17 +276,17 @@
 
 **Applies to:** RhythmAnnotation.state=progress
 
-**Rule:** 表示该时间段主要产生了用户能够确认的目标推进；不能只凭活动看起来像工作自动判定，也不强制关联 Goal。
+**Rule:** 表示该时间段主要产生了用户能够确认的目标推进；不能只凭活动看起来像工作自动判定。progress 必须关联一个 Goal：“推进”永远是针对目标的推进，没有目标归属的时间段不能保存 progress（2026-10-11 用户决定，修订 Q-004 原组合合同）。
 
-**Reason:** 同样是查论文，是否推进取决于用户确认。
+**Reason:** 同样是查论文，是否推进取决于用户确认；而“向什么推进”必须先有目标。
 
 **Examples:** 用户认为查到的论文解决了目标中的问题，标记 progress。
 
-**Invalid examples:** 系统看到标题“查论文”便自动断定 progress。
+**Invalid examples:** 系统看到标题“查论文”便自动断定 progress；为没有 Goal 的 TimeBlock 保存 progress。
 
 **Enforcement layer:** Domain 语义；Application / Presentation 收集用户解释，不能算法验证其真实性。
 
-**Source:** §13
+**Source:** §13、Q-004（2026-10-11 修订）
 
 
 ## RULE RH-004

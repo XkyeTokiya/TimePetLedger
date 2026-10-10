@@ -1,5 +1,32 @@
 # Tasks
 
+**2026-10-11每日复盘四步第二轮设计收口与制作计划（用户要求，仅文档）：** 用户要求先确认项目文档与新原型（`daily-review-round-two`）再确定制作计划。复核：第二轮原型 70 项冒烟已复跑通过（含截图，无控制台错误）；Q-004 修订（progress 必须关联 Goal）已在 OPEN_QUESTIONS / DOMAIN_RULES / DOMAIN_MODEL / DOMAIN_STATE_MACHINES 登记；当前应用复盘仍是旧“读取页 + 单表单”，四步流程只在原型。收口三项用户决定：① 旧两屏表单（概述 / 反思 / 读取页及其结构）整体舍弃，不作为新设计参考，新流程不设概述 / 反思输入（存储字段去留不在本轮范围）；② “下次继续时，第一步是什么？”保留可选目标关联（M-06 / Q-001 不变），原型未画出的该选择实现时补齐；③ 完成复盘时下一步文本必填（Q-015 不变），“跳过”只跳过卡住细节、不豁免下一步。另确认入口分流：无复盘进四步向导、已有复盘进 Detail，继承浏览日期（Q-042）。制作计划（B1–B3、R2-01…R2-13 待授权）登记于 [UI_REBUILD_PLAN](docs/planning/UI_REBUILD_PLAN.md)。文档：源提案补 2026-10-11 节并修订 Q-047 陈旧句；`git diff --check` 通过。
+
+| Task | Depends on | Scope | Status |
+| --- | --- | --- | --- |
+| REVIEW-R2-00 — 复盘四步第二轮设计收口与制作计划 | 用户要求 | 文档：原型复核 / 三项决定收口 / 制作计划与陈旧引用修订 | COMPLETE |
+
+**2026-10-11复盘第 2 步目标优先合流（用户反馈，第三轮原型）：** 用户指出第 2 步与期望冲突：应为目标优先（参考第一版原型），没有指定目标的记录使用第二版的呈现方式。已交付第三轮独立原型（`docs/planning/assets/daily-review-round-three/`）：有目标的记录按目标分组卡（目标名 + 总时长 + 组内逐笔 推进/卡住/恢复/不判断，沿用第一轮呈现），无目标记录保留第二轮的记录轴呈现（时间 + 事项 + 节奏 + “＋关联目标”），“从今天其他记录中选择”沿用；按用户确认不恢复“整体推进”、Detail 保持扁平。冒烟 69 项全部通过（分组顺序 / 时长 / 组内排序 / 无目标区 / 选目标后进入分组 / 取消关联回到无目标区 / 新建目标分组等断言；Chromium 无头，无控制台错误）。文档：DOCUMENT_REGISTER 增第三轮条目、UI_REBUILD_PLAN 基线改为第三轮合流、源提案同步；`git diff --check` 通过。
+
+| Task | Depends on | Scope | Status |
+| --- | --- | --- | --- |
+| REVIEW-R2-00A — 复盘第 2 步目标优先合流（第三轮原型） | 用户反馈 | 第 2 步目标分组 + 无目标记录轴 / 冒烟 69 项 / 文档同步 | COMPLETE |
+
+**2026-10-11复盘重构 B1（用户授权）：progress⇒Goal 全域校验与理解层联动。** R2-01：`validateRhythmAssociation` 增加 Q-004（2026-10-11）规则——`state=progress` 必须有关联 Goal；经 add / edit 与 TimeBlock 更正（含解除目标关联）全域拦截；`ActivityUnderstandingService` 将领域错误映射为“推进需要先关联一个目标。”。按新规则重写域层与受影响夹具 / 合同用例（旧“无 Goal 允许 progress”断言、旧表单与入口编辑器夹具、共享写入契约的 edit 路径改用 recovery），并与 HEAD worktree 基线逐条比对。R2-02：无目标点“推进”时弹出共享“推进了哪个目标？”面板（选择现有 / 新建目标 / 取消不改变选择，取消不写入）；理解页与记录面板、详情面板接线，`main_app` 提供新建目标能力（`GoalRepository.create`）。验证：域层 12 + 8 项、活动组件 15 项（新增 3 项目标询问：取消 / 选择 / 新建）全部通过；`test/features/ledger` + `test/features/review` 失败集合与 HEAD 基线逐条一致（60 项既存失败、零新增）；`flutter analyze` 无问题；`dart format` 0 changed；`git diff --check` 通过。
+
+| Task | Depends on | Scope | Status |
+| --- | --- | --- | --- |
+| REVIEW-R2-01 — progress⇒Goal 全域校验 | 用户授权 | 领域规则 / 更正与解除关联拦截 / 受影响用例重基线 | COMPLETE |
+| REVIEW-R2-02 — 理解层无目标推进的目标询问 | 用户授权 | 共享目标面板 / 理解页与两处宿主接线 / 新建目标能力 / 测试 | COMPLETE |
+
+**2026-10-11复盘四步向导与 Detail 落地（用户授权，可见界面）：** 用户报告“看不到改动”后直接交付新复盘流程：① `ReviewFlowPage` 四步向导（整理今天 → 今天关心过的事情【目标优先分组 + 无目标记录轴】 → 今天哪里最难继续【卡住选择 + 原因 + 必填下一步 + 可选目标】 → 看一眼今天【统计 / 目标时长 / 三态清单 / 下一步】）与已完成 Detail（只读时间轴 + 关心清单 + 当时卡在哪里 + 下次从这里继续 + ••• 重新整理 / 删除），含步骤点、返回、保存横幅与全部键；② `ReviewSessionService`（记录改名 / 改时间 / 删除、Gap 记 Unknown、完成 / 删除复盘；复用 `ActivityUnderstandingService` 与 `ReviewEntrySaver`）；③ `review_record_sheet`（查看 / 改名 / 改时间 / 关联或取消目标 / 删除）；④ 复盘入口与 Gap 补记接线（`main_app._reviewPage` / `_addRecordForReview`），旧 `ReviewContextPage` / `ReviewForm` 保留为历史夹具、生产不可达。验证：新增 `test/app/review_visual_sample_test.dart`（截图存[素材](docs/planning/assets/review-flow-round/)，7 张）；活动 / bootstrap / 设置 / 首页 / 睡眠 / 两个采样批次 36 项全过；7 个旧 app 复盘流程文件净新增失败 1 项（其余 18 项为既存，见 R2-12）；`flutter analyze` 无问题、`dart format` 0 changed、`git diff --check` 通过。
+
+| Task | Depends on | Scope | Status |
+| --- | --- | --- | --- |
+| REVIEW-R2-03…R2-11 — 复盘会话服务与四步向导 + Detail | 用户授权 | 装载 / 写入服务 / Gap 操作 / 四步界面 / 记录面板 / 入口替换 / 采样截图 | COMPLETE |
+| REVIEW-R2-12 — 旧复盘界面测试重基线 | 本批 | 7 个 app 流程文件逐条重写 / 旧页面清理（净新增 1 项） | PENDING |
+| REVIEW-R2-13 — 平台验证与全仓回归 | R2-12 | Android / Web 构建、全仓失败集合对比 | PENDING |
+
 **2026-10-11跳转日期后的向前滚动与跨年日期标题（用户报告）：** 用户报告：① 点击日期选择器跳转后，时间轴把跳转日当作滚动终点，只能向更早日期滚动、不能向后（更晚）滚动；② 跨年日期在展开态显示不佳。修复：① `LedgerFeedController` 新增 `extendLater`（按 7 天分段向后装载，直到导航上限；不改变浏览日期、窗口锚点与阅读位置，不触发切日过渡；失败保留原状态可重试），`contains` / `loadedDates` 改用已装载末端；`HomeTimelineTab` 在滚到已装载末端时触发（闩锁与失败重试同向前装载）。② 跨年日期整行放不下时改为两行：年份小字（0.6×、onSurfaceVariant）在上、月日保持大号在下；宽屏单行放得下仍单行；形态由展开态宽度决定，收放期间不变形。验证：控制器 / 首页六套件 75 项全过（含新增：向前装载锚点与上限、跳转过去日期后滚动装载到今天的页面级回归、跨年窄 / 宽标题结构断言）；截图存[素材](docs/planning/assets/date-jump-round/)；全量 `+785 ~11 -136`，改动范围内无失败（首页相关两项分别为既有基线 `home_feed_nav_capture` 与既有失效断言 `home_visual_sample` 的“约”前缀——lib 中已无任何“约”渲染；其余差异属并行 Q-047 重构范围）；`flutter analyze` 无问题；Android 调试 APK 与 Web 构建通过；真机 / 读屏未验收。
 
 | Task | Depends on | Scope | Status |

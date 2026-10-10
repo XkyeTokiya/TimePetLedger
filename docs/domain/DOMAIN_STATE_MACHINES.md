@@ -143,13 +143,13 @@ Unknown 改为 known 仍是在交代同一类时间事实，不是把“不合�
 
 ### Allowed transitions
 
-add 得到三种合法解释之一，源文档明确允许可选附加。解释与 known / unknown、goalId 有无之间不设额外组合门槛。按 Q-005，progress、stuck、recovery 可任意双向更正，无先后顺序或额外转换门槛。remove 的完整操作合同仍见 Q-013。
+add 得到三种合法解释之一，源文档明确允许可选附加。解释与 known / unknown 之间不设额外组合门槛；goalId 可为空，但 state=progress 必须关联 Goal（2026-10-11 修订 Q-004），stuck / recovery 不强制。按 Q-005，progress、stuck、recovery 可任意双向更正，无先后顺序或额外转换门槛。remove 的完整操作合同仍见 Q-013。
 
 切换状态保留已填附属字段，只展示和使用当前状态适用的细节：stuckReasonCode / stuckReasonText 仅在 stuck 使用，recoveryMethod / recoveryQuality 仅在 recovery 使用；切回对应状态可重新显示原值。continuationHint 在三种状态下均可填写，切换时不清空。所有细节仍可选，值域见 Q-007；通用编辑、移除及缺失对象处理遵循本文件 Q-013 合同。
 
 ### Invalid transitions
 
-add 后同一 TimeBlock 存在两份有效解释；用 neutral 表示 remove 的结果；自动把未标记活动判为 stuck；编辑时以原因或恢复质量未填写拒绝合法的基础标记。状态切换的附属字段处理仍见 Q-005。
+add 后同一 TimeBlock 存在两份有效解释；用 neutral 表示 remove 的结果；自动把未标记活动判为 stuck；编辑时以原因或恢复质量未填写拒绝合法的基础标记；为没有 Goal 的 TimeBlock 添加或保留 progress。状态切换的附属字段处理仍见 Q-005。
 
 ### Deletion / correction semantics
 

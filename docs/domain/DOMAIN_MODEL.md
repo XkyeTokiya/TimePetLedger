@@ -61,7 +61,7 @@ Time is the foundational fact。TimeBlock = what happened；RhythmAnnotation = �
 
 **Persistence status:** YES，包括 knowledgeState = unknown 的记录。Gap 不保存为 TimeBlock；只有用户确认未知后才产生 Unknown 事实。
 
-**What this object must NOT represent:** progress / stuck / recovery 类型、计时器运行状态、未处理 Gap、精确时间的保证或并行多任务分摊。起止必须构成正区间；详细规则见 [DOMAIN_RULES](DOMAIN_RULES.md)。known / unknown 字段转换见 Q-003；已知性、Goal 与解释之间不设额外组合限制。
+**What this object must NOT represent:** progress / stuck / recovery 类型、计时器运行状态、未处理 Gap、精确时间的保证或并行多任务分摊。起止必须构成正区间；详细规则见 [DOMAIN_RULES](DOMAIN_RULES.md)。known / unknown 字段转换见 Q-003；已知性、Goal 与解释之间不设额外组合限制，但 state=progress 必须关联 Goal（RH-003）。
 
 ### RhythmAnnotation（§12–20）
 
@@ -79,7 +79,7 @@ Time is the foundational fact。TimeBlock = what happened；RhythmAnnotation = �
 | continuationHint | 下次回到这件事从哪里接上；可附于 progress / stuck / recovery（Q-005） | 可选 |
 | createdAt / updatedAt | 创建 / 更新时间 | 各自必需 |
 
-**Relationships:** 每条解释属于一个 TimeBlock，一个 TimeBlock 最多一个有效解释。Goal 归属位于 TimeBlock；解释自身没有独立 goalId。任何 RhythmState 都不强制要求 TimeBlock 关联 Goal；已有解释与目标归属可按已知性自由组合，但新增关联仍须遵守 Q-006。
+**Relationships:** 每条解释属于一个 TimeBlock，一个 TimeBlock 最多一个有效解释。Goal 归属位于 TimeBlock；解释自身没有独立 goalId。state=progress 必须关联 Goal（2026-10-11 用户决定）；stuck / recovery 不强制要求 TimeBlock 关联 Goal，已有解释与目标归属可按已知性自由组合，但新增关联仍须遵守 Q-006。
 
 **可选细节正式值域（Q-007）：** 以下代码是已确认选项的稳定内部命名；均可为空，不增加必填门槛。
 
@@ -159,7 +159,7 @@ stuckReasonText 可以独立于代码填写，也可补充任一选项；选择 
 | --- | --- | --- | --- | --- |
 | TimePrecision：边界可信精度 | 当前回顾式输入统一approximate：近似（Q-030）；旧模型含exact，兼容及值域调整待Q-031 | TimeBlock、SleepSession 的起止分别必需 | 随所属实体字段保存 | 内容是否已知、对用户的质量评分 |
 | BlockKnowledgeState：活动内容的已知性 | known：知道大概做了什么；unknown：无法恢复内容但已交代时间 | TimeBlock.knowledgeState 必需 | 随 TimeBlock 保存 | Gap、时间精度或记录失败 |
-| RhythmState：用户节奏解释 | progress：主要产生用户确认的目标推进；stuck：尝试推进目标相关事情但主要消耗于阻力、停滞或反复尝试；recovery：主要作用是重新获得继续行动的可能 | RhythmAnnotation.state 必需；annotation 本身可不存在 | 随 RhythmAnnotation 保存 | neutral、useless、活动类别、自动生产力判断 |
+| RhythmState：用户节奏解释 | progress：主要产生用户确认的目标推进（必须关联 Goal）；stuck：尝试推进目标相关事情但主要消耗于阻力、停滞或反复尝试；recovery：主要作用是重新获得继续行动的可能 | RhythmAnnotation.state 必需；annotation 本身可不存在 | 随 RhythmAnnotation 保存 | neutral、useless、活动类别、自动生产力判断 |
 | SleepType：睡眠类型 | mainSleep：主睡眠；nap：午睡 / 小睡 | SleepSession.type 必需 | 随 SleepSession 保存 | 恢复方式或睡眠质量；不自行添加时长分类阈值 |
 
 Goal.status 明确只有 active、archived；不额外引入新的生命周期值或强制命名一个源文档未命名的类型。首版只能创建 active；归档、恢复、引用、删除和改名行为见 [DOMAIN_STATE_MACHINES](DOMAIN_STATE_MACHINES.md)。

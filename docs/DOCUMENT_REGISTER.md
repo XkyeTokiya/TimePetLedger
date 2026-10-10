@@ -196,6 +196,9 @@
 | [设置第一轮](planning/assets/settings-round-one/prototype-fragment.html) | 原型参考 | 布局方向与高级操作模拟；真实清空 / 注入不由原型授权，合同查 Q-034 |
 | [贯通原型第一轮](planning/assets/app-flow-round-one/prototype-fragment.html) | 原型参考 | 跨页模拟数据、返回路径与设计评审；复盘占位不表示领域复盘未实现 |
 | [每日复盘四步第一轮](planning/assets/daily-review-round-one/prototype.html) | 原型参考（待评审） | 4 步向导与已完成 Detail 的独立交互稿，附 [prototype-smoke.cjs](planning/assets/daily-review-round-one/prototype-smoke.cjs)（Chromium 无头 64 项断言通过）；模拟数据、不接库；“不判断”＝不添加节奏解释；不构成领域或验收结论 |
+| [每日复盘四步第二轮](planning/assets/daily-review-round-two/prototype.html) | 原型参考（第 2 步已被第三轮修订） | 按用户 2026-10-11 评审反馈修订：progress 必须选目标、stuck / recovery 不追问，移除整体推进，第 4 步与 Detail 的节奏汇总改按全部 RhythmAnnotation；附 [prototype-smoke.cjs](planning/assets/daily-review-round-two/prototype-smoke.cjs)（Chromium 无头 70 项断言通过）；第一轮保留追溯；2026-10-11 设计收口（旧两屏表单舍弃、下一步保留可选目标且文本必填）与制作计划见 [UI_REBUILD_PLAN](planning/UI_REBUILD_PLAN.md)，不构成领域或验收结论 |
+| [每日复盘四步第三轮](planning/assets/daily-review-round-three/prototype.html) | 原型参考（待评审） | 按用户 2026-10-11 反馈合流第 2 步：目标优先——有关联目标的记录按目标分组（沿用第一轮呈现，不恢复“整体推进”），没有目标的记录沿用第二轮的记录轴呈现（“＋关联目标”）；Detail 保持扁平。附 [prototype-smoke.cjs](planning/assets/daily-review-round-three/prototype-smoke.cjs)（Chromium 无头 69 项断言通过）；前两轮保留追溯 |
+| [复盘四步实现截图](planning/assets/review-flow-round/) | 实现截图 | 2026-10-11 新复盘流程（四步向导 + Detail）的深色 M3 手机采样：整理 / 目标优先 / 目标询问 / 卡住与下一步 / 总结 / 已完成，共 7 张；由 `test/app/review_visual_sample_test.dart` 输出，可重跑 |
 | [主题系统预览](planning/assets/theme-round-one/) | 原型参考（待评审） | Q-041候选：预设浅 / 深、暖纸深色候选、语义色与热力图；HTML由实际fromSeed输出生成，不构成验收 |
 | [设置重设计素材](planning/assets/settings-redesign-round/) | 实现截图（有用户参考稿） | 2026-10-10 用户参考稿重设计后的暖纸 / 默认 M3 截图；范围与验证查 UI_REBUILD_PLAN，不构成逐像素验收 |
 | [reports/assets](reports/assets/)、[根 assets](../assets/) 及各原型的附属文件 | 随所属文档管理 | 报告截图、对照、图标或运行资产；按引用关系区分用途，不因目录叫 assets 就整体归档或删除 |
