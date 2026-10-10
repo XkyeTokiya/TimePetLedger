@@ -39,6 +39,8 @@
 
 不改：四类分组与信息架构（沿 Q-034）、主题合同与偏好键、清空 / 测试数据领域语义；不新增自定义颜色能力。
 
+2026-10-10 同日追加（用户要求）：首页滑盖快捷区样式贴近设置页——分组标题（当日 / 更多）、圆角 16 卡片、40dp 圆形图标、标题 / 说明两行与行尾箭头，标题行与设置页 AppBar 同构（关闭按钮贴面板外侧 + 日期）；入口分组、顺序、名称、键、直跳与焦点行为不变。截图见[快捷区素材](assets/quick-panel-round/)（含默认 M3 左右、暖纸左右与 1.5× / 2× 大字；M3 截图在测试环境无系统字体，显示为方框，仅验证布局）。
+
 ## 首页比例时间轴与双态顶部（2026-10-09，已实施）
 
 用户提供两张图片，明确第一张为初始状态、第二张为滑动时间轴后的状态，随后选择“先整理设计与实施方案”。本轮交付[HOME-DESIGN-01方案](HOME_PROPORTIONAL_TIMELINE_DESIGN.md)，保存两张原图和用户设计原文，核对当前内容驱动时间列表、固定头部与浮动建议卡，并提出真实比例日轴、展开 / 紧凑顶部、短段访问、默认定位与回归验收顺序。
@@ -428,3 +430,11 @@ HEAD：`8924e67a19e90363c1eee23235f2368762018dd7`。工作区已有未提交文�
 - 测试 + dev 引用：`app/theme/time_ledger_theme.dart`、`dev/guided_recording_sample.dart`、`activity_editor.dart`、`guided_recording_page.dart`、`guided_recording_sheets.dart`、`goals/presentation/goal_create_sheet.dart`。
 - 文件可达但组件已死：`RecordingForm` widget（文件因`formatRecordingTime` / `parseRecordingDate`可达，`parseRecordingTime`无生产引用）、`GoalsPage`、`RecordingOptionalSection` widget（文件因`recordingDetailPreview`可达）。
 - `main_app.dart`无旧页面挂载分支；现役活动 / 睡眠入口分别为`ActivityRecordingEntry` / `SleepEntry`。上述清单只记录未清理项，未在本轮删除。
+
+## 首页顶栏移除（2026-10-10，用户确定）
+
+用户对展开态顶栏（“日账本”字标 + 菜单 + 返回今天胶囊）不满意，逐轮明确最终形态：**无独立顶栏**；字标不再常驻首页；**菜单默认显示在日期行**（随快捷区一侧镜像），可在设置 > 界面设置隐藏；**返回今天固定图标形式**（48dp，语义“返回今天”）。
+
+实现：`HomeTopBar` 删除；`HomeDateTitle` 常驻菜单与返回今天（新增 `showMenuButton` 参数）；按展开 / 紧凑两端点的实际可用宽度分级选取星期形态与按钮策略——星期完整 → 缩短 → 隐藏（读屏仍播报）以保住返回今天，两个端点都放不下时返回今天退到紧凑态随收放渐显，极端几何下只在快捷区可达；日期行左右内边距由 `lerp(16,4)` 收到 `lerp(8,4)`。偏好新增 `AppPreferences.showHomeMenuButton`（null 按显示解析）+ drift 键 `show_home_menu_button` + 界面设置“显示菜单按钮”开关；`main_app` 接线到 `HomeShell.showMenuButton`。隐藏菜单后快捷区仍可从屏幕边缘滑出。
+
+验证：首页 / 比例 / 设置 / 主题 / rebuild / 控制器批次 81 项通过；通用探针 40 项与滚动探针通过（收起帧热态顺带由约 12ms 降至 8.1ms）；`flutter analyze` 无问题。旧顶栏相关的 320dp 与 r1 视觉断言已按新分级更新（星期可缩短 / 隐藏，返回今天优先保留）。
