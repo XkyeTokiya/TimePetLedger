@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:time_pet_ledger/app/theme/app_theme.dart';
 import 'package:time_pet_ledger/app/theme/home_theme.dart';
 import 'package:time_pet_ledger/app/time/device_recording_date.dart';
 import 'package:time_pet_ledger/core/time/civil_date.dart';
@@ -55,6 +56,7 @@ void main() {
     VoidCallback? onReview,
     CivilDate? initialDate,
     HomeQuickPanelSide quickPanelSide = HomeQuickPanelSide.left,
+    ThemeData? theme,
   }) async {
     t.view.devicePixelRatio = 1;
     t.view.physicalSize = size;
@@ -62,7 +64,7 @@ void main() {
     addTearDown(t.view.resetDevicePixelRatio);
     await t.pumpWidget(
       MaterialApp(
-        theme: homeTheme,
+        theme: theme ?? homeTheme,
         builder: (context, child) =>
             RepaintBoundary(key: captureKey, child: child!),
         home: HomeShell(
@@ -159,6 +161,48 @@ void main() {
     expect(settings, 1);
   });
 
+  testWidgets('quick panel follows the settings card and row treatment', (
+    t,
+  ) async {
+    await mount(t, const Size(390, 800), sampleLoader());
+    await t.tap(find.byKey(const ValueKey('home-menu')));
+    await t.pumpAndSettle();
+    final panel = find.byKey(const ValueKey('home-quick-panel'));
+
+    // 2026-10-10 用户要求：快捷区样式贴近设置页——分组标题、行说明、
+    // 圆形图标与行尾箭头；分组、顺序与入口名称不变。
+    expect(
+      find.descendant(of: panel, matching: find.text('当日')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: panel, matching: find.text('更多')),
+      findsOneWidget,
+    );
+    for (final subtitle in const [
+      '这天的摘要与统计',
+      '这天的解释与下一步',
+      '回到今天的浏览位置',
+      '用于记录时间归属',
+      '外观、记录与提醒',
+    ]) {
+      expect(
+        find.descendant(of: panel, matching: find.text(subtitle)),
+        findsOneWidget,
+      );
+    }
+    expect(
+      find.descendant(of: panel, matching: find.byIcon(Icons.chevron_right)),
+      findsNWidgets(5),
+    );
+    // 浏览日为昨天：第一组含“返回今天”，与顶部入口互为镜像。
+    expect(
+      find.descendant(of: panel, matching: find.byIcon(Icons.today_outlined)),
+      findsOneWidget,
+    );
+    expect(t.takeException(), isNull);
+  });
+
   testWidgets('right quick panel mirrors the complete home surface', (t) async {
     await mount(
       t,
@@ -174,6 +218,47 @@ void main() {
     );
     await capture(t, 'home-quick-panel-right');
     expect(t.takeException(), isNull);
+  });
+
+  testWidgets('quick panel capture: default M3 and warm paper', (t) async {
+    final themes = {
+      'm3': buildAppTheme(
+        scheme: ThemeScheme.defaultM3,
+        brightness: Brightness.light,
+        fontChoice: AppFontChoice.system,
+      ),
+      'warm': homeTheme,
+    };
+    for (final MapEntry(key: name, value: theme) in themes.entries) {
+      for (final side in HomeQuickPanelSide.values) {
+        await mount(
+          t,
+          const Size(390, 800),
+          sampleLoader(),
+          quickPanelSide: side,
+          theme: theme,
+        );
+        await t.tap(find.byKey(const ValueKey('home-menu')));
+        await t.pumpAndSettle();
+        await capture(t, 'quick-panel-$name-${side.name}');
+        expect(t.takeException(), isNull);
+        await t.pumpWidget(const SizedBox.shrink());
+      }
+    }
+  });
+
+  testWidgets('quick panel capture: large text', (t) async {
+    for (final scale in [1.5, 2.0]) {
+      t.platformDispatcher.textScaleFactorTestValue = scale;
+      addTearDown(t.platformDispatcher.clearTextScaleFactorTestValue);
+      await mount(t, const Size(320, 800), sampleLoader());
+      await t.tap(find.byKey(const ValueKey('home-menu')));
+      await t.pumpAndSettle();
+      expect(find.text('当日概览'), findsOneWidget);
+      await capture(t, 'quick-panel-scale-$scale');
+      expect(t.takeException(), isNull);
+      await t.pumpWidget(const SizedBox.shrink());
+    }
   });
 
   testWidgets(
@@ -218,7 +303,13 @@ void main() {
     await mount(t, const Size(390, 800), sampleLoader());
     expect(find.byKey(const ValueKey('home-date-title')), findsOneWidget);
     expect(find.text('10月2日'), findsWidgets);
-    expect(find.text('周五 · 昨天'), findsWidgets);
+    // 返回今天占用日期行宽度时，星期按规范先缩短（读屏仍播报完整星期）。
+    expect(
+      find.byWidgetPredicate(
+        (w) => w is Text && (w.data ?? '').startsWith('周五'),
+      ),
+      findsWidgets,
+    );
     expect(find.byKey(const ValueKey('home-back-to-today')), findsOneWidget);
     // 覆盖统计只属于当前浏览日：睡眠 7h20m + 活动 3h40m = 11 小时已交代。
     expect(coverageText(t, '已交代'), '11 小时');

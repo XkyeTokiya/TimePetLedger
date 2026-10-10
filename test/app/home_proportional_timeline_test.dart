@@ -758,14 +758,18 @@ void main() {
           expect(axis.geometry.dpPerHour, 72);
           await capture(t, 'expanded-$width-$scale');
           if (width == 360 && scale == 1) {
-            expect(find.text('日账本'), findsOneWidget);
+            // 无顶栏：菜单与返回今天都在日期行，页面不再有字标行。
+            expect(find.text('日账本'), findsNothing);
+            final dateRowY = t
+                .getCenter(find.byKey(const ValueKey('ledger-date-picker')))
+                .dy;
             expect(
               t.getCenter(find.byKey(const ValueKey('home-menu'))).dy,
-              lessThan(
-                t
-                    .getCenter(find.byKey(const ValueKey('ledger-date-picker')))
-                    .dy,
-              ),
+              closeTo(dateRowY, 1),
+            );
+            expect(
+              t.getCenter(find.byKey(const ValueKey('home-back-to-today'))).dy,
+              closeTo(dateRowY, 1),
             );
             await capture(t, 'expanded-360-1-logical', pixelRatio: 1);
           }
@@ -953,31 +957,23 @@ void main() {
     },
   );
 
-  testWidgets(
-    '320dp keeps the short weekday and the today button inside one row',
-    (t) async {
-      await mount(t, width: 320);
-      await t.drag(find.byType(HomeTimelineTab), const Offset(0, 170));
-      await t.pumpAndSettle();
-      final weekday = find.descendant(
-        of: find.byType(HomeDateTitle).last,
-        matching: find.byWidgetPredicate(
-          (w) => w is Text && (w.data ?? '').startsWith('周三'),
-        ),
-      );
-      expect(weekday, findsOneWidget);
-      expect(t.widget<Text>(weekday).data, '周三');
-      final button = find.byKey(const ValueKey('home-back-to-today'));
-      expect(button.hitTestable(), findsOneWidget);
-      final dateRow = t.getRect(
-        find.byKey(const ValueKey('ledger-date-picker')).last,
-      );
-      expect(t.getRect(weekday).top, lessThan(dateRow.bottom));
-      expect(t.getRect(button).top, lessThan(dateRow.bottom));
-      expect(t.getRect(button).bottom, greaterThan(dateRow.top));
-      expect(t.takeException(), isNull);
-    },
-  );
+  testWidgets('320dp keeps the today button in one row; weekday may hide', (
+    t,
+  ) async {
+    await mount(t, width: 320);
+    // 返回今天优先于星期长度：几何放不下时先隐藏星期（读屏仍播报）。
+    final button = find.byKey(const ValueKey('home-back-to-today'));
+    expect(button.hitTestable(), findsOneWidget);
+    await t.drag(find.byType(HomeTimelineTab), const Offset(0, 170));
+    await t.pumpAndSettle();
+    expect(button.hitTestable(), findsOneWidget);
+    final dateRow = t.getRect(
+      find.byKey(const ValueKey('ledger-date-picker')).last,
+    );
+    expect(t.getRect(button).top, lessThan(dateRow.bottom));
+    expect(t.getRect(button).bottom, greaterThan(dateRow.top));
+    expect(t.takeException(), isNull);
+  });
 
   testWidgets('extreme width with large text still keeps a single header row', (
     t,

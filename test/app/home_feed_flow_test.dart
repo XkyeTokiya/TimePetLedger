@@ -80,6 +80,7 @@ Future<HomeShellState> mountHome(
   int Function()? changingClock,
   bool disableAnimations = false,
   HomeQuickPanelSide quickPanelSide = HomeQuickPanelSide.left,
+  bool showMenuButton = true,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(390, 800);
@@ -104,6 +105,7 @@ Future<HomeShellState> mountHome(
         onRecordActivity: () {},
         onRecordSleep: () {},
         quickPanelSide: quickPanelSide,
+        showMenuButton: showMenuButton,
       ),
     ),
   );
@@ -336,6 +338,55 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'date row carries the menu and the icon today button without a brand row',
+    (tester) async {
+      final db = await openLedger(tester);
+      await mountHome(tester, db, initialDate: oct2, now: at(3, 9));
+
+      // 无顶栏：页面没有字标行，菜单与返回今天都在日期行。
+      expect(find.text('日账本'), findsNothing);
+      final dateRowY = tester
+          .getCenter(find.byKey(const ValueKey('ledger-date-picker')))
+          .dy;
+      expect(
+        tester.getCenter(find.byKey(const ValueKey('home-menu'))).dy,
+        closeTo(dateRowY, 1),
+      );
+      final todayButton = find.byKey(const ValueKey('home-back-to-today'));
+      expect(todayButton, findsOneWidget);
+      expect(tester.getCenter(todayButton).dy, closeTo(dateRowY, 1));
+      expect(tester.widget<IconButton>(todayButton).tooltip, '返回今天');
+
+      await tester.tap(todayButton);
+      await settleNative(tester);
+      expect(homeDateTitle(tester), '10月3日');
+      expect(find.byKey(const ValueKey('home-back-to-today')), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('hiding the menu keeps the swipe entry to the quick panel', (
+    tester,
+  ) async {
+    final db = await openLedger(tester);
+    await mountHome(
+      tester,
+      db,
+      initialDate: oct2,
+      now: at(3, 9),
+      showMenuButton: false,
+    );
+    expect(find.byKey(const ValueKey('home-menu')), findsNothing);
+    await swipeFeed(tester, 240);
+    expect(
+      find.byKey(const ValueKey('home-quick-panel-scrim')),
+      findsOneWidget,
+    );
+    expect(find.text('当日概览'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('calendar jump and back-to-today use the same date rules', (
     tester,

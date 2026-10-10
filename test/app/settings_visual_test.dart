@@ -122,6 +122,23 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('display settings persist the menu button visibility', (
+    tester,
+  ) async {
+    final preferences = _PreferencesStore();
+    await mount(tester, preferences: preferences);
+    await tester.tap(find.byKey(const ValueKey('settings-open-display')));
+    await tester.pumpAndSettle();
+    final toggle = find.byKey(const ValueKey('settings-menu-button'));
+    await tester.ensureVisible(toggle);
+    await tester.pump();
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(preferences.value.showHomeMenuButton, isFalse);
+    expect(find.text('已隐藏；从屏幕边缘滑出快捷区。'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('settings visual states fit the 360 by 800 baseline', (
     tester,
   ) async {
