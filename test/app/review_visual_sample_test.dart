@@ -22,6 +22,7 @@ import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/review/application/review_session_service.dart';
 import 'package:time_pet_ledger/features/review/data/drift_review_draft_store.dart';
+import 'package:time_pet_ledger/features/review/data/session_review_draft_store.dart';
 import 'package:time_pet_ledger/features/review/presentation/review_flow_page.dart';
 import 'package:time_pet_ledger/features/settings/domain/app_preferences.dart';
 
@@ -221,6 +222,7 @@ void main() {
           loader: loader,
           session: session,
           understanding: understanding,
+          drafts: SessionReviewDraftStore(),
           goals: goals,
           initialDate: date,
         ),

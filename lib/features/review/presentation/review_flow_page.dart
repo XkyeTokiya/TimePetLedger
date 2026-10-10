@@ -19,6 +19,8 @@ import '../../ledger/presentation/summary_formatting.dart';
 import '../application/review_context_loader.dart';
 import '../application/review_session_service.dart';
 import '../domain/daily_review.dart';
+import '../domain/review_draft_store.dart';
+import '../domain/review_text.dart';
 import 'review_record_sheet.dart';
 
 String _dateText(CivilDate date) =>
@@ -58,6 +60,7 @@ class ReviewFlowPage extends StatefulWidget {
     required this.loader,
     required this.session,
     required this.understanding,
+    required this.drafts,
     required this.initialDate,
     this.goals,
     this.onAddRecord,
@@ -66,6 +69,9 @@ class ReviewFlowPage extends StatefulWidget {
   final ReviewContextLoader loader;
   final ReviewSessionService session;
   final ActivityUnderstandingService understanding;
+
+  /// Q-012 会话快照存储；由 app 生命周期持有（SessionReviewDraftStore）。
+  final ReviewDraftStore drafts;
   final GoalRepository? goals;
   final CivilDate initialDate;
 
@@ -94,6 +100,17 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
   EntityId? _nextStepGoalId;
   EntityId? _reasonFor;
   bool _nextStepTouched = false;
+
+  // ----- Q-012 会话快照（REVIEW-R2-14） -----
+  ReviewDraft? _pendingRecovery;
+  ReviewDraft? _flowBaseline;
+  bool _recoveryPromptShown = false;
+  bool _restoringFlow = false;
+  bool _flowReadFailed = false;
+  bool _allowPop = false;
+  int _flowEpoch = 0;
+  String? _flowStorageError;
+  Future<void> _flowWrites = Future.value();
 
   CivilDate get _date => _context?.ledger.date ?? widget.initialDate;
   DayLedgerView get _ledger => _context!.ledger;
@@ -132,10 +149,15 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
   void initState() {
     super.initState();
     _nextStep.addListener(() {
+      if (_restoringFlow) return;
       if (!_nextStepTouched) {
         _nextStepTouched = true;
         setState(() {});
       }
+      _persistFlow();
+    });
+    _reason.addListener(() {
+      if (!_restoringFlow) _persistFlow();
     });
     _load();
   }
@@ -184,6 +206,11 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
         }
         _loading = false;
       });
+      if (_flowContext == null) {
+        await _initDetailResidualCleanup();
+      } else {
+        await _initNewEntryTracking();
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() {
@@ -244,6 +271,334 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  // ----- Q-012 会话快照（REVIEW-R2-14） -----
+
+  /// 当前向导 / 重新整理对应的会话入口；已完成 Detail 没有未完成输入。
+  ReviewDraftContext? get _flowContext {
+    final context = _context;
+    if (context == null) return null;
+    final review = context.review;
+    if (_reflow) {
+      return review == null
+          ? null
+          : ReviewDraftContext.edit(reviewId: review.id);
+    }
+    return review == null
+        ? ReviewDraftContext.newEntry(date: context.ledger.date)
+        : null;
+  }
+
+  ReviewDraft _flowDraft(ReviewDraftContext context, {required int step}) =>
+      ReviewDraft(
+        context: context,
+        date: context.isEditing ? null : _date,
+        tomorrowFirstStepText: _nextStep.text,
+        tomorrowFirstStepGoalId: _nextStepGoalId,
+        flowStep: step,
+        extraFocusIds: _extraFocus.toList(),
+        hiddenGapKeys: _hiddenGaps.toList(),
+        stuckPickId: _stuckPick,
+        stuckNone: _stuckNone,
+        stuckReasonText: _reason.text,
+        stuckReasonForId: _reasonFor,
+      );
+
+  /// 预置第 3 步原因，避免渲染同步本身造成相对基线的假修改。
+  void _seedStep3Reason() {
+    final pick = _effectiveStuckPick;
+    _reasonFor = pick?.source.id;
+    _reason.text = pick?.annotation?.stuckReasonText ?? '';
+  }
+
+  void _captureFlowBaseline({required int step}) {
+    final context = _flowContext;
+    _flowBaseline = context == null ? null : _flowDraft(context, step: step);
+  }
+
+  bool _sameFlow(ReviewDraft a, ReviewDraft b) =>
+      a.flowStep == b.flowStep &&
+      (a.tomorrowFirstStepText ?? '') == (b.tomorrowFirstStepText ?? '') &&
+      a.tomorrowFirstStepGoalId == b.tomorrowFirstStepGoalId &&
+      a.stuckPickId == b.stuckPickId &&
+      (a.stuckNone ?? false) == (b.stuckNone ?? false) &&
+      (a.stuckReasonText ?? '') == (b.stuckReasonText ?? '') &&
+      a.stuckReasonForId == b.stuckReasonForId &&
+      _sameIds(a.extraFocusIds, b.extraFocusIds) &&
+      _sameIds(a.hiddenGapKeys, b.hiddenGapKeys);
+
+  bool _sameIds(List<String>? a, List<String>? b) {
+    final left = Set<String>.from(a ?? const []);
+    final right = Set<String>.from(b ?? const []);
+    return left.length == right.length && left.containsAll(right);
+  }
+
+  /// 与基线一致时清除快照，否则保存；失败保留输入并提示，离开前需确认。
+  void _persistFlow() {
+    final context = _flowContext;
+    final baseline = _flowBaseline;
+    if (_loading || _restoringFlow || _flowReadFailed) return;
+    if (context == null || baseline == null) return;
+    final draft = _flowDraft(context, step: _step);
+    final same = _sameFlow(baseline, draft);
+    final epoch = _flowEpoch;
+    _flowWrites = _flowWrites.then((_) async {
+      if (epoch != _flowEpoch) return;
+      try {
+        if (same) {
+          await widget.drafts.clear(context);
+        } else {
+          await widget.drafts.save(draft);
+        }
+        if (mounted && _flowStorageError != null) {
+          setState(() => _flowStorageError = null);
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _flowStorageError = '本次填写暂时无法保留，输入仍在此页，请重试。';
+          });
+        }
+      }
+    });
+  }
+
+  void _applyFlowState(ReviewDraft saved) {
+    _restoringFlow = true;
+    setState(() {
+      _step = saved.flowStep ?? _step;
+      _extraFocus
+        ..clear()
+        ..addAll(saved.extraFocusIds ?? const []);
+      _hiddenGaps
+        ..clear()
+        ..addAll(saved.hiddenGapKeys ?? const []);
+      _stuckPick = saved.stuckPickId;
+      _stuckNone = saved.stuckNone ?? false;
+      _nextStep.text = saved.tomorrowFirstStepText ?? '';
+      _nextStepTouched = true;
+      _nextStepGoalId = saved.tomorrowFirstStepGoalId;
+      _reasonFor = saved.stuckReasonForId;
+      _reason.text = saved.stuckReasonText ?? '';
+    });
+    _restoringFlow = false;
+  }
+
+  Future<bool?> _askRecovery({required bool editing}) => showDialog<bool>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => AlertDialog(
+      title: Text(editing ? '继续上次修改？' : '继续上次填写？'),
+      content: const Text('这个入口还有本次使用期间未完成的内容。'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(editing ? '重新编辑' : '重新填写'),
+        ),
+        FilledButton(
+          key: const ValueKey('review-recovery-continue'),
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text('继续填写'),
+        ),
+      ],
+    ),
+  );
+
+  Future<void> _chooseRecovery({required bool editing}) async {
+    final saved = _pendingRecovery;
+    if (!mounted || saved == null) return;
+    final resume = await _askRecovery(editing: editing);
+    if (!mounted) return;
+    if (resume == true) {
+      _applyFlowState(saved);
+      _persistFlow();
+    } else {
+      await _restartFlow();
+    }
+    if (mounted) setState(() => _pendingRecovery = null);
+  }
+
+  Future<void> _restartFlow() async {
+    final context = _flowContext;
+    if (context == null) return;
+    try {
+      await widget.drafts.clear(context);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _flowStorageError = '暂时无法清空本次填写，请重试。';
+        });
+      }
+      return;
+    }
+    final baseline = _flowBaseline;
+    if (baseline != null) {
+      _applyFlowState(baseline);
+    }
+    if (mounted) {
+      setState(() {
+        _flowStorageError = null;
+        _flowReadFailed = false;
+      });
+    }
+    _flowEpoch += 1;
+    _persistFlow();
+  }
+
+  Future<void> _initNewEntryTracking() async {
+    final context = _flowContext;
+    if (context == null || context.isEditing) return;
+    _seedStep3Reason();
+    _captureFlowBaseline(step: 1);
+    ReviewDraft? saved;
+    try {
+      saved = await widget.drafts.read(context);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _flowReadFailed = true;
+          _flowStorageError = '暂时无法恢复本次填写，请重试。';
+        });
+      }
+      return;
+    }
+    if (saved != null) {
+      try {
+        final committed = await widget.session.recoverCommittedDraft(saved);
+        if (committed != null) saved = null;
+      } catch (_) {
+        // 残留识别失败不阻塞向导；保留快照交给用户选择。
+      }
+    }
+    if (!mounted) return;
+    if (saved != null) {
+      setState(() => _pendingRecovery = saved);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_recoveryPromptShown) {
+          _recoveryPromptShown = true;
+          _chooseRecovery(editing: false);
+        }
+      });
+    }
+  }
+
+  Future<void> _initReflowTracking(int step) async {
+    _seedStep3Reason();
+    _captureFlowBaseline(step: step);
+    final context = _flowContext;
+    final review = _review;
+    if (context == null || review == null) return;
+    ReviewDraft? saved;
+    try {
+      saved = await widget.drafts.read(context);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _flowReadFailed = true;
+          _flowStorageError = '暂时无法恢复本次填写，请重试。';
+        });
+      }
+      return;
+    }
+    if (saved != null && _snapshotMatchesCommitted(saved, review)) {
+      try {
+        await widget.drafts.clear(context);
+      } catch (_) {
+        // 收尾失败不回滚；下次进入再清理。
+      }
+      saved = null;
+    }
+    if (!mounted || saved == null) return;
+    final resume = await _askRecovery(editing: true);
+    if (!mounted) return;
+    if (resume == true) {
+      _applyFlowState(saved);
+      _persistFlow();
+    } else {
+      await _restartFlow();
+    }
+  }
+
+  Future<void> _initDetailResidualCleanup() async {
+    final review = _review;
+    if (review == null) return;
+    try {
+      final saved = await widget.drafts.read(
+        ReviewDraftContext.newEntry(date: _date),
+      );
+      if (saved != null) await widget.session.recoverCommittedDraft(saved);
+    } catch (_) {
+      // 详情态残留清理失败不阻塞；快照保留。
+    }
+  }
+
+  bool _snapshotMatchesCommitted(ReviewDraft saved, DailyReview review) {
+    String? step;
+    try {
+      step = normalizeReviewText(saved.tomorrowFirstStepText, 'text');
+    } on ArgumentError {
+      return false;
+    }
+    return (step ?? '') == review.tomorrowFirstStep.text &&
+        saved.tomorrowFirstStepGoalId == review.tomorrowFirstStep.goalId;
+  }
+
+  void _resetFlowTracking() {
+    _pendingRecovery = null;
+    _flowReadFailed = false;
+    _flowStorageError = null;
+    _allowPop = false;
+    _flowEpoch += 1;
+    _seedStep3Reason();
+    _captureFlowBaseline(step: _step);
+  }
+
+  void _retryFlowStorage() {
+    if (_flowReadFailed) {
+      _flowReadFailed = false;
+      setState(() => _flowStorageError = null);
+      if (_reflow) {
+        _initReflowTracking(_step);
+      } else {
+        _initNewEntryTracking();
+      }
+      return;
+    }
+    _persistFlow();
+  }
+
+  bool get _flowLeaveBlocked => _flowStorageError != null && !_allowPop;
+
+  Future<bool> _confirmLeaveWithoutRecovery() async =>
+      await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('本次填写暂时无法保留'),
+          content: const Text('仍然离开可能丢失最近的修改。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('继续填写'),
+            ),
+            TextButton(
+              key: const ValueKey('review-leave-anyway'),
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('仍然离开'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+
+  Future<void> _confirmLeave() async {
+    if (!mounted) return;
+    final leave = await _confirmLeaveWithoutRecovery();
+    if (!mounted || !leave) return;
+    _allowPop = true;
+    setState(() {});
+    await WidgetsBinding.instance.endOfFrame;
+    if (mounted) Navigator.of(context).pop();
   }
 
   String? _goalName(EntityId? id) {
@@ -393,11 +748,13 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
       _ => 4,
     };
     setState(() => _step = target);
+    _persistFlow();
   }
 
   void _back() {
     if (_step > 1) {
       setState(() => _step -= 1);
+      _persistFlow();
       return;
     }
     Navigator.of(context).maybePop();
@@ -405,12 +762,16 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
 
   Future<void> _skip() async {
     await _saveStuckReason();
-    if (mounted) setState(() => _step = 4);
+    if (mounted) {
+      setState(() => _step = 4);
+      _persistFlow();
+    }
   }
 
   Future<void> _finish() async {
     if (_nextStep.text.trim().isEmpty) {
       setState(() => _step = 3);
+      _persistFlow();
       _message('写下下次的第一步，再完成今天的回顾。');
       return;
     }
@@ -426,7 +787,12 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
       notice: '今天的回顾已保存。',
       resetNextStep: true,
     );
-    if (mounted) setState(() => _step = 1);
+    if (mounted) {
+      setState(() {
+        _step = 1;
+        _resetFlowTracking();
+      });
+    }
   }
 
   Future<void> _deleteReview() async {
@@ -456,14 +822,22 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
       notice: '已删除这次回顾；当天的记录保留。',
       resetNextStep: true,
     );
-    if (mounted) setState(() => _step = 1);
+    if (mounted) {
+      setState(() {
+        _step = 1;
+        _reflow = false;
+        _resetFlowTracking();
+      });
+    }
   }
 
-  void _reflowToStep(int step) {
+  Future<void> _reflowToStep(int step) async {
+    if (_review == null) return;
     setState(() {
       _reflow = true;
       _step = step;
     });
+    await _initReflowTracking(step);
   }
 
   // ----- 构建 -----
@@ -471,32 +845,62 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _header(),
-            if (_busy)
-              const LinearProgressIndicator(minHeight: 2)
-            else
-              const SizedBox(height: 2),
-            Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _error != null
-                  ? _errorBlock()
-                  : _hasReview && !_reflow
-                  ? _detail(colors)
-                  : _wizard(colors),
-            ),
-            if (!_loading && _error == null && !(_hasReview && !_reflow))
-              _footer(),
-          ],
+    return PopScope<void>(
+      canPop: !_flowLeaveBlocked,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _confirmLeave();
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _header(),
+              if (_busy)
+                const LinearProgressIndicator(minHeight: 2)
+              else
+                const SizedBox(height: 2),
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _error != null
+                    ? _errorBlock()
+                    : _hasReview && !_reflow
+                    ? _detail(colors)
+                    : _wizard(colors),
+              ),
+              if (!_loading && _error == null && _flowStorageError != null)
+                _flowNotice(),
+              if (!_loading && _error == null && !(_hasReview && !_reflow))
+                _footer(),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _flowNotice() => Padding(
+    padding: const EdgeInsets.fromLTRB(20, 0, 12, 0),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            _flowStorageError!,
+            style: TextStyle(
+              fontSize: 13,
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ),
+        TextButton(
+          key: const ValueKey('review-flow-retry'),
+          onPressed: _busy ? null : _retryFlowStorage,
+          child: Text(_flowReadFailed ? '重试恢复本次填写' : '重试保留本次填写'),
+        ),
+      ],
+    ),
+  );
 
   Widget _header() => Padding(
     padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
@@ -519,7 +923,7 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
             key: const ValueKey('review-menu'),
             tooltip: '更多',
             onSelected: (value) async {
-              if (value == 'reflow') _reflowToStep(1);
+              if (value == 'reflow') await _reflowToStep(1);
               if (value == 'delete') await _deleteReview();
             },
             itemBuilder: (_) => [
@@ -752,7 +1156,10 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
               key: ValueKey('review-gap-restore-$key'),
               onTap: _busy
                   ? null
-                  : () => setState(() => _hiddenGaps.remove(key)),
+                  : () {
+                      setState(() => _hiddenGaps.remove(key));
+                      _persistFlow();
+                    },
               child: Text(
                 '已先留着 · 点按可再处理',
                 style: TextStyle(fontSize: 13, color: _muted(context)),
@@ -778,7 +1185,10 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
                   key: ValueKey('review-gap-later-$key'),
                   onPressed: _busy
                       ? null
-                      : () => setState(() => _hiddenGaps.add(key)),
+                      : () {
+                          setState(() => _hiddenGaps.add(key));
+                          _persistFlow();
+                        },
                   label: const Text('先留着'),
                 ),
               ],
@@ -971,6 +1381,7 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
                   borderRadius: BorderRadius.circular(14),
                   onTap: () {
                     setState(() => _extraFocus.add(segment.source.id));
+                    _persistFlow();
                     Navigator.of(sheetContext).pop();
                   },
                   child: Padding(
@@ -1012,8 +1423,11 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
     final stuck = _stuckRecords;
     final pick = _effectiveStuckPick;
     if (pick != null && _reasonFor != pick.source.id) {
+      // 渲染同步不是用户输入；避免触发快照写入。
+      _restoringFlow = true;
       _reasonFor = pick.source.id;
       _reason.text = pick.annotation?.stuckReasonText ?? '';
+      _restoringFlow = false;
     }
     return [
       if (stuck.isNotEmpty) ...[
@@ -1030,10 +1444,13 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
               selected: pick?.source.id == record.source.id,
               onTap: _busy
                   ? null
-                  : () => setState(() {
-                      _stuckPick = record.source.id;
-                      _stuckNone = false;
-                    }),
+                  : () {
+                      setState(() {
+                        _stuckPick = record.source.id;
+                        _stuckNone = false;
+                      });
+                      _persistFlow();
+                    },
             ),
           ),
         UnderstandingOptionTile(
@@ -1041,7 +1458,12 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
           icon: Icons.check_circle_outline,
           label: '今天没有特别想记的',
           action: true,
-          onTap: _busy ? null : () => setState(() => _stuckNone = true),
+          onTap: _busy
+              ? null
+              : () {
+                  setState(() => _stuckNone = true);
+                  _persistFlow();
+                },
         ),
         const SizedBox(height: 14),
       ],
@@ -1090,7 +1512,10 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
             TextButton(
               onPressed: _busy
                   ? null
-                  : () => setState(() => _nextStepGoalId = null),
+                  : () {
+                      setState(() => _nextStepGoalId = null);
+                      _persistFlow();
+                    },
               child: const Text('清除'),
             ),
         ],
@@ -1108,6 +1533,7 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
     );
     if (!mounted || goal == null) return;
     setState(() => _nextStepGoalId = goal.id);
+    _persistFlow();
   }
 
   // ----- 第 4 步：看一眼今天 -----

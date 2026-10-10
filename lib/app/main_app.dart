@@ -440,6 +440,7 @@ class _RecordingHomeState extends State<_RecordingHome>
     loader: widget.reviewContext!,
     session: _reviewSessionService(),
     understanding: _understandingService(),
+    drafts: widget.reviewDrafts!,
     goals: widget.goals,
     initialDate: date,
     onAddRecord: _addRecordForReview,

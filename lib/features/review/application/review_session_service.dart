@@ -117,6 +117,15 @@ class ReviewSessionService {
     }
   }
 
+  /// 已提交残留：识别后只收尾（清快照 / 读回），不重复提交。
+  ///
+  /// 返回命中的正式复盘；null 表示残留与现有内容不一致或不属于新建态，
+  /// 由调用方决定是否提供恢复选择。
+  Future<DailyReview?> recoverCommittedDraft(ReviewDraft draft) async {
+    final result = await _guard(() => saver.recoverCommittedDraft(draft));
+    return result?.review;
+  }
+
   Future<T> _guard<T>(Future<T> Function() run) async {
     try {
       return await run();
