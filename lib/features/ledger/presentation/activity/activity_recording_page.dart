@@ -125,12 +125,30 @@ class _ActivityRecordingPageState extends State<ActivityRecordingPage> {
   }
 
   Future<void> _time({bool isStart = true, bool isDate = false}) async {
-    final picker = isDate ? showRecordingDatePicker : showRecordingTimePicker;
-    final result = await picker(
-      context,
-      value: isStart ? model.time.startedAt : model.time.endedAt,
-      date: model.context.date,
-    );
+    final value = isStart ? model.time.startedAt : model.time.endedAt;
+    final int? result;
+    if (isDate) {
+      result = await showRecordingDatePicker(
+        context,
+        value: value,
+        date: model.context.date,
+      );
+    } else {
+      // 终点按起点、起点按终点限制可选时分（同一自然日内）。
+      final range = ledgerClockRangeFor(
+        startedAt: model.time.startedAt,
+        endedAt: model.time.endedAt,
+        isStart: isStart,
+        entryDate: model.context.date,
+      );
+      result = await showRecordingTimePicker(
+        context,
+        value: value,
+        date: model.context.date,
+        first: range.first,
+        last: range.last,
+      );
+    }
     if (!mounted || result == null) return;
     model.setTime(
       start: isStart ? result : model.time.startedAt,

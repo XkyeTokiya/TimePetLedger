@@ -83,12 +83,30 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
   }
 
   Future<void> _times({bool isStart = true, bool isDate = false}) async {
-    final picker = isDate ? showRecordingDatePicker : showRecordingTimePicker;
-    final result = await picker(
-      context,
-      value: isStart ? model.startedAt : model.endedAt,
-      date: model.context.date,
-    );
+    final value = isStart ? model.startedAt : model.endedAt;
+    final int? result;
+    if (isDate) {
+      result = await showRecordingDatePicker(
+        context,
+        value: value,
+        date: model.context.date,
+      );
+    } else {
+      // 醒来按入睡、入睡按醒来限制可选时分（同一自然日内）。
+      final range = ledgerClockRangeFor(
+        startedAt: model.startedAt,
+        endedAt: model.endedAt,
+        isStart: isStart,
+        entryDate: model.context.date,
+      );
+      result = await showRecordingTimePicker(
+        context,
+        value: value,
+        date: model.context.date,
+        first: range.first,
+        last: range.last,
+      );
+    }
     if (!mounted || result == null) return;
     model.setTime(
       start: isStart ? result : model.startedAt,

@@ -92,12 +92,16 @@ Future<int?> showRecordingTimePicker(
   BuildContext context, {
   required int? value,
   required CivilDate date,
+  TimeOfDay? first,
+  TimeOfDay? last,
 }) async {
   FocusScope.of(context).unfocus();
   final base = _base(value, date);
   final clock = await showLedgerClockPicker(
     context,
     initial: TimeOfDay.fromDateTime(base),
+    first: first,
+    last: last,
   );
   if (!context.mounted || clock == null) return null;
   return _combine(context, base, hour: clock.hour, minute: clock.minute);
@@ -122,12 +126,51 @@ Future<int?> showRecordingDatePicker(
 Future<TimeOfDay?> showLedgerClockPicker(
   BuildContext context, {
   required TimeOfDay initial,
+  TimeOfDay? first,
+  TimeOfDay? last,
 }) {
   FocusScope.of(context).unfocus();
   return showDialog<TimeOfDay>(
     context: context,
-    builder: (_) => _ChineseTimePicker(initial: initial),
+    builder: (_) =>
+        _ChineseTimePicker(initial: initial, first: first, last: last),
   );
+}
+
+/// 按“当前组合中的另一端”推导时分选择范围（用户 2026-10-10 决定）。
+///
+/// 领域要求 startedAt < endedAt（严格正区间，见 DOMAIN_RULES「时间区间必须为正」）。
+/// 两端处于同一自然日时：终点最早 = 起点 + 1 分钟，起点最晚 = 终点 − 1 分钟；
+/// 另一端无值、跨日或当日没有合法分钟时不约束，仍由提交校验兜底。无值端点
+/// 按 [entryDate] 计算日期，与 [showRecordingTimePicker] 的初值口径一致。
+/// 只约束时间范围，不自动改日期、不串联另一端（Q-038 继续有效）。
+({TimeOfDay? first, TimeOfDay? last}) ledgerClockRangeFor({
+  required int? startedAt,
+  required int? endedAt,
+  required bool isStart,
+  required CivilDate entryDate,
+}) {
+  final other = isStart ? endedAt : startedAt;
+  if (other == null) return (first: null, last: null);
+  final otherDate = DateTime.fromMillisecondsSinceEpoch(other);
+  final own = isStart ? startedAt : endedAt;
+  final ownDate = own != null
+      ? DateTime.fromMillisecondsSinceEpoch(own)
+      : DateTime(entryDate.year, entryDate.month, entryDate.day);
+  final sameDay =
+      ownDate.year == otherDate.year &&
+      ownDate.month == otherDate.month &&
+      ownDate.day == otherDate.day;
+  if (!sameDay) return (first: null, last: null);
+  final otherMinutes = otherDate.hour * 60 + otherDate.minute;
+  if (isStart) {
+    final max = otherMinutes - 1;
+    if (max < 0) return (first: null, last: null);
+    return (first: null, last: TimeOfDay(hour: max ~/ 60, minute: max % 60));
+  }
+  final min = otherMinutes + 1;
+  if (min > 23 * 60 + 59) return (first: null, last: null);
+  return (first: TimeOfDay(hour: min ~/ 60, minute: min % 60), last: null);
 }
 
 DateTime _base(int? value, CivilDate date) => value == null
@@ -241,19 +284,28 @@ class _DurationPickerState extends State<_DurationPicker> {
             child: Row(
               children: [
                 Expanded(
-                  child: _wheel(
-                    hourScroll,
-                    null,
-                    '小时',
-                    (v) => setState(() => hours = v),
+                  child: _WheelColumn(
+                    label: '小时',
+                    wheelKey: const ValueKey('duration-picker-hour'),
+                    bandKey: const ValueKey('duration-picker-hour-band'),
+                    controller: hourScroll,
+                    childCount: null,
+                    onSelectedItemChanged: (v) => setState(() => hours = v),
+                    itemBuilder: (context, index) => index < 0
+                        ? null
+                        : _wheelNumber(context, index, index == hours),
                   ),
                 ),
                 Expanded(
-                  child: _wheel(
-                    minuteScroll,
-                    60,
-                    '分钟',
-                    (v) => setState(() => minutes = v),
+                  child: _WheelColumn(
+                    label: '分钟',
+                    wheelKey: const ValueKey('duration-picker-minute'),
+                    bandKey: const ValueKey('duration-picker-minute-band'),
+                    controller: minuteScroll,
+                    childCount: 60,
+                    onSelectedItemChanged: (v) => setState(() => minutes = v),
+                    itemBuilder: (context, index) =>
+                        _wheelNumber(context, index, index == minutes),
                   ),
                 ),
               ],
@@ -285,33 +337,6 @@ class _DurationPickerState extends State<_DurationPicker> {
       ),
     ],
   );
-  Widget _wheel(
-    FixedExtentScrollController controller,
-    int? count,
-    String label,
-    ValueChanged<int> onPick,
-  ) => Column(
-    children: [
-      const SizedBox(height: 12),
-      Text(label),
-      Expanded(
-        child: ListWheelScrollView.useDelegate(
-          controller: controller,
-          itemExtent: 44,
-          physics: const FixedExtentScrollPhysics(),
-          onSelectedItemChanged: onPick,
-          childDelegate: ListWheelChildBuilderDelegate(
-            childCount: count,
-            builder: (_, index) => index < 0
-                ? null
-                : Center(
-                    child: Text('$index', style: const TextStyle(fontSize: 22)),
-                  ),
-          ),
-        ),
-      ),
-    ],
-  );
 }
 
 class _ChineseDatePicker extends StatefulWidget {
@@ -339,55 +364,55 @@ class _ChineseDatePickerState extends State<_ChineseDatePicker> {
   });
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
-    insetPadding: const EdgeInsets.all(16),
-    content: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 360),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              IconButton(
-                tooltip: '上个月',
-                onPressed: () => _move(-1),
-                icon: const Icon(Icons.chevron_left),
-              ),
-              Expanded(
-                child: Text(
-                  '${month.year}年${month.month}月',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      insetPadding: const EdgeInsets.all(16),
+      title: const Text('选择日期'),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  tooltip: '上个月',
+                  onPressed: () => _move(-1),
+                  icon: const Icon(Icons.chevron_left),
+                ),
+                Expanded(
+                  child: Text(
+                    '${month.year}年${month.month}月',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleLarge,
                   ),
                 ),
-              ),
-              IconButton(
-                tooltip: '下个月',
-                onPressed: () => _move(1),
-                icon: const Icon(Icons.chevron_right),
-              ),
-            ],
-          ),
-          _calendar(context),
-        ],
+                IconButton(
+                  tooltip: '下个月',
+                  onPressed: () => _move(1),
+                  icon: const Icon(Icons.chevron_right),
+                ),
+              ],
+            ),
+            _calendar(context),
+          ],
+        ),
       ),
-    ),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Text('取消'),
-      ),
-      FilledButton(
-        key: const ValueKey('date-picker-confirm'),
-        onPressed: () => Navigator.pop(context, selected),
-        child: const Text('确定'),
-      ),
-    ],
-  );
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        FilledButton(
+          key: const ValueKey('date-picker-confirm'),
+          onPressed: () => Navigator.pop(context, selected),
+          child: const Text('确定'),
+        ),
+      ],
+    );
+  }
 
   Widget _calendar(BuildContext context) {
     final available = (MediaQuery.sizeOf(context).width - 80).clamp(
@@ -399,6 +424,7 @@ class _ChineseDatePickerState extends State<_ChineseDatePicker> {
   }
 
   Widget _grid(BuildContext context, double cell) {
+    final theme = Theme.of(context);
     final weekday = DateTime.utc(month.year, month.month, 1).weekday - 1;
     final count = DateTime.utc(month.year, month.month + 1, 0).day;
     return Column(
@@ -408,12 +434,13 @@ class _ChineseDatePickerState extends State<_ChineseDatePicker> {
             for (final day in ['一', '二', '三', '四', '五', '六', '日'])
               SizedBox(
                 width: cell,
-                child: Text(
-                  day,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                height: 32,
+                child: Center(
+                  child: Text(
+                    day,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),
@@ -441,38 +468,107 @@ class _ChineseDatePickerState extends State<_ChineseDatePicker> {
     return SizedBox(
       width: cell,
       height: cell,
-      child: TextButton(
-        style: TextButton.styleFrom(
-          padding: EdgeInsets.zero,
-          backgroundColor: selectedDay ? colors.primary : null,
-          foregroundColor: selectedDay ? colors.onPrimary : colors.onSurface,
+      child: Semantics(
+        label: '${date.year}年${date.month}月${date.day}日',
+        selected: selectedDay,
+        child: TextButton(
+          style: TextButton.styleFrom(
+            shape: const CircleBorder(),
+            padding: EdgeInsets.zero,
+            backgroundColor: selectedDay ? colors.primary : null,
+            foregroundColor: selectedDay ? colors.onPrimary : colors.onSurface,
+          ),
+          onPressed: () => setState(() => selected = date),
+          child: Text('$day'),
         ),
-        onPressed: () => setState(() => selected = date),
-        child: Text('$day', style: const TextStyle(fontSize: 15)),
       ),
     );
   }
 }
 
 /// 账本风格的中文时分选择器：小时 / 分钟两列，不使用英文 Material 拨盘。
+///
+/// 可选传入 [first] / [last] 把可选时分限制在另一端点决定的范围；中央选中
+/// 项以底带、放大与选中色高亮，非中间项降不透明度。
 class _ChineseTimePicker extends StatefulWidget {
-  const _ChineseTimePicker({required this.initial});
+  const _ChineseTimePicker({required this.initial, this.first, this.last});
   final TimeOfDay initial;
+  final TimeOfDay? first;
+  final TimeOfDay? last;
 
   @override
   State<_ChineseTimePicker> createState() => _ChineseTimePickerState();
 }
 
 class _ChineseTimePickerState extends State<_ChineseTimePicker> {
-  late int hour = widget.initial.hour;
-  late int minute = widget.initial.minute;
-  late final hourScroll = FixedExtentScrollController(initialItem: hour);
-  late final minuteScroll = FixedExtentScrollController(initialItem: minute);
+  TimeOfDay? first;
+  TimeOfDay? last;
+  late int hour;
+  late int minute;
+  late final FixedExtentScrollController hourScroll;
+  late final FixedExtentScrollController minuteScroll;
+
+  @override
+  void initState() {
+    super.initState();
+    var f = widget.first;
+    var l = widget.last;
+    if (f != null && l != null && _minutesOf(f) > _minutesOf(l)) {
+      // 当日没有合法分钟：退回不约束，仍由提交校验兜底。
+      f = null;
+      l = null;
+    }
+    first = f;
+    last = l;
+    var h = widget.initial.hour;
+    var m = widget.initial.minute;
+    if (f != null &&
+        _minutesOf(TimeOfDay(hour: h, minute: m)) < _minutesOf(f)) {
+      h = f.hour;
+      m = f.minute;
+    }
+    if (l != null &&
+        _minutesOf(TimeOfDay(hour: h, minute: m)) > _minutesOf(l)) {
+      h = l.hour;
+      m = l.minute;
+    }
+    hour = h;
+    minute = m;
+    hourScroll = FixedExtentScrollController(initialItem: h - _hourMin);
+    minuteScroll = FixedExtentScrollController(initialItem: m - _minuteMin(h));
+  }
+
+  int get _hourMin => first?.hour ?? 0;
+  int get _hourMax => last?.hour ?? 23;
+  int _minuteMin(int h) => first != null && h == _hourMin ? first!.minute : 0;
+  int _minuteMax(int h) => last != null && h == _hourMax ? last!.minute : 59;
+
+  static int _minutesOf(TimeOfDay t) => t.hour * 60 + t.minute;
+
   @override
   void dispose() {
     hourScroll.dispose();
     minuteScroll.dispose();
     super.dispose();
+  }
+
+  void _onHour(int index) {
+    final next = _hourMin + index;
+    final min = _minuteMin(next);
+    final max = _minuteMax(next);
+    final nextMinute = minute < min
+        ? min
+        : minute > max
+        ? max
+        : minute;
+    setState(() {
+      hour = next;
+      minute = nextMinute;
+    });
+    if (minuteScroll.hasClients) {
+      final target = nextMinute - _minuteMin(hour);
+      if (minuteScroll.selectedItem != target) minuteScroll.jumpToItem(target);
+    }
   }
 
   @override
@@ -484,21 +580,32 @@ class _ChineseTimePickerState extends State<_ChineseTimePicker> {
       child: Row(
         children: [
           Expanded(
-            child: _column(
-              context,
-              24,
-              hourScroll,
-              (v) => setState(() => hour = v),
-              '小时',
+            child: _WheelColumn(
+              label: '小时',
+              wheelKey: const ValueKey('time-picker-hour'),
+              bandKey: const ValueKey('time-picker-hour-band'),
+              controller: hourScroll,
+              childCount: _hourMax - _hourMin + 1,
+              onSelectedItemChanged: _onHour,
+              itemBuilder: (context, index) {
+                final value = _hourMin + index;
+                return _wheelNumber(context, value, value == hour);
+              },
             ),
           ),
           Expanded(
-            child: _column(
-              context,
-              60,
-              minuteScroll,
-              (v) => setState(() => minute = v),
-              '分钟',
+            child: _WheelColumn(
+              label: '分钟',
+              wheelKey: const ValueKey('time-picker-minute'),
+              bandKey: const ValueKey('time-picker-minute-band'),
+              controller: minuteScroll,
+              childCount: _minuteMax(hour) - _minuteMin(hour) + 1,
+              onSelectedItemChanged: (index) =>
+                  setState(() => minute = _minuteMin(hour) + index),
+              itemBuilder: (context, index) {
+                final value = _minuteMin(hour) + index;
+                return _wheelNumber(context, value, value == minute);
+              },
             ),
           ),
         ],
@@ -517,43 +624,89 @@ class _ChineseTimePickerState extends State<_ChineseTimePicker> {
       ),
     ],
   );
+}
 
-  Widget _column(
-    BuildContext context,
-    int count,
-    FixedExtentScrollController controller,
-    ValueChanged<int> onPick,
-    String label,
-  ) => Column(
-    children: [
-      Text(
-        label,
-        style: TextStyle(
-          fontSize: 14,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
+/// 拨轮中央选中项的数字文本：选中项使用主题主色与更重字重。
+Widget _wheelNumber(BuildContext context, int value, bool selected) {
+  final colors = Theme.of(context).colorScheme;
+  return Center(
+    child: Text(
+      value.toString().padLeft(2, '0'),
+      style: TextStyle(
+        fontSize: 22,
+        fontWeight: selected ? FontWeight.w600 : null,
+        color: selected ? colors.primary : colors.onSurface,
       ),
-      const SizedBox(height: 6),
-      Expanded(
-        child: ListWheelScrollView.useDelegate(
-          controller: controller,
-          itemExtent: 44,
-          onSelectedItemChanged: onPick,
-          physics: const FixedExtentScrollPhysics(),
-          childDelegate: ListWheelChildBuilderDelegate(
-            childCount: count,
-            builder: (context, index) => Center(
-              child: Text(
-                index.toString().padLeft(2, '0'),
-                style: TextStyle(
-                  fontSize: 22,
-                  color: Theme.of(context).colorScheme.onSurface,
+    ),
+  );
+}
+
+/// 单列拨轮：中央底带 + 放大中央项 + 非中间项降不透明度。
+class _WheelColumn extends StatelessWidget {
+  const _WheelColumn({
+    required this.label,
+    required this.controller,
+    required this.childCount,
+    required this.itemBuilder,
+    required this.onSelectedItemChanged,
+    required this.bandKey,
+    this.wheelKey,
+  });
+  final String label;
+  final FixedExtentScrollController controller;
+  final int? childCount;
+  final NullableIndexedWidgetBuilder itemBuilder;
+  final ValueChanged<int> onSelectedItemChanged;
+  final Key bandKey;
+  final Key? wheelKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Column(
+      children: [
+        Text(
+          label,
+          style: TextStyle(fontSize: 14, color: colors.onSurfaceVariant),
+        ),
+        const SizedBox(height: 6),
+        Expanded(
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Center(
+                  child: IgnorePointer(
+                    child: Container(
+                      key: bandKey,
+                      width: double.infinity,
+                      height: 44,
+                      margin: const EdgeInsets.symmetric(horizontal: 6),
+                      decoration: BoxDecoration(
+                        color: colors.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ),
+              ListWheelScrollView.useDelegate(
+                key: wheelKey,
+                controller: controller,
+                itemExtent: 44,
+                physics: const FixedExtentScrollPhysics(),
+                useMagnifier: true,
+                magnification: 1.15,
+                overAndUnderCenterOpacity: .45,
+                onSelectedItemChanged: onSelectedItemChanged,
+                childDelegate: ListWheelChildBuilderDelegate(
+                  childCount: childCount,
+                  builder: itemBuilder,
+                ),
+              ),
+            ],
           ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }

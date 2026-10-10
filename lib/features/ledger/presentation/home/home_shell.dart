@@ -116,6 +116,10 @@ class HomeShellState extends State<HomeShell>
   /// 字号与宽度）变化时照常重建。
   Widget? _timelineCache;
   Object? _timelineCacheKey;
+  Widget? _panelCache;
+  Object? _panelCacheKey;
+  Widget? _bottomBarCache;
+  bool? _bottomBarCacheKey;
 
   /// 快捷区的左右边缘保留区，避免与系统返回手势冲突。
   static const _edgeGuard = 32.0;
@@ -186,6 +190,19 @@ class HomeShellState extends State<HomeShell>
 
   CivilDate _today() => widget.dateOfInstant(widget.now());
 
+  /// 底栏只随 busy 变化；面板 tick 不再重建两个记录按钮。
+  Widget _bottomBar() {
+    if (_bottomBarCache != null && _bottomBarCacheKey == widget.busy) {
+      return _bottomBarCache!;
+    }
+    _bottomBarCacheKey = widget.busy;
+    return _bottomBarCache = _HomeBottomBar(
+      busy: widget.busy,
+      onRecordSleep: widget.onRecordSleep,
+      onRecordActivity: widget.onRecordActivity,
+    );
+  }
+
   Widget _timeline(CivilDate today) {
     final active = widget.active && _panel.value == 0;
     final a11yFactor = _timelineA11yFactor();
@@ -250,11 +267,26 @@ class HomeShellState extends State<HomeShell>
     return unreadable ? 1.25 : 1;
   }
 
+  /// 快捷区内容在面板 tick 之间保持不变；缓存实例让收拢动画只更新
+  /// 位移 / 遮罩与门控，不重建 8 条目列表。
   Widget _quickPanel(CivilDate today) {
     final date = _panelDate ?? feed.focusDate;
+    final left = widget.quickPanelSide == HomeQuickPanelSide.left;
+    final key = (
+      date,
+      left,
+      today,
+      widget.onGoals != null,
+      widget.onSettings != null,
+    );
+    if (_panelCache != null && _panelCacheKey == key) return _panelCache!;
+    _panelCacheKey = key;
+    return _panelCache = _buildQuickPanel(today, date, left);
+  }
+
+  Widget _buildQuickPanel(CivilDate today, CivilDate date, bool left) {
     final colors = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    final left = widget.quickPanelSide == HomeQuickPanelSide.left;
     final closeButton = IconButton(
       key: const ValueKey('home-quick-panel-close'),
       focusNode: _panelFirstFocus,
@@ -475,7 +507,7 @@ class HomeShellState extends State<HomeShell>
     _restorePanelFocus();
     action();
     try {
-      await _settlePanel(false, restoreFocus: false);
+      await _settlePanel(false, restoreFocus: false, quick: true);
     } finally {
       if (mounted) setState(() => _panelActionPending = false);
     }
@@ -653,6 +685,7 @@ class HomeShellState extends State<HomeShell>
     bool open, {
     double velocity = 0,
     bool restoreFocus = true,
+    bool quick = false,
   }) async {
     if (open && _panel.value == 0) {
       _focusBeforePanel = FocusManager.instance.primaryFocus;
@@ -663,6 +696,19 @@ class HomeShellState extends State<HomeShell>
     _panelSettleTarget = target;
     if (MediaQuery.disableAnimationsOf(context)) {
       _panel.value = target;
+    } else if (quick) {
+      // 条目动作：内容已经切换，用短时长收拢，避免 500ms 弹簧与窗口
+      // 装载 / 帧切换叠加成可见卡顿。
+      try {
+        await _panel.animateTo(
+          target,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
+        );
+        _panel.value = target;
+      } on TickerCanceled {
+        return;
+      }
     } else {
       try {
         await _panel.animateWith(
@@ -798,13 +844,7 @@ class HomeShellState extends State<HomeShell>
                                                     canShiftNext,
                                                   ),
                                                 ),
-                                                _HomeBottomBar(
-                                                  busy: widget.busy,
-                                                  onRecordSleep:
-                                                      widget.onRecordSleep,
-                                                  onRecordActivity:
-                                                      widget.onRecordActivity,
-                                                ),
+                                                _bottomBar(),
                                               ],
                                             ),
                                           ),

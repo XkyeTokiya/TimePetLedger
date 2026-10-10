@@ -136,7 +136,11 @@ class _DateDialogState extends State<_DateDialog> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (widget.modeDescription != null) Text(widget.modeDescription!),
+          if (widget.modeDescription != null)
+            Text(
+              widget.modeDescription!,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           if (widget.onToday != null)
             TextButton(
               onPressed: () {
@@ -158,12 +162,7 @@ class _DateDialogState extends State<_DateDialog> {
               },
             )
           else ...[
-            Text(
-              '${month.year}年${month.month}月',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 IconButton(
                   tooltip: '上个月',
@@ -171,6 +170,13 @@ class _DateDialogState extends State<_DateDialog> {
                       ? null
                       : () => _moveMonth(-1),
                   icon: const Icon(Icons.chevron_left),
+                ),
+                Expanded(
+                  child: Text(
+                    '${month.year}年${month.month}月',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
                 IconButton(
                   tooltip: '下个月',
@@ -183,31 +189,18 @@ class _DateDialogState extends State<_DateDialog> {
             ),
             // 七列在窄屏也尽量完整可见：缩小弹窗边距后，360 / 390 宽可整周
             // 显示；320 宽放不下 7 个 48px 触控格，仍可横向滚动。
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (MediaQuery.sizeOf(context).width < 352)
-                  Text(
-                    '左右滑动查看整周',
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(fontSize: 13),
-                  ),
-                Scrollbar(
-                  controller: calendarScroll,
-                  thumbVisibility: true,
-                  child: SingleChildScrollView(
-                    controller: calendarScroll,
-                    scrollDirection: Axis.horizontal,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: SizedBox(width: 336, child: _calendar(48)),
-                    ),
-                  ),
+            Scrollbar(
+              controller: calendarScroll,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: calendarScroll,
+                scrollDirection: Axis.horizontal,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: SizedBox(width: 336, child: _calendar(48)),
                 ),
-              ],
+              ),
             ),
-            const SizedBox(height: 8),
-            Text('已选 ${ledgerDateText(selected)}'),
           ],
           const SizedBox(height: 8),
           TextButton(
@@ -240,8 +233,15 @@ class _DateDialogState extends State<_DateDialog> {
             for (final day in ['一', '二', '三', '四', '五', '六', '日'])
               SizedBox(
                 width: cell,
-                height: cell,
-                child: Center(child: Text(day)),
+                height: 32,
+                child: Center(
+                  child: Text(
+                    day,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
               ),
           ],
         ),
@@ -267,13 +267,14 @@ class _DateDialogState extends State<_DateDialog> {
         selected: date == selected,
         child: TextButton(
           style: TextButton.styleFrom(
+            shape: const CircleBorder(),
             padding: EdgeInsets.zero,
             backgroundColor: date == selected
                 ? Theme.of(context).colorScheme.primary
                 : null,
             foregroundColor: date == selected
                 ? Theme.of(context).colorScheme.onPrimary
-                : null,
+                : Theme.of(context).colorScheme.onSurface,
           ),
           onPressed: () => setState(() => selected = date),
           child: Text('$day'),
