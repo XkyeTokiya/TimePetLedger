@@ -116,6 +116,11 @@ class ActivityUnderstandingService {
         AnnotationOperationFailure.alreadyExists => '这条记录已有节奏解释，请刷新后编辑。',
         AnnotationOperationFailure.notFound => '节奏解释已不存在，请刷新后重试。',
       });
+    } on ArgumentError catch (error) {
+      if (error.name == 'progressGoal') {
+        throw const ActivityUnderstandingException('推进需要先关联一个目标。');
+      }
+      rethrow;
     } on LedgerConflictException {
       throw const ActivityUnderstandingException('时间与其他记录冲突，请刷新后重试。');
     }

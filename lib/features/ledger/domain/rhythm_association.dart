@@ -2,6 +2,7 @@ import 'package:time_pet_ledger/features/goals/domain/goal.dart';
 import 'package:time_pet_ledger/features/goals/domain/goal_status.dart';
 
 import 'rhythm_annotation.dart';
+import 'rhythm_state.dart';
 import 'time_block.dart';
 
 /// 校验明确提供的关联快照（RH-001、Q-004、Q-006），不执行查询。
@@ -21,6 +22,16 @@ void validateRhythmAssociation({
       timeBlock?.id,
       'timeBlock',
       'RH-001: Annotation requires its referenced TimeBlock',
+    );
+  }
+  // Q-004（2026-10-11 修订）：progress 必须关联一个 Goal；没有目标归属
+  // 不能添加或保留 progress（含解除目标关联时保留 progress 的情形）。
+  // stuck / recovery 仍不强制要求 Goal。
+  if (annotation.state == RhythmState.progress && timeBlock.goalId == null) {
+    throw ArgumentError.value(
+      annotation.state,
+      'progressGoal',
+      'Q-004: progress requires a referenced Goal',
     );
   }
   if (timeBlock.goalId == null) return;

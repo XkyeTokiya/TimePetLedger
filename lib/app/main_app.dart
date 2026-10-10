@@ -13,8 +13,9 @@ import '../features/ledger/domain/sleep_session.dart';
 import '../features/goals/domain/goal_repository.dart';
 import '../features/review/application/review_context_loader.dart';
 import '../features/review/application/review_entry_saver.dart';
+import '../features/review/application/review_session_service.dart';
 import '../features/review/domain/review_draft_store.dart';
-import '../features/review/presentation/review_context_page.dart';
+import '../features/review/presentation/review_flow_page.dart';
 
 import '../features/ledger/application/day_ledger_loader.dart';
 import '../features/ledger/presentation/home/home_shell.dart';
@@ -195,15 +196,13 @@ class _RecordingHomeState extends State<_RecordingHome>
   final timelineAnchor = GlobalKey(debugLabel: 'home-timeline-anchor');
   final scrollSession = DayReadScrollSession();
   bool opening = false;
-  bool ledgerInteraction = false;
-  bool reviewInteraction = false;
   bool checkingSleep = false;
   bool? recordedMainSleepToday;
   String? firstSleepError;
   AppPreferences? preferences;
   ModalRoute<void>? route;
 
-  bool get busy => opening || ledgerInteraction || reviewInteraction;
+  bool get busy => opening;
 
   /// 首页顶部当前浏览日期；记录入口与摘要 / 复盘入口都继承它。
   CivilDate get selectedDate =>
@@ -307,22 +306,6 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  void _interaction(bool value, {required bool review}) {
-    if (!mounted) return;
-    setState(() {
-      if (review) {
-        reviewInteraction = value;
-      } else {
-        ledgerInteraction = value;
-      }
-    });
-    if (!value) {
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _refreshSuggestionState(),
-      );
-    }
-  }
-
   Future<ActivityQuickSheetResult?> _openActivitySheet(
     RecordingDraftContext entryContext, {
     UnresolvedSpan? gap,
@@ -334,6 +317,7 @@ class _RecordingHomeState extends State<_RecordingHome>
     entryEditor: widget.entryEditor,
     understanding: _understandingService(),
     loadGoals: _loadActiveGoals,
+    createGoal: _goalCreator,
     loadSuggestion: () => widget.ledger.loadTimeSuggestion(
       date: entryContext.date,
       now: widget.now().millisecondsSinceEpoch,
@@ -352,6 +336,17 @@ class _RecordingHomeState extends State<_RecordingHome>
     final goals = widget.goals;
     if (goals == null) return const [];
     return goals.listActive();
+  }
+
+  /// 无目标点“推进”时的新建目标入口；没有目标仓库时返回 null。
+  Future<Goal> Function(String name)? get _goalCreator {
+    final goals = widget.goals;
+    if (goals == null) return null;
+    return (name) => goals.create(
+      id: widget.entrySaver.newId(),
+      name: name,
+      now: widget.now().millisecondsSinceEpoch,
+    );
   }
 
   Future<void> _pushSleep(CivilDate date) async {
@@ -422,17 +417,32 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  Widget _reviewPage(CivilDate date) => ReviewContextPage(
-    loader: widget.reviewContext!,
-    drafts: widget.reviewDrafts,
-    saver: widget.reviewSaver,
-    goals: widget.goals,
+  ReviewSessionService _reviewSessionService() => ReviewSessionService(
+    repository: widget.ledger.repository,
+    saver: widget.reviewSaver!,
     now: () => widget.now().millisecondsSinceEpoch,
-    dateOfInstant: deviceDateOfInstant,
-    routeObserver: widget.dayRoutes,
+    newId: () => widget.reviewSaver!.newId(),
+  );
+
+  Future<bool> _addRecordForReview(CivilDate date, UnresolvedSpan gap) async {
+    final result = await _openActivitySheet(
+      RecordingDraftContext.gap(
+        date: date,
+        startedAt: gap.startedAt,
+        endedAt: gap.endedAt,
+      ),
+      gap: gap,
+    );
+    return result != null;
+  }
+
+  Widget _reviewPage(CivilDate date) => ReviewFlowPage(
+    loader: widget.reviewContext!,
+    session: _reviewSessionService(),
+    understanding: _understandingService(),
+    goals: widget.goals,
     initialDate: date,
-    scrollSession: scrollSession,
-    onInteraction: (value) => _interaction(value, review: true),
+    onAddRecord: _addRecordForReview,
   );
 
   /// 快捷区入口：独立「当日概览」页，继承打开快捷区时的日期。
@@ -468,7 +478,9 @@ class _RecordingHomeState extends State<_RecordingHome>
 
   /// 快捷区入口：独立「当日复盘」页，继承打开快捷区时的日期。
   Future<void> _openReview([CivilDate? requestedDate]) async {
-    if (busy || widget.reviewContext == null) return;
+    if (busy || widget.reviewContext == null || widget.reviewSaver == null) {
+      return;
+    }
     final date = requestedDate ?? selectedDate;
     setState(() => opening = true);
     try {
@@ -558,6 +570,7 @@ class _RecordingHomeState extends State<_RecordingHome>
         service: _understandingService(),
         recordId: segment.source.id,
         loadGoals: _loadActiveGoals,
+        createGoal: _goalCreator,
         onWrote: () async {
           changed = true;
           await _refreshHome();

@@ -8,6 +8,7 @@ import '../../domain/rhythm_details.dart';
 import '../../domain/rhythm_state.dart';
 import '../../domain/time_block.dart';
 import 'activity_sheet_frame.dart';
+import 'goal_picker.dart';
 import 'understanding_stage_widgets.dart';
 
 /// 理解层的来源：刚保存的新事实，或从详情打开的修改。
@@ -27,6 +28,7 @@ class ActivityUnderstandingPage extends StatefulWidget {
     required this.service,
     required this.loadGoals,
     this.fact,
+    this.createGoal,
     this.onClose,
     this.onWrote,
     this.onNotice,
@@ -39,6 +41,9 @@ class ActivityUnderstandingPage extends StatefulWidget {
 
   /// 正在解释的事实（保存后由记录面板传入；修改模式读取后填充）。
   final TimeBlock? fact;
+
+  /// 无目标点“推进”时新建目标的能力；为 null 时面板只提供选择与取消。
+  final Future<Goal> Function(String name)? createGoal;
   final VoidCallback? onClose;
   final Future<void> Function()? onWrote;
   final ValueChanged<String>? onNotice;
@@ -233,6 +238,17 @@ class ActivityUnderstandingPageState extends State<ActivityUnderstandingPage> {
 
   Future<void> _pickState(RhythmState? state) async {
     if (_busy) return;
+    if (state == RhythmState.progress && _goalId == null) {
+      // Q-004（2026-10-11）：推进必须有关联目标；先问目标，取消不改变选择。
+      final goal = await showProgressGoalPicker(
+        context,
+        loadGoals: widget.loadGoals,
+        createGoal: widget.createGoal,
+      );
+      if (!mounted || goal == null) return;
+      await _pickGoal(goal.id);
+      if (!mounted || _goalId != goal.id) return;
+    }
     setState(() {
       _busy = true;
       _writeError = null;
@@ -640,6 +656,7 @@ Future<void> showActivityUnderstandingSheet(
   required ActivityUnderstandingService service,
   required EntityId recordId,
   required Future<List<Goal>> Function() loadGoals,
+  Future<Goal> Function(String name)? createGoal,
   Future<void> Function()? onWrote,
   ValueChanged<String>? onNotice,
 }) {
@@ -667,6 +684,7 @@ Future<void> showActivityUnderstandingSheet(
             recordId: recordId,
             service: service,
             loadGoals: loadGoals,
+            createGoal: createGoal,
             onWrote: onWrote,
             onNotice: onNotice,
             onClose: () => Navigator.of(sheetContext).pop(),

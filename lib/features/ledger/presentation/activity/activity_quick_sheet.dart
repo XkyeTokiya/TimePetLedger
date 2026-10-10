@@ -46,6 +46,7 @@ Future<ActivityQuickSheetResult?> showActivityQuickSheet(
   RecordingEntryEditor? entryEditor,
   ActivityUnderstandingService? understanding,
   Future<List<Goal>> Function()? loadGoals,
+  Future<Goal> Function(String name)? createGoal,
 }) => showModalBottomSheet<ActivityQuickSheetResult>(
   context: context,
   isScrollControlled: true,
@@ -61,6 +62,7 @@ Future<ActivityQuickSheetResult?> showActivityQuickSheet(
     entryEditor: entryEditor,
     understanding: understanding,
     loadGoals: loadGoals,
+    createGoal: createGoal,
   ),
 );
 
@@ -74,6 +76,7 @@ class ActivityQuickSheet extends StatefulWidget {
     this.entryEditor,
     this.understanding,
     this.loadGoals,
+    this.createGoal,
   });
 
   final RecordingDraftContext entryContext;
@@ -85,6 +88,9 @@ class ActivityQuickSheet extends StatefulWidget {
   /// 保存后理解层的写入服务；为空时保存后直接关闭面板。
   final ActivityUnderstandingService? understanding;
   final Future<List<Goal>> Function()? loadGoals;
+
+  /// 理解层无目标点“推进”时新建目标的能力。
+  final Future<Goal> Function(String name)? createGoal;
 
   @override
   State<ActivityQuickSheet> createState() => _ActivityQuickSheetState();
@@ -393,6 +399,7 @@ class _ActivityQuickSheetState extends State<ActivityQuickSheet> {
           fact: _block,
           service: widget.understanding!,
           loadGoals: widget.loadGoals!,
+          createGoal: widget.createGoal,
           onClose: _closeUnderstanding,
         ),
       ),
