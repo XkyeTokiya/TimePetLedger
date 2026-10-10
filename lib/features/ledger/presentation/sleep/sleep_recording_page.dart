@@ -307,8 +307,6 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
       TextStyle(fontSize: 14, height: 1.5, color: _colors.onSurfaceVariant);
   TextStyle get _label =>
       TextStyle(fontSize: 14, color: _colors.onSurfaceVariant);
-  TextStyle get _fieldLabel =>
-      TextStyle(fontSize: 15, color: _colors.onSurface);
   TextStyle get _dateStyle => TextStyle(fontSize: 16, color: _colors.onSurface);
   TextStyle get _timeStyle => TextStyle(
     fontSize: 36,
@@ -685,8 +683,6 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
         ),
         if (open) ...[
           const SizedBox(height: 9),
-          Text('还有什么想记下的？', style: _fieldLabel),
-          const SizedBox(height: 8),
           TextField(
             key: const ValueKey('sleep-note'),
             controller: note,
@@ -695,6 +691,7 @@ class _SleepRecordingPageState extends State<SleepRecordingPage> {
             maxLines: 4,
             minLines: 3,
             decoration: InputDecoration(
+              labelText: '还有什么想记下的？',
               hintText: '可以留空',
               errorText: model.noteError,
             ),

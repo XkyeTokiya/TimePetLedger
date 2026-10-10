@@ -271,29 +271,22 @@ void main() {
       expect(FocusManager.instance.primaryFocus, isNotNull);
       expect(t.testTextInput.isVisible, isTrue);
       expect(key('activity-unknown-mask'), findsNothing);
-      final questionTop = t.getRect(find.text('这段时间大概在做什么？')).top;
+      // 问题已作为框内标签：聚焦时浮到边框上，仍在输入框范围内。
+      expect(find.text('这段时间大概在做什么？'), findsOneWidget);
       final fieldRect = t.getRect(key('activity'));
       await tapText(t, '想不起来');
-      // 退出输入焦点并盖上磨砂层：问题与输入框原地保留，只是被模糊遮住；
-      // 元素之间的相对位置与面板高度都不变化。
+      // 退出输入焦点并盖上磨砂层：输入框（含框内标签）原地保留，
+      // 面板高度不变。
       expect(t.testTextInput.isVisible, isFalse);
       expect(key('activity-unknown-mask'), findsOneWidget);
       expect(key('activity'), findsOneWidget);
-      expect(
-        t.getRect(key('activity')).top -
-            t.getRect(find.text('这段时间大概在做什么？')).top,
-        fieldRect.top - questionTop,
-      );
-      expect(t.getRect(key('activity')).height, fieldRect.height);
+      expect(t.getRect(key('activity')), fieldRect);
+      expect(find.text('这段时间大概在做什么？'), findsOneWidget);
       expect(t.getSize(key('sheet-stage-form')).height, panelHeight);
       // 切回“记得”恢复输入区。
       await tapText(t, '记得');
       expect(key('activity-unknown-mask'), findsNothing);
-      expect(
-        t.getRect(key('activity')).top -
-            t.getRect(find.text('这段时间大概在做什么？')).top,
-        fieldRect.top - questionTop,
-      );
+      expect(t.getRect(key('activity')), fieldRect);
       expect(t.getSize(key('sheet-stage-form')).height, panelHeight);
       await tapText(t, '想不起来');
       await tapKey(t, 'activity-primary');

@@ -605,6 +605,10 @@ void main() {
       await t.tap(find.text('账本日期'));
       await t.pumpAndSettle();
       await captureShot(t, 'ledger-date-dialog-$name');
+      // 手动输入模式：字段名在框内，聚焦 / 有内容后浮到边框上。
+      await t.tap(find.text('手动输入日期'));
+      await t.pumpAndSettle();
+      await captureShot(t, 'ledger-date-dialog-manual-$name');
       await t.tap(find.text('取消'));
       await t.pumpAndSettle();
       await t.pumpWidget(const SizedBox.shrink());

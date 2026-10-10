@@ -102,6 +102,31 @@ void main() {
     );
   });
 
+  test('every theme family uses the unified outlined input style', () {
+    // 2026-10-11 用户要求：输入框统一为描边 + 浮动标签（参考其他应用）。
+    for (final scheme in const [
+      ThemeScheme.defaultM3,
+      ThemeScheme.blue,
+      ThemeScheme.warmPaper,
+    ]) {
+      for (final brightness in Brightness.values) {
+        final theme = buildAppTheme(scheme: scheme, brightness: brightness);
+        final input = theme.inputDecorationTheme;
+        final colors = theme.colorScheme;
+        expect(input.filled, isFalse, reason: '$scheme/$brightness');
+        final enabled = input.enabledBorder! as OutlineInputBorder;
+        expect(enabled.borderSide.color, colors.outlineVariant);
+        final focused = input.focusedBorder! as OutlineInputBorder;
+        expect(focused.borderSide.color, colors.primary);
+        expect(focused.borderSide.width, 2);
+        final error = input.errorBorder! as OutlineInputBorder;
+        expect(error.borderSide.color, colors.error);
+        expect(input.floatingLabelStyle, isNotNull);
+        expect(input.errorMaxLines, 8);
+      }
+    }
+  });
+
   test('derived semantics keep heatmap labels readable for every scheme', () {
     for (final seed in const [
       0xFF6750A4,

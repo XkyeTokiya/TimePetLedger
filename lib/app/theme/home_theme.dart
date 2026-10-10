@@ -51,6 +51,39 @@ class TimeLedgerRadius {
   static const panel = 10.0;
 }
 
+/// 统一输入框外观（2026-10-11 用户要求，参考其他应用）：
+/// 描边、无填充、圆角 12；字段名用 `labelText` 承担（空时在框内、
+/// 聚焦或有内容后浮到边框上），示例提示用 `hintText`；聚焦主色 2px，
+/// 错误 error。各主题按自己的 ColorScheme 取色。
+InputDecorationThemeData ledgerInputDecorationTheme(ColorScheme colors) {
+  OutlineInputBorder border(Color color, [double width = 1]) =>
+      OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: color, width: width),
+      );
+  return InputDecorationThemeData(
+    filled: false,
+    labelStyle: TextStyle(color: colors.onSurfaceVariant),
+    floatingLabelStyle: WidgetStateTextStyle.resolveWith(
+      (states) => TextStyle(
+        color: states.contains(WidgetState.error)
+            ? colors.error
+            : states.contains(WidgetState.focused)
+            ? colors.primary
+            : colors.onSurfaceVariant,
+      ),
+    ),
+    hintStyle: TextStyle(color: colors.onSurfaceVariant),
+    border: border(colors.outlineVariant),
+    enabledBorder: border(colors.outlineVariant),
+    focusedBorder: border(colors.primary, 2),
+    errorBorder: border(colors.error),
+    focusedErrorBorder: border(colors.error, 2),
+    errorStyle: TextStyle(color: colors.error),
+    errorMaxLines: 8,
+  );
+}
+
 /// Bundled Simplified-Chinese serif declared in pubspec (`NotoSerifSC`).
 const String homeSerifFamily = 'NotoSerifSC';
 
@@ -329,29 +362,7 @@ ThemeData buildWarmPaperTheme({
             : colors.outline,
       ),
     ),
-    inputDecorationTheme: InputDecorationThemeData(
-      filled: true,
-      fillColor: colors.surfaceContainerHighest,
-      labelStyle: TextStyle(color: colors.onSurfaceVariant),
-      hintStyle: TextStyle(color: colors.onSurfaceVariant),
-      border: OutlineInputBorder(
-        borderSide: BorderSide(color: colors.outlineVariant),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: colors.outlineVariant),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: colors.primary, width: 2),
-      ),
-      errorBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: colors.error),
-      ),
-      focusedErrorBorder: OutlineInputBorder(
-        borderSide: BorderSide(color: colors.error, width: 2),
-      ),
-      errorStyle: TextStyle(color: colors.error),
-      errorMaxLines: 8,
-    ),
+    inputDecorationTheme: ledgerInputDecorationTheme(colors),
     textSelectionTheme: TextSelectionThemeData(
       cursorColor: colors.primary,
       selectionColor: colors.surfaceContainerHighest,

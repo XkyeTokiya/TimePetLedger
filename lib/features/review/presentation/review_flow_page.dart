@@ -1046,30 +1046,29 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
         const SizedBox(height: 14),
       ],
       if (pick != null) ...[
-        Text('当时卡在哪里？', style: TextStyle(fontSize: 13, color: _muted(context))),
-        const SizedBox(height: 6),
         TextField(
           key: const ValueKey('review-reason'),
           controller: _reason,
           enabled: !_busy,
           minLines: 2,
           maxLines: 4,
-          decoration: const InputDecoration(hintText: '写一句就好'),
+          decoration: const InputDecoration(
+            labelText: '当时卡在哪里？',
+            hintText: '写一句就好',
+          ),
         ),
         const SizedBox(height: 14),
       ],
-      Text(
-        '下次继续时，第一步是什么？',
-        style: TextStyle(fontSize: 13, color: _muted(context)),
-      ),
-      const SizedBox(height: 6),
       TextField(
         key: const ValueKey('review-next-step'),
         controller: _nextStep,
         enabled: !_busy,
         minLines: 2,
         maxLines: 4,
-        decoration: const InputDecoration(hintText: '比如：下次先做什么，从哪里继续'),
+        decoration: const InputDecoration(
+          labelText: '下次继续时，第一步是什么？',
+          hintText: '比如：下次先做什么，从哪里继续',
+        ),
       ),
       const SizedBox(height: 8),
       Row(

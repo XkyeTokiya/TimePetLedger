@@ -208,7 +208,7 @@ class _ReviewRecordSheetState extends State<_ReviewRecordSheet> {
             key: const ValueKey('review-record-title'),
             controller: _title,
             enabled: !_busy,
-            decoration: const InputDecoration(hintText: '这段时间在做什么？'),
+            decoration: const InputDecoration(labelText: '这段时间在做什么？'),
           ),
           const SizedBox(height: 8),
           Align(

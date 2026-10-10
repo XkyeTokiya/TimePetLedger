@@ -78,5 +78,6 @@ ThemeData buildAppTheme({
     colorScheme: colors,
     fontFamily: fontChoice == AppFontChoice.serif ? homeSerifFamily : null,
     extensions: [colors.defaultSemanticColors],
+    inputDecorationTheme: ledgerInputDecorationTheme(colors),
   );
 }

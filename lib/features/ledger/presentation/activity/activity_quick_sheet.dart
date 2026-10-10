@@ -675,30 +675,25 @@ class _ActivityQuickSheetState extends State<ActivityQuickSheet> {
     );
   }
 
-  /// 问题区（记得 ↔ 想不起来）：真实问题与输入框始终留在原位；
-  /// “想不起来”只在其上盖一层磨砂，元素不移动、面板高度不变化。
+  /// 问题区（记得 ↔ 想不起来）：问题已作为输入框的浮动标签（空时在框内，
+  /// 聚焦或有内容后浮到边框上）；“想不起来”只在其上盖一层磨砂，
+  /// 输入框不移动、面板高度不变化。
   Widget _questionBlockEntry({required bool unknown}) => Stack(
     children: [
       Padding(
         padding: const EdgeInsets.fromLTRB(0, 14, 0, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('这段时间大概在做什么？', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 10),
-            TextField(
-              key: const ValueKey('activity'),
-              controller: _title,
-              readOnly: !model.editable,
-              minLines: 3,
-              maxLines: 6,
-              onChanged: model.setTitle,
-              decoration: InputDecoration(
-                hintText: '几个字也可以',
-                errorText: _showErrors ? model.titleError : null,
-              ),
-            ),
-          ],
+        child: TextField(
+          key: const ValueKey('activity'),
+          controller: _title,
+          readOnly: !model.editable,
+          minLines: 3,
+          maxLines: 6,
+          onChanged: model.setTitle,
+          decoration: InputDecoration(
+            labelText: '这段时间大概在做什么？',
+            hintText: '几个字也可以',
+            errorText: _showErrors ? model.titleError : null,
+          ),
         ),
       ),
       if (unknown)

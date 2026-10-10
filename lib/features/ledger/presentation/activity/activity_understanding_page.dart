@@ -585,7 +585,8 @@ class ActivityUnderstandingPageState extends State<ActivityUnderstandingPage> {
     ];
   }
 
-  /// 补充卡展开后的输入框：圆角填充样式，与卡片一致。
+  /// 补充卡展开后的输入框：圆角填充、无边框，与卡片一致；各状态边框
+  /// 显式声明，避免主题的描边样式套进卡片。
   Widget _noteField({
     required Key key,
     required TextEditingController controller,
@@ -602,6 +603,10 @@ class ActivityUnderstandingPageState extends State<ActivityUnderstandingPage> {
       filled: true,
       fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
       ),

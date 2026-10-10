@@ -203,7 +203,7 @@ class _GoalPickerSheetState extends State<_GoalPickerSheet> {
                   autofocus: true,
                   enabled: !_busy,
                   textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(hintText: '目标名称'),
+                  decoration: const InputDecoration(labelText: '目标名称'),
                   onSubmitted: (_) => _create(),
                 ),
                 const SizedBox(height: 8),
