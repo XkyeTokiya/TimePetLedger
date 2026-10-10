@@ -476,7 +476,7 @@ final ledgerWriteChecks = <String, Future<void> Function(AppDatabase)>{
             id: writeId,
             now: 2,
             title: (value: '不能提交'),
-            annotation: const EditAnnotation(state: RhythmState.progress),
+            annotation: const EditAnnotation(state: RhythmState.recovery),
           ),
           throwsA(isA<LedgerStorageException>()),
         );
@@ -514,7 +514,7 @@ final ledgerWriteChecks = <String, Future<void> Function(AppDatabase)>{
           id: writeId,
           now: 4,
           title: (value: '重试成功'),
-          annotation: const EditAnnotation(state: RhythmState.progress),
+          annotation: const EditAnnotation(state: RhythmState.recovery),
         );
         expect((await allLedger(repo)).timeBlocks.single.title, '重试成功');
       },

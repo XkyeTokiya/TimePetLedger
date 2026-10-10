@@ -129,7 +129,9 @@ void main() {
   test(
     'read by id returns the complete cross-day source and annotation',
     () async {
+      await DriftGoalRepository(db).create(id: goalId, name: '论文', now: 1);
       await createBlock(
+        goal: goalId,
         annotation: const AddAnnotation(
           id: annotationId,
           state: RhythmState.progress,
@@ -268,7 +270,9 @@ void main() {
   test(
     'delete removes annotation, leaves review, and recalculates Gap',
     () async {
+      await DriftGoalRepository(db).create(id: goalId, name: '论文', now: 1);
       await createBlock(
+        goal: goalId,
         annotation: const AddAnnotation(
           id: annotationId,
           state: RhythmState.progress,

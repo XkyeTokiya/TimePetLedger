@@ -68,9 +68,9 @@ RhythmAnnotationOperationResult _edit(
 );
 
 void main() {
-  test('add：三种节奏均允许无细节、无 Goal，known/unknown 都可附加', () {
+  test('add：无 Goal 时 stuck / recovery 允许无细节，progress 必须关联 Goal', () {
     for (final knowledge in BlockKnowledgeState.values) {
-      for (final state in RhythmState.values) {
+      for (final state in [RhythmState.stuck, RhythmState.recovery]) {
         final block = _block(knowledge: knowledge);
         final result = addRhythmAnnotation(
           timeBlock: block,
@@ -97,6 +97,22 @@ void main() {
           (86399999, 86400001, 200),
         );
       }
+    }
+    // Q-004（2026-10-11 修订）：没有目标归属不能添加 progress。
+    for (final knowledge in BlockKnowledgeState.values) {
+      expect(
+        () => addRhythmAnnotation(
+          timeBlock: _block(knowledge: knowledge),
+          existing: null,
+          goal: null,
+          id: _annotationId,
+          state: RhythmState.progress,
+          now: 300,
+        ),
+        throwsA(
+          isA<ArgumentError>().having((e) => e.name, 'name', 'progressGoal'),
+        ),
+      );
     }
   });
 
@@ -138,9 +154,10 @@ void main() {
   for (final from in RhythmState.values) {
     for (final to in RhythmState.values) {
       test('Q-005：$from → $to 保留全部细节，身份和事实不变', () {
-        final block = _block();
+        final goal = Goal.create(id: _annotationId, name: '论文', now: 0);
+        final block = _block(goalId: goal.id);
         final original = _existing(state: from);
-        final result = _edit(block, original, state: to);
+        final result = _edit(block, original, goal: goal, state: to);
         final annotation = result.annotation!;
         expect(result.timeBlock, same(block));
         expect(result.changed, from != to);
@@ -165,6 +182,7 @@ void main() {
         final back = _edit(
           block,
           annotation,
+          goal: goal,
           state: from,
           now: 400,
         ).annotation!;
@@ -181,6 +199,32 @@ void main() {
       });
     }
   }
+
+  test('Q-004（2026-10-11 修订）：无 Goal 不能添加或保留 progress', () {
+    final block = _block();
+    expect(
+      () => addRhythmAnnotation(
+        timeBlock: block,
+        existing: null,
+        goal: null,
+        id: _annotationId,
+        state: RhythmState.progress,
+        now: 300,
+      ),
+      throwsA(
+        isA<ArgumentError>().having((e) => e.name, 'name', 'progressGoal'),
+      ),
+    );
+    expect(
+      () => _edit(block, _existing(), state: RhythmState.progress),
+      throwsA(
+        isA<ArgumentError>().having((e) => e.name, 'name', 'progressGoal'),
+      ),
+    );
+    // stuck / recovery 仍不强制要求 Goal。
+    final recovery = _edit(block, _existing(), state: RhythmState.recovery);
+    expect(recovery.annotation!.state, RhythmState.recovery);
+  });
 
   test('同状态编辑：各细节可独立变化，保留未指定字段', () {
     final block = _block();
@@ -208,11 +252,13 @@ void main() {
   });
 
   test('显式清空所有可选字段仍为合法解释，不能被解释为 remove', () {
-    final block = _block();
+    final goal = Goal.create(id: _annotationId, name: '论文', now: 0);
+    final block = _block(goalId: goal.id);
     for (final state in RhythmState.values) {
       final result = _edit(
         block,
         _existing(),
+        goal: goal,
         state: state,
         stuckReasonCode: (value: null),
         stuckReasonText: (value: ' \n '),
@@ -417,11 +463,13 @@ void main() {
   });
 
   test('Q-018：显式时间允许回拨，候选不改写原解释和事实', () {
-    final block = _block();
+    final goal = Goal.create(id: _annotationId, name: '论文', now: 0);
+    final block = _block(goalId: goal.id);
     final original = _existing();
     final candidate = _edit(
       block,
       original,
+      goal: goal,
       state: RhythmState.progress,
       now: -1,
     );

@@ -187,20 +187,32 @@ void main() {
     expect(() => _annotation(timeBlockId: 'invalid'), throwsArgumentError);
   });
 
-  test('Q-004：known/unknown、Goal 有无与所有解释状态均可组合', () {
+  test('Q-004（2026-10-11 修订）：progress 必须匹配 Goal，其余组合不受限', () {
     for (final knowledge in BlockKnowledgeState.values) {
       for (final goal in [null, _goal()]) {
         for (final state in RhythmState.values) {
+          final legal = !(state == RhythmState.progress && goal == null);
           for (final isNew in [false, true]) {
-            expect(
-              () => validateRhythmAssociation(
-                annotation: _annotation(state: state),
-                timeBlock: _block(knowledge: knowledge, goalId: goal?.id),
-                goal: goal,
-                isNewGoalAssociation: isNew,
-              ),
-              returnsNormally,
+            void call() => validateRhythmAssociation(
+              annotation: _annotation(state: state),
+              timeBlock: _block(knowledge: knowledge, goalId: goal?.id),
+              goal: goal,
+              isNewGoalAssociation: isNew,
             );
+            if (legal) {
+              expect(call, returnsNormally);
+            } else {
+              expect(
+                call,
+                throwsA(
+                  isA<ArgumentError>().having(
+                    (e) => e.name,
+                    'name',
+                    'progressGoal',
+                  ),
+                ),
+              );
+            }
           }
         }
       }

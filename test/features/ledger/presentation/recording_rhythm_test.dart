@@ -127,32 +127,44 @@ class Fixture {
     await db.close();
   }
 
+  Future<void> ensureTestGoal() async {
+    if (await goals.findById(id(1)) == null) {
+      await goals.create(id: id(1), name: '目标', now: 1);
+    }
+  }
+
   Future<void> source({
     RhythmState? state,
     bool details = true,
-  }) => repo.createTimeBlock(
-    id: id(8),
-    startedAt: start,
-    endedAt: end,
-    startPrecision: TimePrecision.approximate,
-    endPrecision: TimePrecision.exact,
-    knowledgeState: BlockKnowledgeState.known,
-    title: '原活动',
-    note: '原备注',
-    categoryId: '原分类',
-    now: 1,
-    annotation: state == null
-        ? null
-        : AddAnnotation(
-            id: id(7),
-            state: state,
-            continuationHint: '原接续点',
-            stuckReasonCode: details ? StuckReasonCode.unclearNextStep : null,
-            stuckReasonText: details ? '原原因' : null,
-            recoveryMethod: details ? RecoveryMethod.walk : null,
-            recoveryQuality: details ? RecoveryQuality.partlyRecovered : null,
-          ),
-  );
+    bool withGoal = false,
+  }) async {
+    if (withGoal) await ensureTestGoal();
+    await repo.createTimeBlock(
+      id: id(8),
+      startedAt: start,
+      endedAt: end,
+      startPrecision: TimePrecision.approximate,
+      endPrecision: TimePrecision.exact,
+      knowledgeState: BlockKnowledgeState.known,
+      title: '原活动',
+      note: '原备注',
+      categoryId: '原分类',
+      goalId: withGoal ? id(1) : null,
+      now: 1,
+      annotation: state == null
+          ? null
+          : AddAnnotation(
+              id: id(7),
+              state: state,
+              continuationHint: '原接续点',
+              stuckReasonCode: details ? StuckReasonCode.unclearNextStep : null,
+              stuckReasonText: details ? '原原因' : null,
+              recoveryMethod: details ? RecoveryMethod.walk : null,
+              recoveryQuality: details ? RecoveryQuality.partlyRecovered : null,
+            ),
+    );
+  }
+
   RecordingFormController controller(RecordingDraftContext context) =>
       RecordingFormController(
         context: context,
@@ -256,6 +268,11 @@ Future<void> textTap(WidgetTester t, String text) async {
   }
 }
 
+Future<void> chooseGoal(WidgetTester t, String id) async {
+  await textTap(t, '选择目标');
+  await tap(t, find.byKey(ValueKey('goal-option-$id')));
+}
+
 Future<void> stateTap(WidgetTester t, RhythmState? state) async {
   if (find.byKey(const ValueKey('rhythm-progress')).evaluate().isEmpty) {
     await tap(t, find.byKey(const ValueKey('recording-rhythm-toggle')));
@@ -287,6 +304,9 @@ void main() {
     for (final knowledge in BlockKnowledgeState.values) {
       for (final withGoal in [false, true]) {
         for (final state in [null, ...RhythmState.values]) {
+          // Q-004（2026-10-11）：无 Goal 不能保存 progress；该拒绝由领域层
+          // 用例覆盖，这里只验证可合法创建的组合。
+          if (state == RhythmState.progress && !withGoal) continue;
           final f = await Fixture.open();
           try {
             if (withGoal) await f.goals.create(id: id(1), name: '目标', now: 1);
@@ -323,7 +343,7 @@ void main() {
         '$from -> $to changes only annotation, retains hidden details and continuation',
         (t) async {
           final f = await openWidget(t);
-          await t.runAsync(() => f.source(state: from));
+          await t.runAsync(() => f.source(state: from, withGoal: true));
           final before = (await t.runAsync(() => f.repo.readTimeBlock(id(8))))!;
           await t.pumpWidget(f.app(editContext));
           await textTap(t, '打开');
@@ -431,9 +451,11 @@ void main() {
       '$state hint accepts 2000 runes, keeps raw draft across states and blank clears only the hint',
       (t) async {
         final f = await openWidget(t);
+        await t.runAsync(f.ensureTestGoal);
         await t.pumpWidget(f.app(newContext));
         await textTap(t, '打开');
         await textTap(t, '想不起来');
+        if (state == RhythmState.progress) await chooseGoal(t, id(1));
         await stateTap(t, state);
         final text = '  ${'🐾' * 1998}\n中  ';
         await enter(t, 'continuation-hint', text);
@@ -625,7 +647,7 @@ void main() {
     (t) async {
       final f = await openWidget(t);
       await t.runAsync(() async {
-        await f.source(state: RhythmState.stuck);
+        await f.source(state: RhythmState.stuck, withGoal: true);
         await f.repo.createSleepSession(
           id: id(6),
           startedAt: end,
@@ -671,7 +693,10 @@ void main() {
       (t) async {
         final f = await openWidget(t);
         await t.runAsync(
-          () => f.source(state: duplicate ? null : RhythmState.stuck),
+          () => f.source(
+            state: duplicate ? null : RhythmState.stuck,
+            withGoal: true,
+          ),
         );
         await t.pumpWidget(f.app(editContext));
         await textTap(t, '打开');
@@ -760,7 +785,7 @@ void main() {
     () async {
       final f = await Fixture.open();
       addTearDown(f.close);
-      await f.source(state: RhythmState.stuck);
+      await f.source(state: RhythmState.stuck, withGoal: true);
       var c = f.controller(editContext);
       await c.initialize();
       c.setRhythmState(RhythmState.progress);
@@ -787,12 +812,20 @@ void main() {
         final f = await Fixture.open(formal: formal, draft: draft);
         addTearDown(f.close);
         if (operation != 'create') {
-          await f.source(state: operation == 'add' ? null : RhythmState.stuck);
+          await f.source(
+            state: operation == 'add' ? null : RhythmState.stuck,
+            withGoal: true,
+          );
+        } else {
+          await f.ensureTestGoal();
         }
         final context = operation == 'create' ? newContext : editContext;
         var c = f.controller(context);
         await c.initialize();
-        if (operation == 'create') c.setKnowledge(BlockKnowledgeState.unknown);
+        if (operation == 'create') {
+          c.setKnowledge(BlockKnowledgeState.unknown);
+          c.selectGoal(id(1));
+        }
         c.setRhythmState(operation == 'remove' ? null : RhythmState.progress);
         if (operation != 'remove') c.setContinuationHint('已提交接续点');
         f.failRefresh = true;
