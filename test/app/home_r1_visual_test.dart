@@ -325,6 +325,46 @@ void main() {
     expect(t.takeException(), isNull);
   });
 
+  testWidgets('quick panel follows a theme switch while cached', (t) async {
+    final theme = ValueNotifier<ThemeData>(homeTheme);
+    addTearDown(theme.dispose);
+    t.view.devicePixelRatio = 1;
+    t.view.physicalSize = const Size(390, 800);
+    addTearDown(t.view.resetPhysicalSize);
+    addTearDown(t.view.resetDevicePixelRatio);
+    await t.pumpWidget(
+      ValueListenableBuilder<ThemeData>(
+        valueListenable: theme,
+        builder: (context, value, _) => MaterialApp(
+          theme: value,
+          home: HomeShell(
+            ledgerLoader: sampleLoader(),
+            now: () => DateTime(2026, 10, 3, 9).millisecondsSinceEpoch,
+            dateOfInstant: deviceDateOfInstant,
+            initialDate: sampleDate,
+            busy: false,
+            onOpenSummary: (_) {},
+            onOpenReview: (_) {},
+            onRecordActivity: () {},
+            onRecordSleep: () {},
+          ),
+        ),
+      ),
+    );
+    await t.pumpAndSettle();
+    await t.tap(find.byKey(const ValueKey('home-menu')));
+    await t.pumpAndSettle();
+    Color panelColor() => t
+        .widget<Material>(find.byKey(const ValueKey('home-quick-panel')))
+        .color!;
+    final warm = panelColor();
+    // 切到默认 M3 深色：面板内容必须随主题重建，不能命中旧缓存。
+    theme.value = ThemeData(useMaterial3: true, brightness: Brightness.dark);
+    await t.pumpAndSettle();
+    expect(panelColor(), isNot(warm));
+    expect(t.takeException(), isNull);
+  });
+
   testWidgets('cross-year expanded date stacks the year above the day', (
     t,
   ) async {
