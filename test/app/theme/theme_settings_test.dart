@@ -131,7 +131,7 @@ void main() {
     );
   });
 
-  testWidgets('recording mode sheet writes the guided/form preference', (
+  testWidgets('recording page keeps the reminders preference reachable', (
     tester,
   ) async {
     final store = _RecordingStore();
@@ -141,11 +141,11 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('settings-open-recording')));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey('settings-mode')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('settings-mode-guided')));
-    await tester.pumpAndSettle();
-    expect(store.value.recordingMode, RecordingMode.guided);
-    expect(store.writes, 1);
+    expect(
+      find.byKey(const ValueKey('settings-mode')),
+      findsNothing,
+      reason: 'Q-047 后只有一套记录流程，记录方式设置已移除',
+    );
+    expect(find.byKey(const ValueKey('settings-reminders')), findsOneWidget);
   });
 }

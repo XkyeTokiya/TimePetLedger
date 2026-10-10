@@ -46,14 +46,29 @@ Future<void> chooseEndpointTime(
 ) async {
   await openEndpointField(tester, '$prefix-time');
   expect(find.byKey(const ValueKey('date-picker-confirm')), findsNothing);
-  final wheels = tester
-      .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
-      .toList();
-  (wheels[0].controller! as FixedExtentScrollController).jumpToItem(value.hour);
-  (wheels[1].controller! as FixedExtentScrollController).jumpToItem(
-    value.minute,
-  );
-  await tester.pumpAndSettle();
+  // 端点选择器可能按另一端限制首项（同一自然日）；拨轮索引不等于小时值，
+  // 因此按“当前中央选中项 → 目标值”的相对距离跳转。
+  Future<void> setWheel(String kind, int target) async {
+    final wheel = find.byKey(ValueKey('time-picker-$kind'));
+    final controller =
+        tester.widget<ListWheelScrollView>(wheel).controller
+            as FixedExtentScrollController;
+    final selected = find.descendant(
+      of: wheel,
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Text &&
+            widget.style?.fontWeight == FontWeight.w600 &&
+            int.tryParse(widget.data ?? '') != null,
+      ),
+    );
+    final current = int.parse(tester.widget<Text>(selected.first).data!);
+    controller.jumpToItem(controller.selectedItem + (target - current));
+    await tester.pumpAndSettle();
+  }
+
+  await setWheel('hour', value.hour);
+  await setWheel('minute', value.minute);
   await tester.tap(find.byKey(const ValueKey('time-picker-confirm')));
   await tester.pumpAndSettle();
   expect(find.byType(AlertDialog), findsNothing);

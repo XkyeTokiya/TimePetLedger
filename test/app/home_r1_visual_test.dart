@@ -324,4 +324,42 @@ void main() {
     expect(coverageText(t, '尚未记录'), '9 小时');
     expect(t.takeException(), isNull);
   });
+
+  testWidgets('cross-year expanded date stacks the year above the day', (
+    t,
+  ) async {
+    // 设备今天是 2026-10-03：跨年日期在窄屏放不下整行时改用两行。
+    await mount(
+      t,
+      const Size(320, 800),
+      sampleLoader(),
+      initialDate: CivilDate(year: 2025, month: 12, day: 31),
+    );
+    expect(
+      t.widget<Text>(find.byKey(const ValueKey('home-date-year'))).data,
+      '2025年',
+    );
+    expect(
+      t.widget<Text>(find.byKey(const ValueKey('home-date-title')).last).data,
+      '12月31日',
+    );
+    await capture(t, 'home-cross-year-header-narrow');
+    expect(t.takeException(), isNull);
+
+    // 宽屏单行放得下时保持整行。
+    await t.pumpWidget(const SizedBox.shrink());
+    await mount(
+      t,
+      const Size(800, 800),
+      sampleLoader(),
+      initialDate: CivilDate(year: 2025, month: 12, day: 31),
+    );
+    expect(find.byKey(const ValueKey('home-date-year')), findsNothing);
+    expect(
+      t.widget<Text>(find.byKey(const ValueKey('home-date-title')).last).data,
+      '2025年12月31日',
+    );
+    await capture(t, 'home-cross-year-header-wide');
+    expect(t.takeException(), isNull);
+  });
 }

@@ -272,4 +272,52 @@ void main() {
     expect(await feed.refresh(), isTrue);
     expect(feed.focusDate, day3);
   });
+
+  test(
+    'extending later loads toward today without moving the window anchor',
+    () async {
+      final feed = feedWith((_) async => emptyFacts(), windowDays: 2);
+      addTearDown(feed.dispose);
+      expect(await feed.showDate(day2), isTrue);
+      expect(feed.loadedDates, [day1, day2]);
+      expect(feed.endDate, day2);
+      expect(feed.focusDate, day2);
+
+      // 跳到过去日期后：向下滚动可继续装载到上限（今天），不越过。
+      expect(await feed.extendLater(day4), isTrue);
+      expect(feed.loadedDates, [day1, day2, day3, day4]);
+      expect(feed.endDate, day2);
+      expect(feed.focusDate, day2);
+      expect(feed.contains(day4), isTrue);
+
+      // 已在上限：不再装载。
+      expect(await feed.extendLater(day4), isFalse);
+
+      // 失败可重试，不改变锚点与浏览日期。
+      var fail = false;
+      final retry = feedWith((_) async {
+        if (fail) throw StateError('unavailable');
+        return emptyFacts();
+      }, windowDays: 1);
+      addTearDown(retry.dispose);
+      expect(await retry.showDate(day1), isTrue);
+      fail = true;
+      expect(await retry.extendLater(day3), isFalse);
+      expect(retry.refreshFailed, isTrue);
+      expect(retry.endDate, day1);
+      fail = false;
+      expect(await retry.extendLater(day3), isTrue);
+      expect(retry.loadedDates, [day1, day2, day3]);
+    },
+  );
+
+  test('later extension stops at a selected future limit', () async {
+    final feed = feedWith((_) async => emptyFacts(), windowDays: 1);
+    addTearDown(feed.dispose);
+    expect(await feed.showSelectedDate(day3, today: day1), isTrue);
+    expect(feed.loadedDates, [day3]);
+    expect(await feed.extendLater(day1), isFalse);
+    expect(feed.loadedDates, [day3]);
+    expect(feed.endDate, day3);
+  });
 }

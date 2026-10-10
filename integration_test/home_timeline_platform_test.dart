@@ -13,7 +13,6 @@ import 'package:time_pet_ledger/features/ledger/domain/block_knowledge_state.dar
 import 'package:time_pet_ledger/features/ledger/domain/projection/ledger_segment.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/activity/activity_recording_entry.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_reading_state.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_timeline_geometry.dart';
@@ -135,13 +134,13 @@ void main() {
       expect(find.text('时段选择'), findsOneWidget);
       await t.tap(find.byKey(ValueKey(('time-choice', gap.id))));
       await t.pumpAndSettle();
-      final entry = t.widget<ActivityRecordingEntry>(
-        find.byType(ActivityRecordingEntry),
-      );
-      expect(entry.context.date, date);
-      expect(entry.context.gapStartedAt, at(7, 10));
-      expect(entry.context.gapEndedAt, at(7, 30));
+      // Q-047 记录面板：时间在顶部直接可改，日期继承所选 Gap。
+      expect(find.byKey(const ValueKey('activity-primary')), findsOneWidget);
+      expect(find.text('07:10'), findsOneWidget);
+      expect(find.text('07:30'), findsOneWidget);
       await back();
+      await t.pumpAndSettle();
+      expect(find.byKey(const ValueKey('activity-primary')), findsNothing);
 
       await showTarget(sleep);
       await t.tapAt(t.getCenter(target(sleep)).translate(0, 0));
@@ -153,14 +152,8 @@ void main() {
 
       await t.tap(find.byKey(const ValueKey('home-record-activity')));
       await t.pumpAndSettle();
-      expect(find.byType(ActivityRecordingEntry), findsOneWidget);
-      expect(
-        t
-            .widget<ActivityRecordingEntry>(find.byType(ActivityRecordingEntry))
-            .context
-            .date,
-        date,
-      );
+      expect(find.byKey(const ValueKey('activity-primary')), findsOneWidget);
+      expect(find.text('记录一笔'), findsOneWidget);
       await back();
       await t.tap(find.byKey(const ValueKey('home-record-sleep')));
       await t.pumpAndSettle();

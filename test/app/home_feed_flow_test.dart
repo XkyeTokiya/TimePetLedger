@@ -691,6 +691,62 @@ void main() {
   );
 
   testWidgets(
+    'a past date jump still loads later days when scrolling forward',
+    (tester) async {
+      final db = await openLedger(tester);
+      final shell = await mountHome(
+        tester,
+        db,
+        initialDate: oct2,
+        now: at(3, 9),
+      );
+      // 跳到 9 月 1 日（过去）：窗口锚点在该日，更晚的日期尚未装载。
+      final past = CivilDate(year: 2026, month: 9, day: 1);
+      final today = CivilDate(year: 2026, month: 10, day: 3);
+      await shell.openDate(past);
+      await settleNative(tester);
+      expect(homeDateTitle(tester), '9月1日');
+      expect(shell.feed.loadedDates.last, past);
+      expect(shell.feed.endDate, past);
+
+      final position = tester
+          .state<ScrollableState>(
+            find
+                .descendant(
+                  of: find.byType(HomeTimelineTab),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          )
+          .position;
+
+      // 向下滚到已装载末端：自动向后装载，锚点与浏览日期不变。
+      position.jumpTo(position.maxScrollExtent);
+      await settleNative(tester);
+      expect(
+        shell.feed.loadedDates.last,
+        CivilDate(year: 2026, month: 9, day: 8),
+      );
+      expect(shell.feed.endDate, past);
+      expect(shell.feed.focusDate, past);
+      // 新日期追加在下方，阅读位置不回卷到窗口起点。
+      final reading = tester
+          .state<HomeTimelineTabState>(find.byType(HomeTimelineTab))
+          .readingPosition!;
+      expect(reading.date, past);
+
+      // 反复向下滚动：逐段装载到上限（今天）为止。
+      for (var i = 0; i < 6; i++) {
+        position.jumpTo(position.maxScrollExtent);
+        await settleNative(tester);
+      }
+      expect(shell.feed.loadedDates.last, today);
+      expect(shell.feed.endDate, past);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
     'midnight rebuild and failed refresh still follow today on retry',
     (tester) async {
       final db = await openLedger(tester);

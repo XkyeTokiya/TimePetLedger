@@ -452,6 +452,41 @@ void main() {
     },
   );
 
+  testWidgets('tap activation raises no floating info after the panel closes', (
+    t,
+  ) async {
+    await mount(
+      t,
+      blocks: [
+        block(1, 0, 1),
+        block(2, 1, 6),
+        block(3, 6, 16, unknown: true),
+        block(4, 16, 36),
+        block(5, 36, 96),
+      ],
+    );
+    final axis = t.widgetList<HomeDayAxis>(find.byType(HomeDayAxis)).last;
+    final items = TimelineInterval.fromView(axis.view);
+    final target = find.byKey(ValueKey(items.first.id)).last;
+    // 2026-10-11 用户要求取消时间轴区域的浮动信息：时间轴不再承载 Tooltip。
+    expect(
+      find.descendant(
+        of: find.byType(HomeDayAxis),
+        matching: find.byType(Tooltip),
+      ),
+      findsNothing,
+    );
+    // 点按打开选择面板，关闭后焦点首次回到该段：不再弹提示浮层。
+    await t.tapAt(t.getCenter(target));
+    await t.pumpAndSettle();
+    expect(find.text('时段选择'), findsOneWidget);
+    await t.tap(find.byTooltip('关闭'));
+    await t.pumpAndSettle();
+    expect(find.textContaining('查看详情 ·'), findsNothing);
+    expect(find.textContaining('补记 ·'), findsNothing);
+    expect(t.takeException(), isNull);
+  });
+
   testWidgets(
     'continuous touch survives compensation and same-day return stays compact',
     (t) async {

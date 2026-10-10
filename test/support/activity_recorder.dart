@@ -4,9 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
 
-/// Navigation helpers for the rebuilt stepped activity recorder
-/// (节奏 → 适用子选项 → 事项 → 时间). Presentation only: they never touch the
-/// controller or the draft store, so the tests still assert the real contract.
+/// 记录面板（Q-047 底部面板）与保存后理解层的导航助手。
+/// 只按可见控件操作，不直接改控制器或草稿。
 Finder recorderKey(String value) => find.byKey(ValueKey(value));
 
 Future<void> recorderTap(WidgetTester t, String key) async {
@@ -20,73 +19,30 @@ Future<void> recorderTap(WidgetTester t, String key) async {
       await t.scrollUntilVisible(target, 160, scrollable: scrollables.last);
     }
   }
+  if (target.evaluate().isEmpty) fail('key "$key" not found');
   await t.ensureVisible(target.first);
   await t.pumpAndSettle();
   await t.tap(target.first);
   await t.pumpAndSettle();
 }
 
-/// 继续 / 保存 / 重试收尾 — the single primary action.
-Future<void> recorderAdvance(WidgetTester t) =>
-    recorderTap(t, 'activity-primary');
+/// 保存记录 / 保存修改 / 继续清理并刷新。
+Future<void> recorderSave(WidgetTester t) => recorderTap(t, 'activity-primary');
 
-/// Advances until the 时间 step, where the primary action saves.
-Future<void> recorderToTime(WidgetTester t) async {
-  for (var i = 0; i < 4; i++) {
-    if (recorderKey('activity-time-summary').evaluate().isNotEmpty) return;
-    await recorderAdvance(t);
-  }
-  fail('did not reach the time step');
-}
+/// 收起记录面板（草稿按会话保留）。
+Future<void> recorderClose(WidgetTester t) => recorderTap(t, 'activity-close');
 
-/// Fills the title if the recorder is on the 事项 step, then advances to 时间.
-Future<void> recorderAdvanceTimed(WidgetTester t) => recorderToTime(t);
-
-/// Selects a rhythm; selecting advances to the next step automatically.
-/// Already-selected values are left alone so callers stay in control.
-Future<void> recorderRhythm(WidgetTester t, RhythmState? state) async {
-  if (state != null) {
-    if (_rhythmSelected(t, state)) return;
-    await recorderTap(t, 'activity-rhythm-${state.name}');
-    return;
-  }
-  // Deselect whatever is currently selected (stays on this step).
-  for (final value in RhythmState.values) {
-    if (_rhythmSelected(t, value)) {
-      await recorderTap(t, 'activity-rhythm-${value.name}');
-      return;
-    }
-  }
-}
-
-bool _rhythmSelected(WidgetTester t, RhythmState state) => find
-    .descendant(
-      of: recorderKey('activity-rhythm-${state.name}'),
-      matching: find.byIcon(Icons.check),
-    )
-    .evaluate()
-    .isNotEmpty;
-
-/// Enters the activity title (step 事项).
+/// 输入活动标题。
 Future<void> recorderTitle(WidgetTester t, String value) async {
   await recorderTap(t, 'activity');
   await t.enterText(recorderKey('activity'), value);
   await t.pumpAndSettle();
 }
 
-/// Hint / note live in the optional-details sheet.
-Future<void> recorderDetail(WidgetTester t, String key, String value) async {
-  await recorderOpenDetails(t);
-  await recorderTap(t, key);
-  await t.enterText(recorderKey(key), value);
+/// 选择“想不起来”。
+Future<void> recorderUnknown(WidgetTester t) async {
+  await t.tap(find.text('想不起来'));
   await t.pumpAndSettle();
-  await recorderTap(t, 'activity-details-apply');
-}
-
-Future<void> recorderOpenDetails(WidgetTester t) async {
-  if (recorderKey('activity-note').evaluate().isEmpty) {
-    await recorderTap(t, 'activity-details');
-  }
 }
 
 /// 通过实际日期 / 时间选择器分别修改端点。
@@ -97,17 +53,31 @@ Future<void> recorderTime(WidgetTester t, String label, String value) =>
       value,
     );
 
-Future<void> recorderChooseGoal(WidgetTester t, String id) async {
-  await recorderTap(t, 'activity-goal');
-  await recorderTap(t, 'activity-goal-$id');
-}
+// ----- 保存后理解层 -----
 
-/// Keeps the draft and returns via the leading back button.
-Future<void> recorderKeep(WidgetTester t) async {
-  final exit = find.byKey(const ValueKey('activity-exit'));
-  final target = exit.evaluate().isNotEmpty
-      ? exit.first
-      : find.byType(BackButton).first;
-  await t.tap(target);
-  await t.pumpAndSettle();
-}
+Future<void> understandingPickGoal(WidgetTester t, String id) =>
+    recorderTap(t, 'understanding-goal-$id');
+
+Future<void> understandingPickState(WidgetTester t, RhythmState state) =>
+    recorderTap(t, 'understanding-state-${state.name}');
+
+Future<void> understandingUnsure(WidgetTester t) =>
+    recorderTap(t, 'understanding-state-unsure');
+
+Future<void> understandingSkipGoal(WidgetTester t) =>
+    recorderTap(t, 'understanding-skip-goal');
+
+Future<void> understandingUnlink(WidgetTester t) =>
+    recorderTap(t, 'understanding-unlink');
+
+Future<void> understandingOpenReason(WidgetTester t) =>
+    recorderTap(t, 'understanding-fold-reason');
+
+Future<void> understandingOpenHint(WidgetTester t) =>
+    recorderTap(t, 'understanding-fold-hint');
+
+Future<void> understandingFinish(WidgetTester t) =>
+    recorderTap(t, 'understanding-finish');
+
+Future<void> understandingClose(WidgetTester t) =>
+    recorderTap(t, 'understanding-close');

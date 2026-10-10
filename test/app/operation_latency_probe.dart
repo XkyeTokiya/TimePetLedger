@@ -20,7 +20,6 @@ import 'package:time_pet_ledger/features/ledger/data/drift_sleep_draft_store.dar
 import 'package:time_pet_ledger/features/ledger/data/drift_sleep_opening_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/block_knowledge_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/activity/activity_recording_entry.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/day_summary_page.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/sleep/sleep_recording_page.dart';
@@ -274,7 +273,8 @@ Future<List<_M>> _pass(
   await p.measure(
     '记录一笔（打开）',
     () => tapKey('home-record-activity'),
-    visible: () => find.byType(ActivityRecordingEntry).evaluate().isNotEmpty,
+    visible: () =>
+        find.byKey(const ValueKey('activity-primary')).evaluate().isNotEmpty,
   );
   await p.measure(
     '记录一笔→返回首页',
@@ -405,7 +405,7 @@ Future<List<_M>> _pass(
     '设置→记录与提醒',
     () => tapKey('settings-open-recording'),
     visible: () =>
-        find.byKey(const ValueKey('settings-mode')).evaluate().isNotEmpty,
+        find.byKey(const ValueKey('settings-reminders')).evaluate().isNotEmpty,
   );
   await p.measure(
     '记录与提醒→设置首页',

@@ -12,28 +12,26 @@ import '../support/legacy_input_stores.dart';
 
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
+import 'package:time_pet_ledger/core/time/civil_date.dart';
 import 'package:time_pet_ledger/features/goals/data/drift_goal_repository.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_ledger_repository.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_recording_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_sleep_draft_store.dart';
-import 'package:time_pet_ledger/features/ledger/domain/annotation_change.dart';
 import 'package:time_pet_ledger/features/ledger/domain/block_knowledge_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/ledger_conflicts.dart';
-import 'package:time_pet_ledger/features/ledger/domain/recording_draft_store.dart';
-import 'package:time_pet_ledger/features/ledger/domain/rhythm_details.dart';
+import 'package:time_pet_ledger/features/ledger/domain/projection/day_ledger_view.dart';
 import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
-import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/activity/activity_recording_entry.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
 import 'package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart';
 
 import '../support/app_recording_navigation.dart' show tap, textTap;
 import '../support/activity_recorder.dart';
-import 'day_ledger_editing_flow_test.dart' show controller, ledgerView;
 import 'day_ledger_resolution_flow_test.dart' show BlockReadFailure;
 import 'recording_goal_flow_test.dart' show disposeApp;
 import 'support/checked_sleep_opening.dart';
 
 const hour = Duration.millisecondsPerHour;
+final _date = CivilDate(year: 2026, month: 10, day: 2);
 
 class ClearFailure extends QueryInterceptor {
   bool fail = false;
@@ -145,9 +143,12 @@ Future<String> createGoal(WidgetTester t, ClosureApp app) async {
   return after.singleWhere((g) => !before.any((b) => b.id == g.id)).id;
 }
 
+DayLedgerView? homeView(WidgetTester t) =>
+    t.state<HomeShellState>(find.byType(HomeShell)).feed.focusView;
+
+/// 目标选择入口（其他 app 测试复用）：在理解层里点一个目标。
 Future<void> chooseGoal(WidgetTester t, String id) async {
-  await textTap(t, '选择目标');
-  await tap(t, find.byKey(ValueKey('goal-option-$id')));
+  await tap(t, find.byKey(ValueKey('understanding-goal-$id')));
 }
 
 /// Opens a goal from the list and runs a lifecycle action from its detail.
@@ -166,339 +167,209 @@ Future<void> goalAction(WidgetTester t, String id, String action) async {
   }
 }
 
-Future<void> fill(WidgetTester t, {String? goal}) async {
-  // Selecting a rhythm advances automatically; then title, then time.
-  await recorderRhythm(t, RhythmState.progress);
-  await recorderTitle(t, '  写作 🐾  ');
-  await recorderToTime(t);
-  await recorderTime(t, '开始时间', '2026-10-02 10:00');
-  await recorderTime(t, '结束时间', '2026-10-02 11:00');
-  if (goal != null) await recorderChooseGoal(t, goal);
-  await recorderDetail(t, 'continuation-hint', '  从第二段接上\n检查字段 🐾  ');
+Future<void> edit(WidgetTester t, String id) async {
+  final shell = t.state<HomeShellState>(find.byType(HomeShell));
+  await shell.openDate(_date);
+  await t.pumpAndSettle();
+  final reference = (type: LedgerFactType.timeBlock, id: id);
+  final target = find.byWidgetPredicate((widget) {
+    final key = widget.key;
+    return key is ValueKey && key.value == reference;
+  });
+  if (target.evaluate().isEmpty) {
+    fail('fact node $id not found after jumping to $_date');
+  }
+  await t.ensureVisible(target.first);
+  await t.pumpAndSettle();
+  await t.tap(target.first);
+  await t.pumpAndSettle();
 }
 
-RecordingDraftContext context(WidgetTester t) => t
-    .widget<ActivityRecordingEntry>(find.byType(ActivityRecordingEntry))
-    .context;
-
-Future<void> edit(WidgetTester t, String id) =>
-    tap(t, find.byKey(ValueKey((type: LedgerFactType.timeBlock, id: id))));
-
-void main() {
+Future<void> main() async {
   final previousWarning = driftRuntimeOptions.dontWarnAboutMultipleDatabases;
   setUpAll(() => driftRuntimeOptions.dontWarnAboutMultipleDatabases = true);
   tearDownAll(
     () => driftRuntimeOptions.dontWarnAboutMultipleDatabases = previousWarning,
   );
+
   testWidgets(
-    'file-backed bootstrap closes the optional Goal/rhythm/lifecycle loop and preserves old fields',
+    'record sheet saves the fact first, then the understanding layer writes goal and rhythm',
     (t) async {
       final app = await ClosureApp.open(t);
-      await textTap(t, '记录活动');
-      await recorderAdvance(t);
-      await recorderTap(t, 'activity-unknown');
-      await recorderAdvance(t);
-      await recorderTime(t, '开始时间', '2026-10-02 08:00');
-      await recorderTime(t, '结束时间', '2026-10-02 09:00');
-      await textTap(t, '保存到账本');
-      var rows = (await t.runAsync(app.snapshot))!;
-      expect(rows['goals'], isEmpty);
-      expect(rows['rhythm_annotations'], isEmpty);
-      final unknownId = rows['time_blocks']!.single['id']! as String;
-      final unknown = (await t.runAsync(
-        () => app.repo.readTimeBlock(unknownId),
-      ))!;
-      expect(unknown.timeBlock.knowledgeState, BlockKnowledgeState.unknown);
-      expect(unknown.timeBlock.goalId, isNull);
-      expect(unknown.timeBlock.startPrecision, TimePrecision.approximate);
-      expect(unknown.timeBlock.endPrecision, TimePrecision.approximate);
-
       await textTap(t, '打开目标');
-      expect(find.text('还没有目标。'), findsOneWidget);
-      final unusedGoal = await createGoal(t, app);
       final goal = await createGoal(t, app);
-      expect(goal, isNot(unusedGoal));
       await back(t);
+
+      // 事实优先：时间 + 一句话 → 保存记录。
       await textTap(t, '记录活动');
-      await fill(t, goal: goal);
-      await recorderDetail(t, 'activity-note', '原备注');
-      final draftContext = context(t);
-      await recorderKeep(t);
-      rows = (await t.runAsync(app.snapshot))!;
-      final beforeSave = rows;
-      final raw = (await t.runAsync(() => app.drafts.read(draftContext)))!;
-      expect(raw.goalId, goal);
-      expect(raw.annotationIntent, RecordingAnnotationIntent.add);
-      expect(raw.continuationHint, '  从第二段接上\n检查字段 🐾  ');
-      await app.reopen(t);
-      expect(await t.runAsync(app.snapshot), beforeSave);
-      await textTap(t, '记录活动');
-      expect(find.text('已恢复上次输入'), findsOneWidget);
-      await recorderOpenDetails(t);
+      await recorderTitle(t, '  写作 🐾  ');
+      await recorderTime(t, '开始时间', '2026-10-02 10:00');
+      await recorderTime(t, '结束时间', '2026-10-02 11:00');
+      final panelHeight = t
+          .getSize(find.byKey(const ValueKey('sheet-stage-form')))
+          .height;
+      await recorderSave(t);
+      var rows = (await t.runAsync(app.snapshot))!;
+      expect(rows['time_blocks'], hasLength(1));
+      expect(rows['rhythm_annotations'], isEmpty);
+      final blockId = rows['time_blocks']!.single['id']! as String;
+      // 同一面板原地进入理解层，不换窗口；理解层沿用记录面板的高度。
+      expect(find.byKey(const ValueKey('activity-primary')), findsNothing);
+      expect(find.text('这段时间和某个目标有关吗？'), findsOneWidget);
+      expect(find.text('10:00 → 11:00'), findsOneWidget);
       expect(
-        t
-            .widget<TextField>(find.byKey(const ValueKey('continuation-hint')))
-            .controller!
-            .text,
-        raw.continuationHint,
+        t.getSize(find.byKey(const ValueKey('activity-sheet-frame'))).height,
+        panelHeight,
       );
-      await recorderTap(t, 'activity-details-apply');
-      await recorderAdvanceTimed(t);
-      await textTap(t, '保存到账本');
-      expect(await t.runAsync(() => app.drafts.read(draftContext)), isNull);
-      rows = (await t.runAsync(app.snapshot))!;
-      final blockId =
-          rows['time_blocks']!.singleWhere((r) => r['id'] != unknownId)['id']!
-              as String;
+
+      await understandingPickGoal(t, goal);
+      expect(find.text('回头看，这段时间整体是什么状态？'), findsOneWidget);
+      await understandingPickState(t, RhythmState.stuck);
+      // 目标 → 状态 → 补充：面板高度保持不变。
+      expect(
+        t.getSize(find.byKey(const ValueKey('activity-sheet-frame'))).height,
+        panelHeight,
+      );
+      await understandingOpenReason(t);
+      await t.enterText(recorderKey('understanding-reason-text'), '一直改来改去');
+      await understandingOpenHint(t);
+      await t.enterText(recorderKey('understanding-hint'), ' 从字段关系接上 ');
+      await understandingFinish(t);
+      expect(
+        find.byKey(const ValueKey('activity-understanding')),
+        findsNothing,
+      );
+      // 保存确认改为顶部轻提示：不遮挡底部操作栏，且限制在时间轴区域内。
+      expect(find.byKey(const ValueKey('top-toast')), findsOneWidget);
+      final toastRect = t.getRect(find.byKey(const ValueKey('top-toast')));
+      final surfaceRect = t.getRect(
+        find.byKey(const ValueKey('home-reading-surface')),
+      );
+      expect(toastRect.top, greaterThanOrEqualTo(surfaceRect.top - 1));
+      expect(toastRect.bottom, lessThanOrEqualTo(surfaceRect.bottom));
+
       final saved = (await t.runAsync(() => app.repo.readTimeBlock(blockId)))!;
       expect(saved.timeBlock.goalId, goal);
-      expect(saved.annotation!.id, raw.annotationId);
-      expect(saved.annotation!.continuationHint, '从第二段接上\n检查字段 🐾');
-      expect(saved.timeBlock.createdAt, app.clock.millisecondsSinceEpoch);
+      expect(saved.timeBlock.knowledgeState, BlockKnowledgeState.known);
+      expect(saved.annotation!.state, RhythmState.stuck);
+      expect(saved.annotation!.stuckReasonText, '一直改来改去');
+      expect(saved.annotation!.continuationHint, '从字段关系接上');
 
-      // Existing fields outside this core UI are legacy facts, not new fields
-      // or Should Have controls. Editing state/hint must retain them.
+      final view = homeView(t)!;
+      expect(view.accountedDuration.milliseconds, hour);
+      expect(view.goalSummaries.single.goalId, goal);
+      expect(view.goalSummaries.single.stuckDuration.milliseconds, hour);
+      expect(view.rhythmSummary.stuckDuration.milliseconds, hour);
+
+      // 更正活动与时间仍走同一记录面板，解释保留。
       await t.runAsync(
         () => app.repo.updateTimeBlock(
           id: blockId,
           now: app.clock.millisecondsSinceEpoch,
           categoryId: (value: '原分类'),
-          annotation: const EditAnnotation(
-            stuckReasonCode: (value: StuckReasonCode.unclearNextStep),
-            stuckReasonText: (value: '原原因'),
-            recoveryMethod: (value: RecoveryMethod.walk),
-            recoveryQuality: (value: RecoveryQuality.partlyRecovered),
-          ),
         ),
       );
-      rows = (await t.runAsync(app.snapshot))!;
-      final factBefore = rows['time_blocks'];
-      await textTap(t, '打开日账本');
-      var view = controller(t).view!;
-      expect(view.accountedDuration.milliseconds, 2 * hour);
-      expect(view.unknownDuration.milliseconds, hour);
-      expect(view.goalSummaries.single.goalId, goal);
-      expect(view.goalSummaries.single.progressDuration.milliseconds, hour);
-      expect(view.goalSummaries.single.totalDuration.hasApproximation, isTrue);
-      app.clock = DateTime(2026, 10, 2, 12, 1);
+      await t.pumpAndSettle();
       await edit(t, blockId);
-      await recorderRhythm(t, RhythmState.stuck);
-      await recorderToTime(t);
-      await recorderDetail(t, 'continuation-hint', '换个例子再试');
-      await textTap(t, '保存更正');
-      rows = (await t.runAsync(app.snapshot))!;
-      expect(rows['time_blocks'], factBefore);
+      await tap(t, find.byKey(const ValueKey('fact-detail-edit')));
+      expect(find.text('更正记录'), findsWidgets);
+      expect(
+        t
+            .widget<TextField>(find.byKey(const ValueKey('activity')))
+            .controller!
+            .text,
+        '写作 🐾',
+      );
+      await recorderTitle(t, '更正后的活动');
+      await recorderSave(t);
       final changed = (await t.runAsync(
         () => app.repo.readTimeBlock(blockId),
       ))!;
+      expect(changed.timeBlock.title, '更正后的活动');
       expect(changed.annotation!.id, saved.annotation!.id);
-      expect(changed.annotation!.createdAt, saved.annotation!.createdAt);
-      expect(changed.annotation!.updatedAt, app.clock.millisecondsSinceEpoch);
-      expect(
-        changed.annotation!.stuckReasonCode,
-        StuckReasonCode.unclearNextStep,
-      );
-      expect(changed.annotation!.stuckReasonText, '原原因');
-      expect(changed.annotation!.recoveryMethod, RecoveryMethod.walk);
-      expect(
-        changed.annotation!.recoveryQuality,
-        RecoveryQuality.partlyRecovered,
-      );
-      view = controller(t).view!;
-      expect(view.rhythmSummary.progressDuration.hasRecords, isFalse);
-      expect(view.rhythmSummary.stuckDuration.milliseconds, hour);
-      expect(view.goalSummaries.single.stuckDuration.milliseconds, hour);
-      expect(find.text('接续点：换个例子再试'), findsOneWidget);
-      final beforeNoop = rows;
-      app.clock = DateTime(2026, 10, 2, 12, 2);
-      await edit(t, blockId);
-      await textTap(t, '保存更正');
-      expect(await t.runAsync(app.snapshot), beforeNoop);
+      expect(changed.annotation!.state, RhythmState.stuck);
+      expect(changed.annotation!.continuationHint, '从字段关系接上');
 
-      await back(t);
-      await textTap(t, '打开目标');
-      await goalAction(t, goal, '归档目标');
-      await back(t);
-      await textTap(t, '打开日账本');
-      expect(controller(t).view!.goalSummaries.single.isArchived, isTrue);
-      expect(find.text('目标：同名目标 🐾（已归档）'), findsOneWidget);
+      // 详情里的理解层可以移除解释、保留事实。
       await edit(t, blockId);
-      expect(find.text('同名目标 🐾（已归档）'), findsOneWidget);
-      await recorderRhythm(t, null);
-      await recorderToTime(t);
-      await textTap(t, '保存更正');
-      view = controller(t).view!;
-      expect(view.accountedDuration.milliseconds, 2 * hour);
-      expect(view.goalSummaries.single.unannotatedDuration.milliseconds, hour);
-      expect(view.rhythmSummary.stuckDuration.hasRecords, isFalse);
+      await tap(t, find.byKey(const ValueKey('fact-detail-understanding')));
+      await understandingSkipGoal(t);
+      // 详情面板里系统返回先退回目标问题，再关闭面板。
+      await back(t);
+      expect(find.text('这段时间和某个目标有关吗？'), findsOneWidget);
+      await understandingSkipGoal(t);
+      await understandingUnsure(t);
       rows = (await t.runAsync(app.snapshot))!;
       expect(rows['rhythm_annotations'], isEmpty);
-      expect(rows['time_blocks'], factBefore);
-      await back(t);
-      await textTap(t, '打开目标');
-      await textTap(t, '查看已归档目标');
-      await goalAction(t, goal, '恢复目标');
-      await back(t);
-      await back(t);
-      final finalRows = (await t.runAsync(app.snapshot))!;
-      await app.reopen(t);
-      expect(await t.runAsync(app.snapshot), finalRows);
-      await textTap(t, '打开日账本');
-      expect(controller(t).view!.goalSummaries.single.isArchived, isFalse);
-      expect(
-        controller(t).view!.goalSummaries.single.totalDuration.milliseconds,
-        hour,
-      );
-      expect(finalRows['sleep_sessions'], isEmpty);
-      expect(finalRows['daily_reviews'], isEmpty);
+      expect(rows['time_blocks'], hasLength(1));
       await disposeApp(t);
     },
   );
 
   testWidgets(
-    'real annotation SQL failure rolls back create and combined edit; UI retries retained drafts',
+    'understanding write failure keeps the card and retries without touching the fact',
     (t) async {
       final app = await ClosureApp.open(t);
       await textTap(t, '打开目标');
       final goal = await createGoal(t, app);
       await back(t);
       await textTap(t, '记录活动');
-      await fill(t, goal: goal);
-      final draftContext = context(t);
+      await recorderTitle(t, '失败重试');
+      await recorderTime(t, '开始时间', '2026-10-02 10:00');
+      await recorderTime(t, '结束时间', '2026-10-02 11:00');
+      await recorderSave(t);
+      await understandingPickGoal(t, goal);
       final before = (await t.runAsync(app.snapshot))!;
       await t.runAsync(
         () => app.db.customStatement(
           "CREATE TRIGGER fail_annotation AFTER INSERT ON rhythm_annotations BEGIN SELECT RAISE(ABORT, 'test'); END",
         ),
       );
-      await textTap(t, '保存到账本');
-      expect(find.byType(ActivityRecordingEntry), findsOneWidget);
+      await understandingPickState(t, RhythmState.progress);
+      expect(find.byKey(const ValueKey('understanding-error')), findsOneWidget);
       expect(await t.runAsync(app.snapshot), before);
-      expect(find.text('正式保存失败，当前输入仍保留，请重试。'), findsOneWidget);
-      final draft = (await t.runAsync(() => app.drafts.read(draftContext)))!;
-      expect(draft.goalId, goal);
-      expect(draft.rhythmState, RhythmState.progress);
-      expect(draft.title, '  写作 🐾  ');
       await t.runAsync(
         () => app.db.customStatement('DROP TRIGGER fail_annotation'),
       );
-      await textTap(t, '保存到账本');
-      var rows = (await t.runAsync(app.snapshot))!;
-      final id = rows['time_blocks']!.single['id']! as String;
+      await understandingPickState(t, RhythmState.progress);
+      await understandingFinish(t);
+      final rows = (await t.runAsync(app.snapshot))!;
       expect(rows['rhythm_annotations'], hasLength(1));
-      expect(await t.runAsync(() => app.drafts.read(draftContext)), isNull);
-      await textTap(t, '打开日账本');
-      await edit(t, id);
-      final editContext = context(t);
-      await recorderRhythm(t, RhythmState.recovery);
-      await recorderAdvance(t);
-      await recorderTitle(t, '更正后的活动');
-      await recorderToTime(t);
-      await recorderDetail(t, 'continuation-hint', '恢复后接着写');
-      app.clock = DateTime(2026, 10, 2, 12, 1);
-      await t.runAsync(
-        () => app.db.customStatement(
-          "CREATE TRIGGER fail_annotation AFTER UPDATE ON rhythm_annotations BEGIN SELECT RAISE(ABORT, 'test'); END",
-        ),
-      );
-      await textTap(t, '保存更正');
-      expect(await t.runAsync(app.snapshot), rows);
-      expect(find.text('正式保存失败，当前输入仍保留，请重试。'), findsOneWidget);
-      final editDraft = (await t.runAsync(() => app.drafts.read(editContext)))!;
-      expect(editDraft.title, '更正后的活动');
-      expect(editDraft.rhythmState, RhythmState.recovery);
-      expect(editDraft.annotationIntent, RecordingAnnotationIntent.edit);
-      expect(await t.runAsync(() => app.drafts.read(draftContext)), isNull);
-      await t.runAsync(
-        () => app.db.customStatement('DROP TRIGGER fail_annotation'),
-      );
-      await textTap(t, '返回');
-      await app.reopen(t);
-      await textTap(t, '打开日账本');
       expect(
-        controller(t).view!.rhythmSummary.progressDuration.milliseconds,
-        hour,
+        find.byKey(const ValueKey('activity-understanding')),
+        findsNothing,
       );
-      await edit(t, id);
-      expect(find.text('已恢复上次输入'), findsOneWidget);
-      await recorderAdvance(t);
-      await recorderAdvance(t);
-      expect(
-        t
-            .widget<TextField>(find.byKey(const ValueKey('activity')))
-            .controller!
-            .text,
-        '更正后的活动',
-      );
-      await recorderToTime(t);
-      await textTap(t, '保存更正');
-      final read = (await t.runAsync(() => app.repo.readTimeBlock(id)))!;
-      expect(read.timeBlock.title, '更正后的活动');
-      expect(
-        read.timeBlock.createdAt,
-        DateTime(2026, 10, 2, 12).millisecondsSinceEpoch,
-      );
-      expect(read.timeBlock.updatedAt, app.clock.millisecondsSinceEpoch);
-      expect(read.annotation!.id, draft.annotationId);
-      expect(read.annotation!.state, RhythmState.recovery);
-      rows = (await t.runAsync(app.snapshot))!;
-      expect(rows['time_blocks'], hasLength(1));
-      expect(rows['rhythm_annotations'], hasLength(1));
-      expect(await t.runAsync(() => app.drafts.read(editContext)), isNull);
-      final view = controller(t).view!;
-      expect(view.accountedDuration.milliseconds, hour);
-      expect(view.goalSummaries.single.recoveryDuration.milliseconds, hour);
-      expect(view.rhythmSummary.progressDuration.hasRecords, isFalse);
       await disposeApp(t);
     },
   );
 
   testWidgets(
-    'committed Goal/annotation survives cleanup plus refresh failure and full bootstrap reopen without duplicate insert',
+    'committed cleanup failure keeps the sheet recoverable and never inserts twice',
     (t) async {
       final app = await ClosureApp.open(t);
-      await textTap(t, '打开目标');
-      final goal = await createGoal(t, app);
-      await back(t);
       await textTap(t, '记录活动');
-      await fill(t, goal: goal);
-      final draftContext = context(t);
-      final draft = (await t.runAsync(() => app.drafts.read(draftContext)))!;
+      await recorderTitle(t, '收尾失败');
+      await recorderTime(t, '开始时间', '2026-10-02 10:00');
+      await recorderTime(t, '结束时间', '2026-10-02 11:00');
       app.reads.arm = true;
-      app.clear.fail = true;
-      await textTap(t, '保存到账本');
-      expect(find.textContaining('已正式保存到账本，请不要再次提交。'), findsOneWidget);
-      expect(find.textContaining('本地收尾失败，旧草稿仍可能显示'), findsOneWidget);
+      await recorderSave(t);
       expect(find.textContaining('账本刷新失败，记录已保存'), findsOneWidget);
-      expect(find.text('保存到账本'), findsNothing);
       final committed = (await t.runAsync(app.snapshot))!;
       expect(committed['time_blocks'], hasLength(1));
-      expect(committed['rhythm_annotations']!.single['id'], draft.annotationId);
       expect(app.reads.blockInserts, 1);
-      await textTap(t, '继续清理并刷新');
-      expect(await t.runAsync(app.snapshot), committed);
-      expect(app.reads.blockInserts, 1);
-      expect(await t.runAsync(() => app.drafts.read(draftContext)), isNotNull);
-      // Reads must be available to identify the committed draft on restart.
-      // Cleanup still fails, leaving the recovered form visibly committed.
       app.reads.arm = false;
       app.reads.failReads = false;
-      await app.reopen(t);
-      await textTap(t, '记录活动');
-      expect(find.textContaining('已正式保存到账本，请不要再次提交。'), findsOneWidget);
-      expect(find.text('保存到账本'), findsNothing);
-      expect(await t.runAsync(app.snapshot), committed);
-      app.clear.fail = false;
-      app.clock = DateTime(2026, 10, 2, 12, 2);
-      await textTap(t, '继续清理并刷新');
-      expect(find.byType(ActivityRecordingEntry), findsNothing);
-      expect(await t.runAsync(() => app.drafts.read(draftContext)), isNull);
+      await recorderSave(t);
+      expect(find.byKey(const ValueKey('activity-primary')), findsNothing);
+      // 收尾成功后同一面板进入理解层；关闭后返回账本。
+      expect(find.text('这段时间和某个目标有关吗？'), findsOneWidget);
       expect(await t.runAsync(app.snapshot), committed);
       expect(app.reads.blockInserts, 1);
-      await textTap(t, '打开日账本');
-      final view = ledgerView(t);
-      expect(view.goalSummaries.single.goalId, goal);
-      expect(view.goalSummaries.single.progressDuration.milliseconds, hour);
+      await recorderTap(t, 'understanding-close');
+      expect(
+        find.byKey(const ValueKey('activity-understanding')),
+        findsNothing,
+      );
       await disposeApp(t);
     },
   );
