@@ -38,6 +38,7 @@ class HomeTimelineTab extends StatefulWidget {
     this.onPositioned,
     this.active = true,
     this.onEditFact,
+    this.onEditUnderstanding,
     this.onDeleteTimeBlock,
     this.onFillGap,
     this.onDayTap,
@@ -52,6 +53,7 @@ class HomeTimelineTab extends StatefulWidget {
   final VoidCallback? onPositioned;
   final bool active;
   final Future<bool> Function(CivilDate, LedgerSegment)? onEditFact;
+  final Future<bool> Function(CivilDate, LedgerSegment)? onEditUnderstanding;
   final ValueChanged<TimeBlockSegment>? onDeleteTimeBlock;
   final void Function(CivilDate, UnresolvedSpan)? onFillGap;
   final void Function(CivilDate)? onDayTap;
@@ -106,6 +108,7 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
   bool _layoutQueued = false;
   bool _positioned = false;
   bool _extendRequested = false;
+  bool _extendLaterRequested = false;
   bool _userScrolling = false;
   _ReadDirection? _readDirection;
   int _restoredVersion = -1;
@@ -258,6 +261,7 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
     if (!_userScrolling) _readDirection = null;
     widget.onPositioned?.call();
     _extendWhenAtStart();
+    _extendWhenAtEnd();
   }
 
   double _viewportTop() {
@@ -484,6 +488,25 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
     );
   }
 
+  /// 向下滚动到已装载末端后继续向后装载，直到导航上限（今天或手选未来
+  /// 上限）；不改变浏览日期与阅读位置。
+  void _extendWhenAtEnd() {
+    if (!_current || _restoring || !widget.active) return;
+    final position = _scroll.position;
+    if (position.pixels < position.maxScrollExtent - .5) {
+      _extendLaterRequested = false;
+      return;
+    }
+    if (_extendLaterRequested) return;
+    _extendLaterRequested = true;
+    unawaited(
+      widget.controller.extendLater(widget.today).then((extended) {
+        // 装载失败或已到上限时解除闩锁，下一次到达末端可以重试。
+        if (!extended && mounted) _extendLaterRequested = false;
+      }),
+    );
+  }
+
   bool _syncBottomFill() {
     final box = _lastDayKey.currentContext?.findRenderObject();
     if (box is! RenderBox || !box.hasSize) return false;
@@ -590,6 +613,7 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
               isToday: date == widget.today,
               isCurrent: () => _current && widget.active,
               onEditFact: widget.onEditFact,
+              onEditUnderstanding: widget.onEditUnderstanding,
               onDeleteTimeBlock: widget.onDeleteTimeBlock,
               onFillGap: widget.onFillGap,
             ),
@@ -614,6 +638,7 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
         cached.a11yFactor == widget.a11yFactor &&
         cached.today == widget.today &&
         cached.onEditFact == widget.onEditFact &&
+        cached.onEditUnderstanding == widget.onEditUnderstanding &&
         cached.onDeleteTimeBlock == widget.onDeleteTimeBlock &&
         cached.onFillGap == widget.onFillGap) {
       return cached.widget;
@@ -630,6 +655,7 @@ class HomeTimelineTabState extends State<HomeTimelineTab> {
       a11yFactor: widget.a11yFactor,
       today: widget.today,
       onEditFact: widget.onEditFact,
+      onEditUnderstanding: widget.onEditUnderstanding,
       onDeleteTimeBlock: widget.onDeleteTimeBlock,
       onFillGap: widget.onFillGap,
       widget: built,
@@ -759,6 +785,7 @@ class _CachedDay {
     required this.a11yFactor,
     required this.today,
     required this.onEditFact,
+    required this.onEditUnderstanding,
     required this.onDeleteTimeBlock,
     required this.onFillGap,
     required this.widget,
@@ -769,6 +796,7 @@ class _CachedDay {
   final double a11yFactor;
   final CivilDate today;
   final Future<bool> Function(CivilDate, LedgerSegment)? onEditFact;
+  final Future<bool> Function(CivilDate, LedgerSegment)? onEditUnderstanding;
   final ValueChanged<TimeBlockSegment>? onDeleteTimeBlock;
   final void Function(CivilDate, UnresolvedSpan)? onFillGap;
   final Widget widget;

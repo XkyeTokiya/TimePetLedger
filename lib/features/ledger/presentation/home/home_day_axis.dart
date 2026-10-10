@@ -43,6 +43,7 @@ class HomeDayAxis extends StatefulWidget {
     required this.isToday,
     required this.isCurrent,
     this.onEditFact,
+    this.onEditUnderstanding,
     this.onDeleteTimeBlock,
     this.onFillGap,
   });
@@ -52,6 +53,7 @@ class HomeDayAxis extends StatefulWidget {
   final bool isToday;
   final bool Function() isCurrent;
   final Future<bool> Function(CivilDate, LedgerSegment)? onEditFact;
+  final Future<bool> Function(CivilDate, LedgerSegment)? onEditUnderstanding;
   final ValueChanged<TimeBlockSegment>? onDeleteTimeBlock;
   final void Function(CivilDate, UnresolvedSpan)? onFillGap;
 
@@ -62,7 +64,6 @@ class HomeDayAxis extends StatefulWidget {
 class _HomeDayAxisState extends State<HomeDayAxis> {
   final _axisKey = GlobalKey();
   final _focus = <Object, FocusNode>{};
-  final _tips = <Object, GlobalKey<TooltipState>>{};
   Object? _hovered;
   Object? _focused;
   Widget? _cachedAxis;
@@ -94,9 +95,6 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
     }
     super.dispose();
   }
-
-  GlobalKey<TooltipState> _tip(Object id) =>
-      _tips.putIfAbsent(id, () => GlobalKey<TooltipState>());
 
   FocusNode _node(Object id) => _focus.putIfAbsent(id, FocusNode.new);
 
@@ -170,6 +168,10 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
       onEdit: widget.onEditFact == null
           ? null
           : () => widget.onEditFact!(widget.view.date, fact),
+      onEditUnderstanding:
+          widget.onEditUnderstanding == null || fact is! TimeBlockSegment
+          ? null
+          : () => widget.onEditUnderstanding!(widget.view.date, fact),
     );
     if (!mounted) return;
     if (action == LedgerDetailAction.delete && fact is TimeBlockSegment) {
@@ -531,10 +533,7 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
                   );
                 }
               }
-              _tip(item.id).currentState?.ensureTooltipVisible();
             });
-          } else {
-            Tooltip.dismissAllToolTips();
           }
         },
         onKeyEvent: (node, event) {
@@ -556,192 +555,177 @@ class _HomeDayAxisState extends State<HomeDayAxis> {
             _cachedAxis = null;
             _hovered = null;
           }),
-          child: Tooltip(
-            key: _tip(item.id),
-            message:
-                '$action · ${_range(item, widget.view)} · $title · ${formatDerivedDuration(item.duration)}',
-            triggerMode: TooltipTriggerMode.manual,
-            excludeFromSemantics: true,
-            child: ExcludeSemantics(
-              child: InkWell(
-                key: ValueKey(item.id),
-                canRequestFocus: false,
-                onTap: () => _activate(item, cluster),
-                child: ClipRect(
-                  child: CustomPaint(
-                    painter: _IntervalPainter(
-                      color: color,
-                      gap: item.gap != null,
-                      selected: selected,
-                    ),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        final scale = MediaQuery.textScalerOf(context);
-                        final mutedStyle = HomeLedgerStyle.metadata.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        );
-                        final lineHeight =
-                            scale.scale(HomeLedgerStyle.state.fontSize!) *
-                            HomeLedgerStyle.state.height!;
-                        if (height < HomeTimelineGeometry.textHeight ||
-                            height < lineHeight) {
-                          return const SizedBox.expand();
-                        }
-                        final top = geometry.y(item.startedAt);
-                        final visibleHeight =
-                            (math.min(height, visibleBottom - top) -
-                                    math.max(0.0, visibleTop - top))
-                                .clamp(0.0, height);
-                        // Do not paint a half-clipped word at a viewport edge.
-                        // The interval's full semantics/focus remain above.
-                        if (visibleHeight > 0 && visibleHeight < lineHeight) {
-                          return const SizedBox.expand();
-                        }
-                        final showIcon =
-                            constraints.maxWidth > 160 &&
-                            scale.scale(HomeLedgerStyle.title.fontSize!) < 24;
-                        final metadataHeight =
-                            scale.scale(HomeLedgerStyle.metadata.fontSize!) *
-                            HomeLedgerStyle.metadata.height!;
-                        final titleHeight = math.max(
-                          showIcon ? HomeLedgerStyle.iconSize : 0,
-                          scale.scale(HomeLedgerStyle.title.fontSize!) *
-                              HomeLedgerStyle.title.height!,
-                        );
-                        final fullHeight = metadataHeight * 2 + titleHeight + 8;
-                        // Label form is a property of the interval: it must
-                        // not switch between heights while the feed scrolls,
-                        // or the same block visibly changes text, size and
-                        // line count every time it crosses a viewport edge.
-                        final full = height >= fullHeight + 16;
-                        final compactRange =
-                            !full && height >= metadataHeight + lineHeight + 20;
-                        final labelHeight = full
-                            ? fullHeight
-                            : compactRange
-                            ? metadataHeight + 4 + lineHeight
-                            : lineHeight;
-                        // One label, clamped to both real boundaries and the
-                        // viewport intersection. It never changes the target.
-                        final offset = full || compactRange
-                            ? (math.max(0.0, visibleTop - top) + 8).clamp(
-                                8.0,
-                                math.max(8.0, height - labelHeight - 8),
-                              )
-                            : (visibleHeight == 0
-                                      ? (height - labelHeight) / 2
-                                      : math.max(0.0, visibleTop - top) +
-                                            (visibleHeight - labelHeight) / 2)
-                                  .clamp(
-                                    0.0,
-                                    math.max(0.0, height - labelHeight),
-                                  );
-                        final goal = item.fact is TimeBlockSegment
-                            ? widget.view.goalSummaries
-                                  .where(
-                                    (g) =>
-                                        g.goalId ==
-                                        (item.fact as TimeBlockSegment)
-                                            .source
-                                            .goalId,
-                                  )
-                                  .firstOrNull
-                            : null;
-                        return Stack(
-                          children: [
-                            Positioned(
-                              top: offset.toDouble(),
-                              left: 8,
-                              right: 8,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (full || compactRange)
-                                    Text(
-                                      _range(item, widget.view),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: mutedStyle,
+          child: ExcludeSemantics(
+            child: InkWell(
+              key: ValueKey(item.id),
+              canRequestFocus: false,
+              onTap: () => _activate(item, cluster),
+              child: ClipRect(
+                child: CustomPaint(
+                  painter: _IntervalPainter(
+                    color: color,
+                    gap: item.gap != null,
+                    selected: selected,
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final scale = MediaQuery.textScalerOf(context);
+                      final mutedStyle = HomeLedgerStyle.metadata.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      );
+                      final lineHeight =
+                          scale.scale(HomeLedgerStyle.state.fontSize!) *
+                          HomeLedgerStyle.state.height!;
+                      if (height < HomeTimelineGeometry.textHeight ||
+                          height < lineHeight) {
+                        return const SizedBox.expand();
+                      }
+                      final top = geometry.y(item.startedAt);
+                      final visibleHeight =
+                          (math.min(height, visibleBottom - top) -
+                                  math.max(0.0, visibleTop - top))
+                              .clamp(0.0, height);
+                      // Do not paint a half-clipped word at a viewport edge.
+                      // The interval's full semantics/focus remain above.
+                      if (visibleHeight > 0 && visibleHeight < lineHeight) {
+                        return const SizedBox.expand();
+                      }
+                      final showIcon =
+                          constraints.maxWidth > 160 &&
+                          scale.scale(HomeLedgerStyle.title.fontSize!) < 24;
+                      final metadataHeight =
+                          scale.scale(HomeLedgerStyle.metadata.fontSize!) *
+                          HomeLedgerStyle.metadata.height!;
+                      final titleHeight = math.max(
+                        showIcon ? HomeLedgerStyle.iconSize : 0,
+                        scale.scale(HomeLedgerStyle.title.fontSize!) *
+                            HomeLedgerStyle.title.height!,
+                      );
+                      final fullHeight = metadataHeight * 2 + titleHeight + 8;
+                      // Label form is a property of the interval: it must
+                      // not switch between heights while the feed scrolls,
+                      // or the same block visibly changes text, size and
+                      // line count every time it crosses a viewport edge.
+                      final full = height >= fullHeight + 16;
+                      final compactRange =
+                          !full && height >= metadataHeight + lineHeight + 20;
+                      final labelHeight = full
+                          ? fullHeight
+                          : compactRange
+                          ? metadataHeight + 4 + lineHeight
+                          : lineHeight;
+                      // One label, clamped to both real boundaries and the
+                      // viewport intersection. It never changes the target.
+                      final offset = full || compactRange
+                          ? (math.max(0.0, visibleTop - top) + 8).clamp(
+                              8.0,
+                              math.max(8.0, height - labelHeight - 8),
+                            )
+                          : (visibleHeight == 0
+                                    ? (height - labelHeight) / 2
+                                    : math.max(0.0, visibleTop - top) +
+                                          (visibleHeight - labelHeight) / 2)
+                                .clamp(
+                                  0.0,
+                                  math.max(0.0, height - labelHeight),
+                                );
+                      final goal = item.fact is TimeBlockSegment
+                          ? widget.view.goalSummaries
+                                .where(
+                                  (g) =>
+                                      g.goalId ==
+                                      (item.fact as TimeBlockSegment)
+                                          .source
+                                          .goalId,
+                                )
+                                .firstOrNull
+                          : null;
+                      return Stack(
+                        children: [
+                          Positioned(
+                            top: offset.toDouble(),
+                            left: 8,
+                            right: 8,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (full || compactRange)
+                                  Text(
+                                    _range(item, widget.view),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: mutedStyle,
+                                  ),
+                                if (full || compactRange)
+                                  const SizedBox(height: 4),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    if (full && showIcon) ...[
+                                      Icon(
+                                        _icon(item),
+                                        color: color,
+                                        size: HomeLedgerStyle.iconSize,
+                                      ),
+                                      const SizedBox(width: 8),
+                                    ],
+                                    Expanded(
+                                      child: Text(
+                                        title,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: full
+                                            ? HomeLedgerStyle.title
+                                            : HomeLedgerStyle.state,
+                                      ),
                                     ),
-                                  if (full || compactRange)
-                                    const SizedBox(height: 4),
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      if (full && showIcon) ...[
-                                        Icon(
-                                          _icon(item),
-                                          color: color,
-                                          size: HomeLedgerStyle.iconSize,
-                                        ),
-                                        const SizedBox(width: 8),
-                                      ],
-                                      Expanded(
+                                    if (!full &&
+                                        constraints.maxWidth > scale.scale(150))
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 8),
                                         child: Text(
-                                          title,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: full
-                                              ? HomeLedgerStyle.title
-                                              : HomeLedgerStyle.state,
+                                          formatDerivedDuration(item.duration),
+                                          style: mutedStyle,
                                         ),
                                       ),
-                                      if (!full &&
-                                          constraints.maxWidth >
-                                              scale.scale(150))
-                                        Padding(
-                                          padding: const EdgeInsets.only(
-                                            left: 8,
-                                          ),
-                                          child: Text(
-                                            formatDerivedDuration(
-                                              item.duration,
-                                            ),
-                                            style: mutedStyle,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                  if (full) ...[
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      selected
-                                          ? action
-                                          : '${formatDerivedDuration(item.duration)}${_secondary(item, goal)}',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: mutedStyle,
-                                    ),
                                   ],
-                                ],
-                              ),
-                            ),
-                            if (selected &&
-                                !full &&
-                                compactRange &&
-                                height >= labelHeight + 32)
-                              Positioned(
-                                bottom: 0,
-                                left: 8,
-                                right: 8,
-                                child: Text(
-                                  action,
-                                  maxLines: 1,
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    height: 1,
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .primary,
+                                ),
+                                if (full) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    selected
+                                        ? action
+                                        : '${formatDerivedDuration(item.duration)}${_secondary(item, goal)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: mutedStyle,
                                   ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          if (selected &&
+                              !full &&
+                              compactRange &&
+                              height >= labelHeight + 32)
+                            Positioned(
+                              bottom: 0,
+                              left: 8,
+                              right: 8,
+                              child: Text(
+                                action,
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  height: 1,
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),
-                          ],
-                        );
-                      },
-                    ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ),

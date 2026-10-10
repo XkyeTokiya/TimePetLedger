@@ -44,7 +44,9 @@ final class LedgerFeedController extends ChangeNotifier {
     required CivilDate initialDate,
     this.windowDays = 14,
     this.earlierStep = 7,
+    this.laterStep = 7,
   }) : _end = initialDate,
+       _loadedEnd = initialDate,
        _start = _startFor(initialDate, windowDays),
        _focus = initialDate;
 
@@ -67,8 +69,12 @@ final class LedgerFeedController extends ChangeNotifier {
   /// 滚动到最早一天后继续向前扩展的自然日数量。
   final int earlierStep;
 
+  /// 滚动到已装载最晚一天后继续向后扩展的自然日数量。
+  final int laterStep;
+
   CivilDate _start;
   CivilDate _end;
+  CivilDate _loadedEnd;
   CivilDate _focus;
   final Map<CivilDate, DayLedgerView> _views = {};
   final Map<CivilDate, RecordingDateContext> _contexts = {};
@@ -96,7 +102,11 @@ final class LedgerFeedController extends ChangeNotifier {
   int get dataVersion => _dataVersion;
 
   CivilDate get startDate => _start;
+
+  /// 显式装载的窗口锚点（首次装载 / 跳转 / 返回今天的结束日）；向前 /
+  /// 向后滚动扩展只改变已装载范围，不移动该锚点，也不触发切日过渡。
   CivilDate get endDate => _end;
+
   CivilDate get focusDate => _focus;
   CivilDate? get futureNavigationLimit => _futureNavigationLimit;
 
@@ -131,14 +141,14 @@ final class LedgerFeedController extends ChangeNotifier {
   );
 
   bool contains(CivilDate date) =>
-      !_isBefore(date, _start) && !_isBefore(_end, date);
+      !_isBefore(date, _start) && !_isBefore(_loadedEnd, date);
 
   /// 窗口内全部日期，从最早到最新。
   List<CivilDate> get loadedDates {
     final dates = <CivilDate>[];
     for (
       var date = _start;
-      !_isBefore(_end, date);
+      !_isBefore(_loadedEnd, date);
       date = adjacentLedgerDate(date, 1)
     ) {
       dates.add(date);
@@ -224,6 +234,43 @@ final class LedgerFeedController extends ChangeNotifier {
     }
   }
 
+  /// 向下滚动到已装载最晚一天后继续向后装载；不越过导航上限，不改变
+  /// 浏览日期与窗口锚点（因此不触发切日过渡与状态重建）。返回是否真正
+  /// 装载了新的一天；失败或本次未执行时返回 false，调用方据此解除重试闩锁。
+  Future<bool> extendLater(CivilDate today) async {
+    if (_disposed || _extending || _loading) return false;
+    final limit = navigationLimit(today);
+    if (!_isBefore(_loadedEnd, limit)) return false;
+    _extending = true;
+    final request = ++_request;
+    var end = _loadedEnd;
+    for (var i = 0; i < laterStep; i++) {
+      final next = adjacentLedgerDate(end, 1);
+      end = _isBefore(limit, next) ? limit : next;
+      if (end == limit) break;
+    }
+    final start = adjacentLedgerDate(_loadedEnd, 1);
+    try {
+      final loaded = await _readRange(start, end);
+      if (_disposed || request != _request) return false;
+      _views.addAll(loaded.views);
+      _contexts.addAll(loaded.contexts);
+      _loadedEnd = end;
+      _status = LedgerFeedStatus.ready;
+      _refreshFailed = false;
+      _dataVersion++;
+      notifyListeners();
+      return true;
+    } catch (_) {
+      if (_disposed || request != _request) return false;
+      _refreshFailed = true;
+      notifyListeners();
+      return false;
+    } finally {
+      _extending = false;
+    }
+  }
+
   /// 滚动驱动：浏览日期在窗口内移动，不重新装载。
   void noteFocus(CivilDate date) {
     if (_disposed || date == _focus || !contains(date)) return;
@@ -251,6 +298,7 @@ final class LedgerFeedController extends ChangeNotifier {
       // 日期、窗口与数据一起提交；失败时全部保留已显示的阅读上下文。
       _start = start;
       _end = end;
+      _loadedEnd = end;
       if (revealDate != null) {
         _focus = revealDate;
         _revealRequest = revealDate;

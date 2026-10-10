@@ -219,19 +219,26 @@ Future<({int start, int end})?> showRecordingDurationPicker(
   BuildContext context, {
   required int? startedAt,
   required int? endedAt,
+  String title = '调整时长',
 }) async {
   if (startedAt == null && endedAt == null) return null;
   FocusScope.of(context).unfocus();
   return showDialog<({int start, int end})>(
     context: context,
-    builder: (_) => _DurationPicker(startedAt: startedAt, endedAt: endedAt),
+    builder: (_) =>
+        _DurationPicker(startedAt: startedAt, endedAt: endedAt, title: title),
   );
 }
 
 class _DurationPicker extends StatefulWidget {
-  const _DurationPicker({required this.startedAt, required this.endedAt});
+  const _DurationPicker({
+    required this.startedAt,
+    required this.endedAt,
+    required this.title,
+  });
   final int? startedAt;
   final int? endedAt;
+  final String title;
   @override
   State<_DurationPicker> createState() => _DurationPickerState();
 }
@@ -257,7 +264,7 @@ class _DurationPickerState extends State<_DurationPicker> {
 
   @override
   Widget build(BuildContext context) => AlertDialog(
-    title: const Text('调整时长'),
+    title: Text(widget.title),
     content: SizedBox(
       width: 280,
       child: Column(

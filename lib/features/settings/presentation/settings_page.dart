@@ -284,8 +284,7 @@ class _SettingsPageState extends State<SettingsPage> {
               key: const ValueKey('settings-open-recording'),
               icon: Icons.edit_note,
               title: '记录与提醒',
-              subtitle:
-                  '${_modeText(prefs)} · 首页提醒${prefs.reminders == false ? '已关闭' : '已开启'}',
+              subtitle: '首页提醒${prefs.reminders == false ? '已关闭' : '已开启'}',
               target: _View.recording,
             ),
             _navRow(
@@ -424,20 +423,6 @@ class _SettingsPageState extends State<SettingsPage> {
         ];
       case _View.recording:
         return [
-          _sectionLabel('记录'),
-          _card([
-            _row(
-              key: const ValueKey('settings-mode'),
-              icon: Icons.edit_note,
-              title: '记录方式',
-              subtitle: '问答引导 / 一页表单',
-              trailing: _navTrailing(
-                _modeText(prefs),
-                valueKey: const ValueKey('settings-mode-current'),
-              ),
-              onTap: busy ? null : () => _pickRecordingMode(prefs),
-            ),
-          ]),
           _sectionLabel('提醒'),
           _card([
             _row(
@@ -664,24 +649,6 @@ class _SettingsPageState extends State<SettingsPage> {
           onTap: () {
             Navigator.pop(context);
             _savePreference((c) => c.copyWith(fontChoice: font));
-          },
-        ),
-    ],
-  );
-
-  Future<void> _pickRecordingMode(AppPreferences prefs) => _showOptionsSheet(
-    title: '记录方式',
-    subtitle: '既有未完成的填写保留自身方式',
-    children: [
-      for (final mode in RecordingMode.values)
-        _sheetTile(
-          key: 'settings-mode-${mode.name}',
-          selected: prefs.recordingMode == mode,
-          title: mode == RecordingMode.guided ? '问答引导' : '表单',
-          description: mode == RecordingMode.guided ? '一步步回想，再记下来' : '在一页中填写记录',
-          onTap: () {
-            Navigator.pop(context);
-            _savePreference((c) => c.copyWith(recordingMode: mode));
           },
         ),
     ],
@@ -1116,12 +1083,6 @@ class _SettingsPageState extends State<SettingsPage> {
   String _rangeText(AppPreferences prefs) => switch (prefs.heatRange) {
     HeatRange.week => '本周',
     HeatRange.month => '本月',
-    null => '未设置',
-  };
-
-  String _modeText(AppPreferences prefs) => switch (prefs.recordingMode) {
-    RecordingMode.guided => '问答引导',
-    RecordingMode.form => '表单',
     null => '未设置',
   };
 

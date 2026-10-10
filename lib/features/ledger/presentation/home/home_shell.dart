@@ -41,9 +41,11 @@ class HomeShell extends StatefulWidget {
     required this.onRecordActivity,
     required this.onRecordSleep,
     this.onEditFact,
+    this.onEditUnderstanding,
     this.onDeleteTimeBlock,
     this.onFillGap,
     this.floatingCard,
+    this.timelineAnchor,
     this.banner,
     this.active = true,
     this.quickPanelSide = HomeQuickPanelSide.left,
@@ -68,11 +70,18 @@ class HomeShell extends StatefulWidget {
 
   final Future<bool> Function(CivilDate date, LedgerSegment segment)?
   onEditFact;
+
+  /// 详情里的“补充 / 修改目标与状态”；返回是否发生写入。
+  final Future<bool> Function(CivilDate date, LedgerSegment segment)?
+  onEditUnderstanding;
   final ValueChanged<TimeBlockSegment>? onDeleteTimeBlock;
   final void Function(CivilDate date, UnresolvedSpan gap)? onFillGap;
 
   /// 浮动提示卡（例如建议区域），停在操作栏正上方，不随记录列表滚动。
   final Widget Function(LedgerFeedController controller)? floatingCard;
+
+  /// 时间轴区域的定位锚点；顶部轻提示等浮层据此限制在时间轴范围内。
+  final GlobalKey? timelineAnchor;
 
   /// 可选提示区（例如首次主睡眠检查失败），显示在顶栏与日期之间。
   final Widget? banner;
@@ -233,6 +242,7 @@ class HomeShellState extends State<HomeShell>
         today: today,
         active: active,
         onEditFact: widget.onEditFact,
+        onEditUnderstanding: widget.onEditUnderstanding,
         onDeleteTimeBlock: widget.onDeleteTimeBlock,
         onFillGap: widget.onFillGap,
         onDayTap: (date) => _chooseDate(initial: date),
@@ -961,7 +971,10 @@ class HomeShellState extends State<HomeShell>
           ),
           Expanded(
             key: const ValueKey('home-reading-surface'),
-            child: _timeline(today),
+            child: KeyedSubtree(
+              key: widget.timelineAnchor,
+              child: _timeline(today),
+            ),
           ),
           if (widget.floatingCard != null &&
               feed.focusDate == today &&

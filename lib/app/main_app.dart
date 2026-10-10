@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import 'theme/app_theme.dart';
+import 'top_toast.dart';
 import '../features/ledger/presentation/day_summary_page.dart';
 import '../features/ledger/presentation/day_read_scroll.dart';
 import '../features/ledger/domain/sleep_session.dart';
@@ -29,14 +30,16 @@ import 'time/device_recording_date.dart';
 import '../features/ledger/application/sleep_first_open.dart';
 
 import '../core/time/civil_date.dart';
+import '../features/ledger/application/activity_understanding.dart';
 import '../features/ledger/application/recording_entry_saver.dart';
 import '../features/ledger/application/recording_entry_editor.dart';
 import '../features/ledger/application/recording_ledger_loader.dart';
-import '../features/ledger/application/recording_time_suggestion.dart';
 import '../features/ledger/application/sleep_ledger_loader.dart';
 import '../features/ledger/domain/recording_draft_store.dart';
 import '../features/ledger/domain/sleep_draft_store.dart';
-import '../features/ledger/presentation/activity/activity_recording_entry.dart';
+import '../features/goals/domain/goal.dart';
+import '../features/ledger/presentation/activity/activity_quick_sheet.dart';
+import '../features/ledger/presentation/activity/activity_understanding_page.dart';
 
 class MainApp extends StatefulWidget {
   const MainApp({
@@ -189,6 +192,7 @@ class _RecordingHome extends StatefulWidget {
 class _RecordingHomeState extends State<_RecordingHome>
     with WidgetsBindingObserver, RouteAware {
   final homeShellKey = GlobalKey<HomeShellState>();
+  final timelineAnchor = GlobalKey(debugLabel: 'home-timeline-anchor');
   final scrollSession = DayReadScrollSession();
   bool opening = false;
   bool ledgerInteraction = false;
@@ -319,16 +323,36 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  Widget _activity(CivilDate date) => ActivityRecordingEntry(
-    goals: widget.goals,
-    context: RecordingDraftContext.newEntry(date: date),
+  Future<ActivityQuickSheetResult?> _openActivitySheet(
+    RecordingDraftContext entryContext, {
+    UnresolvedSpan? gap,
+  }) => showActivityQuickSheet(
+    context,
+    entryContext: entryContext,
     store: widget.drafts,
     entrySaver: widget.entrySaver,
+    entryEditor: widget.entryEditor,
+    understanding: _understandingService(),
+    loadGoals: _loadActiveGoals,
     loadSuggestion: () => widget.ledger.loadTimeSuggestion(
-      date: date,
+      date: entryContext.date,
       now: widget.now().millisecondsSinceEpoch,
+      explicitGap: gap,
     ),
   );
+
+  ActivityUnderstandingService _understandingService() =>
+      ActivityUnderstandingService(
+        repository: widget.ledger.repository,
+        now: () => widget.now().millisecondsSinceEpoch,
+        newId: () => widget.entrySaver.newId(),
+      );
+
+  Future<List<Goal>> _loadActiveGoals() async {
+    final goals = widget.goals;
+    if (goals == null) return const [];
+    return goals.listActive();
+  }
 
   Future<void> _pushSleep(CivilDate date) async {
     final result = await Navigator.of(context).push<SleepLedger>(
@@ -338,8 +362,7 @@ class _RecordingHomeState extends State<_RecordingHome>
       ),
     );
     if (mounted && result != null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('睡眠已保存到账本。')));
+      _snack('睡眠已保存到账本。');
     }
   }
 
@@ -348,13 +371,11 @@ class _RecordingHomeState extends State<_RecordingHome>
     final date = selectedDate;
     setState(() => opening = true);
     try {
-      final result = await Navigator.of(context).push<RecordingLedger>(
-        MaterialPageRoute(builder: (_) => _activity(date)),
+      final result = await _openActivitySheet(
+        RecordingDraftContext.newEntry(date: date),
       );
-      if (mounted && result != null) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('已保存到账本。')));
-      }
+      if (!mounted || result == null) return;
+      _snack('已保存到账本。');
     } finally {
       if (mounted) {
         setState(() => opening = false);
@@ -467,26 +488,17 @@ class _RecordingHomeState extends State<_RecordingHome>
     if (busy) return;
     setState(() => opening = true);
     try {
-      final committed = await Navigator.of(context).push<RecordingLedger>(
-        MaterialPageRoute<RecordingLedger>(
-          builder: (_) => ActivityRecordingEntry(
-            goals: widget.goals,
-            context: RecordingDraftContext.gap(
-              date: date,
-              startedAt: gap.startedAt,
-              endedAt: gap.endedAt,
-            ),
-            store: widget.drafts,
-            entrySaver: widget.entrySaver,
-            loadSuggestion: () => widget.ledger.loadTimeSuggestion(
-              date: date,
-              now: widget.now().millisecondsSinceEpoch,
-              explicitGap: gap,
-            ),
-          ),
+      final result = await _openActivitySheet(
+        RecordingDraftContext.gap(
+          date: date,
+          startedAt: gap.startedAt,
+          endedAt: gap.endedAt,
         ),
+        gap: gap,
       );
-      if (mounted && committed != null) _snack('已保存到账本。');
+      if (mounted && result != null) {
+        _snack('已保存到账本。');
+      }
     } finally {
       if (mounted) {
         setState(() => opening = false);
@@ -496,31 +508,28 @@ class _RecordingHomeState extends State<_RecordingHome>
     }
   }
 
-  /// 从详情压入编辑器；返回是否提交了正式变更，供详情页决定是否离开。
+  /// 从详情打开记录面板；返回是否提交了正式变更，供详情页决定是否离开。
   Future<bool> _openFact(CivilDate date, LedgerSegment segment) async {
     if (busy) return false;
     setState(() => opening = true);
     var committed = false;
     try {
-      final result = await Navigator.of(context).push<Object>(
-        MaterialPageRoute<Object>(
-          builder: (_) => switch (segment) {
-            TimeBlockSegment(:final source) => ActivityRecordingEntry(
-              goals: widget.goals,
-              context: RecordingDraftContext.edit(
-                date: date,
-                timeBlockId: source.id,
-              ),
-              store: widget.drafts,
-              entryEditor: widget.entryEditor,
-              loadSuggestion: () async => const ManualTimeEntry(),
-            ),
-            SleepSessionSegment(:final source) => widget.sleepEntry(
+      final Object? result;
+      if (segment case TimeBlockSegment(:final source)) {
+        result = await _openActivitySheet(
+          RecordingDraftContext.edit(date: date, timeBlockId: source.id),
+        );
+      } else if (segment case SleepSessionSegment(:final source)) {
+        result = await Navigator.of(context).push<SleepLedger>(
+          MaterialPageRoute(
+            builder: (_) => widget.sleepEntry(
               SleepDraftContext.edit(date: date, sleepSessionId: source.id),
             ),
-          },
-        ),
-      );
+          ),
+        );
+      } else {
+        result = null;
+      }
       if (result != null) {
         committed = true;
         if (mounted) _snack('记录更改已应用。');
@@ -533,6 +542,36 @@ class _RecordingHomeState extends State<_RecordingHome>
       }
     }
     return committed;
+  }
+
+  /// 详情里的“补充 / 修改目标与状态”：底部面板承载同一张理解层卡片。
+  Future<bool> _openUnderstandingForFact(
+    CivilDate date,
+    LedgerSegment segment,
+  ) async {
+    if (busy || segment is! TimeBlockSegment) return false;
+    setState(() => opening = true);
+    var changed = false;
+    try {
+      await showActivityUnderstandingSheet(
+        context,
+        service: _understandingService(),
+        recordId: segment.source.id,
+        loadGoals: _loadActiveGoals,
+        onWrote: () async {
+          changed = true;
+          await _refreshHome();
+        },
+        onNotice: _snack,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => opening = false);
+        await _refreshHome();
+        await _refreshSuggestionState();
+      }
+    }
+    return changed;
   }
 
   Future<void> _deleteTimeBlock(TimeBlockSegment segment) async {
@@ -585,8 +624,7 @@ class _RecordingHomeState extends State<_RecordingHome>
   }
 
   void _snack(String message) =>
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(message)));
+      showTopToast(context, message, anchor: timelineAnchor);
 
   /// 首页建议区域：按 Q-028 优先级与 Q-029 边界由已提交投影推导。
   ///
@@ -691,9 +729,11 @@ class _RecordingHomeState extends State<_RecordingHome>
       onOpenSummary: _openSummary,
       onOpenReview: widget.reviewContext == null ? (_) {} : _openReview,
       onEditFact: _openFact,
+      onEditUnderstanding: _openUnderstandingForFact,
       onDeleteTimeBlock: _deleteTimeBlock,
       onFillGap: _openGap,
       floatingCard: (preferences?.reminders ?? true) ? _suggestionCard : null,
+      timelineAnchor: timelineAnchor,
       quickPanelSide:
           preferences?.homeQuickPanelSide ?? HomeQuickPanelSide.left,
       showMenuButton: preferences?.showHomeMenuButton ?? true,

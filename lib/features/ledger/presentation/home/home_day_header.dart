@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
@@ -90,6 +91,8 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
     final dateText = date.year == today.year
         ? '${date.month}月${date.day}日'
         : '${date.year}年${date.month}月${date.day}日';
+    final monthDayText = '${date.month}月${date.day}日';
+    final yearText = '${date.year}年';
     final weekdayText = ledgerWeekdayText(date, today);
     final weekdayName = weekdayText.split(' · ').first;
     final weekdayStyle = TextStyle(
@@ -106,6 +109,19 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
         color: Color.lerp(colors.primary, colors.onSurface, progress),
       ),
     );
+    final yearStyle = withThemeFont(
+      context,
+      TextStyle(
+        fontSize: lerpDouble(
+          base * .6,
+          HomeLedgerStyle.compactDateSize * .6,
+          progress,
+        )!,
+        height: 1.15,
+        fontWeight: FontWeight.w600,
+        color: colors.onSurfaceVariant,
+      ),
+    );
     return Padding(
       padding: EdgeInsets.fromLTRB(
         lerpDouble(8, 4, progress)!,
@@ -118,10 +134,13 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
           final metrics = _metrics ??= _measure(
             context,
             dateText: dateText,
+            monthDayText: monthDayText,
+            yearText: yearText,
             weekdayText: weekdayText,
             weekdayName: weekdayName,
             weekdayStyle: weekdayStyle,
             dateStyle: dateStyle,
+            yearStyle: yearStyle,
             base: base,
           );
           final weekdayWidths = [
@@ -143,6 +162,20 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
           final screenWidth = constraints.maxWidth + 2 * pad;
           final expandedWidth = screenWidth - 16;
           final collapsedWidth = screenWidth - 8;
+          // 跨年日期整行放不下时，改为“年份小字 + 月日大号”两行；形态由
+          // 展开态的最大可用宽度决定，收放期间不变形。
+          final twoLine =
+              date.year != today.year &&
+              expandedWidth - fixedWidths < metrics.expandedDateWidth;
+          final dateWidths = twoLine
+              ? (
+                  expanded: metrics.expandedStackWidth,
+                  compact: metrics.compactStackWidth,
+                )
+              : (
+                  expanded: metrics.expandedDateWidth,
+                  compact: metrics.compactDateWidth,
+                );
           bool fits({
             required bool expanded,
             required int weekday,
@@ -154,8 +187,8 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
                 fixedWidths -
                 buttonWidths[button];
             final dateWidth = expanded
-                ? metrics.expandedDateWidth
-                : metrics.compactDateWidth;
+                ? dateWidths.expanded
+                : dateWidths.compact;
             final weekdayWidth = weekdayWidths[weekday];
             final group = weekdayWidth > 0 ? 8 + weekdayWidth : 0.0;
             return available >= dateWidth + group;
@@ -248,13 +281,21 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
                                       label: weekdayText,
                                       child: _dateGroup(
                                         dateText: dateText,
+                                        monthDayText: monthDayText,
+                                        yearText: yearText,
+                                        twoLine: twoLine,
                                         dateStyle: dateStyle,
+                                        yearStyle: yearStyle,
                                         weekdayStyle: weekdayStyle,
                                       ),
                                     )
                                   : _dateGroup(
                                       dateText: dateText,
+                                      monthDayText: monthDayText,
+                                      yearText: yearText,
+                                      twoLine: twoLine,
                                       dateStyle: dateStyle,
+                                      yearStyle: yearStyle,
                                       weekdayStyle: weekdayStyle,
                                       weekdayMessage: weekdayMessage,
                                     ),
@@ -287,10 +328,13 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
   _DateTitleMetrics _measure(
     BuildContext context, {
     required String dateText,
+    required String monthDayText,
+    required String yearText,
     required String weekdayText,
     required String weekdayName,
     required TextStyle weekdayStyle,
     required TextStyle dateStyle,
+    required TextStyle yearStyle,
     required double base,
   }) {
     final scale = MediaQuery.textScalerOf(context);
@@ -314,12 +358,30 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
         dateText,
         dateStyle.copyWith(fontSize: HomeLedgerStyle.compactDateSize),
       ),
+      expandedStackWidth: math.max(
+        widthOf(yearText, yearStyle.copyWith(fontSize: base * .6)),
+        widthOf(monthDayText, dateStyle.copyWith(fontSize: base)),
+      ),
+      compactStackWidth: math.max(
+        widthOf(
+          yearText,
+          yearStyle.copyWith(fontSize: HomeLedgerStyle.compactDateSize * .6),
+        ),
+        widthOf(
+          monthDayText,
+          dateStyle.copyWith(fontSize: HomeLedgerStyle.compactDateSize),
+        ),
+      ),
     );
   }
 
   Widget _dateGroup({
     required String dateText,
+    required String monthDayText,
+    required String yearText,
+    required bool twoLine,
     required TextStyle dateStyle,
+    required TextStyle yearStyle,
     required TextStyle weekdayStyle,
     String? weekdayMessage,
   }) => Wrap(
@@ -328,12 +390,36 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
     spacing: 8,
     runSpacing: 4,
     children: [
-      Text(
-        dateText,
-        key: const ValueKey('home-date-title'),
-        textAlign: TextAlign.center,
-        style: dateStyle,
-      ),
+      if (twoLine)
+        Semantics(
+          label: dateText,
+          child: ExcludeSemantics(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  yearText,
+                  key: const ValueKey('home-date-year'),
+                  style: yearStyle,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  monthDayText,
+                  key: const ValueKey('home-date-title'),
+                  textAlign: TextAlign.center,
+                  style: dateStyle,
+                ),
+              ],
+            ),
+          ),
+        )
+      else
+        Text(
+          dateText,
+          key: const ValueKey('home-date-title'),
+          textAlign: TextAlign.center,
+          style: dateStyle,
+        ),
       if (weekdayMessage != null) Text(weekdayMessage, style: weekdayStyle),
     ],
   );
@@ -390,10 +476,16 @@ class _DateTitleMetrics {
     required this.weekdayShortWidth,
     required this.expandedDateWidth,
     required this.compactDateWidth,
+    required this.expandedStackWidth,
+    required this.compactStackWidth,
   });
 
   final double weekdayFullWidth;
   final double weekdayShortWidth;
   final double expandedDateWidth;
   final double compactDateWidth;
+
+  /// 跨年两行形态（年份小字在上、月日大号在下）的宽度：两行取较宽者。
+  final double expandedStackWidth;
+  final double compactStackWidth;
 }

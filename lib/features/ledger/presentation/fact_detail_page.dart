@@ -32,6 +32,7 @@ Future<LedgerDetailAction?> showFactDetail(
   bool hasDraft = false,
   VoidCallback? onDiscardDraft,
   Future<bool> Function()? onEdit,
+  Future<bool> Function()? onEditUnderstanding,
 }) => Navigator.of(context).push<LedgerDetailAction>(
   MaterialPageRoute<LedgerDetailAction>(
     builder: (_) => FactDetailPage(
@@ -42,6 +43,7 @@ Future<LedgerDetailAction?> showFactDetail(
       hasDraft: hasDraft,
       onDiscardDraft: onDiscardDraft,
       onEdit: onEdit,
+      onEditUnderstanding: onEditUnderstanding,
     ),
   ),
 );
@@ -56,6 +58,7 @@ class FactDetailPage extends StatefulWidget {
     this.hasDraft = false,
     this.onDiscardDraft,
     this.onEdit,
+    this.onEditUnderstanding,
   });
 
   final LedgerSegment segment;
@@ -67,6 +70,9 @@ class FactDetailPage extends StatefulWidget {
 
   /// 压入编辑器并在返回时告知是否提交了正式变更；详情页保持挂载。
   final Future<bool> Function()? onEdit;
+
+  /// 打开保存后理解层（目标与状态）；返回是否发生写入。
+  final Future<bool> Function()? onEditUnderstanding;
 
   @override
   State<FactDetailPage> createState() => _FactDetailPageState();
@@ -84,6 +90,20 @@ class _FactDetailPageState extends State<FactDetailPage> {
       final changed = await onEdit();
       if (!mounted) return;
       // 取消或保留草稿没有提交变更：留在原详情继续阅读。
+      if (changed) Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => editing = false);
+    }
+  }
+
+  /// 打开理解层（目标 / 状态）；发生写入后随详情一起返回时间线。
+  Future<void> _openUnderstanding() async {
+    final onEdit = widget.onEditUnderstanding;
+    if (onEdit == null || editing) return;
+    setState(() => editing = true);
+    try {
+      final changed = await onEdit();
+      if (!mounted) return;
       if (changed) Navigator.pop(context);
     } finally {
       if (mounted) setState(() => editing = false);
@@ -353,36 +373,52 @@ class _FactDetailPageState extends State<FactDetailPage> {
     ),
   );
 
-  Widget _detailFooter() => Row(
+  Widget _detailFooter() => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      if (widget.canDelete)
-        Expanded(
-          flex: 4,
-          child: TextButton(
-            key: const ValueKey('fact-detail-delete'),
-            onPressed: () => setState(() => confirming = true),
-            style: TextButton.styleFrom(foregroundColor: _colors.primary),
-            child: const Text('删除'),
-          ),
+      if (segment is TimeBlockSegment &&
+          widget.onEditUnderstanding != null) ...[
+        OutlinedButton.icon(
+          key: const ValueKey('fact-detail-understanding'),
+          onPressed: editing ? null : _openUnderstanding,
+          icon: const Icon(Icons.psychology_outlined, size: 18),
+          label: const Text('补充 / 修改目标与状态'),
         ),
-      if (widget.canDelete && widget.canEdit) const SizedBox(width: 12),
-      if (widget.canEdit)
-        Expanded(
-          flex: widget.canDelete ? 6 : 1,
-          child: FilledButton(
-            key: const ValueKey('fact-detail-edit'),
-            onPressed: editing
-                ? null
-                : () {
-                    if (widget.onEdit != null) {
-                      _edit();
-                    } else {
-                      Navigator.pop(context, LedgerDetailAction.edit);
-                    }
-                  },
-            child: Text(widget.hasDraft ? '继续修改' : '编辑完整记录'),
-          ),
-        ),
+        const SizedBox(height: 10),
+      ],
+      Row(
+        children: [
+          if (widget.canDelete)
+            Expanded(
+              flex: 4,
+              child: TextButton(
+                key: const ValueKey('fact-detail-delete'),
+                onPressed: () => setState(() => confirming = true),
+                style: TextButton.styleFrom(foregroundColor: _colors.primary),
+                child: const Text('删除'),
+              ),
+            ),
+          if (widget.canDelete && widget.canEdit) const SizedBox(width: 12),
+          if (widget.canEdit)
+            Expanded(
+              flex: widget.canDelete ? 6 : 1,
+              child: FilledButton(
+                key: const ValueKey('fact-detail-edit'),
+                onPressed: editing
+                    ? null
+                    : () {
+                        if (widget.onEdit != null) {
+                          _edit();
+                        } else {
+                          Navigator.pop(context, LedgerDetailAction.edit);
+                        }
+                      },
+                child: Text(widget.hasDraft ? '继续修改' : '编辑完整记录'),
+              ),
+            ),
+        ],
+      ),
     ],
   );
 
