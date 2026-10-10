@@ -1,0 +1,1129 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Time Pet Ledger · 每日复盘四步原型 · 第一轮</title>
+<style>
+#tpl-review-design{
+  --paper:#fcf9f4;--ink:#241f1a;--muted:#6c625a;--faint:#9a9088;--line:#e1d3c4;
+  --accent:#b65f48;--accent-deep:#9c4a35;--tint:#f4e8dc;
+  --error:#9c3325;--error-bg:#f9e9e1;
+  --sleep:#7e8fa0;--activity:#b08968;--unknown:#8a8177;--recovery:#6d7e64;
+  --rv-phone-w:450px;
+  color:var(--ink);
+  font-family:"Noto Serif SC","Songti SC","PingFang SC","Source Han Serif SC",Georgia,serif;
+}
+#tpl-review-design *{box-sizing:border-box}
+#tpl-review-design [hidden]{display:none!important}
+#tpl-review-design :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+#tpl-review-design .rv-page{
+  min-height:100vh;display:flex;gap:28px;align-items:flex-start;justify-content:center;flex-wrap:wrap;
+  padding:28px 24px 44px;background-color:#f2ede6;
+  background-image:radial-gradient(#d9cfc2 1px,transparent 1.2px);background-size:22px 22px;
+}
+#tpl-review-design .rv-stage{display:flex;flex-direction:column;align-items:center;gap:10px;width:var(--rv-phone-w);max-width:100%}
+#tpl-review-design .rv-caption{font-size:12px;color:var(--muted);letter-spacing:.3px}
+#tpl-review-design .rv-phone{
+  position:relative;width:100%;
+  height:min(780px,calc(100vh - 120px));min-height:560px;
+  background:var(--paper);border:1px solid var(--line);border-radius:20px;
+  box-shadow:0 18px 50px rgba(36,31,26,.13);overflow:hidden;
+}
+#tpl-review-design .rv-app{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
+#tpl-review-design .rv-status{
+  position:absolute;left:20px;right:20px;top:66px;z-index:40;padding:10px 12px;border-radius:8px;
+  background:var(--tint);font-size:14px;line-height:1.55;box-shadow:0 6px 18px rgba(36,31,26,.12);
+}
+#tpl-review-design .rv-content{flex:1;display:flex;flex-direction:column;min-height:0}
+#tpl-review-design .rv-head{flex-shrink:0;padding:14px 20px 0}
+#tpl-review-design .rv-body{flex:1;overflow-y:auto;padding:0 20px 32px;overscroll-behavior:contain}
+#tpl-review-design .rv-foot{
+  flex-shrink:0;display:flex;gap:10px;align-items:center;padding:12px 20px calc(14px + env(safe-area-inset-bottom));
+  background:var(--paper);border-top:1px solid var(--line);
+}
+#tpl-review-design .rv-top{display:flex;align-items:center;gap:6px;min-height:44px}
+#tpl-review-design .rv-icon-btn{
+  width:44px;height:44px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;
+  border:0;border-radius:50%;background:none;color:var(--ink);cursor:pointer;
+}
+#tpl-review-design .rv-icon-btn:first-child{margin-left:-10px}
+#tpl-review-design .rv-icon-btn svg{width:22px;height:22px}
+#tpl-review-design .rv-top-title{flex:1;min-width:0;font-size:16px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#tpl-review-design .rv-stepdots{display:flex;gap:6px;align-items:center;padding:0 6px}
+#tpl-review-design .rv-stepdots i{width:7px;height:7px;border-radius:50%;background:var(--line)}
+#tpl-review-design .rv-stepdots i.is-on{background:var(--accent-deep)}
+#tpl-review-design .rv-eyebrow{display:block;margin:18px 0 6px;font-size:14px;color:var(--muted)}
+#tpl-review-design .rv-h1{margin:0 0 6px;font-size:28px;font-weight:600;line-height:1.35;letter-spacing:.2px}
+#tpl-review-design .rv-h1.small{font-size:24px}
+#tpl-review-design .rv-hint{margin:4px 0 14px;font-size:14px;line-height:1.65;color:var(--muted)}
+#tpl-review-design .rv-banner{
+  margin:12px 0 0;padding:10px 12px;border-radius:10px;background:var(--tint);
+  font-size:13.5px;line-height:1.6;color:var(--ink);
+}
+#tpl-review-design .rv-tl{list-style:none;margin:6px 0 0;padding:0}
+#tpl-review-design .rv-row{
+  width:100%;display:grid;grid-template-columns:52px minmax(0,1fr) auto;column-gap:10px;align-items:start;
+  padding:11px 0;border:0;border-bottom:1px solid var(--line);background:none;
+  font:inherit;color:inherit;text-align:left;
+}
+#tpl-review-design button.rv-row{cursor:pointer}
+#tpl-review-design button.rv-row:active{background:#f7f0e7}
+#tpl-review-design .rv-time{font-size:14px;color:var(--muted);padding-top:2px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#tpl-review-design .rv-main{min-width:0}
+#tpl-review-design .rv-title{display:block;font-size:16.5px;line-height:1.5;overflow-wrap:anywhere}
+#tpl-review-design .rv-sub{display:block;margin-top:2px;font-size:13px;line-height:1.5;color:var(--muted);overflow-wrap:anywhere}
+#tpl-review-design .rv-dur{font-size:14px;color:var(--muted);padding-top:2px;white-space:nowrap;font-variant-numeric:tabular-nums}
+#tpl-review-design .rv-dot{
+  display:inline-block;width:8px;height:8px;margin-right:8px;border-radius:50%;
+  vertical-align:2px;background:var(--activity);
+}
+#tpl-review-design .rv-dot[data-kind=sleep]{background:var(--sleep)}
+#tpl-review-design .rv-dot[data-kind=unknown]{background:transparent;border:1px dashed var(--unknown);width:9px;height:9px}
+#tpl-review-design .rv-gap{padding:0;border-bottom:1px solid var(--line)}
+#tpl-review-design .rv-gap-head{
+  width:100%;display:grid;grid-template-columns:52px minmax(0,1fr) auto;column-gap:10px;align-items:center;
+  min-height:48px;padding:7px 0;border:0;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer;
+}
+#tpl-review-design .rv-gap-mid{display:flex;align-items:center;gap:9px;font-size:14px;color:var(--faint);min-width:0}
+#tpl-review-design .rv-gap-mid::before,
+#tpl-review-design .rv-gap-mid::after{content:"";flex:1;border-top:1px dashed var(--line)}
+#tpl-review-design .rv-gap-actions{display:flex;flex-wrap:wrap;gap:8px;padding:0 0 12px 62px}
+#tpl-review-design .rv-gap-tag{padding:0 0 12px 62px;font-size:13px;color:var(--faint)}
+#tpl-review-design .rv-chip{
+  min-height:40px;padding:8px 14px;border:1px solid var(--line);border-radius:999px;
+  background:#fffdf9;font:inherit;font-size:14px;color:var(--accent-deep);cursor:pointer;
+}
+#tpl-review-design .rv-chip.ghost{color:var(--muted)}
+#tpl-review-design .rv-btn{
+  min-height:48px;padding:12px 22px;border-radius:999px;border:1px solid transparent;
+  font:inherit;font-size:16px;font-weight:600;cursor:pointer;
+}
+#tpl-review-design .rv-primary{flex:1;background:var(--accent-deep);color:#fff8f2}
+#tpl-review-design .rv-secondary{border-color:var(--line);background:#fffdf9;color:var(--ink)}
+#tpl-review-design .rv-text-btn{
+  min-height:44px;padding:8px 12px;border:0;border-radius:10px;background:none;
+  font:inherit;font-size:15px;color:var(--accent-deep);cursor:pointer;
+}
+#tpl-review-design .rv-muted{color:var(--muted)}
+#tpl-review-design .rv-goal{border:1px solid var(--line);border-radius:14px;background:#fffdf9;padding:14px 16px 16px;margin:16px 0}
+#tpl-review-design .rv-goal-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:10px}
+#tpl-review-design .rv-goal-name{font-size:18px;font-weight:600;overflow-wrap:anywhere}
+#tpl-review-design .rv-goal-total{font-size:15px;color:var(--muted);white-space:nowrap}
+#tpl-review-design .rv-rhythm{padding:12px 0;border-bottom:1px solid var(--line)}
+#tpl-review-design .rv-rhythm:last-of-type{border-bottom:0}
+#tpl-review-design .rv-rhythm-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+#tpl-review-design .rv-seg{display:flex;flex-wrap:wrap;gap:2px;margin-top:6px}
+#tpl-review-design .rv-seg button{
+  display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:8px 11px;
+  border:1px solid transparent;border-radius:10px;background:none;
+  font:inherit;font-size:14px;color:var(--muted);cursor:pointer;
+}
+#tpl-review-design .rv-radio{
+  width:14px;height:14px;flex-shrink:0;border-radius:50%;border:1.5px solid var(--faint);
+  background:transparent;
+}
+#tpl-review-design .rv-seg button[aria-checked=true]{color:var(--accent-deep);background:var(--tint)}
+#tpl-review-design .rv-seg button[aria-checked=true] .rv-radio{border-color:var(--accent-deep);background:var(--accent-deep);box-shadow:inset 0 0 0 3px var(--tint)}
+#tpl-review-design .rv-goal .rv-chip{margin-top:12px}
+#tpl-review-design .rv-choice{
+  width:100%;display:flex;gap:12px;align-items:flex-start;min-height:56px;
+  padding:14px 0;border:0;border-bottom:1px solid var(--line);background:none;
+  font:inherit;color:inherit;text-align:left;cursor:pointer;
+}
+#tpl-review-design .rv-choice .rv-radio{width:16px;height:16px;margin-top:4px}
+#tpl-review-design .rv-choice[aria-checked=true] .rv-radio{border-color:var(--accent-deep);background:var(--accent-deep);box-shadow:inset 0 0 0 4px var(--paper)}
+#tpl-review-design .rv-choice-main{flex:1;min-width:0}
+#tpl-review-design .rv-choice-title{display:block;font-size:16px;line-height:1.5;overflow-wrap:anywhere}
+#tpl-review-design .rv-choice-sub{display:block;margin-top:2px;font-size:13px;color:var(--muted)}
+#tpl-review-design .rv-field{margin:18px 0 0}
+#tpl-review-design .rv-field-label{display:block;margin:0 0 8px;font-size:15px;font-weight:600}
+#tpl-review-design .rv-input{
+  width:100%;border:1px solid var(--line);border-radius:10px;background:#fffdf9;
+  padding:10px 12px;font:inherit;font-size:16px;line-height:1.6;color:var(--ink);
+}
+#tpl-review-design textarea.rv-input{min-height:96px;resize:vertical}
+#tpl-review-design .rv-error{margin:8px 0 0;font-size:14px;color:var(--error)}
+#tpl-review-design .rv-note{
+  border-radius:10px;background:var(--tint);padding:12px 14px;
+  font-size:15px;line-height:1.7;overflow-wrap:anywhere;
+}
+#tpl-review-design .rv-stats{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px 18px;margin:16px 0 0;
+  border:1px solid var(--line);border-radius:14px;background:#fffdf9;padding:16px;
+}
+#tpl-review-design .rv-stat-label{font-size:14px;color:var(--muted)}
+#tpl-review-design .rv-stat-value{margin:2px 0 0;font-size:24px;font-weight:600;font-variant-numeric:tabular-nums}
+#tpl-review-design .rv-stat-cap{margin:2px 0 0;font-size:12px;line-height:1.5;color:var(--faint)}
+#tpl-review-design .rv-section{margin:26px 0 0;padding-top:18px;border-top:1px solid var(--line)}
+#tpl-review-design .rv-section-title{margin:0 0 8px;font-size:16px;font-weight:600}
+#tpl-review-design .rv-kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;font-size:16.5px}
+#tpl-review-design .rv-kv .rv-dur{font-size:15px}
+#tpl-review-design .rv-state-label{margin:12px 0 2px;font-size:13px;color:var(--muted)}
+#tpl-review-design .rv-state-line{padding:4px 0;font-size:16px;line-height:1.6;overflow-wrap:anywhere}
+#tpl-review-design .rv-detail-rec{display:flex;justify-content:space-between;gap:12px;padding:8px 0;font-size:16px}
+#tpl-review-design .rv-detail-rec .rv-sub{margin:0;align-self:center;white-space:nowrap}
+#tpl-review-design .rv-edit-row{display:flex;justify-content:flex-end;margin-top:4px}
+#tpl-review-design .rv-backdrop{
+  position:absolute;inset:0;z-index:20;display:flex;flex-direction:column;justify-content:flex-end;
+  background:rgba(36,31,26,.38);
+}
+#tpl-review-design .rv-sheet{
+  width:100%;max-height:84%;overflow-y:auto;background:#fffdf9;
+  border-radius:18px 18px 0 0;padding:8px 20px calc(20px + env(safe-area-inset-bottom));
+  box-shadow:0 -14px 44px rgba(36,31,26,.2);outline:none;
+}
+#tpl-review-design .rv-sheet-handle{width:36px;height:4px;border-radius:2px;background:var(--line);margin:6px auto 12px}
+#tpl-review-design .rv-sheet-title{margin:0 0 2px;font-size:18px;font-weight:600;overflow-wrap:anywhere}
+#tpl-review-design .rv-sheet-sub{margin:0 0 10px;font-size:14px;color:var(--muted)}
+#tpl-review-design .rv-sheet-action{
+  width:100%;display:block;min-height:48px;padding:13px 2px;border:0;border-bottom:1px solid var(--line);
+  background:none;font:inherit;font-size:16px;color:inherit;text-align:left;cursor:pointer;
+}
+#tpl-review-design .rv-sheet-action:last-of-type{border-bottom:0}
+#tpl-review-design .rv-sheet-kv{display:flex;justify-content:space-between;gap:10px;align-items:center}
+#tpl-review-design .rv-danger{color:var(--error)}
+#tpl-review-design .rv-sheet-foot{display:flex;gap:10px;margin-top:16px}
+#tpl-review-design .rv-dialog-wrap{
+  position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:24px;
+  background:rgba(36,31,26,.45);
+}
+#tpl-review-design .rv-dialog{width:100%;max-width:330px;border-radius:16px;background:#fffdf9;padding:20px;box-shadow:0 18px 50px rgba(36,31,26,.25)}
+#tpl-review-design .rv-dialog h3{margin:0 0 8px;font-size:18px}
+#tpl-review-design .rv-dialog p{margin:0;font-size:14.5px;line-height:1.65;color:var(--muted)}
+#tpl-review-design .rv-dialog-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:16px}
+#tpl-review-design .rv-time-edit{display:flex;gap:12px}
+#tpl-review-design .rv-time-edit label{flex:1;min-width:0;font-size:13px;color:var(--muted)}
+#tpl-review-design .rv-time-edit input{margin-top:4px}
+#tpl-review-design .rv-side{
+  width:300px;max-width:100%;border:1px solid var(--line);border-radius:16px;background:#fffdf9;
+  padding:18px;font-size:14px;line-height:1.6;
+}
+#tpl-review-design .rv-side h2{margin:0 0 4px;font-size:16px}
+#tpl-review-design .rv-side > p{margin:4px 0 0;font-size:13px;color:var(--muted)}
+#tpl-review-design .rv-side-group{margin:16px 0 0}
+#tpl-review-design .rv-side-label{margin-bottom:6px;font-size:12px;letter-spacing:.4px;color:var(--muted)}
+#tpl-review-design .rv-side-btns{display:flex;flex-wrap:wrap;gap:6px}
+#tpl-review-design .rv-mini{
+  min-height:36px;padding:7px 12px;border:1px solid var(--line);border-radius:10px;
+  background:#fff;font:inherit;font-size:13px;color:var(--ink);cursor:pointer;
+}
+#tpl-review-design .rv-mini.is-on{border-color:var(--accent);background:var(--tint);color:var(--accent-deep)}
+#tpl-review-design .rv-check{display:flex;gap:8px;align-items:center;font-size:13.5px;min-height:36px;cursor:pointer}
+#tpl-review-design .rv-flow{list-style:none;margin:0;padding:0;font-size:13.5px}
+#tpl-review-design .rv-flow li{padding:5px 0;color:var(--muted)}
+#tpl-review-design .rv-flow li::before{content:"○ ";color:var(--faint)}
+#tpl-review-design .rv-flow li.is-on{color:var(--accent-deep);font-weight:600}
+#tpl-review-design .rv-flow li.is-on::before{content:"● ";}
+#tpl-review-design .rv-side-note{margin:16px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="tpl-review-design">
+  <div class="rv-page">
+    <div class="rv-stage">
+      <div class="rv-phone" id="rv-phone">
+        <div class="rv-app" id="rv-app">
+          <div id="rv-status" class="rv-status" role="status" aria-live="polite" hidden></div>
+          <div id="rv-content" class="rv-content"></div>
+          <div id="rv-overlay"></div>
+        </div>
+      </div>
+      <p class="rv-caption">模拟数据 · 不连接数据库 · 刷新即重置</p>
+    </div>
+    <aside class="rv-side" aria-label="原型演示控制">
+      <h2>每日复盘 · 四步原型（第一轮）</h2>
+      <p>把一次 Daily Review 收在 2–5 分钟：整理时间线 → 回看目标节奏 → 留下卡住与下一步 → 看一眼今天。</p>
+      <div class="rv-side-group">
+        <div class="rv-side-label">演示入口</div>
+        <div class="rv-side-btns">
+          <button class="rv-mini" data-demo="step1" data-step="1">第 1 步 · 整理</button>
+          <button class="rv-mini" data-demo="step2" data-step="2">第 2 步 · 目标</button>
+          <button class="rv-mini" data-demo="step3" data-step="3">第 3 步 · 卡住</button>
+          <button class="rv-mini" data-demo="step4" data-step="4">第 4 步 · 总结</button>
+          <button class="rv-mini" data-demo="detail">已完成 · Detail</button>
+          <button class="rv-mini" data-demo="reflow">重新整理（带旧选择）</button>
+          <button class="rv-mini" data-demo="reset">重置演示</button>
+        </div>
+      </div>
+      <div class="rv-side-group">
+        <div class="rv-side-label">场景</div>
+        <label class="rv-check"><input type="checkbox" id="rv-nostuck"> 今天没有卡住（第 3 步空态）</label>
+      </div>
+      <div class="rv-side-group">
+        <div class="rv-side-label">手机宽度</div>
+        <div class="rv-side-btns" id="rv-widths">
+          <button class="rv-mini" data-width="320">320</button>
+          <button class="rv-mini" data-width="360">360</button>
+          <button class="rv-mini" data-width="412">412</button>
+          <button class="rv-mini is-on" data-width="450">450</button>
+        </div>
+      </div>
+      <div class="rv-side-group">
+        <div class="rv-side-label">操作路径</div>
+        <ol class="rv-flow">
+          <li data-flow="1">整理 Timeline</li>
+          <li data-flow="2">回看 Goal + Rhythm</li>
+          <li data-flow="3">留下 Stuck / Continuation</li>
+          <li data-flow="4">看一眼今天</li>
+          <li data-flow="done">完成</li>
+        </ol>
+      </div>
+      <p class="rv-side-note">“不判断”＝不添加节奏解释（没有 neutral 状态）。各数字由模拟记录实时计算。“•••”里的“重新整理今天”不会删除已保存的复盘。</p>
+    </aside>
+  </div>
+</div>
+<script>
+(function(){
+  'use strict';
+  var root = document.getElementById('tpl-review-design');
+  var content = document.getElementById('rv-content');
+  var overlay = document.getElementById('rv-overlay');
+  var statusEl = document.getElementById('rv-status');
+
+  /* ---------- 常量与模拟数据 ---------- */
+  var DATE_LABEL = '10月11日';
+  var NOW = 22 * 60 + 10;                                  // 22:10
+  var SLEEP = { id: 'sl', start: -50, end: 375 };          // 23:10 – 06:15，完整 7h05m
+  var RHYTHM_LABEL = { progress: '推进', stuck: '卡住', recovery: '恢复' };
+  var RHYTHM_ORDER = ['progress', 'stuck', 'recovery', 'none'];
+  var GOALS = [
+    { id: 'g1', name: '毕业设计' },
+    { id: 'g2', name: '英语' },
+    { id: 'g3', name: '阅读' }
+  ];
+  var BASE_RECORDS = [
+    { id: 'r1',  start: 375,  end: 415,  title: '起床、洗漱' },
+    { id: 'r2',  start: 415,  end: 460,  title: '晨跑' },
+    { id: 'r3',  start: 460,  end: 490,  title: '洗澡、换衣服' },
+    { id: 'r4',  start: 490,  end: 520,  title: '早餐' },
+    { id: 'r5',  start: 565,  end: 645,  title: '写数据库', goalId: 'g1', rhythm: 'progress' },
+    { id: 'r6',  start: 645,  end: 670,  title: '刷视频' },
+    { id: 'r7',  start: 705,  end: 745,  title: '午饭' },
+    { id: 'r8',  start: 745,  end: 780,  title: '收拾厨房' },
+    { id: 'r9',  start: 780,  end: 825,  title: '', unknown: true },
+    { id: 'r10', start: 825,  end: 870,  title: '阅读《设计数据密集型应用》' },
+    { id: 'r11', start: 870,  end: 920,  title: '洗衣服、做家务' },
+    { id: 'r12', start: 920,  end: 990,  title: '查 Drift 文档', goalId: 'g1', rhythm: 'stuck', stuckReason: '不确定 migration 到底应该怎么测试' },
+    { id: 'r13', start: 990,  end: 1060, title: '修改首页', goalId: 'g1', rhythm: 'progress' },
+    { id: 'r14', start: 1060, end: 1100, title: '买菜' },
+    { id: 'r15', start: 1100, end: 1140, title: '晚饭' },
+    { id: 'r16', start: 1140, end: 1210, title: '看纪录片' },
+    { id: 'r17', start: 1210, end: 1260, title: '调整数据库结构', rhythm: 'stuck' },
+    { id: 'r18', start: 1260, end: 1300, title: '看英文视频', goalId: 'g2' }
+  ];
+  var uid = 30;
+
+  function freshState() {
+    return {
+      screen: 'wizard',
+      step: 1,
+      records: BASE_RECORDS.map(function (r) { return Object.assign({}, r); }),
+      review: {
+        saved: false,
+        nextStep: '先写一个最小 migration test，不再继续查资料',
+        nextStepGoalId: 'g1',
+        stuckPick: 'r12',
+        completedAt: null
+      },
+      gapHidden: {},
+      sheet: null,
+      dialog: null,
+      noStuckSnapshot: null
+    };
+  }
+  var state = freshState();
+  var lastScreenKey = '';
+
+  /* ---------- 通用工具 ---------- */
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmtDur(min) {
+    if (!min || min <= 0) return '0m';
+    var h = Math.floor(min / 60), m = min % 60;
+    if (!h) return m + 'm';
+    return m ? h + 'h' + pad(m) + 'm' : h + 'h';
+  }
+  function fmtClock(min) {
+    var m = ((min % 1440) + 1440) % 1440;
+    return pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+  }
+  function timeRange(a, b) { return fmtClock(a) + ' – ' + fmtClock(b); }
+  function parseHM(v) {
+    var m = /^(\d{1,2}):(\d{2})$/.exec(String(v || '').trim());
+    if (!m) return null;
+    var h = +m[1], mi = +m[2];
+    if (h > 23 || mi > 59) return null;
+    return h * 60 + mi;
+  }
+  function goalById(id) { return GOALS.find(function (g) { return g.id === id; }) || null; }
+  function recById(id) { return state.records.find(function (r) { return r.id === id; }) || null; }
+  function sum(list) { return list.reduce(function (s, x) { return s + (x.end - x.start); }, 0); }
+  var toastTimer = null;
+  function toast(msg) {
+    statusEl.textContent = msg;
+    statusEl.hidden = false;
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { statusEl.hidden = true; }, 3000);
+  }
+
+  /* ---------- 派生：覆盖、缺口、统计 ---------- */
+  function coverageIntervals() {
+    var iv = [];
+    var s0 = Math.max(0, SLEEP.start), s1 = Math.min(NOW, SLEEP.end);
+    if (s1 > s0) iv.push([s0, s1]);
+    state.records.forEach(function (r) {
+      var a = Math.max(0, r.start), b = Math.min(NOW, r.end);
+      if (b > a) iv.push([a, b]);
+    });
+    iv.sort(function (a, b) { return a[0] - b[0]; });
+    var merged = [];
+    iv.forEach(function (seg) {
+      var last = merged[merged.length - 1];
+      if (last && seg[0] <= last[1]) last[1] = Math.max(last[1], seg[1]);
+      else merged.push([seg[0], seg[1]]);
+    });
+    return merged;
+  }
+  function gaps() {
+    var out = [], cur = 0;
+    coverageIntervals().forEach(function (seg) {
+      if (seg[0] > cur) out.push({ start: cur, end: seg[0] });
+      cur = Math.max(cur, seg[1]);
+    });
+    if (cur < NOW) out.push({ start: cur, end: NOW });
+    return out;
+  }
+  function stats() {
+    var accounted = coverageIntervals().reduce(function (s, seg) { return s + (seg[1] - seg[0]); }, 0);
+    var unknown = state.records.filter(function (r) { return r.unknown; })
+      .reduce(function (s, r) { return s + (r.end - r.start); }, 0);
+    return {
+      accounted: accounted,
+      unknown: unknown,
+      unresolved: sum(gaps()),
+      sleepFull: SLEEP.end - SLEEP.start
+    };
+  }
+  function goalRecords(gid) {
+    return state.records.filter(function (r) { return r.goalId === gid; })
+      .sort(function (a, b) { return a.start - b.start; });
+  }
+  function goalsWithRecords() {
+    return GOALS.filter(function (g) { return goalRecords(g.id).length > 0; });
+  }
+  function stuckRecords() {
+    return state.records.filter(function (r) { return r.rhythm === 'stuck'; })
+      .sort(function (a, b) { return a.start - b.start; });
+  }
+  function effectiveStuckPick() {
+    var pick = state.review.stuckPick;
+    if (pick === 'none') return 'none';
+    var r = recById(pick);
+    if (r && r.rhythm === 'stuck') return pick;
+    var first = stuckRecords()[0];
+    return first ? first.id : 'none';
+  }
+  function stuckStory() {
+    var pick = state.review.stuckPick;
+    if (pick === 'none') return null;
+    var r = recById(pick);
+    if (r && r.rhythm === 'stuck' && r.stuckReason.trim()) return { rec: r, text: r.stuckReason.trim() };
+    var alt = stuckRecords().find(function (x) { return x.stuckReason.trim(); });
+    return alt ? { rec: alt, text: alt.stuckReason.trim() } : null;
+  }
+  function timelineItems() {
+    var items = [{ kind: 'sleep', start: 0, end: Math.min(NOW, SLEEP.end) }];
+    state.records.forEach(function (r) {
+      items.push({ kind: r.unknown ? 'unknown' : 'record', start: r.start, end: r.end, rec: r });
+    });
+    gaps().forEach(function (g) { items.push({ kind: 'gap', start: g.start, end: g.end }); });
+    items.sort(function (a, b) {
+      if (a.start !== b.start) return a.start - b.start;
+      return a.kind === 'gap' ? -1 : 1;
+    });
+    return items;
+  }
+  function overlaps(id, start, end) {
+    var hit = state.records.some(function (r) {
+      return r.id !== id && start < r.end && r.start < end;
+    });
+    if (hit) return true;
+    var s0 = Math.max(0, SLEEP.start), s1 = Math.min(NOW, SLEEP.end);
+    return start < s1 && s0 < end;
+  }
+
+  /* ---------- 视图：通用片段 ---------- */
+  function stepDots(step) {
+    var out = '';
+    for (var i = 1; i <= 4; i++) out += '<i class="' + (i === step ? 'is-on' : '') + '"></i>';
+    return '<span class="rv-stepdots" role="img" aria-label="第 ' + step + ' 步，共 4 步">' + out + '</span>';
+  }
+  function header(title, opts) {
+    opts = opts || {};
+    var back = '<button type="button" class="rv-icon-btn" data-action="back" aria-label="' + (opts.backLabel || '返回') + '">'
+      + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>'
+      + '</button>';
+    var right = opts.right || (opts.step ? stepDots(opts.step) : '');
+    return '<header class="rv-top">' + back
+      + '<span class="rv-top-title">' + esc(title) + '</span>'
+      + right + '</header>';
+  }
+  function moreButton() {
+    return '<button type="button" class="rv-icon-btn" data-action="menu" aria-label="更多操作" aria-haspopup="dialog">'
+      + '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>'
+      + '</button>';
+  }
+  function footer(buttons) { return '<div class="rv-foot">' + buttons + '</div>'; }
+  function primaryBtn(label, action, extra) {
+    return '<button type="button" class="rv-btn rv-primary" data-action="' + action + '"' + (extra || '') + '>' + label + '</button>';
+  }
+  function textBtn(label, action) {
+    return '<button type="button" class="rv-btn rv-text-btn" data-action="' + action + '">' + label + '</button>';
+  }
+
+  function timelineRows(mode) {
+    var wizard = mode === 'wizard';
+    return timelineItems().map(function (it) {
+      if (it.kind === 'sleep') {
+        return '<li class="rv-row" aria-label="睡眠，23:10 到 06:15，共 7 小时 5 分钟">'
+          + '<span class="rv-time">23:10</span>'
+          + '<span class="rv-main"><span class="rv-title"><span class="rv-dot" data-kind="sleep" aria-hidden="true"></span>睡眠</span>'
+          + '<span class="rv-sub">23:10 – 06:15 · 跨夜</span></span>'
+          + '<span class="rv-dur">7h05m</span></li>';
+      }
+      if (it.kind === 'record' || it.kind === 'unknown') {
+        var r = it.rec;
+        var title = r.unknown ? '想不起来' : r.title;
+        var inner = '<span class="rv-time">' + fmtClock(r.start) + '</span>'
+          + '<span class="rv-main"><span class="rv-title"><span class="rv-dot" data-kind="' + (r.unknown ? 'unknown' : 'activity') + '" aria-hidden="true"></span>' + esc(title) + '</span></span>'
+          + '<span class="rv-dur">' + fmtDur(r.end - r.start) + '</span>';
+        return '<li><button type="button" class="rv-row" data-action="open-record" data-id="' + r.id + '" '
+          + 'aria-label="记录：' + esc(title) + '，' + timeRange(r.start, r.end) + '，' + fmtDur(r.end - r.start) + '">'
+          + inner + '</button></li>';
+      }
+      var key = it.start + ':' + it.end;
+      var hidden = !!state.gapHidden[key];
+      if (!wizard) {
+        return '<li class="rv-row" aria-label="未记录，' + fmtClock(it.start) + ' 到 ' + fmtClock(it.end) + '，' + fmtDur(it.end - it.start) + '">'
+          + '<span class="rv-time">' + fmtClock(it.start) + '</span>'
+          + '<span class="rv-gap-mid">未记录</span>'
+          + '<span class="rv-dur">' + fmtDur(it.end - it.start) + '</span></li>';
+      }
+      return '<li class="rv-gap">'
+        + '<button type="button" class="rv-gap-head" data-action="toggle-gap" data-key="' + key + '" aria-expanded="' + (!hidden) + '" '
+        + 'aria-label="未记录，' + fmtClock(it.start) + ' 到 ' + fmtClock(it.end) + '，' + fmtDur(it.end - it.start) + '">'
+        + '<span class="rv-time">' + fmtClock(it.start) + '</span>'
+        + '<span class="rv-gap-mid">未记录</span>'
+        + '<span class="rv-dur">' + fmtDur(it.end - it.start) + '</span></button>'
+        + (hidden
+          ? '<div class="rv-gap-tag">已先留着 · 点按可再处理</div>'
+          : '<div class="rv-gap-actions">'
+            + '<button type="button" class="rv-chip" data-action="gap-new" data-start="' + it.start + '" data-end="' + it.end + '">补一条记录</button>'
+            + '<button type="button" class="rv-chip ghost" data-action="gap-unknown" data-start="' + it.start + '" data-end="' + it.end + '">想不起来</button>'
+            + '<button type="button" class="rv-chip ghost" data-action="gap-later" data-key="' + key + '">先留着</button>'
+            + '</div>')
+        + '</li>';
+    }).join('');
+  }
+
+  /* ---------- 视图：四步向导 ---------- */
+  function wizardView() {
+    var banner = state.review.saved
+      ? '<div class="rv-banner">正在重新整理这次复盘。完成或返回都不会删除已保存的内容。</div>' : '';
+    var head = header('每日复盘', { step: state.step })
+      + '<div class="rv-head">' + banner + '</div>'
+      + '<div class="rv-head" style="padding-top:0">' + stepTitle() + '</div>';
+    var body = '<div class="rv-body">' + stepBody() + '</div>';
+    var foot = '';
+    if (state.step === 1) foot = footer(primaryBtn('下一步', 'next'));
+    if (state.step === 2) foot = footer(primaryBtn('下一步', 'next'));
+    if (state.step === 3) foot = footer(textBtn('跳过', 'skip') + primaryBtn('下一步', 'next'));
+    if (state.step === 4) foot = footer(primaryBtn('完成今天的回顾', 'finish'));
+    return head + body + foot;
+  }
+  function stepTitle() {
+    if (state.step === 1) {
+      return '<span class="rv-eyebrow">' + DATE_LABEL + ' · 今天</span>'
+        + '<h1 class="rv-h1">整理今天</h1>'
+        + '<p class="rv-hint">不用全部处理完；缺口留在那里也随时可以再回来。</p>';
+    }
+    if (state.step === 2) {
+      return '<span class="rv-eyebrow">' + DATE_LABEL + ' · 今天</span>'
+        + '<h1 class="rv-h1 small">今天关心过的事情</h1>'
+        + '<p class="rv-hint">点一下就是填写，不用逐条纠结；不判断＝不添加节奏解释。</p>';
+    }
+    if (state.step === 3) {
+      var empty = stuckRecords().length === 0;
+      return '<span class="rv-eyebrow">' + DATE_LABEL + ' · 今天</span>'
+        + '<h1 class="rv-h1 small">' + (empty ? '有什么想留给下次的？' : '今天哪里最难继续？') + '</h1>';
+    }
+    return '<span class="rv-eyebrow">今天</span><h1 class="rv-h1">' + DATE_LABEL + '</h1>';
+  }
+  function stepBody() {
+    if (state.step === 1) return '<ol class="rv-tl">' + timelineRows('wizard') + '</ol>';
+    if (state.step === 2) return stepGoals();
+    if (state.step === 3) return stepStuck();
+    return stepSummary();
+  }
+
+  function stepGoals() {
+    var gs = goalsWithRecords();
+    if (!gs.length) {
+      return '<div class="rv-note">今天还没有关联目标的记录。可以继续下一步，也可以先补一条。</div>';
+    }
+    return gs.map(function (g) {
+      var rs = goalRecords(g.id);
+      var rows = rs.map(function (r) {
+        return '<div class="rv-rhythm">'
+          + '<div class="rv-rhythm-head"><span class="rv-title">' + esc(r.title || '想不起来') + '</span>'
+          + '<span class="rv-dur">' + fmtDur(r.end - r.start) + '</span></div>'
+          + '<div class="rv-seg" role="radiogroup" aria-label="节奏：' + esc(r.title || '想不起来') + '">'
+          + RHYTHM_ORDER.map(function (v) { return rhythmOption(r, v); }).join('')
+          + '</div></div>';
+      }).join('');
+      var bulk = rs.length >= 3
+        ? '<button type="button" class="rv-chip" data-action="bulk-progress" data-goal="' + g.id + '">今天这些时间整体都算推进</button>'
+        : '';
+      return '<section class="rv-goal" aria-label="目标 ' + esc(g.name) + '">'
+        + '<div class="rv-goal-head"><span class="rv-goal-name">' + esc(g.name) + '</span>'
+        + '<span class="rv-goal-total">' + fmtDur(sum(rs)) + '</span></div>'
+        + rows + bulk + '</section>';
+    }).join('');
+  }
+  function rhythmOption(r, value) {
+    var checked = value === 'none' ? !r.rhythm : r.rhythm === value;
+    var label = value === 'none' ? '不判断' : RHYTHM_LABEL[value];
+    return '<button type="button" role="radio" aria-checked="' + checked + '" '
+      + 'data-action="set-rhythm" data-id="' + r.id + '" data-value="' + value + '">'
+      + '<span class="rv-radio" aria-hidden="true"></span>' + label + '</button>';
+  }
+
+  function stepStuck() {
+    var stuck = stuckRecords();
+    var nextBox = '<div class="rv-field">'
+      + '<label class="rv-field-label" for="rv-next">下次继续时，第一步是什么？</label>'
+      + '<textarea id="rv-next" class="rv-input" data-input="next-step" placeholder="从哪里接着做">' + esc(state.review.nextStep) + '</textarea>'
+      + '</div>';
+    if (!stuck.length) {
+      return '<div class="rv-field">'
+        + '<textarea id="rv-next" class="rv-input" data-input="next-step" placeholder="比如：下次先做什么，从哪里继续" aria-label="有什么想留给下次的">' + esc(state.review.nextStep) + '</textarea>'
+        + '</div>';
+    }
+    var pick = effectiveStuckPick();
+    var choices = stuck.map(function (r) {
+      return '<button type="button" class="rv-choice" role="radio" aria-checked="' + (pick === r.id) + '" '
+        + 'data-action="stuck-pick" data-id="' + r.id + '">'
+        + '<span class="rv-radio" aria-hidden="true"></span>'
+        + '<span class="rv-choice-main"><span class="rv-choice-title">' + esc(r.title) + '</span>'
+        + '<span class="rv-choice-sub">' + timeRange(r.start, r.end) + ' · ' + fmtDur(r.end - r.start) + '</span></span></button>';
+    }).join('');
+    var none = '<button type="button" class="rv-choice" role="radio" aria-checked="' + (pick === 'none') + '" '
+      + 'data-action="stuck-pick" data-id="none">'
+      + '<span class="rv-radio" aria-hidden="true"></span>'
+      + '<span class="rv-choice-main"><span class="rv-choice-title">今天没有特别想记的</span></span></button>';
+    var sel = stuck.find(function (r) { return r.id === pick; }) || null;
+    var reasonBox = sel
+      ? '<div class="rv-field"><label class="rv-field-label" for="rv-reason">当时卡在哪里？</label>'
+        + '<textarea id="rv-reason" class="rv-input" data-input="stuck-reason" data-id="' + sel.id + '" placeholder="写一句就好">' + esc(sel.stuckReason) + '</textarea></div>'
+      : '';
+    return '<div role="radiogroup" aria-label="今天卡住的记录">' + choices + none + '</div>' + reasonBox + nextBox;
+  }
+
+  function stepSummary() {
+    var s = stats();
+    var gs = goalsWithRecords();
+    var goalLines = gs.map(function (g) {
+      return '<div class="rv-kv"><span>' + esc(g.name) + '</span><span class="rv-dur">' + fmtDur(sum(goalRecords(g.id))) + '</span></div>';
+    }).join('');
+    var stateLine = function (label, rs) {
+      if (!rs.length) return '';
+      return '<div class="rv-state-label">' + label + '</div>'
+        + '<div class="rv-state-line">' + rs.map(function (r) { return esc(r.title); }).join(' · ') + '</div>';
+    };
+    var goalRecs = gs.reduce(function (all, g) { return all.concat(goalRecords(g.id)); }, []);
+    var byState = function (v) { return goalRecs.filter(function (r) { return r.rhythm === v; }); };
+    var next = state.review.nextStep.trim();
+    return '<div class="rv-stats">'
+      + '<div><div class="rv-stat-label">今天记录</div><p class="rv-stat-value">' + fmtDur(s.accounted) + '</p><p class="rv-stat-cap">已交代</p></div>'
+      + '<div><div class="rv-stat-label">睡眠</div><p class="rv-stat-value">' + fmtDur(s.sleepFull) + '</p><p class="rv-stat-cap">主睡眠合计</p></div>'
+      + '<div><div class="rv-stat-label">未知</div><p class="rv-stat-value">' + fmtDur(s.unknown) + '</p><p class="rv-stat-cap">想不起来，已含在其中</p></div>'
+      + '<div><div class="rv-stat-label">仍未整理</div><p class="rv-stat-value">' + fmtDur(s.unresolved) + '</p><p class="rv-stat-cap">尚未记录</p></div>'
+      + '</div>'
+      + (goalLines
+        ? '<section class="rv-section"><h2 class="rv-section-title">你关心的事情</h2>' + goalLines
+          + stateLine('推进', byState('progress'))
+          + stateLine('卡住', byState('stuck'))
+          + stateLine('恢复', byState('recovery'))
+          + '</section>'
+        : '')
+      + (next
+        ? '<section class="rv-section"><h2 class="rv-section-title">下次从这里继续</h2>'
+          + '<div class="rv-note">' + esc(next) + '</div></section>'
+        : '');
+  }
+
+  /* ---------- 视图：Review Detail ---------- */
+  function detailView() {
+    var story = stuckStory();
+    var next = state.review.nextStep.trim();
+    var goalCards = goalsWithRecords().map(function (g) {
+      var rs = goalRecords(g.id);
+      var rows = rs.map(function (r) {
+        var stateText = r.rhythm ? RHYTHM_LABEL[r.rhythm] : '不判断';
+        return '<div class="rv-detail-rec"><span>' + esc(r.title || '想不起来') + '</span>'
+          + '<span class="rv-sub">' + stateText + '</span></div>';
+      }).join('');
+      return '<section class="rv-goal" aria-label="目标 ' + esc(g.name) + '">'
+        + '<div class="rv-goal-head"><span class="rv-goal-name">' + esc(g.name) + '</span>'
+        + '<span class="rv-goal-total">' + fmtDur(sum(rs)) + '</span></div>'
+        + rows
+        + '<div class="rv-edit-row"><button type="button" class="rv-text-btn" data-action="jump" data-step="2">编辑节奏</button></div>'
+        + '</section>';
+    }).join('');
+    var storySection = story
+      ? '<section class="rv-section"><h2 class="rv-section-title">当时卡在哪里</h2>'
+        + '<p class="rv-sub" style="margin:0 0 8px">' + esc(story.rec.title) + ' · ' + timeRange(story.rec.start, story.rec.end) + '</p>'
+        + '<div class="rv-note">' + esc(story.text) + '</div>'
+        + '<div class="rv-edit-row"><button type="button" class="rv-text-btn" data-action="jump" data-step="3">编辑</button></div>'
+        + '</section>'
+      : '';
+    var nextSection = next
+      ? '<section class="rv-section"><h2 class="rv-section-title">下次从这里继续</h2>'
+        + '<div class="rv-note">' + esc(next) + '</div>'
+        + '<div class="rv-edit-row"><button type="button" class="rv-text-btn" data-action="jump" data-step="3">编辑</button></div>'
+        + '</section>'
+      : '';
+    return header(DATE_LABEL, { right: moreButton(), backLabel: '返回' })
+      + '<div class="rv-body">'
+      + '<span class="rv-eyebrow">今天 · 已回顾</span>'
+      + '<ol class="rv-tl">' + timelineRows('detail') + '</ol>'
+      + '<div class="rv-section">' + goalCards + '</div>'
+      + storySection
+      + nextSection
+      + '</div>';
+  }
+
+  /* ---------- 底部面板与对话框 ---------- */
+  function sheetShell(inner, label) {
+    return '<div class="rv-backdrop" data-action="sheet-backdrop">'
+      + '<div class="rv-sheet" role="dialog" aria-modal="true" aria-label="' + esc(label) + '" tabindex="-1">'
+      + '<div class="rv-sheet-handle" aria-hidden="true"></div>' + inner + '</div></div>';
+  }
+  function recordSheet() {
+    var s = state.sheet;
+    var r = recById(s.id);
+    if (!r) { state.sheet = null; return ''; }
+    var title = r.unknown ? '想不起来' : r.title;
+    var sub = '<p class="rv-sheet-sub">' + timeRange(r.start, r.end) + ' · ' + fmtDur(r.end - r.start) + '</p>';
+    var body = '';
+    if (s.mode === 'title') {
+      body = '<label class="rv-field-label" for="rv-edit-title">事项</label>'
+        + '<input id="rv-edit-title" class="rv-input" type="text" value="' + esc(r.title) + '" placeholder="想不起来" autocomplete="off">'
+        + '<div class="rv-sheet-foot"><button type="button" class="rv-btn rv-secondary" data-action="sheet-mode" data-mode="view">取消</button>'
+        + '<button type="button" class="rv-btn rv-primary" data-action="sheet-title-save">完成</button></div>';
+    } else if (s.mode === 'time') {
+      body = '<div class="rv-time-edit">'
+        + '<label>开始<input id="rv-edit-start" class="rv-input" type="time" value="' + fmtClock(r.start) + '"></label>'
+        + '<label>结束<input id="rv-edit-end" class="rv-input" type="time" value="' + fmtClock(r.end) + '"></label>'
+        + '</div>'
+        + (s.error ? '<p class="rv-error">' + esc(s.error) + '</p>' : '')
+        + '<div class="rv-sheet-foot"><button type="button" class="rv-btn rv-secondary" data-action="sheet-mode" data-mode="view">取消</button>'
+        + '<button type="button" class="rv-btn rv-primary" data-action="sheet-time-save">保存</button></div>';
+    } else if (s.mode === 'delete') {
+      body = '<p class="rv-sheet-sub">删除这条记录？当天其他记录与复盘文字不受影响。</p>'
+        + '<div class="rv-sheet-foot"><button type="button" class="rv-btn rv-secondary" data-action="sheet-mode" data-mode="view">取消</button>'
+        + '<button type="button" class="rv-btn rv-primary rv-danger" style="background:var(--error);color:#fff7f3" data-action="sheet-record-delete">删除</button></div>';
+    } else if (s.mode === 'goal') {
+      body = GOALS.map(function (g) {
+        return '<button type="button" class="rv-sheet-action" data-action="sheet-goal-set" data-goal="' + g.id + '">'
+          + '<span class="rv-sheet-kv"><span>' + esc(g.name) + '</span><span>' + (r.goalId === g.id ? '✓' : '') + '</span></span></button>';
+      }).join('')
+        + '<button type="button" class="rv-sheet-action" data-action="sheet-goal-set" data-goal="">'
+        + '<span class="rv-sheet-kv"><span>不关联目标</span><span>' + (!r.goalId ? '✓' : '') + '</span></span></button>'
+        + '<div class="rv-sheet-foot"><button type="button" class="rv-btn rv-secondary" data-action="sheet-mode" data-mode="view">返回</button></div>';
+    } else {
+      body = '<button type="button" class="rv-sheet-action" data-action="sheet-mode" data-mode="title">修改事项</button>'
+        + '<button type="button" class="rv-sheet-action" data-action="sheet-mode" data-mode="time">修改时间</button>'
+        + '<button type="button" class="rv-sheet-action rv-danger" data-action="sheet-mode" data-mode="delete">删除</button>'
+        + '<button type="button" class="rv-sheet-action" data-action="sheet-mode" data-mode="goal">'
+        + '<span class="rv-sheet-kv"><span>关联目标</span><span class="rv-muted">' + (r.goalId ? esc(goalById(r.goalId).name) : '不关联') + ' ›</span></span></button>'
+        + '<div class="rv-sheet-foot"><button type="button" class="rv-btn rv-primary" data-action="sheet-close">完成</button></div>';
+    }
+    return sheetShell('<h2 class="rv-sheet-title">' + esc(title) + '</h2>' + sub + body, '记录');
+  }
+  function newSheet() {
+    var s = state.sheet;
+    var body = '<label class="rv-field-label" for="rv-new-title">事项</label>'
+      + '<input id="rv-new-title" class="rv-input" type="text" placeholder="这段时间做了什么" autocomplete="off" value="' + esc(s.title) + '">'
+      + '<div class="rv-field" style="margin-top:12px"><div class="rv-time-edit">'
+      + '<label>开始<input id="rv-new-start" class="rv-input" type="time" value="' + fmtClock(s.start) + '"></label>'
+      + '<label>结束<input id="rv-new-end" class="rv-input" type="time" value="' + fmtClock(s.end) + '"></label>'
+      + '</div></div>'
+      + '<div class="rv-field" style="margin-top:12px"><label class="rv-field-label" for="rv-new-goal">关联目标</label>'
+      + '<select id="rv-new-goal" class="rv-input"><option value="">不关联目标</option>'
+      + GOALS.map(function (g) { return '<option value="' + g.id + '">' + esc(g.name) + '</option>'; }).join('')
+      + '</select></div>'
+      + (s.error ? '<p class="rv-error">' + esc(s.error) + '</p>' : '')
+      + '<div class="rv-sheet-foot"><button type="button" class="rv-btn rv-secondary" data-action="sheet-close">取消</button>'
+      + '<button type="button" class="rv-btn rv-primary" data-action="sheet-new-save">保存</button></div>';
+    return sheetShell('<h2 class="rv-sheet-title">补一条记录</h2>'
+      + '<p class="rv-sheet-sub">' + timeRange(s.start, s.end) + ' · ' + fmtDur(s.end - s.start) + '</p>' + body, '补一条记录');
+  }
+  function menuSheet() {
+    var body = '<button type="button" class="rv-sheet-action" data-action="menu-reflow">重新整理今天</button>'
+      + '<button type="button" class="rv-sheet-action rv-danger" data-action="menu-delete">删除这次回顾</button>'
+      + '<div class="rv-sheet-foot"><button type="button" class="rv-btn rv-secondary" data-action="sheet-close">取消</button></div>';
+    return sheetShell(body, '更多操作');
+  }
+  function dialogShell(inner, label) {
+    return '<div class="rv-dialog-wrap" data-action="dialog-backdrop">'
+      + '<div class="rv-dialog" role="dialog" aria-modal="true" aria-label="' + esc(label) + '" tabindex="-1">' + inner + '</div></div>';
+  }
+  function renderOverlay() {
+    var html = '';
+    if (state.dialog) {
+      if (state.dialog.type === 'delete-review') {
+        html = dialogShell('<h3>删除这次回顾？</h3>'
+          + '<p>将删除 ' + DATE_LABEL + ' 的复盘与下一步；当天时间记录与节奏解释保留。</p>'
+          + '<div class="rv-dialog-actions"><button type="button" class="rv-btn rv-text-btn" data-action="dialog-cancel">取消</button>'
+          + '<button type="button" class="rv-btn rv-text-btn rv-danger" data-action="dialog-confirm">删除</button></div>', '删除这次回顾');
+      }
+    } else if (state.sheet) {
+      if (state.sheet.type === 'record') html = recordSheet();
+      else if (state.sheet.type === 'new') html = newSheet();
+      else if (state.sheet.type === 'menu') html = menuSheet();
+    }
+    overlay.innerHTML = html;
+    var focusable = overlay.querySelector('.rv-sheet, .rv-dialog');
+    if (focusable) focusable.focus();
+  }
+
+  /* ---------- 渲染 ---------- */
+  function renderScreen() {
+    var key = state.screen + ':' + state.step;
+    content.innerHTML = state.screen === 'wizard' ? wizardView() : detailView();
+    var body = content.querySelector('.rv-body');
+    if (body && key !== lastScreenKey) body.scrollTop = 0;
+    lastScreenKey = key;
+  }
+  function updateSide() {
+    var cur = state.screen === 'detail' ? 'done' : String(state.step);
+    root.querySelectorAll('.rv-flow li').forEach(function (li) {
+      li.classList.toggle('is-on', li.dataset.flow === cur);
+    });
+    var cb = root.querySelector('#rv-nostuck');
+    if (cb) cb.checked = !!state.noStuckSnapshot;
+  }
+  function renderAll() {
+    renderScreen();
+    renderOverlay();
+    updateSide();
+  }
+
+  /* ---------- 行为 ---------- */
+  function goStep(step) { state.screen = 'wizard'; state.step = step; renderAll(); }
+  function finishReview() {
+    state.review.saved = true;
+    state.review.completedAt = NOW;
+    state.screen = 'detail';
+    toast('今天的回顾已保存');
+    renderAll();
+  }
+  function backAction() {
+    if (state.screen === 'detail') { toast('原型未包含日账本页；返回由正式应用提供'); return; }
+    if (state.step > 1) { goStep(state.step - 1); return; }
+    if (state.review.saved) { state.screen = 'detail'; renderAll(); return; }
+    toast('草稿只在本次演示中保留；正式应用会保存在本机');
+  }
+  function setRhythm(id, value) {
+    var r = recById(id);
+    if (!r) return;
+    r.rhythm = value === 'none' ? null : value;
+    renderAll();
+  }
+  function bulkProgress(gid) {
+    goalRecords(gid).forEach(function (r) { r.rhythm = 'progress'; });
+    toast('已整体标为推进；可以再单独修改例外项');
+    renderAll();
+  }
+  function setStuckPick(id) {
+    state.review.stuckPick = id;
+    renderAll();
+  }
+  function gapToUnknown(start, end) {
+    state.records.push({
+      id: 'r' + (++uid), start: Number(start), end: Number(end),
+      title: '', unknown: true, goalId: null, rhythm: null, stuckReason: ''
+    });
+    toast('已记为“想不起来”；之后仍可补充');
+    renderAll();
+  }
+  function openRecordSheet(id) { state.sheet = { type: 'record', id: id, mode: 'view', error: '' }; renderOverlay(); }
+  function openNewSheet(start, end) {
+    state.sheet = { type: 'new', start: Number(start), end: Number(end), title: '', error: '' };
+    renderOverlay();
+  }
+  function closeSheet() { state.sheet = null; renderOverlay(); }
+
+  function sheetAction(el) {
+    var s = state.sheet;
+    if (!s) return;
+    var action = el.dataset.action;
+    if (action === 'sheet-backdrop') return;
+    if (action === 'sheet-close') { closeSheet(); return; }
+    if (!s.type) return;
+    if (s.type === 'record') {
+      var r = recById(s.id);
+      if (!r) { closeSheet(); return; }
+      if (action === 'sheet-mode') {
+        s.mode = el.dataset.mode;
+        s.error = '';
+        renderOverlay();
+        return;
+      }
+      if (action === 'sheet-title-save') {
+        var input = overlay.querySelector('#rv-edit-title');
+        var v = input ? input.value.trim() : '';
+        r.title = v;
+        r.unknown = !v;
+        s.mode = 'view';
+        renderAll();
+        return;
+      }
+      if (action === 'sheet-time-save') {
+        var start = parseHM((overlay.querySelector('#rv-edit-start') || {}).value);
+        var end = parseHM((overlay.querySelector('#rv-edit-end') || {}).value);
+        var error = '';
+        if (start == null || end == null) error = '请填写完整的开始与结束时间。';
+        else if (start >= end) error = '开始时间需要早于结束时间。';
+        else if (end > NOW) error = '记录不能超过今天的现在时刻（22:10）。';
+        else if (overlaps(r.id, start, end)) error = '与这段前后的记录重叠了，请调整时间。';
+        if (error) { s.error = error; renderOverlay(); return; }
+        r.start = start; r.end = end;
+        s.mode = 'view';
+        renderAll();
+        return;
+      }
+      if (action === 'sheet-record-delete') {
+        state.records = state.records.filter(function (x) { return x.id !== r.id; });
+        closeSheet();
+        toast('已删除这条记录');
+        renderAll();
+        return;
+      }
+      if (action === 'sheet-goal-set') {
+        r.goalId = el.dataset.goal || null;
+        s.mode = 'view';
+        renderAll();
+        return;
+      }
+    }
+    if (s.type === 'new') {
+      if (action === 'sheet-new-save') {
+        var titleEl = overlay.querySelector('#rv-new-title');
+        var title = titleEl ? titleEl.value.trim() : '';
+        var st = parseHM((overlay.querySelector('#rv-new-start') || {}).value);
+        var en = parseHM((overlay.querySelector('#rv-new-end') || {}).value);
+        var goalEl = overlay.querySelector('#rv-new-goal');
+        var err = '';
+        if (!title) err = '写一句这段时间做了什么。';
+        else if (st == null || en == null) err = '请填写完整的开始与结束时间。';
+        else if (st >= en) err = '开始时间需要早于结束时间。';
+        else if (en > NOW) err = '记录不能超过今天的现在时刻（22:10）。';
+        else if (overlaps(null, st, en)) err = '与已有记录或睡眠重叠了，请调整时间。';
+        if (err) { s.error = err; renderOverlay(); return; }
+        state.records.push({
+          id: 'r' + (++uid), start: st, end: en, title: title,
+          goalId: goalEl && goalEl.value ? goalEl.value : null, rhythm: null, stuckReason: ''
+        });
+        closeSheet();
+        toast('已补记一段时间');
+        renderAll();
+        return;
+      }
+    }
+  }
+
+  function resetDemo() {
+    state = freshState();
+    var cb = root.querySelector('#rv-nostuck');
+    if (cb) cb.checked = false;
+    toast('已重置为初始演示数据');
+    renderAll();
+  }
+  function openMenu() { state.sheet = { type: 'menu' }; renderOverlay(); }
+
+  /* ---------- 事件 ---------- */
+  function findAction(node, container) {
+    var el = node.closest ? node.closest('[data-action]') : null;
+    return el && container.contains(el) ? el : null;
+  }
+  content.addEventListener('click', function (e) {
+    var el = findAction(e.target, content);
+    if (!el) return;
+    var a = el.dataset.action;
+    if (a === 'back') backAction();
+    else if (a === 'next') goStep(state.step + 1);
+    else if (a === 'skip') goStep(state.step + 1);
+    else if (a === 'finish') finishReview();
+    else if (a === 'open-record') openRecordSheet(el.dataset.id);
+    else if (a === 'gap-new') openNewSheet(el.dataset.start, el.dataset.end);
+    else if (a === 'gap-unknown') gapToUnknown(el.dataset.start, el.dataset.end);
+    else if (a === 'gap-later') { state.gapHidden[el.dataset.key] = true; renderScreen(); }
+    else if (a === 'toggle-gap') {
+      var key = el.dataset.key;
+      state.gapHidden[key] = !state.gapHidden[key];
+      renderScreen();
+    }
+    else if (a === 'set-rhythm') setRhythm(el.dataset.id, el.dataset.value);
+    else if (a === 'bulk-progress') bulkProgress(el.dataset.goal);
+    else if (a === 'stuck-pick') setStuckPick(el.dataset.id);
+    else if (a === 'jump') goStep(Number(el.dataset.step));
+    else if (a === 'menu') openMenu();
+  });
+  content.addEventListener('input', function (e) {
+    var t = e.target;
+    if (t.dataset && t.dataset.input === 'stuck-reason') {
+      var r = recById(t.dataset.id);
+      if (r) r.stuckReason = t.value;
+    } else if (t.dataset && t.dataset.input === 'next-step') {
+      state.review.nextStep = t.value;
+    }
+  });
+  overlay.addEventListener('click', function (e) {
+    var el = findAction(e.target, overlay);
+    if (!el) return;
+    var a = el.dataset.action;
+    if (el.classList.contains('rv-backdrop') || el.classList.contains('rv-dialog-wrap')) {
+      if (e.target !== el) return;
+      if (el.classList.contains('rv-backdrop')) { closeSheet(); }
+      return;
+    }
+    if (a === 'sheet-backdrop' || a === 'dialog-cancel') { closeSheet(); state.dialog = null; renderOverlay(); return; }
+    if (a === 'sheet-close') { closeSheet(); return; }
+    if (a === 'dialog-confirm') {
+      state.dialog = null;
+      state.review = { saved: false, nextStep: '', nextStepGoalId: null, stuckPick: null, completedAt: null };
+      state.screen = 'wizard';
+      state.step = 1;
+      toast('已删除这次回顾；当天时间记录保留');
+      renderAll();
+      return;
+    }
+    if (a === 'menu-reflow') {
+      state.sheet = null;
+      state.screen = 'wizard';
+      state.step = 1;
+      renderAll();
+      return;
+    }
+    if (a === 'menu-delete') {
+      state.sheet = null;
+      state.dialog = { type: 'delete-review' };
+      renderOverlay();
+      return;
+    }
+    sheetAction(el);
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (state.dialog) { state.dialog = null; renderOverlay(); return; }
+    if (state.sheet) { state.sheet = null; renderOverlay(); }
+  });
+  root.addEventListener('click', function (e) {
+    var el = e.target.closest ? e.target.closest('[data-demo],[data-width]') : null;
+    if (!el) return;
+    if (el.dataset.width) {
+      root.style.setProperty('--rv-phone-w', el.dataset.width + 'px');
+      root.querySelectorAll('#rv-widths .rv-mini').forEach(function (b) {
+        b.classList.toggle('is-on', b === el);
+      });
+      return;
+    }
+    var demo = el.dataset.demo;
+    if (demo === 'reset') { resetDemo(); return; }
+    if (demo === 'detail') {
+      if (!state.review.saved) {
+        state.review.saved = true;
+        if (!state.review.stuckPick) {
+          var f = stuckRecords().find(function (r) { return r.stuckReason.trim(); }) || stuckRecords()[0];
+          state.review.stuckPick = f ? f.id : 'none';
+        }
+      }
+      state.screen = 'detail';
+      renderAll();
+      return;
+    }
+    if (demo === 'reflow') {
+      if (!state.review.saved) state.review.saved = true;
+      state.screen = 'wizard';
+      state.step = 1;
+      renderAll();
+      return;
+    }
+    var step = Number(el.dataset.step || '1');
+    if (!state.review.saved && (demo === 'step2' || demo === 'step3' || demo === 'step4')) {
+      /* 未完成时直接跳步仅用于查看布局 */
+    }
+    goStep(step);
+  });
+  root.querySelector('#rv-nostuck').addEventListener('change', function () {
+    if (this.checked) {
+      state.noStuckSnapshot = state.records
+        .filter(function (r) { return r.rhythm === 'stuck'; })
+        .map(function (r) { return { id: r.id, rhythm: r.rhythm }; });
+      state.records.forEach(function (r) { if (r.rhythm === 'stuck') r.rhythm = null; });
+    } else if (state.noStuckSnapshot) {
+      state.noStuckSnapshot.forEach(function (snap) {
+        var r = recById(snap.id);
+        if (r) r.rhythm = snap.rhythm;
+      });
+      state.noStuckSnapshot = null;
+    }
+    toast(this.checked ? '场景：今天没有卡住' : '场景恢复：今天有两段卡住');
+    renderAll();
+  });
+
+  function applyDeepLink() {
+    var q = new URLSearchParams(location.search);
+    var width = q.get('width');
+    if (width && /^\d+$/.test(width)) {
+      root.style.setProperty('--rv-phone-w', width + 'px');
+      root.querySelectorAll('#rv-widths .rv-mini').forEach(function (b) {
+        b.classList.toggle('is-on', b.dataset.width === width);
+      });
+    }
+    if (q.get('nostuck') === '1') {
+      var cb = root.querySelector('#rv-nostuck');
+      if (cb) cb.checked = true;
+      state.noStuckSnapshot = state.records
+        .filter(function (r) { return r.rhythm === 'stuck'; })
+        .map(function (r) { return { id: r.id, rhythm: r.rhythm }; });
+      state.records.forEach(function (r) { if (r.rhythm === 'stuck') r.rhythm = null; });
+    }
+    var demo = q.get('demo');
+    if (demo === 'detail') {
+      state.review.saved = true;
+      state.screen = 'detail';
+    } else if (demo === 'reflow') {
+      state.review.saved = true;
+      state.screen = 'wizard';
+      state.step = 1;
+    } else if (demo && /^[1-4]$/.test(demo)) {
+      state.screen = 'wizard';
+      state.step = Number(demo);
+    }
+  }
+  applyDeepLink();
+  renderAll();
+})();
+</script>
+<noscript>此原型需要启用 JavaScript 才能交互。</noscript>
+</body>
+</html>
