@@ -349,4 +349,49 @@ void main() {
       isEmpty,
     );
   });
+
+  testWidgets(
+    'same-day end time cannot precede the start in the sleep picker',
+    (t) async {
+      final f = await open(t);
+      await t.pumpWidget(f.app(newContext));
+      await settleNative(t);
+      await tapKey(t, 'open');
+
+      // 入睡：10 月 1 日 13:00（入口日期当月，直接选 1 日）。
+      await tapKey(t, 'sleep-start-date');
+      await t.tap(find.text('1').last);
+      await settleNative(t);
+      await tapKey(t, 'date-picker-confirm');
+      await tapKey(t, 'sleep-start-time');
+      var wheels = t
+          .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
+          .toList();
+      (wheels[0].controller! as FixedExtentScrollController).jumpToItem(13);
+      (wheels[1].controller! as FixedExtentScrollController).jumpToItem(0);
+      await settleNative(t);
+      await tapKey(t, 'time-picker-confirm');
+
+      // 醒来与入睡同日且未选日期：初值按入口日期，不得早于 13:01。
+      await tapKey(t, 'sleep-end-time');
+      wheels = t
+          .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
+          .toList();
+      expect(wheels[0].childDelegate.estimatedChildCount, 11);
+      (wheels[0].controller! as FixedExtentScrollController).jumpToItem(0);
+      await settleNative(t);
+      wheels = t
+          .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
+          .toList();
+      expect(wheels[1].childDelegate.estimatedChildCount, 59);
+      (wheels[1].controller! as FixedExtentScrollController).jumpToItem(0);
+      await settleNative(t);
+      await tapKey(t, 'time-picker-confirm');
+      final draft = (await t.runAsync(() => f.drafts.read(newContext)))!;
+      expect(draft.startedAt, ts(10, 1, 13));
+      expect(draft.endedAt, ts(10, 1, 13, 1));
+      await t.pumpWidget(const SizedBox.shrink());
+      await settleNative(t);
+    },
+  );
 }

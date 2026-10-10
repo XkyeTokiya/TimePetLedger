@@ -245,6 +245,72 @@ void main() {
     },
   );
 
+  testWidgets('same-day endpoint times constrain each other in the pickers', (
+    t,
+  ) async {
+    final f = await open(t);
+    final began = DateTime(2026, 12, 31, 9).millisecondsSinceEpoch;
+    final ended = DateTime(2026, 12, 31, 10).millisecondsSinceEpoch;
+    await t.pumpWidget(
+      f.app(
+        newContext,
+        suggestedTime: RecordingTimeInput(startedAt: began, endedAt: ended),
+      ),
+    );
+    await settleNative(t);
+    await tapKey(t, 'open');
+    await tapKey(t, 'activity-rhythm-progress');
+    await t.enterText(key('activity'), '受限活动');
+    await tapKey(t, 'activity-primary');
+
+    // 终点不得早于起点 09:00：小时只保留 09–23。
+    await tapKey(t, 'activity-end-time');
+    var wheels = t
+        .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
+        .toList();
+    expect(wheels[0].childDelegate.estimatedChildCount, 15);
+    (wheels[0].controller! as FixedExtentScrollController).jumpToItem(0);
+    await settleNative(t);
+    wheels = t
+        .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
+        .toList();
+    expect(wheels[1].childDelegate.estimatedChildCount, 59);
+    (wheels[1].controller! as FixedExtentScrollController).jumpToItem(0);
+    await settleNative(t);
+    await tapKey(t, 'time-picker-confirm');
+    final afterEnd = (await t.runAsync(() => f.drafts.read(newContext)))!;
+    expect(afterEnd.startedAt, began);
+    expect(
+      afterEnd.endedAt,
+      DateTime(2026, 12, 31, 9, 1).millisecondsSinceEpoch,
+    );
+
+    // 起点不得晚于终点 09:01：小时只保留 00–09，09 时只剩 09:00。
+    await tapKey(t, 'activity-start-time');
+    wheels = t
+        .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
+        .toList();
+    expect(wheels[0].childDelegate.estimatedChildCount, 10);
+    (wheels[0].controller! as FixedExtentScrollController).jumpToItem(9);
+    await settleNative(t);
+    wheels = t
+        .widgetList<ListWheelScrollView>(find.byType(ListWheelScrollView))
+        .toList();
+    expect(wheels[1].childDelegate.estimatedChildCount, 1);
+    (wheels[1].controller! as FixedExtentScrollController).jumpToItem(0);
+    await settleNative(t);
+    await tapKey(t, 'time-picker-confirm');
+    final afterStart = (await t.runAsync(() => f.drafts.read(newContext)))!;
+    expect(afterStart.startedAt, began);
+    expect(
+      afterStart.endedAt,
+      DateTime(2026, 12, 31, 9, 1).millisecondsSinceEpoch,
+    );
+
+    await t.pumpWidget(const SizedBox.shrink());
+    await settleNative(t);
+  });
+
   testWidgets('steps 节奏 → 事项 → 时间 save one known record with a hint', (
     t,
   ) async {

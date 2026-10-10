@@ -388,6 +388,23 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('the quick panel today entry returns to today and closes', (
+    tester,
+  ) async {
+    final db = await openLedger(tester);
+    await mountHome(tester, db, initialDate: oct2, now: at(3, 9));
+    expect(homeDateTitle(tester), '10月2日');
+
+    await tester.tap(find.byKey(const ValueKey('home-menu')));
+    await settleNative(tester);
+    await tester.tap(find.byKey(const ValueKey('menu-today')));
+    await settleNative(tester);
+    expect(homeDateTitle(tester), '10月3日');
+    expect(find.byKey(const ValueKey('home-quick-panel-scrim')), findsNothing);
+    expect(find.byKey(const ValueKey('home-back-to-today')), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('calendar jump and back-to-today use the same date rules', (
     tester,
   ) async {

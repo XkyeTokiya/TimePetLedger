@@ -262,13 +262,17 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.text('4'));
         await tester.pumpAndSettle();
-        final calendarContent = find.text('已选 2026-10-04');
-        await Scrollable.ensureVisible(
-          tester.element(calendarContent),
-          alignment: .5,
+        // 选中状态由日历圆形高亮表达，不再显示重复的“已选 …”文案。
+        expect(find.textContaining('已选'), findsNothing);
+        final day = tester.widget<TextButton>(
+          find
+              .ancestor(of: find.text('4'), matching: find.byType(TextButton))
+              .first,
         );
-        await tester.pumpAndSettle();
-        expect(calendarContent.hitTestable(), findsOneWidget);
+        expect(
+          day.style?.backgroundColor?.resolve(<WidgetState>{}),
+          Theme.of(tester.element(find.text('4'))).colorScheme.primary,
+        );
         await screenshot(tester, 'calendar-scrolled-320-scale-2');
         await expectLater(tester, meetsGuideline(androidTapTargetGuideline));
         await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
