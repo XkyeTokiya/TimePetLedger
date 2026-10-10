@@ -282,12 +282,16 @@ class HomeShellState extends State<HomeShell>
   Widget _quickPanel(CivilDate today) {
     final date = _panelDate ?? feed.focusDate;
     final left = widget.quickPanelSide == HomeQuickPanelSide.left;
+    final theme = Theme.of(context);
     final key = (
       date,
       left,
       today,
       widget.onGoals != null,
       widget.onSettings != null,
+      // 颜色与字阶在构建时写入子树，主题切换必须让缓存失效，
+      // 否则面板会停留在旧主题（用户 2026-10-11 报告）。
+      theme,
     );
     if (_panelCache != null && _panelCacheKey == key) return _panelCache!;
     _panelCacheKey = key;
