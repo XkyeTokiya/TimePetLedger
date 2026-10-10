@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../app/theme/home_theme.dart';
 import '../../../../app/theme/theme_text.dart';
 import '../../../../core/time/civil_date.dart';
 import '../../application/day_ledger_loader.dart';
@@ -46,6 +47,7 @@ class HomeShell extends StatefulWidget {
     this.banner,
     this.active = true,
     this.quickPanelSide = HomeQuickPanelSide.left,
+    this.showMenuButton = true,
   });
 
   final DayLedgerLoader ledgerLoader;
@@ -78,6 +80,9 @@ class HomeShell extends StatefulWidget {
   /// 首页是否为当前阅读面；压在编辑器或独立页下时为 false。
   final bool active;
   final HomeQuickPanelSide quickPanelSide;
+
+  /// 日期行是否显示菜单按钮（默认显示；隐藏后仍可从屏幕边缘滑出快捷区）。
+  final bool showMenuButton;
 
   @override
   State<HomeShell> createState() => HomeShellState();
@@ -247,102 +252,219 @@ class HomeShellState extends State<HomeShell>
 
   Widget _quickPanel(CivilDate today) {
     final date = _panelDate ?? feed.focusDate;
+    final colors = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    final left = widget.quickPanelSide == HomeQuickPanelSide.left;
+    final closeButton = IconButton(
+      key: const ValueKey('home-quick-panel-close'),
+      focusNode: _panelFirstFocus,
+      tooltip: '关闭快捷区',
+      onPressed: () => _settlePanel(false),
+      icon: const Icon(Icons.close),
+    );
+    final moreEntries = [
+      if (widget.onGoals case final onGoals?)
+        _panelEntry(
+          key: 'menu-goals',
+          icon: Icons.flag_outlined,
+          label: '我的目标',
+          subtitle: '用于记录时间归属',
+          action: onGoals,
+        ),
+      if (widget.onSettings case final onSettings?)
+        _panelEntry(
+          key: 'menu-settings',
+          icon: Icons.settings_outlined,
+          label: '设置',
+          subtitle: '外观、记录与提醒',
+          action: onSettings,
+        ),
+    ];
     return Material(
       key: const ValueKey('home-quick-panel'),
-      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      color: colors.surfaceContainerLow,
       child: FocusTraversalGroup(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
+          padding: const EdgeInsets.fromLTRB(
+            TimeLedgerSpacing.page,
+            TimeLedgerSpacing.xxs,
+            TimeLedgerSpacing.page,
+            TimeLedgerSpacing.xxl,
+          ),
           children: [
-            Align(
-              alignment: widget.quickPanelSide == HomeQuickPanelSide.left
-                  ? Alignment.centerLeft
-                  : Alignment.centerRight,
-              child: IconButton(
-                key: const ValueKey('home-quick-panel-close'),
-                focusNode: _panelFirstFocus,
-                tooltip: '关闭快捷区',
-                onPressed: () => _settlePanel(false),
-                icon: const Icon(Icons.close),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    date.year == today.year
-                        ? '${date.month}月${date.day}日'
-                        : '${date.year}年${date.month}月${date.day}日',
-                    key: const ValueKey('home-quick-panel-date'),
-                    style: Theme.of(context).textTheme.titleLarge,
+            // 与设置页 AppBar 同构：关闭按钮贴面板外侧，日期标题紧随其后。
+            Row(
+              children: [
+                if (left) closeButton,
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: TimeLedgerSpacing.xxs,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          date.year == today.year
+                              ? '${date.month}月${date.day}日'
+                              : '${date.year}年${date.month}月${date.day}日',
+                          key: const ValueKey('home-quick-panel-date'),
+                          style: text.titleLarge,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          ledgerWeekdayText(date, today),
+                          style: text.bodySmall,
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    ledgerWeekdayText(date, today),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
+                ),
+                if (!left) closeButton,
+              ],
             ),
-            const Divider(),
-            _panelEntry(
-              key: 'menu-summary',
-              icon: Icons.donut_small_outlined,
-              label: '当日概览',
-              action: () => widget.onOpenSummary(date),
-            ),
-            _panelEntry(
-              key: 'menu-review',
-              icon: Icons.menu_book_outlined,
-              label: '当日复盘',
-              action: () => widget.onOpenReview(date),
-            ),
-            if (date != today)
+            _panelSectionLabel('当日'),
+            _panelCard([
               _panelEntry(
-                key: 'menu-today',
-                icon: Icons.today_outlined,
-                label: '返回今天',
-                action: _returnToToday,
+                key: 'menu-summary',
+                icon: Icons.donut_small_outlined,
+                label: '当日概览',
+                subtitle: '这天的摘要与统计',
+                action: () => widget.onOpenSummary(date),
               ),
-            const Divider(),
-            if (widget.onGoals case final onGoals?)
               _panelEntry(
-                key: 'menu-goals',
-                icon: Icons.flag_outlined,
-                label: '我的目标',
-                action: onGoals,
+                key: 'menu-review',
+                icon: Icons.menu_book_outlined,
+                label: '当日复盘',
+                subtitle: '这天的解释与下一步',
+                action: () => widget.onOpenReview(date),
               ),
-            if (widget.onSettings case final onSettings?)
-              _panelEntry(
-                key: 'menu-settings',
-                icon: Icons.settings_outlined,
-                label: '设置',
-                action: onSettings,
-              ),
+              if (date != today)
+                _panelEntry(
+                  key: 'menu-today',
+                  icon: Icons.today_outlined,
+                  label: '返回今天',
+                  subtitle: '回到今天的浏览位置',
+                  action: _returnToToday,
+                ),
+            ]),
+            if (moreEntries.isNotEmpty) ...[
+              _panelSectionLabel('更多'),
+              _panelCard(moreEntries),
+            ],
           ],
         ),
       ),
     );
   }
 
+  /// 快捷区分组标题：与设置页分组标题同款（titleSmall + primary）。
+  Widget _panelSectionLabel(String title) => Padding(
+    padding: const EdgeInsets.fromLTRB(
+      TimeLedgerSpacing.xxs,
+      TimeLedgerSpacing.md,
+      TimeLedgerSpacing.xxs,
+      TimeLedgerSpacing.xs,
+    ),
+    child: Text(
+      title,
+      style: Theme.of(context).textTheme.titleSmall
+          ?.copyWith(color: Theme.of(context).colorScheme.primary),
+    ),
+  );
+
+  /// 快捷区分组卡片：与设置页卡片同款（圆角 16、卡内分隔线缩进 16）。
+  ///
+  /// 卡片本体用 [Material] 而不是纯 Container，行内 InkWell 的按压反馈才
+  /// 会画在卡片表面，而不是被不透明底色盖住。
+  Widget _panelCard(List<Widget> children) {
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: TimeLedgerSpacing.xxs),
+      child: Material(
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          children: [
+            for (var i = 0; i < children.length; i++) ...[
+              if (i > 0)
+                Divider(
+                  height: 1,
+                  thickness: 1,
+                  indent: TimeLedgerSpacing.md,
+                  endIndent: TimeLedgerSpacing.md,
+                  color: colors.outlineVariant,
+                ),
+              children[i],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 快捷区入口行：与设置页入口行同款（圆形图标、标题 / 说明、行尾箭头）。
   Widget _panelEntry({
     required String key,
     required IconData icon,
     required String label,
+    required String subtitle,
     required VoidCallback action,
-  }) => ConstrainedBox(
-    constraints: const BoxConstraints(minHeight: 56),
-    child: ListTile(
-      key: ValueKey(key),
-      leading: Icon(icon),
-      title: Text(label),
-      onTap: widget.busy || _panelActionPending
-          ? null
-          : () => _activatePanelEntry(action),
-    ),
-  );
+  }) {
+    final colors = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    final enabled = !widget.busy && !_panelActionPending;
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: enabled,
+      child: InkWell(
+        key: ValueKey(key),
+        onTap: enabled ? () => _activatePanelEntry(action) : null,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 64),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: TimeLedgerSpacing.md,
+              vertical: TimeLedgerSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, size: 22, color: colors.primary),
+                ),
+                const SizedBox(width: TimeLedgerSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(label, style: text.titleMedium),
+                      const SizedBox(height: 2),
+                      Text(subtitle, style: text.bodySmall),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: TimeLedgerSpacing.sm),
+                Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: colors.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   /// 入口直跳：点击立即提交目标页导航，快捷区在路由过渡后同步收拢；
   /// 不再等待收拢完成再进入（用户 2026-10-10 明确要求直接跳转）。
@@ -752,30 +874,6 @@ class HomeShellState extends State<HomeShell>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (progress < 1)
-                    ClipRect(
-                      child: Align(
-                        heightFactor: 1 - progress,
-                        child: Opacity(
-                          opacity: 1 - progress,
-                          child: IgnorePointer(
-                            ignoring: progress > 0,
-                            child: ExcludeSemantics(
-                              excluding: progress > 0,
-                              child: HomeTopBar(
-                                busy: widget.busy,
-                                side: widget.quickPanelSide,
-                                menuFocusNode: _menuFocus,
-                                onToday: feed.focusDate == today
-                                    ? null
-                                    : _returnToToday,
-                                onMenu: () => _settlePanel(true),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                   ?widget.banner,
                   HomeDateTitle(
                     date: feed.focusDate,
@@ -785,6 +883,7 @@ class HomeShellState extends State<HomeShell>
                     side: widget.quickPanelSide,
                     menuFocusNode: _menuFocus,
                     canShiftNext: canShiftNext,
+                    showMenuButton: widget.showMenuButton,
                     onMenu: () => _settlePanel(true),
                     onChooseDate: _chooseDate,
                     onShiftDay: _shiftDay,

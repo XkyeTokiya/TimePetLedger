@@ -10,67 +10,6 @@ import 'home_ledger_style.dart';
 import 'home_timeline_tab.dart' show ledgerWeekdayText;
 import 'home_value_transition.dart';
 
-class HomeTopBar extends StatelessWidget {
-  const HomeTopBar({
-    super.key,
-    required this.busy,
-    required this.onMenu,
-    this.side = HomeQuickPanelSide.left,
-    this.menuFocusNode,
-    this.onToday,
-  });
-  final bool busy;
-  final VoidCallback onMenu;
-  final HomeQuickPanelSide side;
-  final FocusNode? menuFocusNode;
-  final VoidCallback? onToday;
-  @override
-  Widget build(BuildContext context) {
-    final menu = IconButton(
-      key: const ValueKey('home-menu'),
-      focusNode: menuFocusNode,
-      tooltip: '菜单',
-      onPressed: busy ? null : onMenu,
-      icon: const Icon(Icons.menu, size: 24),
-    );
-    final today = onToday == null
-        ? null
-        : _TodayButton(busy: busy, onToday: onToday!);
-    return Padding(
-      padding: side == HomeQuickPanelSide.left
-          ? const EdgeInsets.fromLTRB(4, 4, 16, 4)
-          : const EdgeInsets.fromLTRB(16, 4, 4, 4),
-      child: Row(
-        children: [
-          if (side == HomeQuickPanelSide.left) ...[
-            menu,
-            const SizedBox(width: 4),
-          ] else if (today != null) ...[
-            today,
-            const SizedBox(width: 8),
-          ],
-          Expanded(
-            child: Text(
-              '日账本',
-              textAlign: side == HomeQuickPanelSide.left
-                  ? TextAlign.start
-                  : TextAlign.end,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          if (side == HomeQuickPanelSide.right) ...[
-            const SizedBox(width: 4),
-            menu,
-          ] else if (today != null) ...[
-            const SizedBox(width: 8),
-            today,
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 /// Compact layout keeps all date controls, even when text requires two lines.
 class HomeDateTitle extends StatefulWidget {
   const HomeDateTitle({
@@ -86,6 +25,7 @@ class HomeDateTitle extends StatefulWidget {
     this.menuFocusNode,
     this.canShiftNext = true,
     this.progress = 0,
+    this.showMenuButton = true,
   });
   final CivilDate date;
   final CivilDate today;
@@ -98,6 +38,10 @@ class HomeDateTitle extends StatefulWidget {
   final FocusNode? menuFocusNode;
   final bool canShiftNext;
   final double progress;
+
+  /// 日期行是否显示菜单按钮（默认显示，可在界面设置隐藏；隐藏后仍可
+  /// 从屏幕边缘滑出快捷区）。
+  final bool showMenuButton;
 
   @override
   State<HomeDateTitle> createState() => _HomeDateTitleState();
@@ -133,6 +77,7 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
     final menuFocusNode = widget.menuFocusNode;
     final canShiftNext = widget.canShiftNext;
     final progress = widget.progress;
+    final showMenuButton = widget.showMenuButton;
     final colors = Theme.of(context).colorScheme;
     final compact = progress == 1;
     final largeText = MediaQuery.textScalerOf(context).scale(16) > 24;
@@ -163,9 +108,9 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
     );
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        lerpDouble(16, 4, progress)!,
+        lerpDouble(8, 4, progress)!,
         lerpDouble(0, 4, progress)!,
-        16,
+        lerpDouble(8, 4, progress)!,
         12,
       ),
       child: LayoutBuilder(
@@ -179,82 +124,91 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
             dateStyle: dateStyle,
             base: base,
           );
-          // 展开与紧凑两个稳定态的行宽（外层左右内边距随进度插值）。
-          final widthExpanded = constraints.maxWidth - 12 * progress;
-          final widthCollapsed = constraints.maxWidth + 12 * (1 - progress);
           final weekdayWidths = [
             metrics.weekdayFullWidth,
             metrics.weekdayShortWidth,
             0.0,
           ];
-          final buttonWidths = [metrics.todayWidth + 24, homeTapTarget, 0.0];
-          // 页头只有日期行：星期与返回今天都在同一行内取舍。按优先级选择
-          // 同时放进展开与紧凑两个稳定态的组合：星期完整 → 缩短；按钮先
-          // 文字、再图标；空间确实放不下时先隐藏星期以保住按钮，最后两者
-          // 都省略（快捷区保留“返回今天”入口）。任何情况都不再出现第二
-          // 行，也不在收放动画中途改变形态。
-          ({int weekday, int button})? pick() {
-            final preference = <({int weekday, int button})>[
-              (weekday: 0, button: 0),
-              (weekday: 0, button: 1),
-              (weekday: 1, button: 0),
-              (weekday: 1, button: 1),
-              (weekday: 2, button: 1),
-              (weekday: 0, button: 2),
-              (weekday: 1, button: 2),
-              (weekday: 2, button: 2),
-            ];
-            for (final combo in preference) {
-              if (date == today && combo.button != 2) continue;
-              final weekdayWidth = weekdayWidths[combo.weekday];
-              final group = weekdayWidth > 0 ? 8 + weekdayWidth : 0.0;
-              if (widthExpanded - 2 * homeTapTarget <
-                  metrics.expandedDateWidth + group) {
-                continue;
-              }
-              if (widthCollapsed - 3 * homeTapTarget <
-                  metrics.compactDateWidth +
-                      group +
-                      buttonWidths[combo.button]) {
-                continue;
-              }
-              return combo;
-            }
-            return null;
+          // 菜单（可选）+ 前后箭头始终占位；返回今天固定图标形式。
+          final fixedWidths =
+              (showMenuButton ? homeTapTarget : 0.0) + 2 * homeTapTarget;
+          final buttonWidths = [homeTapTarget, homeTapTarget, 0.0];
+          // 页头只有日期行：星期与返回今天都在同一行内取舍。两端点的行宽
+          // 与字号不同，用屏幕宽推算两个稳定态的可用宽度；星期取能在展开
+          // 态站住的最长形态，收放期间不变形。返回今天优先常显；只能站住
+          // 紧凑态时随收放渐显；两端都放不下时先缩短星期再试（按钮优先于
+          // 星期长度），最后才省略按钮（快捷区保留入口）。任何情况都不再
+          // 出现第二行。
+          final pad = lerpDouble(8, 4, progress)!;
+          final screenWidth = constraints.maxWidth + 2 * pad;
+          final expandedWidth = screenWidth - 16;
+          final collapsedWidth = screenWidth - 8;
+          bool fits({
+            required bool expanded,
+            required int weekday,
+            required int button,
+          }) {
+            if (date == today && button != 2) return false;
+            final available =
+                (expanded ? expandedWidth : collapsedWidth) -
+                fixedWidths -
+                buttonWidths[button];
+            final dateWidth = expanded
+                ? metrics.expandedDateWidth
+                : metrics.compactDateWidth;
+            final weekdayWidth = weekdayWidths[weekday];
+            final group = weekdayWidth > 0 ? 8 + weekdayWidth : 0.0;
+            return available >= dateWidth + group;
           }
 
-          final choice = pick();
-          final weekdayForm = choice?.weekday ?? 2;
-          final buttonForm = choice?.button ?? 2;
+          final baseWeekday = [0, 1, 2].firstWhere(
+            (weekday) => fits(expanded: true, weekday: weekday, button: 2),
+            orElse: () => 2,
+          );
+          var weekdayForm = baseWeekday;
+          var buttonAlways = false;
+          var buttonCompactOnly = false;
+          // 返回今天优先常显：从最长的星期形态开始，必要时缩短 / 隐藏
+          // 星期以保住按钮（读屏仍播报完整星期）。
+          for (final weekday in [0, 1, 2]) {
+            if (weekday < baseWeekday) continue;
+            if (fits(expanded: true, weekday: weekday, button: 0)) {
+              weekdayForm = weekday;
+              buttonAlways = true;
+              break;
+            }
+          }
+          if (!buttonAlways) {
+            // 展开态实在放不下时退到紧凑态渐显，仍尽量保留较长的星期。
+            for (final weekday in [0, 1, 2]) {
+              if (weekday < baseWeekday) continue;
+              if (fits(expanded: false, weekday: weekday, button: 0)) {
+                weekdayForm = weekday;
+                buttonCompactOnly = true;
+                break;
+              }
+            }
+          }
           final weekdayMessage = switch (weekdayForm) {
             0 => weekdayText,
             1 => weekdayName,
             _ => null,
           };
-          final menu = IconButton(
-            key: compact ? const ValueKey('home-menu') : null,
-            focusNode: compact ? menuFocusNode : null,
-            tooltip: '菜单',
-            onPressed: busy ? null : onMenu,
-            icon: const Icon(Icons.menu, size: 24),
-          );
-          final buttonKey = compact
-              ? const ValueKey('home-back-to-today')
+          final menu = showMenuButton
+              ? IconButton(
+                  key: const ValueKey('home-menu'),
+                  focusNode: menuFocusNode,
+                  tooltip: '菜单',
+                  onPressed: busy ? null : onMenu,
+                  icon: const Icon(Icons.menu, size: 24),
+                )
               : null;
-          final todayButton = switch (buttonForm) {
-            0 => _TodayButton(
-              busy: busy,
-              onToday: onToday,
-              buttonKey: buttonKey,
-            ),
-            1 => _TodayButton(
-              busy: busy,
-              onToday: onToday,
-              buttonKey: buttonKey,
-              iconOnly: true,
-            ),
-            _ => null,
-          };
+          final todayWidget = _TodayButton(busy: busy, onToday: onToday);
+          final todayButton = buttonAlways
+              ? todayWidget
+              : buttonCompactOnly
+              ? _CompactSlot(progress: progress, child: todayWidget)
+              : null;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -265,10 +219,9 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
               ),
               Row(
                 children: [
-                  if (side == HomeQuickPanelSide.left)
-                    _CompactSlot(progress: progress, child: menu),
+                  if (side == HomeQuickPanelSide.left && menu != null) menu,
                   if (side == HomeQuickPanelSide.right && todayButton != null)
-                    _CompactSlot(progress: progress, child: todayButton),
+                    todayButton,
                   IconButton(
                     key: const ValueKey('home-previous-day'),
                     tooltip: '前一天',
@@ -320,9 +273,8 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
                     icon: const Icon(Icons.chevron_right, size: 24),
                   ),
                   if (side == HomeQuickPanelSide.left && todayButton != null)
-                    _CompactSlot(progress: progress, child: todayButton),
-                  if (side == HomeQuickPanelSide.right)
-                    _CompactSlot(progress: progress, child: menu),
+                    todayButton,
+                  if (side == HomeQuickPanelSide.right && menu != null) menu,
                 ],
               ),
             ],
@@ -355,10 +307,6 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
     }
 
     return _DateTitleMetrics(
-      todayWidth: widthOf(
-        '返回今天',
-        withThemeFont(context, HomeLedgerStyle.button),
-      ),
       weekdayFullWidth: widthOf(weekdayText, weekdayStyle),
       weekdayShortWidth: widthOf(weekdayName, weekdayStyle),
       expandedDateWidth: widthOf(dateText, dateStyle.copyWith(fontSize: base)),
@@ -392,48 +340,28 @@ class _HomeDateTitleState extends State<HomeDateTitle> {
 }
 
 class _TodayButton extends StatelessWidget {
-  const _TodayButton({
-    required this.busy,
-    required this.onToday,
-    this.buttonKey = const ValueKey('home-back-to-today'),
-    this.iconOnly = false,
-  });
+  const _TodayButton({required this.busy, required this.onToday});
   final bool busy;
   final VoidCallback onToday;
-  final Key? buttonKey;
-  final bool iconOnly;
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    if (iconOnly) {
-      return SizedBox(
-        width: homeTapTarget,
-        height: homeTapTarget,
-        child: IconButton(
-          key: buttonKey,
-          tooltip: '返回今天',
-          onPressed: busy ? null : onToday,
-          padding: EdgeInsets.zero,
-          icon: Icon(Icons.today_outlined, color: colors.primary),
-        ),
-      );
-    }
-    return TextButton(
-      key: buttonKey,
-      onPressed: busy ? null : onToday,
-      style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        textStyle: withThemeFont(context, HomeLedgerStyle.button),
-        backgroundColor: colors.surfaceContainerHighest,
-        foregroundColor: colors.primary,
+    return SizedBox(
+      width: homeTapTarget,
+      height: homeTapTarget,
+      child: IconButton(
+        key: const ValueKey('home-back-to-today'),
+        tooltip: '返回今天',
+        onPressed: busy ? null : onToday,
+        padding: EdgeInsets.zero,
+        icon: Icon(Icons.today_outlined, color: colors.primary),
       ),
-      child: const Text('返回今天'),
     );
   }
 }
 
 /// 过渡中先用同一最终控件占据逐步增长的宽度；只有稳定紧凑态才允许
-/// 它接收焦点、语义和点击，避免菜单 / 返回今天在端点突然挤动日期。
+/// 它接收焦点、语义和点击，避免返回今天在端点突然挤动日期。
 class _CompactSlot extends StatelessWidget {
   const _CompactSlot({required this.progress, required this.child});
 
@@ -458,14 +386,12 @@ class _CompactSlot extends StatelessWidget {
 /// 日期行的静态测量（与收放进度无关），按日期/主题/字号失效。
 class _DateTitleMetrics {
   const _DateTitleMetrics({
-    required this.todayWidth,
     required this.weekdayFullWidth,
     required this.weekdayShortWidth,
     required this.expandedDateWidth,
     required this.compactDateWidth,
   });
 
-  final double todayWidth;
   final double weekdayFullWidth;
   final double weekdayShortWidth;
   final double expandedDateWidth;

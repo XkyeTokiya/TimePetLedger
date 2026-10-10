@@ -34,6 +34,7 @@ final class AppPreferences {
     this.themeMode,
     this.fontChoice,
     this.homeQuickPanelSide,
+    this.showHomeMenuButton,
   });
 
   /// 用户显式指定的常用目标；归档 / 删除后清除（Q-025）。
@@ -66,6 +67,9 @@ final class AppPreferences {
   /// 首页快捷区位置；是本机界面偏好，不进入账本事实。
   final HomeQuickPanelSide? homeQuickPanelSide;
 
+  /// 日期行菜单按钮开关；null 按显示解析。
+  final bool? showHomeMenuButton;
+
   AppPreferences copyWith({
     EntityId? commonGoalId,
     bool clearCommonGoal = false,
@@ -78,6 +82,7 @@ final class AppPreferences {
     AppThemeMode? themeMode,
     AppFontChoice? fontChoice,
     HomeQuickPanelSide? homeQuickPanelSide,
+    bool? showHomeMenuButton,
   }) => AppPreferences(
     commonGoalId: clearCommonGoal ? null : (commonGoalId ?? this.commonGoalId),
     heatRange: heatRange ?? this.heatRange,
@@ -89,6 +94,7 @@ final class AppPreferences {
     themeMode: themeMode ?? this.themeMode,
     fontChoice: fontChoice ?? this.fontChoice,
     homeQuickPanelSide: homeQuickPanelSide ?? this.homeQuickPanelSide,
+    showHomeMenuButton: showHomeMenuButton ?? this.showHomeMenuButton,
   );
 }
 

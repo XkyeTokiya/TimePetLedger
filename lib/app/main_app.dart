@@ -696,6 +696,7 @@ class _RecordingHomeState extends State<_RecordingHome>
       floatingCard: (preferences?.reminders ?? true) ? _suggestionCard : null,
       quickPanelSide:
           preferences?.homeQuickPanelSide ?? HomeQuickPanelSide.left,
+      showMenuButton: preferences?.showHomeMenuButton ?? true,
     );
   }
 }

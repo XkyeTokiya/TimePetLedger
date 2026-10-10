@@ -45,6 +45,7 @@ final class DriftAppPreferencesStore implements AppPreferencesStore {
         homeQuickPanelSide: _homeQuickPanelSide(
           values['home_quick_panel_side'],
         ),
+        showHomeMenuButton: _bool(values['show_home_menu_button']),
       );
     } catch (error, stack) {
       Error.throwWithStackTrace(AppPreferencesStorageException(error), stack);
@@ -68,6 +69,7 @@ final class DriftAppPreferencesStore implements AppPreferencesStore {
           'theme_mode': preferences.themeMode?.name,
           'font_choice': preferences.fontChoice?.name,
           'home_quick_panel_side': preferences.homeQuickPanelSide?.name,
+          'show_home_menu_button': preferences.showHomeMenuButton?.toString(),
         }.entries) {
           final value = entry.value;
           if (value == null) {

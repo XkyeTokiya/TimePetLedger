@@ -380,14 +380,30 @@ class _SettingsPageState extends State<SettingsPage> {
                     side,
                 title: side == HomeQuickPanelSide.left ? '左侧' : '右侧',
                 description: side == HomeQuickPanelSide.left
-                    ? '向右滑打开，菜单在左上'
-                    : '向左滑打开，菜单在右上',
+                    ? '向右滑打开，菜单在日期行左侧'
+                    : '向左滑打开，菜单在日期行右侧',
                 onTap: busy
                     ? null
                     : () => _savePreference(
                         (c) => c.copyWith(homeQuickPanelSide: side),
                       ),
               ),
+            _row(
+              icon: Icons.menu,
+              title: '显示菜单按钮',
+              subtitle: (prefs.showHomeMenuButton ?? true)
+                  ? '日期行显示菜单按钮；关闭后从屏幕边缘滑出快捷区。'
+                  : '已隐藏；从屏幕边缘滑出快捷区。',
+              trailing: Switch(
+                key: const ValueKey('settings-menu-button'),
+                value: prefs.showHomeMenuButton ?? true,
+                onChanged: busy
+                    ? null
+                    : (value) => _savePreference(
+                        (c) => c.copyWith(showHomeMenuButton: value),
+                      ),
+              ),
+            ),
           ]),
           _sectionLabel('目标热力图', value: _rangeText(prefs)),
           _card([
