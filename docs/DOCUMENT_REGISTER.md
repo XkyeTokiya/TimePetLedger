@@ -77,7 +77,7 @@
 | [UI_IMPLEMENTATION_DESIGN](planning/UI_IMPLEMENTATION_DESIGN.md) | 历史归档 | 旧原型还原标准及展示修订；文件明确暂停，已登记的领域 / 展示决定仍需追溯保留 |
 | [UI_IMPLEMENTATION_TASKS](planning/UI_IMPLEMENTATION_TASKS.md) | 历史归档（含未完成任务） | PAGE-T01–T09 旧路线暂停；不继续自动执行，未通过、部分交付及待执行状态保留 |
 | [PAGE_T01_RESTORATION_CHECKLIST](planning/PAGE_T01_RESTORATION_CHECKLIST.md) | 历史归档 | 旧六屏还原清单和可操作视觉夹具；对应 PAGE-T01 报告，不作为新路线验收清单 |
-| [GUIDED_RECORDING_DESIGN](planning/GUIDED_RECORDING_DESIGN.md) | 历史归档（含决定追溯） | 三幕 v0.2 及样板反馈；明确暂停，最新反馈转入 UI_REBUILD_PLAN；旧精度选择、外露更换按钮、时间绕行不能照搬 |
+| [GUIDED_RECORDING_DESIGN](planning/GUIDED_RECORDING_DESIGN.md) | 历史归档（含决定追溯） | 三幕 v0.2 及样板反馈；明确暂停，最新反馈转入 UI_REBUILD_PLAN；旧精度选择、外露更换按钮、时间绕行不能照搬；问答顺序已被[Q-047](domain/OPEN_QUESTIONS.md#q-047)取代 |
 | [design-qa](../design-qa.md) | 验证证据（历史样板） | RB-01 内存预览交付与 blocked 记录；127.0.0.1 和 /tmp 为当时环境，不宣称当前可访问，不作为正式持久化交付 |
 | [活动原型 README](../prototypes/activity-editor/README.md) | 原型参考（历史） | 本地 HTML 原型说明；localStorage 与模拟响应不读写 Flutter 正式库 |
 | [活动原型 QA](../prototypes/activity-editor/QA.md) | 验证证据（历史原型） | 2026-10-05 原型检查；模拟键盘 / 保存通过不等于真实平台或数据库通过 |
