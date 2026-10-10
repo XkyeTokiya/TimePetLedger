@@ -1,0 +1,873 @@
+{
+ "commit": "bb5051c",
+ "command": "flutter test --reporter expanded",
+ "date": "2026-10-11",
+ "totals": {
+  "passed": 789,
+  "skipped": 11,
+  "failed": 141,
+  "total": 941
+ },
+ "buckets": {
+  "legacy_fixture": {
+   "count": 92,
+   "description": "测试引用的旧页面 / 组件为生产不可达实现；随 DEBT-LEGACY-01 删除或迁移。"
+  },
+  "stale_assertion": {
+   "count": 29,
+   "description": "活跃路径上的陈旧断言：有意变更未同步；DEBT-REBASE-01 按现行合同重写。"
+  },
+  "needs_judgment": {
+   "count": 20,
+   "description": "需对照 Source of Truth / 领域合同判定“测试陈旧 or 真实缺陷”；DEBT-REBASE-01 逐条给出结论。"
+  }
+ },
+ "failures": [
+  {
+   "file": "test/app/basic_recording_flow_test.dart",
+   "name": "historical candidate requires choice; invalid and sleep conflict can be corrected",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/basic_recording_flow_test.dart",
+   "name": "sleep-only today suggests tail; mixed precision survives draft, save, edit and delete",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/bootstrap/app_bootstrap_test.dart",
+   "name": "bootstrap owns one connection across rebuilds and closes it",
+   "bucket": "stale_assertion",
+   "reason": "断言旧首页字标 / 结构与文案（“日账本”已由 f289eb5 移除；旧入口文案被时间轴与记录面板替换）"
+  },
+  {
+   "file": "test/app/bootstrap/app_bootstrap_test.dart",
+   "name": "bootstrapped new Unknown is saved and home shows refreshed coverage",
+   "bucket": "stale_assertion",
+   "reason": "断言旧首页字标 / 结构与文案（“日账本”已由 f289eb5 移除；旧入口文案被时间轴与记录面板替换）"
+  },
+  {
+   "file": "test/app/bootstrap/app_bootstrap_test.dart",
+   "name": "existing record is reachable for edit after opening the app",
+   "bucket": "stale_assertion",
+   "reason": "断言旧首页字标 / 结构与文案（“日账本”已由 f289eb5 移除；旧入口文案被时间轴与记录面板替换）"
+  },
+  {
+   "file": "test/app/day_ledger_editing_flow_test.dart",
+   "name": "cross-day SleepSession enters complete editor from both slices; moving wake date and deleting refresh all revisited projections",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/day_ledger_editing_flow_test.dart",
+   "name": "cross-day TimeBlock edits one complete identity from both days; hidden fields survive both knowledge transitions and move; delete removes annotation only",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/day_ledger_editing_flow_test.dart",
+   "name": "stale TimeBlock save conflicts atomically, retains draft and rejects missing source; missing Sleep slice cannot recreate saved draft",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/day_ledger_entry_test.dart",
+   "name": "bootstrap opens day ledger, follows today and excludes preserved draft",
+   "bucket": "stale_assertion",
+   "reason": "断言已移除的“日账本”字标（f289eb5）"
+  },
+  {
+   "file": "test/app/day_ledger_goal_rhythm_test.dart",
+   "name": "both day slices edit the complete annotation, clear hint/remove and delete reread without rewriting reviews",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/day_ledger_goal_rhythm_test.dart",
+   "name": "committed annotation refresh failure retries reads only, including independent full-day Goal failure",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/day_ledger_goal_rhythm_test.dart",
+   "name": "long Unicode Goal and multiline continuation stay readable on narrow scaled timeline without truncating stored text",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/day_ledger_goal_rhythm_test.dart",
+   "name": "real Goal read failure hides stale timeline; retry reads current metadata without any formal write",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/day_ledger_goal_rhythm_test.dart",
+   "name": "same names use distinct ids, current metadata reloads and absent annotations/sleep carry no implied rhythm",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/day_ledger_resolution_flow_test.dart",
+   "name": "current Gap conflict remains unresolved until manual adjacent correction; committed read retry never inserts twice; refreshed now and future contexts stay distinct",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/day_ledger_resolution_flow_test.dart",
+   "name": "one real app resolves cross-day sleep, partial known and Unknown while leaving gaps, then edits/deletes and reopens only persisted facts",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/day_ledger_timeline_test.dart",
+   "name": "real facts render as one day timeline and re-slice across dates without writes or duplicates",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/day_summary_entry_test.dart",
+   "name": "bootstrap opens summary, follows today and excludes preserved draft",
+   "bucket": "stale_assertion",
+   "reason": "断言旧摘要页标题“基础摘要”；现行摘要页已替换"
+  },
+  {
+   "file": "test/app/day_summary_recalculation_flow_test.dart",
+   "name": "current-day UI save retry and summary route return refresh without repeated writes or stale snapshot",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/day_summary_recalculation_flow_test.dart",
+   "name": "real file app UI mutations keep historical mixed summaries derived from current facts",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/editor_visual_sample_test.dart",
+   "name": "editor mobile matrix, continuous writing and staged time cancel",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/gap_recording_flow_test.dart",
+   "name": "Gap partial known draft survives leaving and file reopen, existing precision wins, ordinary draft remains separate, save leaves remainder",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/gap_recording_flow_test.dart",
+   "name": "empty historical Gap prefills full calendar day; future date exposes no Gap action",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/gap_recording_flow_test.dart",
+   "name": "empty ordinary entry stays manual but explicit full-day Gap prefills approximate and saves untitled Unknown only after confirmation",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/gap_recording_flow_test.dart",
+   "name": "stale Gap conflicts atomically with new sleep, retains input and draft until manual correction succeeds",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/home_feed_nav_capture_test.dart",
+   "name": "capture home feed at 360 and 320 with large text",
+   "bucket": "stale_assertion",
+   "reason": "捕获 / 断言基线仍指向旧页面（含 ReviewContextPage）与旧文案；需随重建更新"
+  },
+  {
+   "file": "test/app/home_feed_nav_capture_test.dart",
+   "name": "capture standalone summary and review pages",
+   "bucket": "stale_assertion",
+   "reason": "捕获 / 断言基线仍指向旧页面（含 ReviewContextPage）与旧文案；需随重建更新"
+  },
+  {
+   "file": "test/app/home_navigation_flow_test.dart",
+   "name": "resuming across midnight keeps the review editor date and draft",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/home_navigation_flow_test.dart",
+   "name": "review input survives within the session, resumes by choice and saves for real",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/home_navigation_flow_test.dart",
+   "name": "summary and review inherit the home date, manage their own, and the home keeps its reading place",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/home_visual_sample_test.dart",
+   "name": "confirmed home sample, details and mobile text matrix",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/page_t01_visual_fixture_test.dart",
+   "name": "V01 real Gap save and V06 atomic conflict retains input",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/page_t01_visual_fixture_test.dart",
+   "name": "V02 complete source edit and V05 cancel isolates temporary values",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/recording_goal_flow_test.dart",
+   "name": "bootstrap Gap prefills unchanged approximate times, timeline source edit retains archived Goal and clears",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/recording_goal_flow_test.dart",
+   "name": "real bootstrap ordinary selection reopens both files, saves by id, legacy home edit clears",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/recording_rhythm_flow_test.dart",
+   "name": "bootstrap Gap/timeline routes save optional hint and edit/remove through the real repository",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/recording_rhythm_flow_test.dart",
+   "name": "bootstrap ordinary/home routes save optional hint and edit/remove through the real repository",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_closure_flow_test.dart",
+   "name": "committed leap-day review with simultaneous cleanup/read faults recovers through full bootstrap reopen and retries only finish before edit/delete",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_closure_flow_test.dart",
+   "name": "independent SQLite writer wins selected date, restored failed draft stays distinct; write retry and deleted stale source never retarget a replacement",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_closure_flow_test.dart",
+   "name": "real mixed summary to raw draft, Unicode limit and changed Goal failure, full-field create/edit/move/delete preserve facts",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_context_entry_test.dart",
+   "name": "direct bootstrap review entry, absent vs failed retry, stored historical text and archived reference survive fact refresh",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_correction_flow_test.dart",
+   "name": "actual bootstrap restores edit draft, retains archived Goal, saves moved date and no-op without changing identity or creation time",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_correction_flow_test.dart",
+   "name": "date conflict keeps raw edit and both reviews; source deleted after read reports missing and never recreates",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_correction_flow_test.dart",
+   "name": "post-update clear/read failure feedback freezes input and retries only finalization",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_deletion_flow_test.dart",
+   "name": "actual bootstrap confirms stored source date; cancel retains facts, delete removes only review/edit draft and returns correct day",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_deletion_flow_test.dart",
+   "name": "fast delete/dialog callbacks run once; committed cleanup/read failures freeze old edit and retry only finish",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_deletion_flow_test.dart",
+   "name": "real formal delete failure keeps raw invalid edit and all facts, retry succeeds without saving corrections",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_deletion_flow_test.dart",
+   "name": "return after cleanup failure and reopen new-entry form cannot revive residual old-ID edit draft",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_form_entry_test.dart",
+   "name": "bootstrap passes real draft session and Goal reads to form; leave and reopen restores raw input while original review remains unchanged",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_form_entry_test.dart",
+   "name": "real file reopen restores edited date by original identity and new drafts by entry date; formal five tables unchanged",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_route_flow_test.dart",
+   "name": "actual fact correction refreshes ledger, summary and review context while archived original Goal and review text keep their source",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_route_flow_test.dart",
+   "name": "ledger entry allows failed facts, rejects invalid dates and pins displayed today across midnight with one route",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_route_flow_test.dart",
+   "name": "real summary save-return, historical ledger read/edit, move to new day and delete leave original facts intact",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_route_flow_test.dart",
+   "name": "summary entry allows failed facts, rejects invalid dates and pins displayed today across midnight with one route",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_submission_flow_test.dart",
+   "name": "actual bootstrap submits only a step with remaining Gap, fast repeat click creates one row and reads changed historical date",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/review_submission_flow_test.dart",
+   "name": "real clear and refresh failures are post-commit feedback; retry cannot create, edit or discard the saved review",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/sleep_editing_flow_test.dart",
+   "name": "app edits complete fact from either day, reopens file draft, migrates wake summary, preserves note and deletes with refreshed Gap",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/sleep_editing_flow_test.dart",
+   "name": "app rejects a stale summary edit when source was removed, preserving the real edit draft",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/sleep_note_flow_test.dart",
+   "name": "2001 code points remain in draft; trimmed 2000 emoji save without UTF16 clipping",
+   "bucket": "stale_assertion",
+   "reason": "测试经旧表单导航辅助（test/support/app_sleep_navigation.dart）驱动；入口已换为 SleepRecordingPage，需迁移"
+  },
+  {
+   "file": "test/app/sleep_note_flow_test.dart",
+   "name": "optional note can be omitted or blank for both sleep types",
+   "bucket": "stale_assertion",
+   "reason": "测试经旧表单导航辅助（test/support/app_sleep_navigation.dart）驱动；入口已换为 SleepRecordingPage，需迁移"
+  },
+  {
+   "file": "test/app/sleep_note_flow_test.dart",
+   "name": "raw multiline note restores, failed note-only edit retains input and explicit clearing saves null",
+   "bucket": "stale_assertion",
+   "reason": "测试经旧表单导航辅助（test/support/app_sleep_navigation.dart）驱动；入口已换为 SleepRecordingPage，需迁移"
+  },
+  {
+   "file": "test/app/sleep_recording_flow_test.dart",
+   "name": "committed create/edit/delete with real cleanup and read failures only retries cleanup and reads",
+   "bucket": "stale_assertion",
+   "reason": "测试经旧表单导航辅助（test/support/app_sleep_navigation.dart）驱动；入口已换为 SleepRecordingPage，需迁移"
+  },
+  {
+   "file": "test/app/sleep_recording_flow_test.dart",
+   "name": "facts changed after drafting reject both conflicts; manual correction survives real rollback and editing conflicts",
+   "bucket": "stale_assertion",
+   "reason": "测试经旧表单导航辅助（test/support/app_sleep_navigation.dart）驱动；入口已换为 SleepRecordingPage，需迁移"
+  },
+  {
+   "file": "test/app/sleep_recording_flow_test.dart",
+   "name": "first real entry persists a draft, submits cross-day/multiple main sleeps and nap, edits and deletes with independent approximation",
+   "bucket": "stale_assertion",
+   "reason": "测试经旧表单导航辅助（test/support/app_sleep_navigation.dart）驱动；入口已换为 SleepRecordingPage，需迁移"
+  },
+  {
+   "file": "test/app/sleep_recording_flow_test.dart",
+   "name": "midnight wake saved via entry remains in complete summary with zero day contribution and is editable",
+   "bucket": "stale_assertion",
+   "reason": "测试经旧表单导航辅助（test/support/app_sleep_navigation.dart）驱动；入口已换为 SleepRecordingPage，需迁移"
+  },
+  {
+   "file": "test/app/sleep_submission_flow_test.dart",
+   "name": "assembled app saves one cross-day fact, clears file draft and updates summaries/coverage for both days and nap",
+   "bucket": "stale_assertion",
+   "reason": "测试经旧表单导航辅助（test/support/app_sleep_navigation.dart）驱动；入口已换为 SleepRecordingPage，需迁移"
+  },
+  {
+   "file": "test/app/sleep_submission_flow_test.dart",
+   "name": "summary displays every complete main sleep and nap, including sub-minute duration without calling it missing",
+   "bucket": "stale_assertion",
+   "reason": "测试经旧表单导航辅助（test/support/app_sleep_navigation.dart）驱动；入口已换为 SleepRecordingPage，需迁移"
+  },
+  {
+   "file": "test/app/theme/time_ledger_theme_test.dart",
+   "name": "existing form and time dialog at 320.0 / 1.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/theme/time_ledger_theme_test.dart",
+   "name": "existing form and time dialog at 320.0 / 1.5",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/theme/time_ledger_theme_test.dart",
+   "name": "existing form and time dialog at 320.0 / 2.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/theme/time_ledger_theme_test.dart",
+   "name": "existing form and time dialog at 360.0 / 1.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/theme/time_ledger_theme_test.dart",
+   "name": "existing form and time dialog at 360.0 / 1.5",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/theme/time_ledger_theme_test.dart",
+   "name": "existing form and time dialog at 360.0 / 2.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/theme/time_ledger_theme_test.dart",
+   "name": "existing form and time dialog at 412.0 / 1.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/theme/time_ledger_theme_test.dart",
+   "name": "existing form and time dialog at 412.0 / 1.5",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/theme/time_ledger_theme_test.dart",
+   "name": "existing form and time dialog at 412.0 / 2.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/theme/time_ledger_theme_test.dart",
+   "name": "ready app retains date error and original entries at 320.0 / 2.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/theme/time_ledger_theme_test.dart",
+   "name": "ready app retains date error and original entries at 360.0 / 1.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/ui_t04_navigation_test.dart",
+   "name": "root mobile matrix, large text, safe bottom and create/more contrast",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/ui_t04_navigation_test.dart",
+   "name": "shared fixed/follow date, modal cancel, native root back, formal saved date and drafts",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/app/ui_t04_navigation_test.dart",
+   "name": "source anchor survives reread, modal, destination, size change and deleted source; seven date limit",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/application/recording_time_automation_test.dart",
+   "name": "entry initializes cache immediately and saving leaves earlier gaps intact",
+   "bucket": "needs_judgment",
+   "reason": "时间初值缓存与 continuation-hint 期望待对照现行实现判定"
+  },
+  {
+   "file": "test/features/ledger/application/sleep_time_prediction_loader_test.dart",
+   "name": "post-commit feedback failure preserves draft and recovers without another formal write",
+   "bucket": "needs_judgment",
+   "reason": "应用层时间初值与反馈文案期望待对照现行合同判定"
+  },
+  {
+   "file": "test/features/ledger/application/sleep_time_prediction_loader_test.dart",
+   "name": "screenshot context initializes cache, keeps old gaps, and records feedback after commit",
+   "bucket": "needs_judgment",
+   "reason": "应用层时间初值与反馈文案期望待对照现行合同判定"
+  },
+  {
+   "file": "test/features/ledger/data/recording_goal_migration_test.dart",
+   "name": "v1 upgrade retains raw input and omitted Goal; select/clear survive file reopen and edit leaves hidden fields",
+   "bucket": "needs_judgment",
+   "reason": "草稿迁移 / 重开持久化期望与 Q-012 会话内恢复合同的关系待判定（保留最小升级安全性或随旧草稿路径清理）"
+  },
+  {
+   "file": "test/features/ledger/data/recording_goal_migration_test.dart",
+   "name": "v2 upgrade retains raw input and omitted Goal; select/clear survive file reopen and edit leaves hidden fields",
+   "bucket": "needs_judgment",
+   "reason": "草稿迁移 / 重开持久化期望与 Q-012 会话内恢复合同的关系待判定（保留最小升级安全性或随旧草稿路径清理）"
+  },
+  {
+   "file": "test/features/ledger/data/recording_rhythm_details_migration_test.dart",
+   "name": "new oversized raw details and stable annotation id survive file reopen; discard clears only draft",
+   "bucket": "needs_judgment",
+   "reason": "草稿迁移 / 重开持久化期望与 Q-012 会话内恢复合同的关系待判定（保留最小升级安全性或随旧草稿路径清理）"
+  },
+  {
+   "file": "test/features/ledger/data/recording_rhythm_details_migration_test.dart",
+   "name": "v4 edit with previous state/hint intent preserves omitted details, then explicit clear survives file reopen",
+   "bucket": "needs_judgment",
+   "reason": "草稿迁移 / 重开持久化期望与 Q-012 会话内恢复合同的关系待判定（保留最小升级安全性或随旧草稿路径清理）"
+  },
+  {
+   "file": "test/features/ledger/data/recording_rhythm_migration_test.dart",
+   "name": "new annotation stable id and raw hint survive file reopen and none/state restoration",
+   "bucket": "needs_judgment",
+   "reason": "草稿迁移 / 重开持久化期望与 Q-012 会话内恢复合同的关系待判定（保留最小升级安全性或随旧草稿路径清理）"
+  },
+  {
+   "file": "test/features/ledger/data/recording_rhythm_migration_test.dart",
+   "name": "v1 file upgrade omits annotation change, keeps hidden source; explicit edit/remove survive reopen",
+   "bucket": "needs_judgment",
+   "reason": "草稿迁移 / 重开持久化期望与 Q-012 会话内恢复合同的关系待判定（保留最小升级安全性或随旧草稿路径清理）"
+  },
+  {
+   "file": "test/features/ledger/data/recording_rhythm_migration_test.dart",
+   "name": "v2 file upgrade omits annotation change, keeps hidden source; explicit edit/remove survive reopen",
+   "bucket": "needs_judgment",
+   "reason": "草稿迁移 / 重开持久化期望与 Q-012 会话内恢复合同的关系待判定（保留最小升级安全性或随旧草稿路径清理）"
+  },
+  {
+   "file": "test/features/ledger/data/recording_rhythm_migration_test.dart",
+   "name": "v3 file upgrade omits annotation change, keeps hidden source; explicit edit/remove survive reopen",
+   "bucket": "needs_judgment",
+   "reason": "草稿迁移 / 重开持久化期望与 Q-012 会话内恢复合同的关系待判定（保留最小升级安全性或随旧草稿路径清理）"
+  },
+  {
+   "file": "test/features/ledger/data/sleep_note_migration_test.dart",
+   "name": "v1 to v2 preserves both old contexts and omitted note; raw note and explicit clearing survive reopening",
+   "bucket": "needs_judgment",
+   "reason": "草稿迁移 / 重开持久化期望与 Q-012 会话内恢复合同的关系待判定（保留最小升级安全性或随旧草稿路径清理）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_ledger_time_bar_test.dart",
+   "name": "one millisecond remains fractional; empty today/future is neutral and not Gap",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_ledger_time_bar_test.dart",
+   "name": "selected figure uses all projected facts and gaps, Unknown is a subset",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_ledger_timeline_layout_test.dart",
+   "name": "approximate wake affects only its retained slice end and complete duration",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_ledger_timeline_layout_test.dart",
+   "name": "mixed and long timeline at width 320.0, text scale 1.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_ledger_timeline_layout_test.dart",
+   "name": "mixed and long timeline at width 320.0, text scale 1.5",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_ledger_timeline_layout_test.dart",
+   "name": "mixed and long timeline at width 320.0, text scale 2.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_ledger_timeline_layout_test.dart",
+   "name": "mixed and long timeline at width 360.0, text scale 1.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_ledger_timeline_layout_test.dart",
+   "name": "mixed and long timeline at width 360.0, text scale 1.5",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_ledger_timeline_layout_test.dart",
+   "name": "mixed and long timeline at width 360.0, text scale 2.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_ledger_timeline_layout_test.dart",
+   "name": "mixed and long timeline at width 412.0, text scale 1.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_ledger_timeline_layout_test.dart",
+   "name": "mixed and long timeline at width 412.0, text scale 1.5",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_ledger_timeline_layout_test.dart",
+   "name": "mixed and long timeline at width 412.0, text scale 2.0",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_summary_coverage_test.dart",
+   "name": "approximation is independent for accounted Unknown and remaining Gap",
+   "bucket": "stale_assertion",
+   "reason": "断言要求已移除的“约”前缀；现行渲染无“约”"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_summary_coverage_test.dart",
+   "name": "full coverage with approximate interior keeps zero Gap exact",
+   "bucket": "stale_assertion",
+   "reason": "断言要求已移除的“约”前缀；现行渲染无“约”"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_summary_coverage_test.dart",
+   "name": "positive subminute values and final-sum rounding do not become missing or force display equality",
+   "bucket": "stale_assertion",
+   "reason": "断言要求已移除的“约”前缀；现行渲染无“约”"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_summary_goal_rhythm_test.dart",
+   "name": "empty and unannotated-only Goals preserve missing labels and positive subminute recovery",
+   "bucket": "needs_judgment",
+   "reason": "摘要页同名目标渲染数量与结构期望待对照现行页面判定"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_summary_goal_rhythm_test.dart",
+   "name": "same-name archived Goals remain separate; four subsets and global rhythm use independent contributions",
+   "bucket": "needs_judgment",
+   "reason": "摘要页同名目标渲染数量与结构期望待对照现行页面判定"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_summary_page_test.dart",
+   "name": "loading, empty, failure and retry are distinct; fast selection rejects old response",
+   "bucket": "needs_judgment",
+   "reason": "摘要页结构与日期文案期望待对照现行页面判定"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_summary_page_test.dart",
+   "name": "return, resume, refresh and today reacquire context across midnight",
+   "bucket": "needs_judgment",
+   "reason": "摘要页结构与日期文案期望待对照现行页面判定"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_summary_sleep_test.dart",
+   "name": "correcting wake date removes old summary and refreshes new date without losing original identity",
+   "bucket": "stale_assertion",
+   "reason": "断言要求已移除的“约”前缀；现行渲染无“约”"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_summary_sleep_test.dart",
+   "name": "midnight wake and future date have full sleep even with zero window contribution",
+   "bucket": "stale_assertion",
+   "reason": "断言要求已移除的“约”前缀；现行渲染无“约”"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_summary_sleep_test.dart",
+   "name": "missing groups and exact/approximate subminute totals use existing formatting",
+   "bucket": "stale_assertion",
+   "reason": "断言要求已移除的“约”前缀；现行渲染无“约”"
+  },
+  {
+   "file": "test/features/ledger/presentation/day_summary_sleep_test.dart",
+   "name": "multiple complete main sleeps and nap stay separate from window coverage",
+   "bucket": "stale_assertion",
+   "reason": "断言要求已移除的“约”前缀；现行渲染无“约”"
+  },
+  {
+   "file": "test/features/ledger/presentation/recording_form_layout_test.dart",
+   "name": "distinct read, draft, formal, conflict, missing-source and committed states",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/recording_form_layout_test.dart",
+   "name": "folds retain raw fields, no formal writes, restore and state switches",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/recording_form_storage_test.dart",
+   "name": "form autosaves incomplete input to disk without changing formal facts",
+   "bucket": "stale_assertion",
+   "reason": "断言“自动保存到磁盘”属被 Q-012 取代的旧草稿合同；现行为会话内快照"
+  },
+  {
+   "file": "test/features/ledger/presentation/recording_rhythm_details_test.dart",
+   "name": "same state/hint with different details is not a recovered commit; committed details lock duplicate submit",
+   "bucket": "needs_judgment",
+   "reason": "注解草稿提交时机与标题期望（“不应提前改写” vs “原活动”）待对照领域合同判定"
+  },
+  {
+   "file": "test/features/ledger/presentation/recording_rhythm_test.dart",
+   "name": "deleted original cannot be recreated from restored annotation draft",
+   "bucket": "needs_judgment",
+   "reason": "注解草稿提交时机与标题期望（“不应提前改写” vs “原活动”）待对照领域合同判定"
+  },
+  {
+   "file": "test/features/ledger/presentation/recording_rhythm_test.dart",
+   "name": "duplicate add preserves explicit intent and reports correct relation failure",
+   "bucket": "needs_judgment",
+   "reason": "注解草稿提交时机与标题期望（“不应提前改写” vs “原活动”）待对照领域合同判定"
+  },
+  {
+   "file": "test/features/ledger/presentation/recording_rhythm_test.dart",
+   "name": "missing edit preserves explicit intent and reports correct relation failure",
+   "bucket": "needs_judgment",
+   "reason": "注解草稿提交时机与标题期望（“不应提前改写” vs “原活动”）待对照领域合同判定"
+  },
+  {
+   "file": "test/features/ledger/presentation/sleep_editing_test.dart",
+   "name": "cancel deletion leaves fact and draft; formal failure is editable and preserves both",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/sleep_editing_test.dart",
+   "name": "delete post-commit cleanup/other-day read failure locks mutations and retry does not repeat them",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/sleep_editing_test.dart",
+   "name": "restored edit with missing source reports not found, retains draft and cannot save or recreate",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/sleep_editing_test.dart",
+   "name": "source read failure retries without replacing stored partial draft or exposing SQL",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/sleep_editing_test.dart",
+   "name": "update post-commit cleanup/other-day read failure locks mutations and retry does not repeat them",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/sleep_submission_test.dart",
+   "name": "widget blocks a second click and back while submitting; write failure leaves editable draft",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/sleep_submission_test.dart",
+   "name": "widget distinguishes committed both failure and only finishes cleanup/read",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/sleep_submission_test.dart",
+   "name": "widget distinguishes committed clear failure and only finishes cleanup/read",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/sleep_submission_test.dart",
+   "name": "widget distinguishes committed refresh failure and only finishes cleanup/read",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/sleep_submission_test.dart",
+   "name": "widget lists both conflict identities and full intervals and permits manual correction",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+   "name": "Q-017：复用最终分钟四舍五入，半分钟边界不使用截断",
+   "bucket": "stale_assertion",
+   "reason": "断言要求已移除的“约”前缀（ad711f6 有意移除；现行渲染无“约”）"
+  },
+  {
+   "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+   "name": "Q-021：每类有记录的微小时长不同于缺失，近似提示独立",
+   "bucket": "stale_assertion",
+   "reason": "断言要求已移除的“约”前缀（ad711f6 有意移除；现行渲染无“约”）"
+  },
+  {
+   "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+   "name": "多个小值先由投影汇总后格式化，不累加单条舍入分钟",
+   "bucket": "stale_assertion",
+   "reason": "断言要求已移除的“约”前缀（ad711f6 有意移除；现行渲染无“约”）"
+  },
+  {
+   "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+   "name": "真实混合投影：精度、存在性和全局/目标范围不相互污染",
+   "bucket": "stale_assertion",
+   "reason": "断言要求已移除的“约”前缀（ad711f6 有意移除；现行渲染无“约”）"
+  },
+  {
+   "file": "test/features/ledger/presentation/summary_formatting_test.dart",
+   "name": "覆盖及 Gap 的真零是数值零，正时长舍入零仍显示微小时长",
+   "bucket": "stale_assertion",
+   "reason": "断言要求已移除的“约”前缀（ad711f6 有意移除；现行渲染无“约”）"
+  },
+  {
+   "file": "test/features/review/application/review_correction_saver_test.dart",
+   "name": "real file edit draft reopen preserves clears/date and does not modify source before submission",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/review/application/review_deletion_test.dart",
+   "name": "delete locks repeat operations; committed clear/read failures retry only finalization and cannot resurrect draft",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  },
+  {
+   "file": "test/features/review/application/review_deletion_test.dart",
+   "name": "file reopen retains residual edit only by old ID; old restored edit cannot recreate deleted source",
+   "bucket": "legacy_fixture",
+   "reason": "引用的旧页面 / 组件为生产不可达实现（DEBT-LEGACY-01 清除范围）"
+  }
+ ]
+}
