@@ -22,6 +22,8 @@
 - 备选路线：① 2.x + 字段转换（把 material_ui scheme 映射为 flutter `ColorScheme`）；② 自写可选 MethodChannel（约 50 行 + testing）。若 1.9.0 在目标平台出现嵌入问题，选 ②；不做整包 `material_ui` 迁移。
 - spike 工程位于 `/tmp/opencode/theme-spike`（1.9.0）与 `/tmp/opencode/theme-spike-dc2`（2.x 证据），与主仓库隔离。
 
+**2026-10-10 用户决定：暂不迁移 `material_ui`。** 全 app 继续使用框架 `package:flutter/material.dart`（`useMaterial3: true`），`dynamic_color` 保持 pin `1.9.0`；设置页等新页面同样不引入第二套组件库。评估依据：lib 61 个、test / integration 91 个文件引用 `flutter/material`，`fl_chart 1.2.0` 仍返回旧类型；迁移收益主要是解锁 `material_ui` 类型的新依赖，目前无此需求。重评触发条件（满足两条以上再启动）：① Flutter 官方宣布框架 material 弃用 / 退役，或所需 M3 能力仅在 `material_ui`；② 关键依赖（如 `fl_chart`）迁至 `material_ui` 类型或旧版 pin 被生态抛弃；③ 需要仅支持 `material_ui` 的新依赖；④ 存在稳定迁移窗口（基线失败清理、并行 UI 工作合并）。届时按 `dart fix --code=migrate_design_widgets` + `MaterialUiCompatibilityBridge`（未迁移依赖）+ 全量基线对比与双平台验证执行，预计一个专项 Epic（3–4 任务）。
+
 ## 2. 可执行合同
 
 ### 2.1 配色清单
