@@ -295,6 +295,16 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 | REVIEW-R2-13 — 平台验证与全仓回归 | R2-12 | Android / Web 构建、全仓失败集合对比 | COMPLETE |
 | REVIEW-R2-14 — 复盘会话快照与继续提示移植 | 用户决定（2026-10-11） | 四步向导接入 Q-012 会话快照、继续 / 重新整理提示与失败体验；先于旧页面删除（R2-12 清理部分） | COMPLETE |
 
+### <a id="debt-legacy-01--死代码批量清除"></a>DEBT-LEGACY-01 — 死代码批量清除
+
+**2026-10-11债务清理 P2（用户授权）：** 删除全部生产不可达文件（17 个 lib 文件，含重建后新发现的 `editor_body` / `recording_optional_section` / `goals_page` / `goal_rename_dialog`）；`recording_form.dart` 拆分保留 `formatRecordingTime` / `parseRecordingDate`；删除 40 个旧界面测试、4 个旧导航助手、5 个陈旧集成测试与 6 个孤立平台助手，公共夹具迁入 `test/support`。全量 `flutter test` 141 → 116 → **25**（686 通过 / 6 跳过），剩余 25 项均为 P0 登记 `needs_judgment`、零新增；`flutter analyze` 0；lib 可达性无死角。旧场景覆盖映射与限制见[P2 报告](../reports/DEBT_P2_LEGACY_CLEANUP_REPORT.md)。
+
+| Task | Depends on | Scope | Status |
+| --- | --- | --- | --- |
+| DEBT-LEGACY-01 — 死代码批量清除 | DEBT-P0 | 生产不可达文件与旧夹具测试清理 / 场景迁移；失败数降至约 50 | COMPLETE |
+
+验证：全量 686 通过 / 6 跳过 / 25 失败（差集核对零新增）；`flutter analyze` 无问题；`dart format` 通过；lib 可达性检查无死角。
+
 ## Epic 0 — Project Foundation
 
 ### E0-T01 — 核查现有工程与验证基线

@@ -34,6 +34,8 @@ python3 docs/audits/2026-10-11-test-baseline-bb5051c/extract_failures.py /tmp/ti
 | 2026-10-10 | PICKER-FIX-01 / HOME-PERF-01 | 786 / 11 / 142；768 / 11 / 141 | 未入库 |
 | 2026-10-11 | HOME-SCROLL-FWD-01 | 785 / 11 / 136 | 未入库 |
 | 2026-10-11 | 本目录（`bb5051c`） | 789 / 11 / 141 | [failures.json](failures.json) |
+| 2026-10-11 | 债务清理 P1（复盘遗留） | 797 / 11 / 116 | [P1 报告](../../reports/REVIEW_R2_12_R2_13_REPORT.md) |
+| 2026-10-11 | 债务清理 P2（死代码清除） | 686 / 6 / 25 | [P2 报告](../../reports/DEBT_P2_LEGACY_CLEANUP_REPORT.md) |
 
 103–142 区间的完整失败清单在历史任务中只保留了 /tmp 临时路径，现已失效；本目录是自 2026-10-06 审计以来首个入库的完整清单。
 
