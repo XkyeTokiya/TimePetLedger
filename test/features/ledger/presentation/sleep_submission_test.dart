@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:drift/native.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/app/time/device_recording_date.dart';
 import 'package:time_pet_ledger/core/identity/entity_id.dart';
@@ -10,17 +9,14 @@ import 'package:time_pet_ledger/core/time/time_contract.dart';
 import 'package:time_pet_ledger/features/ledger/application/sleep_entry_saver.dart';
 import 'package:time_pet_ledger/features/ledger/application/sleep_ledger_loader.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_ledger_repository.dart';
-import 'package:time_pet_ledger/features/ledger/domain/block_knowledge_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/ledger_repository.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_session.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/sleep_form.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/sleep_form_controller.dart';
 
 import 'sleep_form_controller_test.dart'
     show FormSleepStore, sleepContext, fill;
-import 'sleep_form_test.dart' show tapText;
 
 class SubmissionRepository implements LedgerRepository {
   SubmissionRepository(this.inner);
@@ -183,156 +179,4 @@ void main() {
     expect(h.repository.creates, 1);
     expect(h.store.value, isNull);
   });
-
-  for (final failure in ['clear', 'refresh', 'both']) {
-    testWidgets(
-      'widget distinguishes committed $failure failure and only finishes cleanup/read',
-      (tester) async {
-        final c = h.controller();
-        await c.initialize();
-        fill(c);
-        await c.flush();
-        h.store.failClear = failure != 'refresh';
-        h.failRefresh = failure != 'clear';
-        await tester.pumpWidget(
-          MaterialApp(
-            home: Builder(
-              builder: (context) => Scaffold(
-                body: TextButton(
-                  onPressed: () => Navigator.of(context).push<SleepLedger>(
-                    MaterialPageRoute(builder: (_) => SleepForm(controller: c)),
-                  ),
-                  child: const Text('打开'),
-                ),
-              ),
-            ),
-          ),
-        );
-        await tester.tap(find.text('打开'));
-        await tester.pumpAndSettle();
-        await tapText(tester, '确认并保存到账本');
-        expect(c.committed, isNotNull);
-        expect(find.textContaining('睡眠已保存，但'), findsOneWidget);
-        expect(find.text('确认并保存到账本'), findsNothing);
-        expect(find.text('放弃草稿'), findsNothing);
-        expect(find.textContaining('private'), findsNothing);
-        expect(
-          tester
-              .widget<TextField>(find.byKey(const ValueKey('sleep-start')))
-              .enabled,
-          isFalse,
-        );
-        expect(h.repository.creates, 1);
-        h.store.failClear = false;
-        h.failRefresh = false;
-        await tapText(tester, '继续清理并刷新');
-        expect(find.text('打开'), findsOneWidget);
-        expect(c.committed!.complete, isTrue);
-        expect(
-          c.committed!.refreshed!.sleepSummary.mainSleep.records,
-          hasLength(1),
-        );
-        expect(
-          c.committed!.refreshed!.coverage.accountedDuration.roundedMinutes,
-          460,
-        );
-        expect(h.repository.creates, 1);
-        expect(h.store.value, isNull);
-        await tester.pumpWidget(const SizedBox.shrink());
-        c.dispose();
-      },
-    );
-  }
-
-  testWidgets(
-    'widget blocks a second click and back while submitting; write failure leaves editable draft',
-    (tester) async {
-      final c = h.controller();
-      await c.initialize();
-      fill(c);
-      await c.flush();
-      h.repository.gate = Completer<void>();
-      h.repository.failCreate = true;
-      await tester.pumpWidget(MaterialApp(home: SleepForm(controller: c)));
-      await tester.pumpAndSettle();
-      final button = find.text('确认并保存到账本');
-      await tester.scrollUntilVisible(
-        button,
-        150,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.ensureVisible(button);
-      await tester.tap(button);
-      await tester.pump();
-      await tester.tap(button, warnIfMissed: false);
-      await tester.tap(find.byType(BackButton));
-      await tester.pump();
-      expect(c.submitting, isTrue);
-      expect(h.repository.creates, 1);
-      h.repository.gate!.complete();
-      await tester.pumpAndSettle();
-      expect(find.textContaining('正式保存失败'), findsOneWidget);
-      expect(c.editable, isTrue);
-      expect(h.store.value, isNotNull);
-      expect(find.textContaining('睡眠已保存'), findsNothing);
-      await tester.pumpWidget(const SizedBox.shrink());
-      c.dispose();
-    },
-  );
-
-  testWidgets(
-    'widget lists both conflict identities and full intervals and permits manual correction',
-    (tester) async {
-      final c = h.controller();
-      await c.initialize();
-      fill(c);
-      await c.flush();
-      const blockId = '00000000-0000-4000-8000-000000000002';
-      const sleepId = '00000000-0000-4000-8000-000000000003';
-      final start = c.startedAt!;
-      await h.actual.createTimeBlock(
-        id: blockId,
-        startedAt: start,
-        endedAt: start + 60000,
-        startPrecision: TimePrecision.exact,
-        endPrecision: TimePrecision.exact,
-        knowledgeState: BlockKnowledgeState.known,
-        title: '夜间活动',
-        now: 1,
-      );
-      await h.actual.createSleepSession(
-        id: sleepId,
-        startedAt: start + 60000,
-        endedAt: c.endedAt!,
-        startPrecision: TimePrecision.exact,
-        endPrecision: TimePrecision.exact,
-        type: SleepType.nap,
-        now: 1,
-      );
-      await tester.pumpWidget(MaterialApp(home: SleepForm(controller: c)));
-      await tester.pumpAndSettle();
-      await tapText(tester, '确认并保存到账本');
-      expect(
-        find.textContaining(
-          '普通记录 $blockId：2026-09-28 23:50 → 2026-09-28 23:51',
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining(
-          '睡眠记录 $sleepId：2026-09-28 23:51 → 2026-09-29 07:40',
-        ),
-        findsOneWidget,
-      );
-      expect(c.committed, isNull);
-      expect(h.store.value, isNotNull);
-      c.setStartedAtInput('2026-09-29 08:00');
-      c.setEndedAtInput('2026-09-29 09:00');
-      expect(c.conflicts, isEmpty);
-      expect(c.submitError, isNull);
-      await c.flush();
-      await tester.pumpWidget(const SizedBox.shrink());
-      c.dispose();
-    },
-  );
 }

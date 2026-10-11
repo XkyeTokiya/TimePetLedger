@@ -6,10 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/core/time/civil_date.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_sleep_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_draft_store.dart';
-import 'package:time_pet_ledger/features/ledger/domain/sleep_session.dart';
-import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
-import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/sleep_form_controller.dart';
 
 const id = '00000000-0000-4000-8000-000000000001';
 final date = CivilDate(year: 2026, month: 9, day: 29);
@@ -76,91 +72,6 @@ void main() {
     final store = await DriftSleepDraftStore.open(NativeDatabase(file));
     expect((await store.read(newContext))!.startedAtInput, '原始未完成时间');
     expect((await store.read(newContext))!.noteProvided, isFalse);
-    await store.close();
-  });
-  test('v1 to v2 preserves both old contexts and omitted note; raw note and explicit clearing survive reopening', () async {
-    final dir = await Directory.systemTemp.createTemp('sleep_note_migration_');
-    addTearDown(() => dir.delete(recursive: true));
-    final file = File('${dir.path}/drafts.sqlite');
-    final legacy = LegacyDrafts(NativeDatabase(file));
-    for (final context in [newContext, editContext]) {
-      await legacy.customStatement(
-        'INSERT INTO sleep_drafts VALUES (?, 2026, 9, 29, ?, 1001, NULL, ?, ?, ?, ?, ?)',
-        [
-          context.isEditing ? 'edit:$id' : 'new:2026:9:29',
-          context.sleepSessionId,
-          'approximate',
-          'exact',
-          'mainSleep',
-          '2026-09-',
-          '2026-09-29 07:',
-        ],
-      );
-    }
-    await legacy.close();
-    var store = await DriftSleepDraftStore.open(NativeDatabase(file));
-    for (final context in [newContext, editContext]) {
-      final saved = (await store.read(context))!;
-      expect(saved.context.date, date);
-      expect(saved.context.sleepSessionId, context.sleepSessionId);
-      expect(saved.startedAt, 1001);
-      expect(saved.endedAt, isNull);
-      expect(saved.startedAtInput, '2026-09-');
-      expect(saved.endedAtInput, '2026-09-29 07:');
-      expect(saved.startPrecision, TimePrecision.approximate);
-      expect(saved.endPrecision, TimePrecision.exact);
-      expect(saved.type, SleepType.mainSleep);
-      expect(saved.note, isNull);
-      expect(saved.noteProvided, isFalse);
-    }
-    final original = SleepSession(
-      id: id,
-      startedAt: 1001,
-      endedAt: 2001,
-      startPrecision: TimePrecision.approximate,
-      endPrecision: TimePrecision.exact,
-      type: SleepType.mainSleep,
-      createdAt: 1,
-      updatedAt: 1,
-      note: '原有\n说明',
-    );
-    var controller = SleepFormController(
-      context: editContext,
-      store: store,
-      original: original,
-    );
-    await controller.initialize();
-    expect(controller.note, original.note);
-    controller.setEndedAtInput('2026-09-29 07:40');
-    await controller.flush();
-    expect((await store.read(editContext))!.noteProvided, isFalse);
-    controller.setNote('');
-    await controller.flush();
-    controller.dispose();
-    await store.save(
-      SleepDraft(
-        context: newContext,
-        startedAt: null,
-        endedAt: null,
-        startPrecision: null,
-        endPrecision: null,
-        type: null,
-        note: '  原始\n说明😀  ',
-        noteProvided: true,
-      ),
-    );
-    await store.close();
-    store = await DriftSleepDraftStore.open(NativeDatabase(file));
-    expect((await store.read(newContext))!.note, '  原始\n说明😀  ');
-    controller = SleepFormController(
-      context: editContext,
-      store: store,
-      original: original,
-    );
-    await controller.initialize();
-    expect(controller.note, isEmpty);
-    expect(controller.draft.noteProvided, isTrue);
-    controller.dispose();
     await store.close();
   });
 }

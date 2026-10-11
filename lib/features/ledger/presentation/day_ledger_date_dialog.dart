@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/time/civil_date.dart';
-import 'recording_form.dart';
+import 'recording_time_format.dart';
 
 String ledgerDateText(CivilDate date) =>
     '${date.year < 0 ? '-' : ''}${date.year.abs().toString().padLeft(4, '0')}-'

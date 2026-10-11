@@ -9,7 +9,7 @@ import '../domain/rhythm_details.dart';
 import '../domain/rhythm_state.dart';
 import '../domain/sleep_type.dart';
 import '../domain/time_precision.dart';
-import 'recording_form.dart' show formatRecordingTime;
+import 'recording_time_format.dart' show formatRecordingTime;
 import 'recording_rhythm_input.dart' show rhythmInputLabel;
 import 'summary_formatting.dart';
 

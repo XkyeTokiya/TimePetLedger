@@ -16,7 +16,7 @@ import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/review/data/drift_review_draft_store.dart';
 import 'package:time_pet_ledger/features/review/data/drift_review_repository.dart';
 
-import 'goal_rhythm_platform_test.dart'
+import 'support/platform_flow.dart'
     as ui
     show tapFinder, visible, waitForUI, enter, input;
 import 'support/schema_contract.dart' show clearSchemaRows;

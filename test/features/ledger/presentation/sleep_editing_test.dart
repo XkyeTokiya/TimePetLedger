@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:drift/native.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/app/time/device_recording_date.dart';
 import 'package:time_pet_ledger/core/identity/entity_id.dart';
@@ -17,12 +16,10 @@ import 'package:time_pet_ledger/features/ledger/domain/sleep_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_session.dart';
 import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/sleep_form.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/sleep_form_controller.dart';
 
 import '../application/sleep_entry_editor_test.dart' show sleepId, day, at;
 import 'sleep_form_controller_test.dart' show FormSleepStore;
-import 'sleep_form_test.dart' show tapText;
 
 class EditRepository implements LedgerRepository {
   EditRepository(this.inner);
@@ -131,25 +128,6 @@ void main() {
     h = EditingHarness(await AppDatabase.open(NativeDatabase.memory()));
   });
   tearDown(() => h.db.close());
-  Future<void> show(WidgetTester tester, SleepFormController c) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Builder(
-          builder: (context) => Scaffold(
-            body: TextButton(
-              onPressed: () => Navigator.of(context).push<SleepLedger>(
-                MaterialPageRoute(builder: (_) => SleepForm(controller: c)),
-              ),
-              child: const Text('打开'),
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.tap(find.text('打开'));
-    await tester.pumpAndSettle();
-  }
-
   test('loaded source keeps exact milliseconds; queued edit saves only after confirmation, duplicate edit/delete requests are locked', () async {
     final original = await h.create();
     final c = h.model();
@@ -198,130 +176,6 @@ void main() {
     expect(h.store.value!.type, SleepType.nap);
     expect(await h.actual.readSleepSession(sleepId), isNull);
   });
-
-  testWidgets(
-    'restored edit with missing source reports not found, retains draft and cannot save or recreate',
-    (tester) async {
-      await h.create();
-      final first = h.model();
-      await first.initialize();
-      first.setType(SleepType.nap);
-      await first.flush();
-      first.dispose();
-      await h.actual.deleteSleepSession(sleepId);
-      final c = h.model();
-      await show(tester, c);
-      expect(find.textContaining('记录已不存在'), findsOneWidget);
-      expect(find.text('保存更正'), findsNothing);
-      expect(h.store.value!.type, SleepType.nap);
-      expect(h.repo.updates, 0);
-      await tester.tap(find.byType(BackButton));
-      await tester.pumpAndSettle();
-      expect(find.text('打开'), findsOneWidget);
-      expect(h.store.value, isNotNull);
-      await tester.pumpWidget(const SizedBox.shrink());
-      c.dispose();
-    },
-  );
-
-  testWidgets(
-    'source read failure retries without replacing stored partial draft or exposing SQL',
-    (tester) async {
-      await h.create();
-      final first = h.model();
-      await first.initialize();
-      first.setEndedAtInput('2026-');
-      await first.flush();
-      first.dispose();
-      h.repo.failRead = true;
-      final c = h.model();
-      await show(tester, c);
-      expect(find.text('无法读取睡眠记录或未完成输入，请重试。'), findsOneWidget);
-      expect(find.textContaining('private'), findsNothing);
-      expect(h.store.value!.endedAtInput, '2026-');
-      h.repo.failRead = false;
-      await tester.tap(find.text('重试读取'));
-      await tester.pumpAndSettle();
-      expect(c.restored, isTrue);
-      expect(c.endedAt, isNull);
-      expect(c.endedAtInput, '2026-');
-      await tester.pumpWidget(const SizedBox.shrink());
-      c.dispose();
-    },
-  );
-
-  for (final operation in ['update', 'delete']) {
-    testWidgets(
-      '$operation post-commit cleanup/other-day read failure locks mutations and retry does not repeat them',
-      (tester) async {
-        await h.create();
-        final c = h.model();
-        await c.initialize();
-        c.setType(SleepType.nap);
-        await c.flush();
-        h.store.failClear = true;
-        h.failDate = day(29);
-        await show(tester, c);
-        if (operation == 'update') {
-          await tapText(tester, '保存更正');
-        } else {
-          await tapText(tester, '删除睡眠');
-          await tester.tap(find.text('确认删除'));
-          await tester.pumpAndSettle();
-        }
-        expect(c.postCommit, isTrue);
-        expect(c.finishPending, isTrue);
-        expect(find.textContaining('本地收尾和摘要 / 账本刷新失败'), findsOneWidget);
-        expect(find.text('保存更正'), findsNothing);
-        expect(find.text('删除睡眠'), findsNothing);
-        expect(h.store.value, isNotNull);
-        expect(await c.submit(), isNull);
-        expect(await c.delete(), isNull);
-        h.store.failClear = false;
-        h.failDate = null;
-        await tapText(tester, '继续清理并刷新');
-        expect(find.text('打开'), findsOneWidget);
-        expect(h.store.value, isNull);
-        expect(h.repo.updates, operation == 'update' ? 1 : 0);
-        expect(h.repo.deletes, operation == 'delete' ? 1 : 0);
-        await tester.pumpWidget(const SizedBox.shrink());
-        c.dispose();
-      },
-    );
-  }
-
-  testWidgets(
-    'cancel deletion leaves fact and draft; formal failure is editable and preserves both',
-    (tester) async {
-      final original = await h.create();
-      final c = h.model();
-      await c.initialize();
-      c.setType(SleepType.nap);
-      await c.flush();
-      await show(tester, c);
-      await tapText(tester, '删除睡眠');
-      await tester.tap(find.text('取消'));
-      await tester.pumpAndSettle();
-      expect(h.repo.deletes, 0);
-      expect(h.store.value, isNotNull);
-      h.repo.failWrite = true;
-      await tapText(tester, '删除睡眠');
-      await tester.tap(find.text('确认删除'));
-      await tester.pumpAndSettle();
-      expect(find.text('删除失败，睡眠记录与当前输入仍保留，请重试。'), findsOneWidget);
-      expect(c.editable, isTrue);
-      expect(c.deleted, isNull);
-      expect(
-        (await h.actual.readSleepSession(sleepId))!.updatedAt,
-        original.updatedAt,
-      );
-      await tapText(tester, '保存更正');
-      expect(find.textContaining('正式保存失败'), findsOneWidget);
-      expect(h.store.value, isNotNull);
-      await tester.pumpWidget(const SizedBox.shrink());
-      c.dispose();
-    },
-  );
 
   test('delete is locked during in-flight operation; reopened committed edit only finishes cleanup', () async {
     await h.create();

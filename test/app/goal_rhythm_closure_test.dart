@@ -24,10 +24,9 @@ import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
 import 'package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart';
 
-import '../support/app_recording_navigation.dart' show tap, textTap;
+import '../support/native_flow.dart' show tapFinder, tapText;
 import '../support/activity_recorder.dart';
-import 'day_ledger_resolution_flow_test.dart' show BlockReadFailure;
-import 'recording_goal_flow_test.dart' show disposeApp;
+import '../support/app_flow_helpers.dart' show BlockReadFailure, disposeApp;
 import 'support/checked_sleep_opening.dart';
 
 const hour = Duration.millisecondsPerHour;
@@ -131,12 +130,12 @@ Future<void> back(WidgetTester t) async {
 
 Future<String> createGoal(WidgetTester t, ClosureApp app) async {
   final before = (await t.runAsync(app.goals.listActive))!;
-  await tap(t, find.byKey(const ValueKey('goal-new')));
+  await tapFinder(t, find.byKey(const ValueKey('goal-new')));
   await t.enterText(
     find.byKey(const ValueKey('goal-name-input')),
     '  同名目标 🐾  ',
   );
-  await textTap(t, '保存目标');
+  await tapText(t, '保存目标');
   final after = (await t.runAsync(app.goals.listActive))!;
   // Return to the goal list so a second create starts from the same place.
   await back(t);
@@ -148,20 +147,20 @@ DayLedgerView? homeView(WidgetTester t) =>
 
 /// 目标选择入口（其他 app 测试复用）：在理解层里点一个目标。
 Future<void> chooseGoal(WidgetTester t, String id) async {
-  await tap(t, find.byKey(ValueKey('understanding-goal-$id')));
+  await tapFinder(t, find.byKey(ValueKey('understanding-goal-$id')));
 }
 
 /// Opens a goal from the list and runs a lifecycle action from its detail.
 Future<void> goalAction(WidgetTester t, String id, String action) async {
-  await tap(t, find.byKey(ValueKey('goal-open-$id')));
+  await tapFinder(t, find.byKey(ValueKey('goal-open-$id')));
   final button = switch (action) {
     '归档目标' => const ValueKey('goal-archive'),
     '恢复目标' => const ValueKey('goal-restore'),
     _ => const ValueKey('goal-delete'),
   };
-  await tap(t, find.byKey(button));
+  await tapFinder(t, find.byKey(button));
   if (action == '归档目标' || action == '删除目标') {
-    await textTap(t, '确认归档');
+    await tapText(t, '确认归档');
   } else {
     await t.pumpAndSettle();
   }
@@ -196,12 +195,12 @@ Future<void> main() async {
     'record sheet saves the fact first, then the understanding layer writes goal and rhythm',
     (t) async {
       final app = await ClosureApp.open(t);
-      await textTap(t, '打开目标');
+      await tapText(t, '打开目标');
       final goal = await createGoal(t, app);
       await back(t);
 
       // 事实优先：时间 + 一句话 → 保存记录。
-      await textTap(t, '记录活动');
+      await tapText(t, '记录活动');
       await recorderTitle(t, '  写作 🐾  ');
       await recorderTime(t, '开始时间', '2026-10-02 10:00');
       await recorderTime(t, '结束时间', '2026-10-02 11:00');
@@ -271,7 +270,7 @@ Future<void> main() async {
       );
       await t.pumpAndSettle();
       await edit(t, blockId);
-      await tap(t, find.byKey(const ValueKey('fact-detail-edit')));
+      await tapFinder(t, find.byKey(const ValueKey('fact-detail-edit')));
       expect(find.text('更正记录'), findsWidgets);
       expect(
         t
@@ -292,7 +291,10 @@ Future<void> main() async {
 
       // 详情里的理解层可以移除解释、保留事实。
       await edit(t, blockId);
-      await tap(t, find.byKey(const ValueKey('fact-detail-understanding')));
+      await tapFinder(
+        t,
+        find.byKey(const ValueKey('fact-detail-understanding')),
+      );
       await understandingSkipGoal(t);
       // 详情面板里系统返回先退回目标问题，再关闭面板。
       await back(t);
@@ -310,10 +312,10 @@ Future<void> main() async {
     'understanding write failure keeps the card and retries without touching the fact',
     (t) async {
       final app = await ClosureApp.open(t);
-      await textTap(t, '打开目标');
+      await tapText(t, '打开目标');
       final goal = await createGoal(t, app);
       await back(t);
-      await textTap(t, '记录活动');
+      await tapText(t, '记录活动');
       await recorderTitle(t, '失败重试');
       await recorderTime(t, '开始时间', '2026-10-02 10:00');
       await recorderTime(t, '结束时间', '2026-10-02 11:00');
@@ -347,7 +349,7 @@ Future<void> main() async {
     'committed cleanup failure keeps the sheet recoverable and never inserts twice',
     (t) async {
       final app = await ClosureApp.open(t);
-      await textTap(t, '记录活动');
+      await tapText(t, '记录活动');
       await recorderTitle(t, '收尾失败');
       await recorderTime(t, '开始时间', '2026-10-02 10:00');
       await recorderTime(t, '结束时间', '2026-10-02 11:00');

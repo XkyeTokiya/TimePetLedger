@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'root_navigation.dart';
@@ -23,4 +24,28 @@ Future<void> tapText(WidgetTester t, String text) async {
   await t.ensureVisible(finder);
   await t.tap(finder);
   await settleNative(t);
+}
+
+/// Scroll a target into view (building lazily as needed), then tap it.
+Future<void> tapFinder(WidgetTester t, Finder target) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  t.testTextInput.hide();
+  await t.pumpAndSettle();
+  if (target.evaluate().isEmpty) {
+    t.state<ScrollableState>(find.byType(Scrollable).first).position.jumpTo(0);
+    await t.pumpAndSettle();
+    final position = t
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position;
+    for (var i = 0; i < 100 && target.evaluate().isEmpty; i++) {
+      position.jumpTo(
+        (position.pixels + 160).clamp(0, position.maxScrollExtent),
+      );
+      await t.pumpAndSettle();
+    }
+  }
+  await Scrollable.ensureVisible(t.element(target.first), alignment: .5);
+  await t.pumpAndSettle();
+  await t.tap(target.first);
+  await t.pumpAndSettle();
 }

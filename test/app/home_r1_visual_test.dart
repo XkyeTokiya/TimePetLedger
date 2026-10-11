@@ -13,8 +13,7 @@ import 'package:time_pet_ledger/features/ledger/application/day_ledger_loader.da
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
 import 'package:time_pet_ledger/features/settings/domain/app_preferences.dart';
 
-import '../features/ledger/presentation/day_ledger_overview_layout_test.dart'
-    show mixedFacts;
+import '../support/ledger_view_fixtures.dart' show mixedLedgerFacts;
 
 const captureKey = ValueKey('r1-home-capture');
 final sampleDate = CivilDate(year: 2026, month: 10, day: 2);
@@ -88,7 +87,7 @@ void main() {
 
   DayLedgerLoader sampleLoader({bool longText = false}) => DayLedgerLoader(
     resolveDate: resolveDeviceRecordingDate,
-    readFacts: (_) async => mixedFacts(longText: longText),
+    readFacts: (_) async => mixedLedgerFacts(longText: longText),
   );
 
   /// 覆盖数值是数字 / 单位分层的富文本，按 key 读取纯文本。

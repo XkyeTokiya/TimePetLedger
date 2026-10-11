@@ -1,4 +1,3 @@
-import '../../support/recording_fields.dart';
 import '../../support/ledger_date_selection.dart';
 import '../../support/root_navigation.dart';
 
@@ -43,7 +42,6 @@ Future<void> tapVisible(WidgetTester tester, String text) async {
 }
 
 Future<void> enterTime(WidgetTester tester, String label, String value) async {
-  await revealRecordingField(tester, label);
   await tapVisible(tester, label);
   await tester.enterText(
     find.byKey(const ValueKey('time-dialog-input')),
@@ -159,10 +157,7 @@ void main() {
       expect(rows.single.data['end_precision'], 'approximate');
       await tapVisible(tester, '更正完整记录');
       expect(find.text('更正记录'), findsOneWidget);
-      expect(
-        recordingTimeSummaryContaining('2026-09-28 10:00'),
-        findsOneWidget,
-      );
+      expect(find.text('2026-09-28 10:00'), findsOneWidget);
       await tester.tap(find.byType(BackButton));
       await tester.pumpAndSettle();
       await tapVisible(tester, '删除完整时间记录');

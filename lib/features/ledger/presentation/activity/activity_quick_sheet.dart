@@ -13,7 +13,7 @@ import '../../domain/projection/derived_duration.dart';
 import '../../domain/recording_draft_store.dart';
 import '../../domain/time_block.dart';
 import '../../domain/time_precision.dart';
-import '../recording_form.dart' show formatRecordingTime;
+import '../recording_time_format.dart' show formatRecordingTime;
 import '../recording_form_controller.dart';
 import '../recording_time_picker.dart';
 import '../sleep_time_input.dart';
