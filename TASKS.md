@@ -1,11 +1,11 @@
 # Tasks
 
-**2026-10-11债务清理（用户授权 P0–P3；P4 暂缓）：** 用户确认按体检方案分四段处理多次迭代债务，段间独立提交与报告、不自动推进：P0 基线登记与状态收口（DEBT-P0）与 P1 复盘遗留清理（REVIEW-R2-14 → R2-12 → R2-13）已完成，见[P1 报告](docs/reports/REVIEW_R2_12_R2_13_REPORT.md)与[归档](docs/planning/COMPLETED_TASKS.md#review-r2-03r2-14--复盘四步落地会话快照与重基线)；P2 死代码批量清除（DEBT-LEGACY-01）已完成，见[P2 报告](docs/reports/DEBT_P2_LEGACY_CLEANUP_REPORT.md)；P3 活跃路径重基线清零＝DEBT-REBASE-01（剩余 25 项）。P4 防复发门禁未授权。失败基线见[测试失败基线](docs/audits/2026-10-11-test-baseline-bb5051c/README.md)。
+**2026-10-11债务清理（用户授权 P0–P3；P4 暂缓）：** 用户确认按体检方案分四段处理多次迭代债务，段间独立提交与报告、不自动推进：P0 基线登记与状态收口（DEBT-P0）、P1 复盘遗留清理（REVIEW-R2-14 → R2-12 → R2-13）、P2 死代码批量清除（DEBT-LEGACY-01）与 P3 活跃路径重基线清零（DEBT-REBASE-01）均已完成为全绿：全量 `flutter test` **711 通过 / 6 跳过 / 0 失败**（141 → 116 → 25 → 0），见 [P1](docs/reports/REVIEW_R2_12_R2_13_REPORT.md) / [P2](docs/reports/DEBT_P2_LEGACY_CLEANUP_REPORT.md) / [P3](docs/reports/DEBT_P3_REBASE_REPORT.md) 报告。P4 防复发门禁未授权。失败基线见[测试失败基线](docs/audits/2026-10-11-test-baseline-bb5051c/README.md)。
 
 | Task | Depends on | Scope | Status |
 | --- | --- | --- | --- |
 | DEBT-LEGACY-01 — 死代码批量清除 | DEBT-P0 | 17 个生产不可达文件（约 4,495 行）与旧夹具测试清理 / 场景迁移；全仓失败数降至约 50 | COMPLETE（见 P2 报告） |
-| DEBT-REBASE-01 — 活跃路径重基线清零 | DEBT-LEGACY-01 | 剩余失败逐条判定：陈旧断言按现行合同重写，疑似缺陷对照领域来源处理；目标全仓 0 失败 | PENDING（已授权，P3） |
+| DEBT-REBASE-01 — 活跃路径重基线清零 | DEBT-LEGACY-01 | 剩余失败逐条判定：陈旧断言按现行合同重写，疑似缺陷对照领域来源处理；目标全仓 0 失败 | COMPLETE（全仓 0 失败，见 P3 报告） |
 
 **2026-10-09当前首页阶段：[HOME-INTERACTION-01](docs/planning/HOME_INTERACTION_DESIGN.md)已按用户后续「开始实现」授权落地；2026-10-10纠正纸带方向、头部样式及收放触发。** 左右可设置滑盖快捷区、按钮镜像、当日入口、下沿阅读锚点、日期横线上沿切日 / 连续回展、下拖连续收起、首版展开 / 紧凑头部布局、今天专属提醒、未来日上限与设置持久化均已实现。左右截图已检查；真机系统边缘、人工读屏 / 误触及帧性能未验收，平台任务保持PARTIAL。详见[实施报告](docs/reports/HOME_INTERACTION_IMPLEMENTATION_REPORT.md)。
 
@@ -88,6 +88,7 @@
 | 2026-10-07 | <a id="time-02--日期时间独立修改"></a>[TIME-02 — 日期时间独立修改](docs/planning/COMPLETED_TASKS.md#time-02--日期时间独立修改) | 归档正文 |
 | 2026-10-11 | <a id="review-r2-03r2-14--复盘四步落地会话快照与重基线"></a>[REVIEW-R2-03…R2-14 — 复盘四步落地、会话快照与重基线](docs/planning/COMPLETED_TASKS.md#review-r2-03r2-14--复盘四步落地会话快照与重基线) | P1 报告 |
 | 2026-10-11 | <a id="debt-legacy-01--死代码批量清除"></a>[DEBT-LEGACY-01 — 死代码批量清除](docs/planning/COMPLETED_TASKS.md#debt-legacy-01--死代码批量清除) | P2 报告 |
+| 2026-10-11 | <a id="debt-rebase-01--活跃路径重基线清零"></a>[DEBT-REBASE-01 — 活跃路径重基线清零](docs/planning/COMPLETED_TASKS.md#debt-rebase-01--活跃路径重基线清零) | P3 报告 |
 
 ## 使用方式与当前状态
 

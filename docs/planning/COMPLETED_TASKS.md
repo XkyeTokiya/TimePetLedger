@@ -305,6 +305,16 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 验证：全量 686 通过 / 6 跳过 / 25 失败（差集核对零新增）；`flutter analyze` 无问题；`dart format` 通过；lib 可达性检查无死角。
 
+### <a id="debt-rebase-01--活跃路径重基线清零"></a>DEBT-REBASE-01 — 活跃路径重基线清零
+
+**2026-10-11债务清理 P3（用户授权）：** 25 项登记失败逐条判定：12 项为"约"前缀陈旧断言（2026-10-04 用户决定不加"约"，补 DERIVED_MODELS 示例与 Q-021 文本一致性）、5 项为摘要结构与独立日期行为、3 项为首页 / 详情 / 面板流程、2 项为首页捕获、3 项为 Q-012 恢复选择与应用层反馈合同；全部按现行来源与实现重写测试。**全量 `flutter test` 首次全绿：711 通过 / 6 跳过 / 0 失败**（141 → 116 → 25 → 0），`flutter analyze` 与 `dart format` 干净。遗留事项（P4 门禁未授权、重新整理完成行为、平台 / 人工验收）见[P3 报告](../reports/DEBT_P3_REBASE_REPORT.md)。
+
+| Task | Depends on | Scope | Status |
+| --- | --- | --- | --- |
+| DEBT-REBASE-01 — 活跃路径重基线清零 | DEBT-LEGACY-01 | 剩余失败逐条判定：陈旧断言按现行合同重写，疑似缺陷对照领域来源处理；目标全仓 0 失败 | COMPLETE |
+
+验证：全量 711 通过 / 6 跳过 / 0 失败（退出码 0）；`flutter analyze` 无问题；`dart format` 通过。
+
 ## Epic 0 — Project Foundation
 
 ### E0-T01 — 核查现有工程与验证基线

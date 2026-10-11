@@ -22,7 +22,7 @@ flutter test --reporter expanded > /tmp/timepet-tests.log 2>&1
 python3 docs/audits/2026-10-11-test-baseline-bb5051c/extract_failures.py /tmp/timepet-tests.log > current_failures.json
 ```
 
-与 `failures.json` 比对：新增失败必须当轮修复或在任务报告中登记理由；已修复项从清单移除。目标：DEBT-REBASE-01 完成后全仓归零。
+与 `failures.json` 比对：新增失败必须当轮修复或在任务报告中登记理由；已修复项从清单移除。目标：全仓归零（2026-10-11 DEBT-REBASE-01 后为 0，此后任何新增失败都必须当轮修复或登记）。
 
 ## 趋势（记录来源）
 
@@ -36,6 +36,7 @@ python3 docs/audits/2026-10-11-test-baseline-bb5051c/extract_failures.py /tmp/ti
 | 2026-10-11 | 本目录（`bb5051c`） | 789 / 11 / 141 | [failures.json](failures.json) |
 | 2026-10-11 | 债务清理 P1（复盘遗留） | 797 / 11 / 116 | [P1 报告](../../reports/REVIEW_R2_12_R2_13_REPORT.md) |
 | 2026-10-11 | 债务清理 P2（死代码清除） | 686 / 6 / 25 | [P2 报告](../../reports/DEBT_P2_LEGACY_CLEANUP_REPORT.md) |
+| 2026-10-11 | 债务清理 P3（重基线清零） | **711 / 6 / 0** | [P3 报告](../../reports/DEBT_P3_REBASE_REPORT.md) |
 
 103–142 区间的完整失败清单在历史任务中只保留了 /tmp 临时路径，现已失效；本目录是自 2026-10-06 审计以来首个入库的完整清单。
 
