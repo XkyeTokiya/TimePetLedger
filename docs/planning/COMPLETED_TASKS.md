@@ -282,6 +282,19 @@ Epic 完成门槛继承 PLAN。允许先交付不受问题影响的局部任务�
 
 **2026-10-07后续授权：[TIME-02日期时间独立修改](DATE_TIME_EDITING.md)。** 用户在审查后明确要求补足提示词遗漏；覆盖全应用四字段直达、取消 / 初值 / 单字段更新及旧中间层清理。实现与验证见[交付报告](../reports/TIME-02_DATE_TIME_EDITING_REPORT.md)，不扩展预测模型或执行其他Task。
 
+### <a id="review-r2-03r2-14--复盘四步落地会话快照与重基线"></a>REVIEW-R2-03…R2-14 — 复盘四步落地、会话快照与重基线（债务清理 P1）
+
+**债务清理 P1（用户授权，2026-10-11）：** R2-14 会话快照移植 → R2-12 测试重基线 / 旧页面清理 → R2-13 全仓与平台回归。全量 `flutter test` 141 → 116 失败（修复 26、零真实回归），`flutter analyze` 0 问题，Android 调试 APK 与 Web 构建通过；旧复盘页面 5 件与旧测试 3 件删除，7 个 app 流程文件（24 项测试）与 3 个 application 测试重写。发现未修问题（重新整理完成后停留向导、超长文案、阅读位置、集成测试陈旧）与旧场景处置见[P1 报告](../reports/REVIEW_R2_12_R2_13_REPORT.md)。真机 / 读屏 / 集成测试未执行。
+
+**2026-10-11复盘四步向导与 Detail 落地（用户授权，可见界面）：** 用户报告“看不到改动”后直接交付新复盘流程：① `ReviewFlowPage` 四步向导（整理今天 → 今天关心过的事情【目标优先分组 + 无目标记录轴】 → 今天哪里最难继续【卡住选择 + 原因 + 必填下一步 + 可选目标】 → 看一眼今天【统计 / 目标时长 / 三态清单 / 下一步】）与已完成 Detail（只读时间轴 + 关心清单 + 当时卡在哪里 + 下次从这里继续 + ••• 重新整理 / 删除），含步骤点、返回、保存横幅与全部键；② `ReviewSessionService`（记录改名 / 改时间 / 删除、Gap 记 Unknown、完成 / 删除复盘；复用 `ActivityUnderstandingService` 与 `ReviewEntrySaver`）；③ `review_record_sheet`（查看 / 改名 / 改时间 / 关联或取消目标 / 删除）；④ 复盘入口与 Gap 补记接线（`main_app._reviewPage` / `_addRecordForReview`），旧 `ReviewContextPage` / `ReviewForm` 保留为历史夹具、生产不可达。验证：新增 `test/app/review_visual_sample_test.dart`（截图存[素材](assets/review-flow-round/)，7 张）；活动 / bootstrap / 设置 / 首页 / 睡眠 / 两个采样批次 36 项全过；7 个旧 app 复盘流程文件净新增失败 1 项（其余 18 项为既存，见 R2-12）；`flutter analyze` 无问题、`dart format` 0 changed、`git diff --check` 通过。
+
+| Task | Depends on | Scope | Status |
+| --- | --- | --- | --- |
+| REVIEW-R2-03…R2-11 — 复盘会话服务与四步向导 + Detail | 用户授权 | 装载 / 写入服务 / Gap 操作 / 四步界面 / 记录面板 / 入口替换 / 采样截图 | COMPLETE |
+| REVIEW-R2-12 — 旧复盘界面测试重基线 | 本批 | 7 个 app 流程文件逐条重写 / 旧页面清理（P0 基线 19 项失败） | COMPLETE |
+| REVIEW-R2-13 — 平台验证与全仓回归 | R2-12 | Android / Web 构建、全仓失败集合对比 | COMPLETE |
+| REVIEW-R2-14 — 复盘会话快照与继续提示移植 | 用户决定（2026-10-11） | 四步向导接入 Q-012 会话快照、继续 / 重新整理提示与失败体验；先于旧页面删除（R2-12 清理部分） | COMPLETE |
+
 ## Epic 0 — Project Foundation
 
 ### E0-T01 — 核查现有工程与验证基线

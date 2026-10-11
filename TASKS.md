@@ -1,20 +1,11 @@
 # Tasks
 
-**2026-10-11债务清理（用户授权 P0–P3；P4 暂缓）：** 用户确认按体检方案分四段处理多次迭代债务，段间独立提交与报告、不自动推进：P0 基线登记与状态收口（DEBT-P0，已完成，见[归档](docs/planning/COMPLETED_TASKS.md#debt-p0--测试失败基线登记与状态收口)）；P1 复盘遗留清理＝REVIEW-R2-12 / R2-13（含 2026-10-11 用户决定的 R2-14 复盘会话快照移植）；P2 死代码批量清除＝DEBT-LEGACY-01；P3 活跃路径重基线清零＝DEBT-REBASE-01。P4 防复发门禁未授权。失败基线见[测试失败基线](docs/audits/2026-10-11-test-baseline-bb5051c/README.md)。
+**2026-10-11债务清理（用户授权 P0–P3；P4 暂缓）：** 用户确认按体检方案分四段处理多次迭代债务，段间独立提交与报告、不自动推进：P0 基线登记与状态收口（DEBT-P0）与 P1 复盘遗留清理（REVIEW-R2-14 → R2-12 → R2-13）已完成，见[P1 报告](docs/reports/REVIEW_R2_12_R2_13_REPORT.md)与[归档](docs/planning/COMPLETED_TASKS.md#review-r2-03r2-14--复盘四步落地会话快照与重基线)；P2 死代码批量清除＝DEBT-LEGACY-01；P3 活跃路径重基线清零＝DEBT-REBASE-01。P4 防复发门禁未授权。失败基线见[测试失败基线](docs/audits/2026-10-11-test-baseline-bb5051c/README.md)。
 
 | Task | Depends on | Scope | Status |
 | --- | --- | --- | --- |
 | DEBT-LEGACY-01 — 死代码批量清除 | DEBT-P0 | 17 个生产不可达文件（约 4,495 行）与旧夹具测试清理 / 场景迁移；全仓失败数降至约 50 | PENDING（已授权，P2） |
 | DEBT-REBASE-01 — 活跃路径重基线清零 | DEBT-LEGACY-01 | 剩余失败逐条判定：陈旧断言按现行合同重写，疑似缺陷对照领域来源处理；目标全仓 0 失败 | PENDING（已授权，P3） |
-
-**2026-10-11复盘四步向导与 Detail 落地（用户授权，可见界面）：** 用户报告“看不到改动”后直接交付新复盘流程：① `ReviewFlowPage` 四步向导（整理今天 → 今天关心过的事情【目标优先分组 + 无目标记录轴】 → 今天哪里最难继续【卡住选择 + 原因 + 必填下一步 + 可选目标】 → 看一眼今天【统计 / 目标时长 / 三态清单 / 下一步】）与已完成 Detail（只读时间轴 + 关心清单 + 当时卡在哪里 + 下次从这里继续 + ••• 重新整理 / 删除），含步骤点、返回、保存横幅与全部键；② `ReviewSessionService`（记录改名 / 改时间 / 删除、Gap 记 Unknown、完成 / 删除复盘；复用 `ActivityUnderstandingService` 与 `ReviewEntrySaver`）；③ `review_record_sheet`（查看 / 改名 / 改时间 / 关联或取消目标 / 删除）；④ 复盘入口与 Gap 补记接线（`main_app._reviewPage` / `_addRecordForReview`），旧 `ReviewContextPage` / `ReviewForm` 保留为历史夹具、生产不可达。验证：新增 `test/app/review_visual_sample_test.dart`（截图存[素材](docs/planning/assets/review-flow-round/)，7 张）；活动 / bootstrap / 设置 / 首页 / 睡眠 / 两个采样批次 36 项全过；7 个旧 app 复盘流程文件净新增失败 1 项（其余 18 项为既存，见 R2-12）；`flutter analyze` 无问题、`dart format` 0 changed、`git diff --check` 通过。
-
-| Task | Depends on | Scope | Status |
-| --- | --- | --- | --- |
-| REVIEW-R2-03…R2-11 — 复盘会话服务与四步向导 + Detail | 用户授权 | 装载 / 写入服务 / Gap 操作 / 四步界面 / 记录面板 / 入口替换 / 采样截图 | COMPLETE |
-| REVIEW-R2-12 — 旧复盘界面测试重基线 | 本批 | 7 个 app 流程文件逐条重写 / 旧页面清理（P0 基线 19 项失败） | PENDING（债务清理 P1，已授权） |
-| REVIEW-R2-13 — 平台验证与全仓回归 | R2-12 | Android / Web 构建、全仓失败集合对比 | PENDING（债务清理 P1，已授权） |
-| REVIEW-R2-14 — 复盘会话快照与继续提示移植 | 用户决定（2026-10-11） | 四步向导接入 Q-012 会话快照、继续 / 重新整理提示与失败体验；先于旧页面删除（R2-12 清理部分） | PENDING（债务清理 P1，已授权） |
 
 **2026-10-09当前首页阶段：[HOME-INTERACTION-01](docs/planning/HOME_INTERACTION_DESIGN.md)已按用户后续「开始实现」授权落地；2026-10-10纠正纸带方向、头部样式及收放触发。** 左右可设置滑盖快捷区、按钮镜像、当日入口、下沿阅读锚点、日期横线上沿切日 / 连续回展、下拖连续收起、首版展开 / 紧凑头部布局、今天专属提醒、未来日上限与设置持久化均已实现。左右截图已检查；真机系统边缘、人工读屏 / 误触及帧性能未验收，平台任务保持PARTIAL。详见[实施报告](docs/reports/HOME_INTERACTION_IMPLEMENTATION_REPORT.md)。
 
@@ -43,13 +34,13 @@
 | HOME-TIME-03 — 双态壳与阅读定位 | HOME-TIME-02 | 滞回状态机、时间锚点、切日 / 返回 / 刷新 / 补偿及窄屏大字 | COMPLETE |
 | HOME-TIME-04 — 应用回归与平台验收 | HOME-TIME-03 | 工程与Android / Web集成通过；人工读屏 / 实机误触未验收 | PARTIAL |
 
-**2026-10-08授权：[取消“草稿”、改为会话内输入恢复](docs/planning/SESSION_INPUT_RECOVERY.md)；2026-10-11 DEBT-P0 收口。** 用户要求完整实施Q-012新决定；跨关闭 / 跨刷新恢复合同已被取代，历史COMPLETE报告只保留为当时证据。不改正式领域模型、五表schema、时间算法或冲突规则。收口结论（证据见 DEBT-P0 归档记录）：01 文档合同已全部更新、02 会话 store 与启动清除已接线，二者 COMPLETE；03 的活动、睡眠已交付（恢复提示与测试），**复盘四步向导缺少会话快照与“继续上次填写？”提示**（该提示现仅存在于生产不可达的旧 `ReviewForm`），保持 PARTIAL，待按 Q-012 补齐（2026-10-11 用户决定移植到四步向导，见 REVIEW-R2-14）；04 的平台会话边界验证未执行，保持 PENDING。
+**2026-10-08授权：[取消“草稿”、改为会话内输入恢复](docs/planning/SESSION_INPUT_RECOVERY.md)；2026-10-11 DEBT-P0 收口。** 用户要求完整实施Q-012新决定；跨关闭 / 跨刷新恢复合同已被取代，历史COMPLETE报告只保留为当时证据。不改正式领域模型、五表schema、时间算法或冲突规则。收口结论（证据见 DEBT-P0 归档记录）：01 文档合同已全部更新、02 会话 store 与启动清除已接线，二者 COMPLETE；03 的活动 / 睡眠 / 复盘恢复选择均已交付（复盘会话快照见 REVIEW-R2-14，2026-10-11 用户决定），COMPLETE；04 的平台会话边界验证未执行，保持 PENDING。
 
 | Task | Depends on | Scope | Status |
 | --- | --- | --- | --- |
 | INPUT-RECOVERY-01 — 固定文档合同 | Q-012新决定 | Source of Truth、领域 / 架构、MVP、实施计划、当前UI交接与任务追踪 | COMPLETE |
 | INPUT-RECOVERY-02 — 会话存储与旧数据迁移 | INPUT-RECOVERY-01 | app运行期内存store、旧三类输入清除、睡眠学习分层与保留 | COMPLETE |
-| INPUT-RECOVERY-03 — 全入口交互去草稿化 | INPUT-RECOVERY-02 | 活动 / 睡眠 / 复盘的新建、Gap、更正、恢复选择与失败体验 | PARTIAL |
+| INPUT-RECOVERY-03 — 全入口交互去草稿化 | INPUT-RECOVERY-02 | 活动 / 睡眠 / 复盘的新建、Gap、更正、恢复选择与失败体验 | COMPLETE |
 | INPUT-RECOVERY-04 — Android / Web验证 | INPUT-RECOVERY-03 | controller / widget / 迁移回归、平台会话边界、分析 / 测试 / 构建 | PENDING |
 
 **2026-10-07本轮授权：[TIME-01活动与睡眠时间自动化](docs/planning/TIME_RECORDING_AUTOMATION.md)，实现已交付，平台验收未完成。** 相关测试与Web真实存储验证通过；全仓库既有失败及Android未实测见[交付报告](docs/reports/TIME-01_TIME_AUTOMATION_REPORT.md)，不标COMPLETE。按Q-032 / Q-035执行当前生产输入范围；下述旧阶段说明保留追溯，不阻止本轮明确授权。
@@ -95,6 +86,7 @@
 | 2026-10-07 | <a id="time-04--个人睡眠初值与多日空白修复"></a>[TIME-04 — 个人睡眠初值与多日空白修复](docs/planning/COMPLETED_TASKS.md#time-04--个人睡眠初值与多日空白修复) | 归档正文 |
 | 2026-10-07 | <a id="time-03--长gap后的活动新建初值"></a>[TIME-03 — 长Gap后的活动新建初值](docs/planning/COMPLETED_TASKS.md#time-03--长gap后的活动新建初值) | 归档正文 |
 | 2026-10-07 | <a id="time-02--日期时间独立修改"></a>[TIME-02 — 日期时间独立修改](docs/planning/COMPLETED_TASKS.md#time-02--日期时间独立修改) | 归档正文 |
+| 2026-10-11 | <a id="review-r2-03r2-14--复盘四步落地会话快照与重基线"></a>[REVIEW-R2-03…R2-14 — 复盘四步落地、会话快照与重基线](docs/planning/COMPLETED_TASKS.md#review-r2-03r2-14--复盘四步落地会话快照与重基线) | P1 报告 |
 
 ## 使用方式与当前状态
 
