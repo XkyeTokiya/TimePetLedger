@@ -1,1 +1,0 @@
-void reportGoalRhythmPlatformPhase(int completedPhase) {}

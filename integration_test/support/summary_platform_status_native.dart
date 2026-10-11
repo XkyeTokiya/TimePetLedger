@@ -1,1 +1,0 @@
-void reportSummaryPlatformPhase(int completedPhase) {}
