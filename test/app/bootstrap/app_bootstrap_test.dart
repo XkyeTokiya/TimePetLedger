@@ -19,15 +19,14 @@ import 'package:time_pet_ledger/features/ledger/data/drift_ledger_repository.dar
 import 'package:time_pet_ledger/features/ledger/domain/block_knowledge_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/recording_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
+import 'package:time_pet_ledger/features/ledger/presentation/activity/activity_quick_sheet.dart';
 import 'package:time_pet_ledger/core/time/civil_date.dart';
 
 Future<void> tapVisible(WidgetTester tester, String text) async {
   if (await tapRootAction(tester, text)) {
     return;
   }
-  final target = text == '更正完整记录' || text == '删除完整时间记录'
-      ? find.byTooltip(text == '删除完整时间记录' ? '删除记录' : text)
-      : find.text(text);
+  final target = find.text(text);
   if (target.evaluate().isEmpty) {
     await tester.scrollUntilVisible(
       target,
@@ -39,15 +38,6 @@ Future<void> tapVisible(WidgetTester tester, String text) async {
   await tester.pumpAndSettle();
   await tester.tap(target.first);
   await tester.pumpAndSettle();
-}
-
-Future<void> enterTime(WidgetTester tester, String label, String value) async {
-  await tapVisible(tester, label);
-  await tester.enterText(
-    find.byKey(const ValueKey('time-dialog-input')),
-    value,
-  );
-  await tapVisible(tester, '确认');
 }
 
 void main() {
@@ -85,19 +75,33 @@ void main() {
     await tester.pumpAndSettle();
     await selectLedgerDate(tester, '2026-09-28');
     await tapVisible(tester, '查看记录');
-    expect(find.text('已有记录'), findsOneWidget);
-    await tapVisible(tester, '更正完整记录');
-    expect(find.text('更正记录'), findsOneWidget);
-    await tester.tap(find.byType(BackButton));
+    expect(find.text('已有记录'), findsWidgets);
+    await tester.ensureVisible(
+      recordingFact('00000000-0000-4000-8000-000000000001').first,
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      recordingFact('00000000-0000-4000-8000-000000000001').first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('记录详情'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('fact-detail-edit')));
+    await tester.pumpAndSettle();
+    expect(find.text('更正记录'), findsWidgets);
+    await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     await tester.runAsync(
       () =>
           DriftLedgerRepository(db)
               .deleteTimeBlock('00000000-0000-4000-8000-000000000001'),
     );
-    await tapVisible(tester, '更正完整记录');
+    await tester.tap(find.byKey(const ValueKey('fact-detail-edit')));
+    await tester.pumpAndSettle();
     expect(find.text('记录已不存在，无法更正。'), findsOneWidget);
-    await tapVisible(tester, '清空未完成修改并返回');
+    await tester.tap(find.text('清除未完成输入'));
+    await tester.pumpAndSettle();
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
     expect(
       await tester.runAsync(
         () =>
@@ -130,54 +134,83 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await selectLedgerDate(tester, '2026-09-28');
+      // 今天先放一条记录，让新记录面板预填尾部区间（08:00–09:00 之后到当前时刻）。
+      await tester.runAsync(
+        () => DriftLedgerRepository(db).createTimeBlock(
+          id: '00000000-0000-4000-8000-000000000009',
+          startedAt: DateTime(2026, 9, 29, 8).millisecondsSinceEpoch,
+          endedAt: DateTime(2026, 9, 29, 9).millisecondsSinceEpoch,
+          startPrecision: TimePrecision.exact,
+          endPrecision: TimePrecision.exact,
+          knowledgeState: BlockKnowledgeState.known,
+          title: '上午的事',
+          now: 1,
+        ),
+      );
+      await tester.pumpAndSettle();
       await tapVisible(tester, '记录活动');
-      expect(find.widgetWithText(ListTile, '未填写'), findsNWidgets(2));
-      expect(find.text('选择要补记的时间，也可以手动填写：'), findsNothing);
       expect(
-        tester
-            .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, '开始大约'))
-            .selected,
-        isTrue,
+        find.descendant(
+          of: find.byType(ActivityQuickSheet),
+          matching: find.text('09:00'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(ActivityQuickSheet),
+          matching: find.text('12:00'),
+        ),
+        findsOneWidget,
       );
       await tapVisible(tester, '想不起来');
-      await enterTime(tester, '开始时间', '2026-09-28 10:00');
-      await enterTime(tester, '结束时间', '2026-09-28 11:00');
-      await tapVisible(tester, '保存到账本');
+      await tapVisible(tester, '保存记录');
       expect(find.text('已保存到账本。'), findsOneWidget);
-      expect(ledgerDuration('已交代', '约1 小时'), findsOneWidget);
-      expect(find.text('其中想不起来：约1 小时（已含在已交代中）'), findsOneWidget);
-      expect(ledgerFactCount(tester, '普通'), 1);
+      expect(ledgerDuration('已交代', '4 小时'), findsOneWidget);
+      expect(ledgerFactCount(tester, '普通'), 2);
       final rows = await tester.runAsync(
-        () => db.customSelect('SELECT * FROM time_blocks').get(),
+        () => db.customSelect('SELECT * FROM time_blocks ORDER BY id').get(),
       );
-      expect(rows, hasLength(1));
-      expect(rows!.single.data['knowledge_state'], 'unknown');
-      expect(rows.single.data['start_precision'], 'approximate');
-      expect(rows.single.data['end_precision'], 'approximate');
-      await tapVisible(tester, '更正完整记录');
-      expect(find.text('更正记录'), findsOneWidget);
-      expect(find.text('2026-09-28 10:00'), findsOneWidget);
-      await tester.tap(find.byType(BackButton));
+      expect(rows, hasLength(2));
+      final unknownRow = rows!.firstWhere(
+        (row) => row.data['knowledge_state'] == 'unknown',
+      );
+      expect(
+        unknownRow.data['started_at'],
+        DateTime(2026, 9, 29, 9).millisecondsSinceEpoch,
+      );
+      expect(
+        unknownRow.data['ended_at'],
+        DateTime(2026, 9, 29, 12).millisecondsSinceEpoch,
+      );
+
+      // 新记录的详情与更正入口可达；来源删除后报缺失而不重建。
+      final unknownId = unknownRow.data['id'] as String;
+      await tester.ensureVisible(recordingFact(unknownId).first);
       await tester.pumpAndSettle();
-      await tapVisible(tester, '删除完整时间记录');
-      expect(find.text('删除完整记录时，依附的节奏解释也会删除。'), findsOneWidget);
-      await tapVisible(tester, '取消');
-      expect(
-        await tester.runAsync(
-          () => db.customSelect('SELECT * FROM time_blocks').get(),
-        ),
-        hasLength(1),
+      await tester.tap(recordingFact(unknownId).first);
+      await tester.pumpAndSettle();
+      expect(find.text('记录详情'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('fact-detail-edit')));
+      await tester.pumpAndSettle();
+      expect(find.text('更正记录'), findsWidgets);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await tester.runAsync(
+        () => DriftLedgerRepository(db).deleteTimeBlock(unknownId),
       );
-      await tapVisible(tester, '删除完整时间记录');
-      await tapVisible(tester, '删除记录');
-      expect(ledgerFactCount(tester, '普通'), 0);
-      expect(ledgerDuration('已交代', '0 分钟'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('fact-detail-edit')));
+      await tester.pumpAndSettle();
+      expect(find.text('记录已不存在，无法更正。'), findsOneWidget);
+      await tester.tap(find.text('清除未完成输入'));
+      await tester.pumpAndSettle();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
       expect(
         await tester.runAsync(
-          () => db.customSelect('SELECT * FROM time_blocks').get(),
+          () => DriftLedgerRepository(db).readTimeBlock(unknownId),
         ),
-        isEmpty,
+        isNull,
       );
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.pumpAndSettle();
@@ -213,7 +246,7 @@ void main() {
       defaultM3ColorScheme(Brightness.light),
     );
     await tester.pumpAndSettle();
-    expect(find.text('日账本'), findsOneWidget);
+    expect(find.byKey(const ValueKey('home-date-title')), findsOneWidget);
     expect(
       tester.widget<MaterialApp>(find.byType(MaterialApp)).theme?.colorScheme,
       defaultM3ColorScheme(Brightness.light),
@@ -228,7 +261,7 @@ void main() {
       ),
     );
     expect(opens, 1);
-    expect(find.text('补一笔'), findsOneWidget);
+    expect(find.text('记录一笔'), findsOneWidget);
     await tester.runAsync(() async {
       await tapRootAction(tester, '记录活动');
       await tester.pumpAndSettle();

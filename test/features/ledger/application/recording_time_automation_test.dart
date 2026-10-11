@@ -366,6 +366,13 @@ void main() {
     });
     await first.initialize();
     expect(first.loadError, isNull);
+    expect(first.pendingRecovery, isNotNull);
+    // Q-012：选择继续前保持新建议；继续恢复文本，时间仍取新建议。
+    expect((first.time.startedAt, first.time.endedAt), (at(7, 14, 20), now));
+    expect(first.title, isEmpty);
+    await first.resumePendingInput();
+    expect(first.title, '刚完成的一件事');
+    expect(first.note, '保留内容');
     expect((first.time.startedAt, first.time.endedAt), (at(7, 14, 20), now));
     expect(await first.flush(), isTrue);
     final cached = (await drafts.read(context))!;
@@ -395,6 +402,8 @@ void main() {
     await second.initialize();
     expect((second.time.startedAt, second.time.endedAt), (at(7, 14, 40), now));
     expect(loads, 2);
+    await second.resumePendingInput();
+    expect(second.title, '刚完成的一件事');
     final refreshed = await second.submit();
     expect(second.submitError, isNull);
     expect(refreshed, isNotNull);

@@ -37,7 +37,7 @@ void main() {
     }
   });
 
-  test('Q-021：每类有记录的微小时长不同于缺失，近似提示独立', () {
+  test('Q-021：每类有记录的微小时长不同于缺失，近似不加“约”', () {
     for (final kind in SummaryDurationKind.values) {
       for (final milliseconds in [1, 20000, 29999]) {
         expect(
@@ -49,7 +49,7 @@ void main() {
             _summary(milliseconds, approximate: true),
             kind: kind,
           ),
-          '约少于 1 分钟',
+          '少于 1 分钟',
         );
       }
     }
@@ -78,7 +78,7 @@ void main() {
         final duration = _summary(milliseconds, approximate: approximate);
         expect(
           formatSummaryDuration(duration, kind: SummaryDurationKind.mainSleep),
-          '${approximate ? '约' : ''}$expected',
+          expected,
         );
         expect(duration.milliseconds, milliseconds);
       }
@@ -100,7 +100,7 @@ void main() {
     );
     expect(
       formatSummaryDuration(approximate, kind: SummaryDurationKind.progress),
-      '约1 分钟',
+      '1 分钟',
     );
     final roundsDown = SummaryDuration.fromRecords([
       _duration(30000),
@@ -117,7 +117,7 @@ void main() {
     expect(formatDerivedDuration(_duration(0)), '0 分钟');
     expect(formatDerivedDuration(_duration(0, approximate: true)), '0 分钟');
     expect(formatDerivedDuration(_duration(1)), '少于 1 分钟');
-    expect(formatDerivedDuration(_duration(1, approximate: true)), '约少于 1 分钟');
+    expect(formatDerivedDuration(_duration(1, approximate: true)), '少于 1 分钟');
     expect(formatDerivedDuration(_duration(60000)), '1 分钟');
   });
 
@@ -221,13 +221,13 @@ void main() {
     );
     final item = view.goalSummaries.single;
     expect(goalSummariesEmptyMessage(view.goalSummaries), isNull);
-    expect(formatDerivedDuration(item.totalDuration.duration), '约1 分钟');
+    expect(formatDerivedDuration(item.totalDuration.duration), '1 分钟');
     expect(
       formatSummaryDuration(
         item.progressDuration,
         kind: SummaryDurationKind.progress,
       ),
-      '约少于 1 分钟',
+      '少于 1 分钟',
     );
     expect(
       formatSummaryDuration(
@@ -271,7 +271,7 @@ void main() {
       ),
       '少于 1 分钟',
     );
-    expect(formatDerivedDuration(view.accountedDuration), '约2 分钟');
+    expect(formatDerivedDuration(view.accountedDuration), '2 分钟');
     expect(formatDerivedDuration(view.unresolvedDuration), '1 分钟');
     expect(view.accountedDuration.milliseconds, 120000);
     expect(item.totalDuration.milliseconds, 40000);

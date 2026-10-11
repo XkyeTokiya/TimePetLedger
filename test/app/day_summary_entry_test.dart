@@ -11,7 +11,6 @@ import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/core/time/civil_date.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_recording_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_ledger_repository.dart';
-import 'package:time_pet_ledger/features/ledger/domain/sleep_type.dart';
 import 'package:time_pet_ledger/features/ledger/domain/recording_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/domain/block_knowledge_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
@@ -59,74 +58,60 @@ void main() {
       await tester.pumpAndSettle();
       await tapRootAction(tester, '打开基础摘要');
       await tester.pumpAndSettle();
-      expect(find.text('基础摘要'), findsOneWidget);
+      expect(find.text('当日摘要'), findsOneWidget);
       expect(find.text('此账本窗口及醒来日期尚无正式记录。'), findsOneWidget);
-      expect(find.text('日期：2026-09-30'), findsOneWidget);
-      expect(find.text('已交代：0 分钟'), findsOneWidget);
-      expect(find.text('其中未知：0 分钟'), findsOneWidget);
-      expect(find.text('尚未记录：12 小时'), findsOneWidget);
+      expect(find.text('9月30日'), findsOneWidget);
+      expect(find.textContaining('已交代 0 分钟'), findsOneWidget);
+      expect(find.textContaining('尚未记录 12 小时'), findsOneWidget);
       expect(find.text('只在草稿'), findsNothing);
+      // 进入后独立管理日期；应用恢复是它的重读路径，不跟随午夜改写所选日。
       clock = DateTime(2026, 10, 1, 0, 1);
-      await tester.tap(find.text('刷新摘要'));
+      resumeSummary(tester);
       await tester.pumpAndSettle();
-      expect(find.text('日期：2026-10-01'), findsOneWidget);
-      expect(
-        (await tester.runAsync(() => drafts.read(context)))!.title,
-        '只在草稿',
-      );
-      expect(
-        await tester.runAsync(
-          () => db.customSelect('SELECT * FROM time_blocks').get(),
-        ),
-        isEmpty,
-      );
-      final sleep = (await tester.runAsync(
-        () => DriftLedgerRepository(db).createSleepSession(
-          id: '00000000-0000-4000-8000-000000000001',
-          startedAt: DateTime(2026, 9, 30, 23).millisecondsSinceEpoch,
-          endedAt: DateTime(2026, 10, 1).millisecondsSinceEpoch,
-          startPrecision: TimePrecision.approximate,
-          endPrecision: TimePrecision.exact,
-          type: SleepType.mainSleep,
-          now: 1,
-        ),
-      ))!;
-      await tester.tap(find.text('刷新摘要'));
-      await tester.pumpAndSettle();
-      expect(find.text('摘要已读取。'), findsOneWidget);
-      expect(find.text('此账本窗口及醒来日期尚无正式记录。'), findsNothing);
-      expect(find.text('已交代：0 分钟'), findsOneWidget);
-      expect(find.text('尚未记录：1 分钟'), findsOneWidget);
+      expect(find.text('9月30日'), findsOneWidget);
+      expect(find.textContaining('尚未记录 24 小时'), findsOneWidget);
       await tester.runAsync(
         () => DriftLedgerRepository(db).createTimeBlock(
           id: '00000000-0000-4000-8000-000000000002',
-          startedAt: DateTime(2026, 10, 1).millisecondsSinceEpoch,
-          endedAt: DateTime(2026, 10, 1, 0, 0, 20).millisecondsSinceEpoch,
+          startedAt: DateTime(2026, 9, 30, 10).millisecondsSinceEpoch,
+          endedAt: DateTime(2026, 9, 30, 11).millisecondsSinceEpoch,
           startPrecision: TimePrecision.exact,
-          endPrecision: TimePrecision.approximate,
-          knowledgeState: BlockKnowledgeState.unknown,
+          endPrecision: TimePrecision.exact,
+          knowledgeState: BlockKnowledgeState.known,
+          title: '上午的事',
           now: 2,
         ),
       );
-      await tester.tap(find.text('刷新摘要'));
+      resumeSummary(tester);
       await tester.pumpAndSettle();
-      expect(find.text('已交代：约少于 1 分钟'), findsOneWidget);
-      expect(find.text('其中未知：约少于 1 分钟'), findsOneWidget);
-      expect(find.text('尚未记录：约1 分钟'), findsOneWidget);
+      expect(find.text('此账本窗口及醒来日期尚无正式记录。'), findsNothing);
+      expect(find.textContaining('已交代 1 小时'), findsOneWidget);
+      expect(find.textContaining('尚未记录 23 小时'), findsOneWidget);
+      // 旧版草稿在启动时已被清除，摘要不展示草稿内容。
+      expect(find.text('只在草稿'), findsNothing);
       expect(
-        (await tester.runAsync(() => drafts.read(context)))!.title,
-        '只在草稿',
+        (await tester.runAsync(
+          () => db.customSelect('SELECT * FROM time_blocks').get(),
+        ))!,
+        hasLength(1),
       );
-      final reread = (await tester.runAsync(
-        () => DriftLedgerRepository(db).readSleepSession(sleep.id),
-      ))!;
-      expect(reread.startedAt, sleep.startedAt);
-      expect(reread.endedAt, sleep.endedAt);
-      expect(reread.startPrecision, TimePrecision.approximate);
       await tester.pumpWidget(const SizedBox.shrink());
       await tester.runAsync(() async {
         await Future<void>.delayed(Duration.zero);
       });
     },
   );
+}
+
+void resumeSummary(WidgetTester tester) {
+  for (final state in [
+    AppLifecycleState.inactive,
+    AppLifecycleState.hidden,
+    AppLifecycleState.paused,
+    AppLifecycleState.hidden,
+    AppLifecycleState.inactive,
+    AppLifecycleState.resumed,
+  ]) {
+    tester.binding.handleAppLifecycleStateChanged(state);
+  }
 }

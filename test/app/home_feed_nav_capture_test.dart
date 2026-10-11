@@ -156,8 +156,8 @@ void main() {
     await capture(tester, 'home-320');
     await resize(tester, const Size(320, 800), 1.5);
     await capture(tester, 'home-320-large-text');
-    // 验证实际排版：短标题和数字单位分别占完整一行，不能挤成逐字换行。
-    for (final text in ['主睡眠', '7 小时', '40 分钟']) {
+    // 验证实际排版：标题与完整时长各占完整一行，不能挤成逐字换行。
+    for (final text in ['主睡眠', '7 小时 20 分钟 · 跨日切片']) {
       final paragraphs = find.text(text);
       expect(paragraphs, findsWidgets);
       for (var i = 0; i < paragraphs.evaluate().length; i++) {
@@ -171,7 +171,7 @@ void main() {
       }
     }
     final semantics = tester.ensureSemantics();
-    expect(find.bySemanticsLabel(RegExp('完整时长 7 小时 40 分钟')), findsWidgets);
+    expect(find.bySemanticsLabel(RegExp('主睡眠，7 小时 20 分钟')), findsWidgets);
     semantics.dispose();
     expect(tester.takeException(), isNull);
   });
@@ -232,7 +232,13 @@ void main() {
     await settleNative(tester);
     await capture(tester, 'review-360');
 
-    await tester.tap(find.byKey(const ValueKey('review-open-form')));
+    await tester.tap(find.byKey(const ValueKey('review-menu')));
+    await settleNative(tester);
+    await tester.tap(find.byKey(const ValueKey('review-reflow')));
+    await settleNative(tester);
+    await tester.tap(find.byKey(const ValueKey('review-next')));
+    await settleNative(tester);
+    await tester.tap(find.byKey(const ValueKey('review-next')));
     await settleNative(tester);
     await capture(tester, 'review-form-360');
     expect(tester.takeException(), isNull);

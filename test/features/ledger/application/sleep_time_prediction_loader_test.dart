@@ -95,7 +95,11 @@ void main() {
     addTearDown(c.dispose);
     await c.initialize();
     expect(c.loadError, isNull);
+    expect(c.pendingRecovery, isNotNull);
     expect((c.startedAt, c.endedAt), (at(6, 23), at(7, 7)));
+    expect(c.note, isEmpty);
+    // Q-012：选择继续前保持新建议；继续恢复文本，时间仍取新建议。
+    await c.resumePendingInput();
     expect(c.note, '保留备注');
     expect(await c.flush(), isTrue);
     final cached = (await drafts.read(context))!;
@@ -213,11 +217,14 @@ void main() {
     );
     await c.initialize();
     c.setType(SleepType.mainSleep);
+    // 产生一次实际修改，让带预测来源的草稿落盘。
+    c.setNote('保留备注');
     await c.flush();
     final probe = _Probe(NativeDatabase(file));
     await probe.customStatement(
       "CREATE TRIGGER reject_feedback BEFORE INSERT ON sleep_learning_feedback BEGIN SELECT RAISE(ABORT,'test'); END",
     );
+    // 反馈写入失败不回滚已提交事实：收尾未完成时提交不返回视图，草稿保留。
     expect(await c.submit(), isNull);
     expect(c.committed, isNotNull);
     expect(c.committed!.draftCleared, isFalse);

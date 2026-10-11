@@ -12,6 +12,8 @@ import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/day_summary_page.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/sleep_summary_view.dart';
 
+import '../../../support/ledger_date_selection.dart';
+
 String id(int n) => '00000000-0000-4000-8000-${n.toString().padLeft(12, '0')}';
 int instant(int day, [int hour = 0, int minute = 0, int second = 0]) =>
     DateTime(2026, 10, day, hour, minute, second).millisecondsSinceEpoch;
@@ -51,6 +53,21 @@ Future<SleepSession> save(
     now: 1,
   ),
 ))!;
+
+/// 独立摘要页没有单独刷新按钮；离开并返回是它的真实重读路径。
+Future<void> refreshSummary(
+  WidgetTester tester,
+  GlobalKey<NavigatorState> navigator,
+) async {
+  navigator.currentState!.push<void>(
+    MaterialPageRoute<void>(
+      builder: (_) => const Scaffold(body: Text('other page')),
+    ),
+  );
+  await tester.pumpAndSettle();
+  navigator.currentState!.pop();
+  await tester.pumpAndSettle();
+}
 
 Future<GlobalKey<NavigatorState>> open(
   WidgetTester tester,
@@ -109,11 +126,16 @@ void main() {
       expect(view.nap.records.single.id, id(3));
       expect(view.mainSleep.totalDuration.milliseconds, 530 * 60000);
       expect(view.nap.totalDuration.milliseconds, 20 * 60000);
-      expect(find.text('约8 小时 50 分钟'), findsOneWidget);
+      expect(find.text('8 小时 50 分钟'), findsOneWidget);
       expect(find.text('20 分钟'), findsOneWidget);
-      expect(find.text('已交代：9 小时'), findsOneWidget);
+      expect(find.textContaining('已交代 9 小时'), findsOneWidget);
+      // 摘要页把单条记录收进可折叠分组：先展开再读完整行。
+      await tester.tap(find.byKey(const ValueKey('sleep-summary-mainSleep')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('sleep-summary-nap')));
+      await tester.pumpAndSettle();
       expect(
-        find.text('约2026-10-01 23:50 → 2026-10-02 07:40 · 完整时长 约7 小时 50 分钟'),
+        find.text('2026-10-01 23:50 → 2026-10-02 07:40 · 完整时长 7 小时 50 分钟'),
         findsOneWidget,
       );
       expect(
@@ -150,7 +172,7 @@ void main() {
     'missing groups and exact/approximate subminute totals use existing formatting',
     (tester) async {
       final db = await database(tester);
-      await open(tester, db, 2, instant(2, 12));
+      final navigator = await open(tester, db, 2, instant(2, 12));
       expect(find.text('尚未记录主睡眠'), findsOneWidget);
       expect(find.text('尚未记录小睡'), findsOneWidget);
       await save(tester, db, 1, instant(2, 1), instant(2, 1, 0, 20));
@@ -163,16 +185,25 @@ void main() {
         type: SleepType.nap,
         endPrecision: TimePrecision.approximate,
       );
-      await tester.tap(find.text('刷新摘要'));
-      await tester.pumpAndSettle();
-      expect(find.text('少于 1 分钟'), findsOneWidget);
-      expect(find.text('约少于 1 分钟'), findsOneWidget);
+      await refreshSummary(tester, navigator);
+      expect(
+        find.descendant(
+          of: find.byType(SleepSummaryView),
+          matching: find.text('少于 1 分钟'),
+        ),
+        findsNWidgets(2),
+      );
       expect(find.text('尚未记录主睡眠'), findsNothing);
       expect(find.text('尚未记录小睡'), findsNothing);
       await save(tester, db, 3, instant(2, 3), instant(2, 3, 0, 20));
-      await tester.tap(find.text('刷新摘要'));
-      await tester.pumpAndSettle();
-      expect(find.text('1 分钟'), findsOneWidget); // 20s + 20s 仅合计后舍入。
+      await refreshSummary(tester, navigator);
+      expect(
+        find.descendant(
+          of: find.byType(SleepSummaryView),
+          matching: find.text('1 分钟'),
+        ),
+        findsOneWidget,
+      ); // 20s + 20s 仅合计后舍入。
       expect(summary(tester).summary.mainSleep.records, hasLength(2));
       expect(
         summary(tester).summary.mainSleep.totalDuration.milliseconds,
@@ -195,15 +226,14 @@ void main() {
       );
       await save(tester, db, 2, instant(2, 23), instant(3, 7));
       await open(tester, db, 2, instant(2));
-      expect(find.text('约1 小时'), findsOneWidget);
-      expect(find.text('已交代：0 分钟'), findsOneWidget);
+      expect(find.text('1 小时'), findsOneWidget);
+      expect(find.textContaining('已交代 0 分钟'), findsOneWidget);
       expect(find.text('尚未记录主睡眠'), findsNothing);
       expect(summary(tester).summary.mainSleep.records.single.id, id(1));
       await open(tester, db, 3, instant(2, 12));
       expect(find.text('8 小时'), findsOneWidget);
-      expect(find.text('已交代：0 分钟'), findsOneWidget);
-      expect(find.text('尚未记录：0 分钟'), findsOneWidget);
-      expect(find.text('当前账本窗口为空，不产生未记录缺口。'), findsOneWidget);
+      expect(find.textContaining('已交代 0 分钟'), findsOneWidget);
+      expect(find.textContaining('尚未记录 0 分钟'), findsOneWidget);
       expect(summary(tester).summary.mainSleep.records.single.id, id(2));
       expect(find.text('尚未记录小睡'), findsOneWidget);
     },
@@ -221,9 +251,9 @@ void main() {
         instant(2, 7),
         startPrecision: TimePrecision.approximate,
       );
-      await open(tester, db, 2, instant(4, 12));
+      final navigator = await open(tester, db, 2, instant(4, 12));
       final old = summary(tester).summary;
-      expect(find.text('约8 小时'), findsOneWidget);
+      expect(find.text('8 小时'), findsOneWidget);
       final corrected = (await tester.runAsync(
         () => DriftLedgerRepository(db).updateSleepSession(
           id: record.id,
@@ -232,15 +262,14 @@ void main() {
           endedAt: instant(3, 7),
         ),
       ))!;
-      await tester.tap(find.text('刷新摘要'));
-      await tester.pumpAndSettle();
+      await refreshSummary(tester, navigator);
       expect(find.text('尚未记录主睡眠'), findsOneWidget);
-      expect(find.text('约8 小时'), findsNothing);
-      expect(find.text('已交代：约1 小时'), findsOneWidget); // 仍有新记录入睡日切片。
-      await tester.enterText(find.byType(TextField), '2026-10-03');
+      expect(find.text('8 小时'), findsNothing);
+      expect(find.textContaining('已交代 1 小时'), findsOneWidget); // 仍有新记录入睡日切片。
+      await selectLedgerDate(tester, '2026-10-03');
       await tester.pumpAndSettle();
-      expect(find.text('约8 小时'), findsOneWidget);
-      expect(find.text('已交代：7 小时'), findsOneWidget);
+      expect(find.text('8 小时'), findsOneWidget);
+      expect(find.textContaining('已交代 7 小时'), findsOneWidget);
       expect(summary(tester).summary.mainSleep.records.single.id, record.id);
       expect(corrected.createdAt, record.createdAt);
       expect(corrected.updatedAt, 2);

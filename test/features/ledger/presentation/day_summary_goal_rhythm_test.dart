@@ -10,7 +10,9 @@ import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/goal_rhythm_summary_view.dart';
 
-import 'day_summary_sleep_test.dart' show database, open, instant, date, id;
+import '../../../support/ledger_date_selection.dart';
+import 'day_summary_sleep_test.dart'
+    show database, open, instant, date, id, refreshSummary;
 
 Future<void> goal(
   WidgetTester tester,
@@ -73,21 +75,6 @@ Future<GoalRhythmSummaryView> section(WidgetTester tester) async {
   );
 }
 
-/// 独立摘要页没有单独刷新按钮；离开并返回是它的真实重读路径。
-Future<void> refreshSummary(
-  WidgetTester tester,
-  GlobalKey<NavigatorState> navigator,
-) async {
-  navigator.currentState!.push<void>(
-    MaterialPageRoute<void>(
-      builder: (_) => const Scaffold(body: Text('other page')),
-    ),
-  );
-  await tester.pumpAndSettle();
-  navigator.currentState!.pop();
-  await tester.pumpAndSettle();
-}
-
 Finder card(int n) => find.byKey(ValueKey('summary-goal-${id(n)}'));
 void label(int n, String text) => expect(
   find.descendant(of: card(n), matching: find.text(text)),
@@ -110,7 +97,7 @@ void main() {
         (1, RhythmState.recovery, 60, false),
         (1, null, 20, false),
         (2, RhythmState.recovery, 60, false),
-        (null, RhythmState.progress, 60, false),
+        (2, RhythmState.progress, 60, false),
         (null, RhythmState.stuck, 60, true),
         (null, RhythmState.recovery, 60, false),
       ]) {
@@ -133,19 +120,20 @@ void main() {
       await open(tester, db, 2, instant(2, 12));
       final view = await section(tester);
       expect(view.goals.map((g) => g.goalId).toSet(), {id(1), id(2)});
-      expect(find.text('同名'), findsNWidgets(2));
+      // 目标圆环图例与明细卡各显示一次同名目标。
+      expect(find.text('同名'), findsNWidgets(4));
       expect(find.text('没有记录'), findsNothing);
-      label(1, '目标相关：约3 分钟');
-      label(1, '明确推进：约少于 1 分钟');
+      label(1, '目标相关：3 分钟');
+      label(1, '明确推进：少于 1 分钟');
       label(1, '明确卡住：1 分钟');
       label(1, '目标内恢复：1 分钟');
       label(1, '未标记节奏：少于 1 分钟');
       label(2, '已归档');
-      label(2, '明确推进：未记录推进');
+      label(2, '明确推进：1 分钟');
       label(2, '明确卡住：未记录卡住');
       label(2, '未标记节奏：没有未标记节奏的记录');
-      expect(find.text('全局推进：约1 分钟'), findsOneWidget);
-      expect(find.text('全局卡住：约2 分钟'), findsOneWidget);
+      expect(find.text('全局推进：1 分钟'), findsOneWidget);
+      expect(find.text('全局卡住：2 分钟'), findsOneWidget);
       expect(find.text('全局恢复：3 分钟'), findsOneWidget);
       for (final g in view.goals) {
         expect(
@@ -179,7 +167,7 @@ void main() {
       final db = await database(tester);
       await goal(tester, db, 1, '未标记');
       await goal(tester, db, 2, '恢复');
-      await open(tester, db, 2, instant(2, 12));
+      final navigator = await open(tester, db, 2, instant(2, 12));
       await section(tester);
       expect(find.text('这段时间还没有目标相关记录'), findsOneWidget);
       expect(find.text('全局推进：未记录推进'), findsOneWidget);
@@ -203,22 +191,19 @@ void main() {
         state: RhythmState.recovery,
         approximate: true,
       );
-      await tester.ensureVisible(find.text('刷新摘要'));
-      await tester.tap(find.text('刷新摘要'));
-      await tester.pumpAndSettle();
+      await refreshSummary(tester, navigator);
       final view = await section(tester);
       label(1, '目标相关：少于 1 分钟');
       label(1, '明确推进：未记录推进');
       label(1, '明确卡住：未记录卡住');
       label(1, '目标内恢复：未记录恢复');
       label(1, '未标记节奏：少于 1 分钟');
-      label(2, '目标内恢复：约少于 1 分钟');
+      label(2, '目标内恢复：少于 1 分钟');
       label(2, '未标记节奏：没有未标记节奏的记录');
       expect(view.rhythm.progressDuration.hasRecords, isFalse);
       expect(view.rhythm.recoveryDuration.hasRecords, isTrue);
-      expect(find.text('全局恢复：约少于 1 分钟'), findsOneWidget);
-      await tester.ensureVisible(find.byType(TextField));
-      await tester.enterText(find.byType(TextField), '2026-10-03');
+      expect(find.text('全局恢复：少于 1 分钟'), findsOneWidget);
+      await selectLedgerDate(tester, '2026-10-03');
       await tester.pumpAndSettle();
       await section(tester);
       expect(find.text('这段时间还没有目标相关记录'), findsOneWidget);

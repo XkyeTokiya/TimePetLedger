@@ -119,11 +119,10 @@ Future<void> verify(
   final chart = tester.widget<HomeDonutChart>(
     find.byKey(const ValueKey('summary-day-chart')),
   );
+  // 零未知时圆环不包含该分块；存在时其毫秒数必须等于投影。
+  final unknownPart = chart.parts.where((part) => part.id == 'unknown');
   expect(
-    chart.parts
-        .firstWhere((part) => part.id == 'unknown')
-        .duration
-        .milliseconds,
+    unknownPart.isEmpty ? 0 : unknownPart.single.duration.milliseconds,
     unknown,
   );
   expect(find.textContaining('%'), findsNothing);
@@ -221,7 +220,7 @@ void main() {
           startPrecision: TimePrecision.approximate,
         ),
       ],
-      labels: ['已交代：约1 小时 40 分钟', '其中未知：约50 分钟', '尚未记录：0 分钟', '此账本窗口没有未记录缺口。'],
+      labels: ['已交代 1 小时 40 分钟', '尚未记录 0 分钟'],
     );
   });
 
@@ -238,7 +237,7 @@ void main() {
           block(1, 0, 30 * minute, startPrecision: TimePrecision.approximate),
           block(2, 30 * minute, 50 * minute, unknown: true),
         ],
-        labels: ['已交代：约50 分钟', '其中未知：20 分钟', '尚未记录：50 分钟'],
+        labels: ['已交代 50 分钟', '尚未记录 50 分钟'],
       );
       await verify(
         tester,
@@ -255,7 +254,7 @@ void main() {
           ),
           block(2, 60 * minute, 80 * minute, unknown: true),
         ],
-        labels: ['已交代：约40 分钟', '其中未知：20 分钟', '尚未记录：约1 小时'],
+        labels: ['已交代 40 分钟', '尚未记录 1 小时'],
       );
     },
   );
@@ -302,7 +301,7 @@ void main() {
         unknown: 20000,
         gap: 20000,
         blocks: [block(1, 0, 20000, unknown: true)],
-        labels: ['已交代：少于 1 分钟', '其中未知：少于 1 分钟', '尚未记录：少于 1 分钟'],
+        labels: ['已交代 少于 1 分钟', '尚未记录 少于 1 分钟'],
       );
       await verify(
         tester,
@@ -319,7 +318,7 @@ void main() {
             endPrecision: TimePrecision.approximate,
           ),
         ],
-        labels: ['已交代：约少于 1 分钟', '其中未知：约少于 1 分钟', '尚未记录：约少于 1 分钟'],
+        labels: ['已交代 少于 1 分钟', '尚未记录 少于 1 分钟'],
       );
       await verify(
         tester,
@@ -328,7 +327,7 @@ void main() {
         unknown: 20000,
         gap: 30000,
         blocks: [block(1, 0, 20000), block(2, 20000, 40000, unknown: true)],
-        labels: ['账本窗口：1 分钟', '已交代：1 分钟', '其中未知：少于 1 分钟', '尚未记录：1 分钟'],
+        labels: ['账本窗口：1 分钟', '已交代 1 分钟', '尚未记录 1 分钟'],
       );
     },
   );

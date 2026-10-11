@@ -77,8 +77,14 @@ int ledgerFactCount(WidgetTester tester, String type) {
       .length;
 }
 
-Finder recordingFact(String id) =>
-    find.byKey(ValueKey((type: LedgerFactType.timeBlock, id: id)));
+/// 时间轴事实节点：行 key 以 Object 类型保存引用记录，按值匹配。
+Finder recordingFact(String id) {
+  final reference = (type: LedgerFactType.timeBlock, id: id);
+  return find.byWidgetPredicate(
+    (widget) =>
+        widget.key is ValueKey && (widget.key! as ValueKey).value == reference,
+  );
+}
 
 Finder sleepFact(String id) {
   final complete = find.byKey(ValueKey('sleep-edit-$id'));
