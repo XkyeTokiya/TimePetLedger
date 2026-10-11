@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -11,7 +10,6 @@ import 'package:time_pet_ledger/features/review/data/drift_review_draft_store.da
 import 'package:time_pet_ledger/features/review/data/drift_review_repository.dart';
 import 'package:time_pet_ledger/features/review/domain/daily_review.dart';
 import 'package:time_pet_ledger/features/review/domain/review_draft_store.dart';
-import 'package:time_pet_ledger/features/review/presentation/review_form_controller.dart';
 
 import 'review_entry_saver_test.dart';
 
@@ -24,7 +22,6 @@ final editContext = ReviewDraftContext.edit(reviewId: sourceId);
 class CorrectionReviews extends TracedReviews {
   CorrectionReviews(super.inner);
   int updates = 0;
-  Completer<void>? updateGate;
   @override
   Future<DailyReview> update({
     required String id,
@@ -36,7 +33,6 @@ class CorrectionReviews extends TracedReviews {
     ({String? value})? tomorrowFirstStepGoalId,
   }) async {
     updates++;
-    await updateGate?.future;
     return inner.update(
       id: id,
       now: now,
@@ -271,16 +267,9 @@ void main() {
   });
 
   test('deleted source with another same-date review cannot be retargeted or recreated', () async {
-    final original = await seedReview(h);
-    final model = ReviewFormController(
-      context: editContext,
-      store: h.drafts,
-      original: original,
-      entrySaver: h.saver,
-    );
-    await model.initialize();
-    model.setReflection('  我的更正\n保留  ');
-    await model.flush();
+    await seedReview(h);
+    final raw = correction(reflection: '  我的更正\n保留  ');
+    await h.drafts.save(raw);
     await h.traced.inner.delete(sourceId);
     await h.traced.inner.create(
       id: replacementId,
@@ -289,14 +278,14 @@ void main() {
       now: 30,
     );
     final before = await rows(h);
-    expect(await model.submit(), isNull);
-    expect(model.submitError, contains('原复盘已不存在'));
-    expect(model.editable, true);
-    expect((await h.drafts.read(editContext))!.reflection, model.reflection);
+    expect(
+      (await h.saver.submit(raw) as ReviewSubmitFailed).reason,
+      ReviewSubmitFailure.missingSource,
+    );
+    expect((await h.drafts.read(editContext))!.reflection, raw.reflection);
     expect(await rows(h), before);
     expect(h.traced.creates, 0);
     expect(h.ids, 0);
-    model.dispose();
   });
 
   test('real update fault rolls back every field and preserves draft; user retry updates same ID', () async {
@@ -337,67 +326,59 @@ void main() {
     );
     await h.drafts.save(raw);
     await h.reopen();
-    final original = (await h.reviews.findByDate(reviewDate))!;
-    final model = ReviewFormController(
-      context: editContext,
-      store: h.drafts,
-      original: original,
-      entrySaver: h.saver,
-    );
-    await model.initialize();
-    expect(model.restored, true);
-    expect(model.date, raw.date);
-    expect(model.summary, '');
-    expect(model.reflection, '');
-    expect(model.firstStep, raw.tomorrowFirstStepText);
-    expect(model.committed, isNull);
+    final restored = (await h.drafts.read(editContext))!;
+    expect(restored.date, raw.date);
+    expect(restored.summary, '');
+    expect(restored.reflection, isNull);
+    expect(restored.tomorrowFirstStepText, raw.tomorrowFirstStepText);
     expect((await h.reviews.findByDate(reviewDate))!.reflection, '原反思');
-    expect(await h.drafts.read(editContext), isNotNull);
-    final result = await model.submit();
-    expect(result!.review!.id, sourceId);
+    final saver = ReviewEntrySaver(
+      repository: h.reviews,
+      drafts: h.drafts,
+      refresh: h.refresh,
+      newId: () => throw StateError('Correction must not create'),
+      now: () => h.clock,
+    );
+    final result = await saver.submit(restored) as ReviewSubmitCommitted;
+    expect(result.complete, true);
+    expect(result.review.id, sourceId);
     expect(await h.reviews.findByDate(reviewDate), isNull);
-    expect(result.review!.summary, isNull);
-    expect(result.review!.reflection, isNull);
+    expect(result.review.summary, isNull);
+    expect(result.review.reflection, isNull);
     expect(h.traced.updates, 1);
     expect(h.traced.creates, 0);
-    model.dispose();
   });
 
-  test('duplicate edit clicks freeze input; post-commit clear/read retries never update again', () async {
-    final original = await seedReview(h);
-    final model = ReviewFormController(
-      context: editContext,
-      store: h.drafts,
-      original: original,
-      entrySaver: h.saver,
-    );
-    await model.initialize();
-    model.setReflection('已提交更正');
-    await model.flush();
+  test('committed update with cleanup/read failures only finishes later; no second update', () async {
+    await seedReview(h);
+    final raw = correction(reflection: '已提交更正');
+    await h.drafts.save(raw);
     await h.failClear(true);
     h.failRefresh = true;
-    h.traced.updateGate = Completer<void>();
-    final first = model.submit();
-    expect(await model.submit(), isNull);
-    model.setReflection('不得覆盖');
-    expect(model.reflection, '已提交更正');
-    expect(await model.discard(), false);
-    expect(await model.leave(), false);
-    await Future<void>.delayed(Duration.zero);
-    h.traced.updateGate!.complete();
-    expect(await first, isNull);
-    expect(model.committedMessage, contains('本地收尾和读回失败'));
-    final committedAt = model.committed!.review.updatedAt;
+    final first = await h.saver.submit(raw) as ReviewSubmitCommitted;
+    expect(first.complete, false);
+    expect(first.draftCleared, false);
+    expect(first.refreshed, isNull);
+    final committedAt = first.review.updatedAt;
     await h.failClear(false);
     h.clock += 1000;
-    expect(await model.retryFinish(), isNull);
-    expect(model.committed!.draftCleared, true);
+    final readFailed = await h.saver.finishCommitted(
+      context: editContext,
+      review: first.review,
+      draftCleared: first.draftCleared,
+    );
+    expect(readFailed.draftCleared, true);
+    expect(readFailed.refreshed, isNull);
     h.failRefresh = false;
-    expect(await model.retryFinish(), isNotNull);
+    final finished = await h.saver.finishCommitted(
+      context: editContext,
+      review: first.review,
+      draftCleared: readFailed.draftCleared,
+    );
+    expect(finished.complete, true);
     expect((await h.reviews.findByDate(reviewDate))!.updatedAt, committedAt);
     expect(h.traced.updates, 1);
     expect(h.traced.creates, 0);
     expect(await h.drafts.read(editContext), isNull);
-    model.dispose();
   });
 }

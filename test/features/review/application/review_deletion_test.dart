@@ -1,14 +1,10 @@
-import 'dart:async';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/core/time/civil_date.dart';
 import 'package:time_pet_ledger/features/goals/data/drift_goal_repository.dart';
 import 'package:time_pet_ledger/features/review/application/review_entry_saver.dart';
 import 'package:time_pet_ledger/features/review/domain/daily_review.dart';
 import 'package:time_pet_ledger/features/review/domain/review_draft_store.dart';
-import 'package:time_pet_ledger/features/review/presentation/review_form_controller.dart';
 
-import '../data/review_draft_store_test.dart' show mutate;
 import 'review_correction_saver_test.dart';
 import 'review_entry_saver_test.dart'
     show reviewDate, goalId, draftContext, input;
@@ -20,11 +16,9 @@ final otherEntry = ReviewDraftContext.newEntry(date: otherDate);
 class DeletionReviews extends CorrectionReviews {
   DeletionReviews(super.inner);
   int deletes = 0;
-  Completer<void>? deleteGate;
   @override
   Future<void> delete(String id) async {
     deletes++;
-    await deleteGate?.future;
     await inner.delete(id);
   }
 }
@@ -129,23 +123,16 @@ void main() {
   });
   tearDown(() => h.close());
 
-  test('delete stored source despite invalid edited date/step; only source review/edit key removed, ledger and all other facts unchanged', () async {
+  test('delete stored source; only source review/edit key removed, ledger and all other facts unchanged', () async {
     final original = await deletionScene(h);
     final before = await formalFacts(h);
     final ledgerBefore = await h.refresh(date: reviewDate, now: h.clock);
-    final model = ReviewFormController(
-      context: editContext,
-      store: h.drafts,
-      original: original,
-      entrySaver: deletionSaver(h),
-    );
-    await model.initialize();
-    model.setDateInput('未完成日期');
-    model.setFirstStep('  ');
-    final result = (await model.deleteReview())!;
-    expect(model.valid, false);
-    expect(result.ledger.date, original.date);
-    expect(result.review, isNull);
+    final result = await deletionSaver(
+      h,
+    ).delete(context: editContext, original: original) as ReviewDeleteCommitted;
+    expect(result.complete, true);
+    expect(result.refreshed!.ledger.date, original.date);
+    expect(result.refreshed!.review, isNull);
     final after = await formalFacts(h);
     for (final table in [
       'goals',
@@ -162,11 +149,11 @@ void main() {
           .toList(),
     );
     expect(
-      result.ledger.accountedDuration.milliseconds,
+      result.refreshed!.ledger.accountedDuration.milliseconds,
       ledgerBefore.ledger.accountedDuration.milliseconds,
     );
     expect(
-      result.ledger.unresolvedDuration.milliseconds,
+      result.refreshed!.ledger.unresolvedDuration.milliseconds,
       ledgerBefore.ledger.unresolvedDuration.milliseconds,
     );
     expect(await h.drafts.read(editContext), isNull);
@@ -174,9 +161,6 @@ void main() {
     expect(h.deletion.deletes, 1);
     expect(h.deletion.creates, 0);
     expect(h.deletion.updates, 0);
-    expect(await model.submit(), isNull);
-    expect(await model.deleteReview(), isNull);
-    model.dispose();
   });
 
   test('repeat deletion is idempotent and same-date replacement survives; readback shows current identity', () async {
@@ -209,70 +193,60 @@ void main() {
     expect(h.deletion.creates, 0);
   });
 
-  test('real delete storage fault rolls back all formal tables, preserves latest raw input, retry succeeds', () async {
+  test('real delete storage fault rolls back all formal tables, preserves draft, retry succeeds', () async {
     final original = await deletionScene(h);
     final before = await formalFacts(h);
-    final model = ReviewFormController(
-      context: editContext,
-      store: h.drafts,
-      original: original,
-      entrySaver: deletionSaver(h),
-    );
-    await model.initialize();
-    model.setReflection('  原始输入仍保留\n\n😀  ');
     await deleteFault(h, true);
-    expect(await model.deleteReview(), isNull);
-    expect(model.deleted, isNull);
-    expect(model.submitError, contains('删除复盘失败'));
-    expect(model.editable, true);
+    expect(
+      await deletionSaver(h).delete(context: editContext, original: original),
+      isA<ReviewDeleteFailed>(),
+    );
     expect(await formalFacts(h), before);
-    expect((await h.drafts.read(editContext))!.reflection, model.reflection);
+    expect((await h.drafts.read(editContext))!.reflection, '  未提交编辑\n\n😀  ');
     await deleteFault(h, false);
-    expect(await model.deleteReview(), isNotNull);
+    expect(
+      (await deletionSaver(h).delete(
+        context: editContext,
+        original: original,
+      ) as ReviewDeleteCommitted).complete,
+      true,
+    );
     expect(h.deletion.deletes, 2);
     await expectOtherDrafts(h);
-    model.dispose();
   });
 
-  test('delete locks repeat operations; committed clear/read failures retry only finalization and cannot resurrect draft', () async {
+  test('committed delete with clear/read failures only finishes later; no second delete', () async {
     final original = await deletionScene(h);
-    final model = ReviewFormController(
-      context: editContext,
-      store: h.drafts,
-      original: original,
-      entrySaver: deletionSaver(h),
-    );
-    await model.initialize();
     await h.failClear(true);
     h.failRefresh = true;
-    h.deletion.deleteGate = Completer<void>();
-    final first = model.deleteReview();
-    expect(await model.deleteReview(), isNull);
-    expect(await model.submit(), isNull);
-    expect(await model.leave(), false);
-    expect(await model.discard(), false);
-    model.setReflection('不能修改');
-    await Future<void>.delayed(Duration.zero);
-    h.deletion.deleteGate!.complete();
-    expect(await first, isNull);
-    expect(model.deletedMessage, contains('本地收尾和读回失败'));
+    final first = await deletionSaver(
+      h,
+    ).delete(context: editContext, original: original) as ReviewDeleteCommitted;
+    expect(first.draftCleared, false);
+    expect(first.refreshed, isNull);
     expect(await h.reviews.findByDate(original.date), isNull);
-    expect(model.editable, false);
-    expect(await model.submit(), isNull);
-    model.setFirstStep('不得重新提交');
-    expect(model.firstStep, '原下一步');
     await h.failClear(false);
-    expect(await model.retryFinish(), isNull);
-    expect(model.deleted!.draftCleared, true);
-    expect(model.deletedMessage, contains('但读回失败'));
+    final readFailed = await deletionSaver(h).finishDelete(
+      context: editContext,
+      original: original,
+      draftCleared: first.draftCleared,
+    );
+    expect(readFailed.draftCleared, true);
+    expect(readFailed.refreshed, isNull);
     h.failRefresh = false;
-    expect(await model.retryFinish(), isNotNull);
+    expect(
+      (await deletionSaver(h).finishDelete(
+        context: editContext,
+        original: original,
+        draftCleared: readFailed.draftCleared,
+      )).complete,
+      true,
+    );
     expect(await h.drafts.read(editContext), isNull);
     await expectOtherDrafts(h);
     expect(h.deletion.deletes, 1);
     expect(h.deletion.updates, 0);
     expect(h.deletion.creates, 0);
-    model.dispose();
   });
 
   test('stale source or wrong-date readback never counts as complete; later read only retries cleanup/read', () async {
@@ -318,17 +292,12 @@ void main() {
     expect(removed.draftCleared, false);
     await h.reopen();
     expect(await h.reviews.findByDate(original.date), isNull);
-    final model = ReviewFormController(
-      context: editContext,
-      store: h.drafts,
-      original: original,
-      entrySaver: deletionSaver(h),
+    final restored = (await h.drafts.read(editContext))!;
+    expect(restored.reflection, '  未提交编辑\n\n😀  ');
+    expect(
+      (await deletionSaver(h).submit(restored) as ReviewSubmitFailed).reason,
+      ReviewSubmitFailure.missingSource,
     );
-    await model.initialize();
-    expect(model.restored, true);
-    expect(model.reflection, '  未提交编辑\n\n😀  ');
-    expect(await model.submit(), isNull);
-    expect(model.submitError, contains('原复盘已不存在'));
     expect(await h.reviews.findByDate(original.date), isNull);
     expect(h.deletion.creates, 0);
     await h.failClear(false);
@@ -341,39 +310,5 @@ void main() {
       true,
     );
     await expectOtherDrafts(h);
-    model.dispose();
-  });
-
-  test('failed queued draft write blocks delete and keeps raw input; retry can delete without valid form text', () async {
-    final original = await seedReview(h);
-    final model = ReviewFormController(
-      context: editContext,
-      store: h.drafts,
-      original: original,
-      entrySaver: deletionSaver(h),
-    );
-    await model.initialize();
-    model.setReflection('磁盘旧输入');
-    await model.flush();
-    await mutate(
-      h.draftFile,
-      (db) => db.customStatement(
-        "CREATE TRIGGER fail_save AFTER UPDATE ON review_drafts BEGIN SELECT RAISE(FAIL, 'fault'); END",
-      ),
-    );
-    model.setReflection('  内存新输入  ');
-    expect(await model.deleteReview(), isNull);
-    expect(model.submitError, contains('本次填写尚未保留成功'));
-    expect(h.deletion.deletes, 0);
-    expect((await h.drafts.read(editContext))!.reflection, '磁盘旧输入');
-    expect((await h.reviews.findByDate(original.date))!.id, sourceId);
-    await mutate(
-      h.draftFile,
-      (db) => db.customStatement('DROP TRIGGER fail_save'),
-    );
-    model.setFirstStep('');
-    expect(await model.deleteReview(), isNotNull);
-    expect(h.deletion.deletes, 1);
-    model.dispose();
   });
 }

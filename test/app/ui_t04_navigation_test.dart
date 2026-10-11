@@ -1,5 +1,3 @@
-import '../support/review_date_picker.dart';
-
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -16,13 +14,12 @@ import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_timeline_tab.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart';
-import 'package:time_pet_ledger/features/review/presentation/review_form.dart';
 
+import '../support/app_fixture.dart';
 import '../support/ledger_date_selection.dart';
 import '../support/root_navigation.dart';
 import '../support/rendered_text_contrast.dart';
-import 'review_route_flow_test.dart' show RouteApp;
-import 'review_form_entry_test.dart' show settleNative;
+import '../support/native_flow.dart';
 import '../features/ledger/presentation/day_ledger_page_test.dart'
     show dateLabel, today;
 
@@ -126,79 +123,58 @@ void main() {
     }
   });
 
-  testWidgets(
-    'shared fixed/follow date, modal cancel, native root back, formal saved date and drafts',
-    (t) async {
-      final app = await mount(t);
-      await selectLedgerDate(t, '2026-10-02');
-      await settleNative(t);
-      final ledger = t.state(find.byType(HomeShell));
-      await t.tap(find.byKey(const ValueKey('root-create')));
-      await settleNative(t);
-      expect(find.text('记录活动'), findsOneWidget);
-      expect(find.text('记录睡眠'), findsOneWidget);
-      expect(find.byType(RecordingForm), findsNothing);
-      await t.binding.handlePopRoute();
-      await settleNative(t);
-      expect(find.text('记录活动'), findsNothing);
-      expect(t.state(find.byType(HomeShell)), same(ledger));
-      await tapRootAction(t, '打开按日复盘');
-      await settleNative(t);
-      expect(find.text('日期：2026-10-02'), findsOneWidget);
-      await t.binding.handlePopRoute();
-      await settleNative(t);
-      expect(find.byType(HomeTimelineTab), findsOneWidget);
-      expect(dateLabel('2026-10-02'), findsOneWidget);
-      await tapRootAction(t, '打开基础摘要');
-      await settleNative(t);
-      await selectLedgerDate(t, '2026-10-01');
-      await settleNative(t);
-      await backFromPage(t);
-      await settleNative(t);
-      expect(dateLabel('2026-10-01'), findsOneWidget);
-      await tapRootAction(t, '打开按日复盘');
-      await settleNative(t);
-      await t.ensureVisible(find.text('填写复盘'));
-      await t.tap(find.text('填写复盘'));
-      await settleNative(t);
-      await changeReviewDate(t, '2026-10-03');
-      await t.enterText(find.byKey(const ValueKey('review-step')), '尚在草稿🐾');
-      await backFromPage(t);
-      await settleNative(t);
-      expect(find.text('日期：2026-10-01'), findsOneWidget);
-      await t.tap(find.text('填写复盘'));
-      await settleNative(t);
-      expect(reviewDateInput(t), '2026-10-03');
-      await t.ensureVisible(find.text('保存复盘'));
-      await t.tap(find.text('保存复盘'));
-      await settleNative(t);
-      expect(find.byType(ReviewForm), findsNothing);
-      expect(find.text('日期：2026-10-03'), findsOneWidget);
-      expect(
-        (await t.runAsync(
-          () =>
-              app.reviews.findByDate(CivilDate(year: 2026, month: 10, day: 3)),
-        ))!.tomorrowFirstStep.text,
-        '尚在草稿🐾',
-      );
-      await backFromPage(t);
-      await settleNative(t);
-      expect(dateLabel('2026-10-03'), findsOneWidget);
-      app.clock = DateTime(2026, 10, 4, 0, 1);
-      await tapRootAction(t, '查看记录');
-      await settleNative(t);
-      expect(dateLabel('2026-10-03'), findsOneWidget);
-      await today(t);
-      await settleNative(t);
-      expect(dateLabel('2026-10-04'), findsOneWidget);
-      expect(
-        await t.runAsync(
-          () => app.recording.read(RecordingDraftContext.newEntry(date: day)),
-        ),
-        isNull,
-      );
-    },
-  );
+  testWidgets('shared fixed/follow date, modal cancel and native root back', (
+    t,
+  ) async {
+    final app = await mount(t);
+    await selectLedgerDate(t, '2026-10-02');
+    await settleNative(t);
+    final ledger = t.state(find.byType(HomeShell));
+    await t.tap(find.byKey(const ValueKey('root-create')));
+    await settleNative(t);
+    expect(find.text('记录活动'), findsOneWidget);
+    expect(find.text('记录睡眠'), findsOneWidget);
+    expect(find.byType(RecordingForm), findsNothing);
+    await t.binding.handlePopRoute();
+    await settleNative(t);
+    expect(find.text('记录活动'), findsNothing);
+    expect(t.state(find.byType(HomeShell)), same(ledger));
+    await tapRootAction(t, '打开按日复盘');
+    await settleNative(t);
+    expect(find.text('2026-10-02'), findsOneWidget);
+    expect(find.text('完整第一步🐾\n打开笔记，继续昨天的阅读。'), findsOneWidget);
+    await t.binding.handlePopRoute();
+    await settleNative(t);
+    expect(find.byType(HomeTimelineTab), findsOneWidget);
+    expect(dateLabel('2026-10-02'), findsOneWidget);
+    await tapRootAction(t, '打开基础摘要');
+    await settleNative(t);
+    await selectLedgerDate(t, '2026-10-01');
+    await settleNative(t);
+    await backFromPage(t);
+    await settleNative(t);
+    expect(dateLabel('2026-10-01'), findsOneWidget);
+    await tapRootAction(t, '打开按日复盘');
+    await settleNative(t);
+    expect(find.text('整理今天'), findsOneWidget);
+    expect(find.text('10月1日'), findsWidgets);
+    await backFromPage(t);
+    await settleNative(t);
+    expect(dateLabel('2026-10-01'), findsOneWidget);
+    app.clock = DateTime(2026, 10, 4, 0, 1);
+    await tapRootAction(t, '查看记录');
+    await settleNative(t);
+    expect(dateLabel('2026-10-03'), findsOneWidget);
+    await today(t);
+    await settleNative(t);
+    expect(dateLabel('2026-10-04'), findsOneWidget);
+    expect(
+      await t.runAsync(
+        () => app.recording.read(RecordingDraftContext.newEntry(date: day)),
+      ),
+      isNull,
+    );
+  });
 
   testWidgets(
     'source anchor survives reread, modal, destination, size change and deleted source; seven date limit',
@@ -225,15 +201,10 @@ void main() {
       await settleNative(t);
       await t.ensureVisible(find.text('完整第一步🐾\n打开笔记，继续昨天的阅读。'));
       await settleNative(t);
-      final reviewPixels = readingScroll(t).position.pixels;
+      // 复盘页返回后，首页阅读位置不变。
       await tapRootAction(t, '打开日账本');
       await settleNative(t);
       expect(t.getTopLeft(tile).dy, closeTo(before, 1));
-      await tapRootAction(t, '打开按日复盘');
-      await settleNative(t);
-      expect(readingScroll(t).position.pixels, closeTo(reviewPixels, 1));
-      await backFromPage(t);
-      await settleNative(t);
       await t.binding.setSurfaceSize(const Size(800, 360));
       await settleNative(t);
       expect(

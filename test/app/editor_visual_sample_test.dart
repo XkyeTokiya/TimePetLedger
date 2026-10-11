@@ -15,19 +15,11 @@ import 'package:time_pet_ledger/features/ledger/presentation/sleep_form.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/sleep_form_controller.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart';
 import 'package:time_pet_ledger/features/ledger/application/recording_time_suggestion.dart';
-import 'package:time_pet_ledger/features/review/presentation/review_form.dart';
-import 'package:time_pet_ledger/features/review/presentation/review_form_controller.dart';
-import 'package:time_pet_ledger/features/review/domain/review_draft_store.dart';
-import 'package:time_pet_ledger/features/review/application/review_context_loader.dart';
 
 import '../features/ledger/presentation/sleep_form_controller_test.dart'
     show FormSleepStore;
 import '../features/ledger/presentation/recording_form_controller_test.dart'
     show FormDraftStore;
-import '../features/review/presentation/review_form_controller_test.dart'
-    show MemoryDrafts;
-import '../features/review/presentation/review_context_controller_test.dart'
-    show contextFor;
 
 void main() {
   testWidgets(
@@ -161,58 +153,6 @@ void main() {
           FocusManager.instance.primaryFocus?.unfocus();
           await t.pumpWidget(const SizedBox());
           await t.pumpAndSettle();
-          final review = ReviewFormController(
-            context: ReviewDraftContext.newEntry(date: day),
-            store: MemoryDrafts(),
-          );
-          await mount(
-            ReviewForm(
-              controller: review,
-              loader: ReviewContextLoader(
-                readContext: ({required date, required now}) async =>
-                    contextFor(date),
-              ),
-              now: () => 1,
-              dateOfInstant: (_) => day,
-            ),
-          );
-          await t.enterText(
-            find.byKey(const ValueKey('review-step')),
-            '打开设计稿，\n先画补记弹层。',
-          );
-          await t.pumpAndSettle();
-          t.view.viewInsets = const FakeViewPadding(bottom: 232);
-          await t.pumpAndSettle();
-          expect(t.takeException(), isNull);
-          if (width == 360 && scale == 1) await capture('review-ime');
-          await t.scrollUntilVisible(
-            find.text('再写几句 ＋'),
-            160,
-            scrollable: find.byType(Scrollable).first,
-          );
-          await t.pumpAndSettle();
-          await t.tap(find.text('再写几句 ＋'));
-          await t.pumpAndSettle();
-          expect(
-            t
-                .widget<TextField>(find.byKey(const ValueKey('review-summary')))
-                .focusNode!
-                .hasFocus,
-            isTrue,
-          );
-          await t.enterText(
-            find.byKey(const ValueKey('review-summary')),
-            '上午完成了首页草图。',
-          );
-          await t.pumpAndSettle();
-          if (width == 360 && scale == 1) await capture('review-expanded');
-          expect(t.takeException(), isNull);
-          t.view.resetViewInsets();
-          t.testTextInput.hide();
-          FocusManager.instance.primaryFocus?.unfocus();
-          await t.pumpWidget(const SizedBox());
-          await review.leave();
-          review.dispose();
         }
       }
     },

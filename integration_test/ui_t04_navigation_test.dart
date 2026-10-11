@@ -16,7 +16,7 @@ import 'package:time_pet_ledger/features/ledger/domain/recording_draft_store.dar
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart';
 import 'package:time_pet_ledger/features/review/data/drift_review_draft_store.dart';
-import 'package:time_pet_ledger/features/review/presentation/review_context_page.dart';
+import 'package:time_pet_ledger/features/review/presentation/review_flow_page.dart';
 
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
@@ -96,10 +96,9 @@ void main() {
       step('review', find.byKey(const ValueKey('root-复盘')));
       await wait(
         () =>
-            find.byType(ReviewContextPage).evaluate().isNotEmpty &&
-            find.text('这一天尚无复盘。').evaluate().isNotEmpty,
+            find.byType(ReviewFlowPage).evaluate().isNotEmpty &&
+            find.text('整理今天').evaluate().isNotEmpty,
       );
-      expect(find.text('日期：2026-10-03'), findsOneWidget);
       step('back_to_ledger');
       await wait(() => find.text('日账本').evaluate().isNotEmpty);
       step('more', find.byTooltip('更多'));

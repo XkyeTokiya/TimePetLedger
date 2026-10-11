@@ -3,7 +3,7 @@ import '../support/recording_fields.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_timeline.dart';
 import 'package:time_pet_ledger/features/ledger/domain/projection/ledger_segment.dart';
 
-import 'review_form_entry_test.dart' show settleNative;
+import '../support/native_flow.dart';
 import '../support/ledger_date_selection.dart';
 import '../support/root_navigation.dart';
 

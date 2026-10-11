@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/core/time/civil_date.dart';
 
+export 'native_flow.dart' show settleNative;
+
 /// 顶部大日期当前展示的浏览日文本。
 String homeDateTitle(WidgetTester tester) => tester
     .widget<Text>(find.byKey(const ValueKey('home-date-title')).last)
@@ -15,17 +17,6 @@ String coverageText(WidgetTester tester, String label) => tester
 
 Finder dayDivider(CivilDate date) =>
     find.byKey(ValueKey('day-divider-${date.year}-${date.month}-${date.day}'));
-
-/// 让真实 NativeDatabase 的异步续体在 fake-async 帧之间运行。
-Future<void> settleNative(WidgetTester tester) async {
-  for (var i = 0; i < 5; i++) {
-    await tester.pump();
-    await tester.runAsync(
-      () => Future<void>.delayed(const Duration(milliseconds: 10)),
-    );
-  }
-  await tester.pumpAndSettle();
-}
 
 /// 在时间轴主体上做一次明确的横向滑动。
 Future<void> swipeFeed(

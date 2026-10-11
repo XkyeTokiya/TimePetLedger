@@ -18,7 +18,7 @@ import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form_controller.dart';
 
 import '../../../support/rendered_text_contrast.dart';
-import '../../../app/review_form_entry_test.dart' show settleNative;
+import '../../../support/native_flow.dart';
 import 'recording_rhythm_test.dart' as support;
 import 'recording_form_controller_test.dart' show FormDraftStore;
 

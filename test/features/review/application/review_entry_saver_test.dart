@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -14,7 +13,6 @@ import 'package:time_pet_ledger/features/review/data/drift_review_repository.dar
 import 'package:time_pet_ledger/features/review/domain/daily_review.dart';
 import 'package:time_pet_ledger/features/review/domain/review_draft_store.dart';
 import 'package:time_pet_ledger/features/review/domain/review_repository.dart';
-import 'package:time_pet_ledger/features/review/presentation/review_form_controller.dart';
 
 import '../data/review_draft_store_test.dart' show mutate;
 
@@ -43,7 +41,6 @@ class TracedReviews implements ReviewRepository {
   TracedReviews(this.inner);
   final ReviewRepository inner;
   int creates = 0;
-  Completer<void>? gate;
   @override
   Future<DailyReview?> findByDate(CivilDate date) => inner.findByDate(date);
   @override
@@ -57,7 +54,6 @@ class TracedReviews implements ReviewRepository {
     String? tomorrowFirstStepGoalId,
   }) async {
     creates++;
-    await gate?.future;
     return inner.create(
       id: id,
       date: date,
@@ -185,41 +181,6 @@ void main() {
       'updated_at',
     ]);
     expect(h.reviews.creates, 1);
-  });
-
-  test('failed final draft save blocks create, preserves current input and disk snapshot, then retry writes latest content', () async {
-    final model = ReviewFormController(
-      context: draftContext,
-      store: h.drafts,
-      entrySaver: h.saver,
-    );
-    await model.initialize();
-    model.setFirstStep('正式下一步');
-    await model.flush();
-    await mutate(
-      h.draftFile,
-      (db) => db.customStatement(
-        "CREATE TRIGGER fail_save AFTER UPDATE ON review_drafts BEGIN SELECT RAISE(FAIL, 'fault'); END",
-      ),
-    );
-    model.setReflection('  新的\n\n  反思😀  ');
-    expect(await model.submit(), isNull);
-    expect(model.submitError, contains('本次填写尚未保留成功'));
-    expect(model.reflection, '  新的\n\n  反思😀  ');
-    expect(h.reviews.creates, 0);
-    expect((await h.drafts.read(draftContext))!.reflection, '');
-    await mutate(
-      h.draftFile,
-      (db) => db.customStatement('DROP TRIGGER fail_save'),
-    );
-    expect(await model.retrySave(), true);
-    expect(await model.submit(), isNotNull);
-    expect(
-      (await h.reviews.findByDate(reviewDate))!.reflection,
-      '新的\n\n  反思😀',
-    );
-    expect(h.reviews.creates, 1);
-    model.dispose();
   });
 
   test('two real concurrent creates compete by current date without overwriting or clearing loser draft', () async {
@@ -381,39 +342,6 @@ void main() {
     expect(recovered!.complete, true);
     expect(recovered.review.id, saved.review.id);
     expect(h.reviews.creates, 1);
-  });
-
-  test('controller locks repeat clicks/input/discard while create waits; post-commit retry cannot call create', () async {
-    final model = ReviewFormController(
-      context: draftContext,
-      store: h.drafts,
-      entrySaver: h.saver,
-    );
-    await model.initialize();
-    model.setFirstStep('用户下一步');
-    await model.flush();
-    h.reviews.gate = Completer<void>();
-    await h.failClear(true);
-    final first = model.submit();
-    while (h.reviews.creates == 0) {
-      await Future<void>.delayed(Duration.zero);
-    }
-    expect(model.editable, false);
-    expect(await model.submit(), isNull);
-    expect(await model.discard(), false);
-    expect(await model.leave(), false);
-    model.setFirstStep('不能改');
-    h.reviews.gate!.complete();
-    expect(await first, isNull);
-    expect(model.committed, isNotNull);
-    expect(model.firstStep, '用户下一步');
-    expect(await model.submit(), isNull);
-    expect(await model.discard(), false);
-    expect(model.committedMessage, contains('本地收尾失败'));
-    await h.failClear(false);
-    expect(await model.retryFinish(), isNotNull);
-    expect(h.reviews.creates, 1);
-    model.dispose();
   });
 
   test('null readback never claims completion or offers create again; only later identity-matched read finishes', () async {

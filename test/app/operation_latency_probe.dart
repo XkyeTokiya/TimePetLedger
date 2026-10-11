@@ -24,7 +24,7 @@ import 'package:time_pet_ledger/features/ledger/presentation/day_summary_page.da
 import 'package:time_pet_ledger/features/ledger/presentation/home/home_shell.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/sleep/sleep_recording_page.dart';
 import 'package:time_pet_ledger/features/review/data/drift_review_draft_store.dart';
-import 'package:time_pet_ledger/features/review/presentation/review_context_page.dart';
+import 'package:time_pet_ledger/features/review/presentation/review_flow_page.dart';
 import 'package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart';
 
 import '../support/home_feed.dart';
@@ -240,7 +240,7 @@ Future<List<_M>> _pass(
   await p.measure(
     '快捷区→当日复盘',
     () => tapKey('menu-review'),
-    visible: () => find.byType(ReviewContextPage).evaluate().isNotEmpty,
+    visible: () => find.byType(ReviewFlowPage).evaluate().isNotEmpty,
   );
   await p.measure(
     '当日复盘→返回首页',

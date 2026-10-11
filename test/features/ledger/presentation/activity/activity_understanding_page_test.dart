@@ -13,7 +13,7 @@ import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/activity/activity_understanding_page.dart';
 
-import '../../../../app/review_form_entry_test.dart' show settleNative;
+import '../../../../support/native_flow.dart';
 
 String id(int n) => '00000000-0000-4000-8000-${n.toString().padLeft(12, '0')}';
 final start = DateTime(2026, 10, 1, 10).millisecondsSinceEpoch;

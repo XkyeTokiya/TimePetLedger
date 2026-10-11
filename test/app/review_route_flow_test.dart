@@ -1,460 +1,128 @@
-import '../support/review_date_picker.dart';
-import '../support/root_navigation.dart';
-
-import 'dart:io';
-
-import '../support/ledger_date_selection.dart';
-
-import 'package:drift/drift.dart'
-    show ApplyInterceptor, QueryExecutor, QueryInterceptor;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:time_pet_ledger/app/bootstrap/app_bootstrap.dart';
 import 'package:time_pet_ledger/core/persistence/app_database.dart';
 import 'package:time_pet_ledger/core/time/civil_date.dart';
-import 'package:time_pet_ledger/features/goals/data/drift_goal_repository.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_ledger_repository.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_recording_draft_store.dart';
+import 'package:time_pet_ledger/features/ledger/data/drift_sleep_draft_store.dart';
 import 'package:time_pet_ledger/features/ledger/data/drift_sleep_opening_store.dart';
-import 'package:time_pet_ledger/features/ledger/domain/annotation_change.dart';
 import 'package:time_pet_ledger/features/ledger/domain/block_knowledge_state.dart';
-import 'package:time_pet_ledger/features/ledger/domain/ledger_conflicts.dart';
-import 'package:time_pet_ledger/features/ledger/domain/rhythm_state.dart';
 import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/day_ledger_page.dart';
-import 'package:time_pet_ledger/features/ledger/presentation/day_summary_page.dart';
 import 'package:time_pet_ledger/features/review/data/drift_review_draft_store.dart';
 import 'package:time_pet_ledger/features/review/data/drift_review_repository.dart';
-import 'package:time_pet_ledger/features/review/presentation/review_context_page.dart';
-import 'package:time_pet_ledger/features/review/presentation/review_form.dart';
+import 'package:time_pet_ledger/features/settings/data/drift_app_preferences_store.dart';
 
-import 'recording_goal_flow_test.dart' show time;
-import 'review_form_entry_test.dart' show settleNative, tapText;
-import 'review_submission_flow_test.dart' show enter;
+import '../support/ledger_date_selection.dart';
+import '../support/native_flow.dart';
+import '../support/review_flow_app.dart';
 
-final historical = CivilDate(year: 2025, month: 12, day: 31);
-final moved = CivilDate(year: 2026, month: 1, day: 1);
-final today = CivilDate(year: 2026, month: 10, day: 2);
-const goalId = '00000000-0000-4000-8000-000000000001';
-const blockId = '00000000-0000-4000-8000-000000000002';
-const annotationId = '00000000-0000-4000-8000-000000000003';
-const reviewId = '00000000-0000-4000-8000-000000000004';
+/// 路由与日期：首页入口继承浏览日期；缺口操作刷新向导时间轴。
+void main() {
+  final day1 = CivilDate(year: 2026, month: 10, day: 1);
 
-class ReadFault extends QueryInterceptor {
-  bool failFacts = false;
-  @override
-  Future<List<Map<String, Object?>>> runSelect(
-    QueryExecutor executor,
-    String sql,
-    List<Object?> args,
-  ) {
-    if (failFacts && sql.contains('FROM time_blocks ')) {
-      throw StateError('private fact read failure');
-    }
-    return executor.runSelect(sql, args);
-  }
-}
-
-class RouteApp {
-  RouteApp(
-    this.dir,
-    this.db,
-    this.recording,
-    this.drafts,
-    this.openings,
-    this.reads,
-  );
-  final Directory dir;
-  final AppDatabase db;
-  final DriftRecordingDraftStore recording;
-  final DriftReviewDraftStore drafts;
-  final DriftSleepOpeningStore openings;
-  final ReadFault reads;
-  DateTime clock = DateTime(2026, 10, 2, 12);
-  DriftReviewRepository get reviews => DriftReviewRepository(db);
-
-  static Future<RouteApp> open(WidgetTester t) async {
-    await t.binding.setSurfaceSize(const Size(1000, 1800));
-    addTearDown(() => t.binding.setSurfaceSize(null));
-    final app = (await t.runAsync(() async {
-      final dir = await Directory.systemTemp.createTemp('review_routes_');
-      final reads = ReadFault();
-      final db = await AppDatabase.open(
-        NativeDatabase(File('${dir.path}/facts.sqlite')).interceptWith(reads),
+  Future<AppDatabase> openApp(WidgetTester tester, DateTime clock) async {
+    final db = (await tester.runAsync(
+      () => AppDatabase.open(NativeDatabase.memory()),
+    ))!;
+    final recording = (await tester.runAsync(
+      () => DriftRecordingDraftStore.open(NativeDatabase.memory()),
+    ))!;
+    final sleepDrafts = (await tester.runAsync(
+      () => DriftSleepDraftStore.open(NativeDatabase.memory()),
+    ))!;
+    final openings = (await tester.runAsync(
+      () => DriftSleepOpeningStore.open(NativeDatabase.memory()),
+    ))!;
+    final drafts = (await tester.runAsync(
+      () => DriftReviewDraftStore.open(NativeDatabase.memory()),
+    ))!;
+    final preferences = (await tester.runAsync(
+      () => DriftAppPreferencesStore.open(NativeDatabase.memory()),
+    ))!;
+    addTearDown(() => tester.pumpWidget(const SizedBox.shrink()));
+    await tester.runAsync(() async {
+      final repo = DriftLedgerRepository(db);
+      await repo.createTimeBlock(
+        id: flowId(1),
+        startedAt: DateTime(2026, 10, 1, 9).millisecondsSinceEpoch,
+        endedAt: DateTime(2026, 10, 1, 10).millisecondsSinceEpoch,
+        startPrecision: TimePrecision.exact,
+        endPrecision: TimePrecision.exact,
+        knowledgeState: BlockKnowledgeState.known,
+        title: '十月一日的活动',
+        now: 1,
       );
-      final recording = await DriftRecordingDraftStore.open(
-        NativeDatabase(File('${dir.path}/recording.sqlite')),
+      await repo.createTimeBlock(
+        id: flowId(2),
+        startedAt: DateTime(2026, 10, 2, 8).millisecondsSinceEpoch,
+        endedAt: DateTime(2026, 10, 2, 9).millisecondsSinceEpoch,
+        startPrecision: TimePrecision.exact,
+        endPrecision: TimePrecision.exact,
+        knowledgeState: BlockKnowledgeState.known,
+        title: '十月二日的活动',
+        now: 1,
       );
-      final drafts = await DriftReviewDraftStore.open(
-        NativeDatabase(File('${dir.path}/review.sqlite')),
+      await DriftReviewRepository(db).create(
+        id: flowId(9),
+        date: day1,
+        tomorrowFirstStepText: '十月的第一步',
+        now: 2,
       );
-      final openings = await DriftSleepOpeningStore.open(
-        NativeDatabase.memory(),
-      );
-      await openings.claim(today);
-      await openings.claim(CivilDate(year: 2026, month: 10, day: 3));
-      return RouteApp(dir, db, recording, drafts, openings, reads);
-    }))!;
-    addTearDown(() => app.close(t));
-    return app;
-  }
-
-  Future<void> mount(WidgetTester t) async {
-    await t.pumpWidget(
+    });
+    await tester.pumpWidget(
       AppBootstrap(
         openDatabase: () async => db,
         openDrafts: () async => recording,
-        openReviewDrafts: () async => drafts,
+        openSleepDrafts: () async => sleepDrafts,
         openSleepOpenings: () async => openings,
+        openReviewDrafts: () async => drafts,
+        openPreferences: () async => preferences,
         now: () => clock,
       ),
     );
+    await settleNative(tester);
+    return db;
+  }
+
+  testWidgets('review entry inherits the home browsing date', (t) async {
+    await openApp(t, DateTime(2026, 10, 2, 20));
+    await tapText(t, '打开按日复盘');
+    expect(find.text('10月2日'), findsWidgets);
+    expect(find.text('整理今天'), findsOneWidget);
+
+    await t.tap(find.byKey(const ValueKey('review-back')));
     await settleNative(t);
-  }
+    await selectLedgerDate(t, '2026-10-01');
+    await tapText(t, '打开按日复盘');
+    expect(find.text('今天 · 已回顾'), findsOneWidget);
+    expect(find.text('十月的第一步'), findsOneWidget);
+    expect(t.takeException(), isNull);
+  });
 
-  Future<void> close(WidgetTester t) async {
-    await t.pumpWidget(const SizedBox());
-    var closed = false;
-    late Future<void> pending;
-    await t.runAsync(() async {
-      pending = Future.wait([
-        db.close(),
-        recording.close(),
-        drafts.close(),
-        openings.close(),
-      ]).then((_) => closed = true);
-    });
-    for (var i = 0; i < 100 && !closed; i++) {
-      await t.pump();
-      await t.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 10)),
-      );
-    }
-    expect(closed, true, reason: 'Drain app-owned native close continuations.');
-    await t.runAsync(() => pending);
-    await t.runAsync(() => dir.delete(recursive: true));
-  }
-
-  Future<List<Map<String, Object?>>> reviewRows() async =>
-      (await db.customSelect('SELECT * FROM daily_reviews ORDER BY id').get())
-          .map((r) => r.data)
-          .toList();
-
-  Future<Map<String, Object?>> facts() async => {
-    for (final table in [
-      'goals',
-      'time_blocks',
-      'rhythm_annotations',
-      'sleep_sessions',
-    ])
-      table: (await db.customSelect('SELECT * FROM $table ORDER BY id').get())
-          .map((r) => r.data)
-          .toList(),
-  };
-
-  Future<void> source({bool withGoal = false}) async {
-    if (withGoal) {
-      await DriftGoalRepository(db).create(id: goalId, name: '原目标', now: 1);
-    }
-    await DriftLedgerRepository(db).createTimeBlock(
-      id: blockId,
-      startedAt: DateTime(2025, 12, 31, 8).millisecondsSinceEpoch,
-      endedAt: DateTime(2025, 12, 31, 9).millisecondsSinceEpoch,
-      startPrecision: TimePrecision.exact,
-      endPrecision: TimePrecision.exact,
-      knowledgeState: BlockKnowledgeState.known,
-      title: '原活动',
-      goalId: withGoal ? goalId : null,
-      annotation: const AddAnnotation(
-        id: annotationId,
-        state: RhythmState.progress,
-        continuationHint: '原记录接续点',
-      ),
-      now: 2,
-    );
-  }
-}
-
-Future<void> back(WidgetTester t) async {
-  await backFromPage(t);
-  await settleNative(t);
-}
-
-Future<void> date(WidgetTester t, String label, String value) async {
-  if (label == '账本日期' || label == '查看日期') {
-    await selectLedgerDate(t, value);
+  testWidgets('marking a gap as unknown refreshes the wizard timeline', (
+    t,
+  ) async {
+    final h = ReviewFlowHarness();
+    await h.open(t);
+    await h.openPage(t);
+    final gapsBefore = find.text('未记录').evaluate().length;
+    expect(gapsBefore, greaterThan(0));
+    await t.tap(find.text('想不起来').first);
     await settleNative(t);
-    return;
-  }
-  final input = find.widgetWithText(TextField, label);
-  await t.ensureVisible(input);
-  await t.enterText(input, value);
-  await settleNative(t);
-}
-
-String input(WidgetTester t, String key) => key == 'review-date'
-    ? reviewDateInput(t)
-    : t.widget<TextField>(find.byKey(ValueKey(key))).controller!.text;
-
-void main() {
-  testWidgets(
-    'real summary save-return, historical ledger read/edit, move to new day and delete leave original facts intact',
-    (t) async {
-      final app = await RouteApp.open(t);
-      await t.runAsync(() => app.source());
-      final facts = await t.runAsync(app.facts);
-      await app.mount(t);
-      await date(t, '查看日期', '2025-12-31');
-      await tapText(t, '打开基础摘要');
-      expect(find.text('日期：2025-12-31'), findsOneWidget);
-      await tapText(t, '打开此日复盘');
-      expect(find.text('当天事实上下文：2025-12-31'), findsOneWidget);
-      expect(find.text('这一天尚无复盘。'), findsOneWidget);
-      await tapText(t, '填写复盘');
-      expect(input(t, 'review-date'), '2025-12-31');
-      expect(input(t, 'review-summary'), '');
-      expect(input(t, 'review-reflection'), '');
-      expect(
-        input(t, 'review-step'),
-        '',
-        reason: 'A continuation hint is not an automatic first step.',
-      );
-      expect(find.text('下一步目标：未关联（可选）'), findsOneWidget);
-      expect(find.text('尚未记录：23 小时'), findsOneWidget);
-      await enter(t, 'review-step', '仅由用户填写的下一步');
-      await tapText(t, '保存复盘');
-      expect(find.byType(ReviewForm), findsNothing);
-      expect(find.text('已存复盘日期：2025-12-31'), findsOneWidget);
-      expect(find.text('下一自然日：2026-01-01'), findsOneWidget);
-      expect(find.text('明天第一步'), findsOneWidget);
-      expect(find.text('仅由用户填写的下一步'), findsOneWidget);
-      final saved = (await t.runAsync(app.reviewRows))!.single;
-      expect(saved['summary'], isNull);
-      expect(saved['reflection'], isNull);
-      expect(saved['tomorrow_first_step_goal_id'], isNull);
-      await back(t);
-      expect(find.byType(DaySummaryPage), findsOneWidget);
-      expect(find.text('已交代：1 小时'), findsOneWidget);
-      await tapText(t, '打开此日复盘');
-      expect(find.text('已有复盘'), findsOneWidget);
-      expect(find.text('填写复盘'), findsNothing);
-      await back(t);
-      await back(t);
-      await tapText(t, '打开日账本');
-      expect(find.text('接续点：原记录接续点'), findsOneWidget);
-      await tapText(t, '打开此日复盘');
-      await tapText(t, '编辑复盘草稿');
-      expect(input(t, 'review-step'), '仅由用户填写的下一步');
-      expect(find.text('保存复盘'), findsNothing);
-      await enter(t, 'review-date', '2026-01-01');
-      await tapText(t, '保存更正');
-      expect(find.text('已存复盘日期：2026-01-01'), findsOneWidget);
-      expect(find.text('下一自然日：2026-01-02'), findsOneWidget);
-      final updated = (await t.runAsync(app.reviewRows))!.single;
-      expect(updated['id'], saved['id']);
-      expect(updated['created_at'], saved['created_at']);
-      expect(
-        await t.runAsync(() => app.reviews.findByDate(historical)),
-        isNull,
-      );
-      expect(
-        (await t.runAsync(() => app.reviews.findByDate(moved)))!.id,
-        saved['id'],
-      );
-      await back(t);
-      expect(find.text('日期：2026-01-01'), findsOneWidget);
-      await date(t, '账本日期', '2025-12-31');
-      await tapText(t, '打开此日复盘');
-      expect(find.text('这一天尚无复盘。'), findsOneWidget);
-      await back(t);
-      await date(t, '账本日期', '2026-01-01');
-      await tapText(t, '打开此日复盘');
-      expect(find.text('仅由用户填写的下一步'), findsOneWidget);
-      await tapText(t, '编辑复盘草稿');
-      await tapText(t, '删除复盘');
-      await tapText(t, '确认删除');
-      expect(find.text('这一天尚无复盘。'), findsOneWidget);
-      await back(t);
-      expect(find.text('日期：2026-01-01'), findsOneWidget);
-      await tapText(t, '打开此日复盘');
-      expect(find.text('这一天尚无复盘。'), findsOneWidget);
-      expect(find.text('仅由用户填写的下一步'), findsNothing);
-      await tapText(t, '填写复盘');
-      expect(input(t, 'review-step'), '');
-      await tapText(t, '返回');
-      expect(await t.runAsync(app.reviewRows), isEmpty);
-      expect(await t.runAsync(app.facts), facts);
-    },
-  );
-
-  testWidgets(
-    'actual fact correction refreshes ledger, summary and review context while archived original Goal and review text keep their source',
-    (t) async {
-      final app = await RouteApp.open(t);
-      await t.runAsync(() async {
-        await app.source(withGoal: true);
-        await app.reviews.create(
-          id: reviewId,
-          date: historical,
-          summary: '已存概述',
-          reflection: '已存反思\n保留段落',
-          tomorrowFirstStepText: '已存明天第一步',
-          tomorrowFirstStepGoalId: goalId,
-          now: 3,
-        );
-        await DriftGoalRepository(app.db).archive(id: goalId, now: 4);
-      });
-      final original = await t.runAsync(app.reviewRows);
-      await app.mount(t);
-      await date(t, '查看日期', '2025-12-31');
-      await tapText(t, '打开日账本');
-      await date(t, '账本日期', '2025-12-31');
-      final ledgerPage = t.widget<DayLedgerPage>(find.byType(DayLedgerPage));
-      expect(find.text('接续点：原记录接续点'), findsOneWidget);
-      expect(find.text('已存明天第一步'), findsNothing);
-      await tapText(t, '打开此日复盘');
-      expect(find.text('第一步目标：原目标（已归档）'), findsOneWidget);
-      expect(find.text('明天第一步'), findsOneWidget);
-      expect(find.text('已存明天第一步'), findsOneWidget);
-      expect(find.text('已交代：1 小时'), findsOneWidget);
-      await tapText(t, '编辑复盘草稿');
-      expect(input(t, 'review-step'), '已存明天第一步');
-      await tapText(t, '返回');
-      // Use the actual app-composed editor route over the review to exercise
-      // route-return refresh without adding a new product editing entry.
-      Navigator.of(t.element(find.byType(ReviewContextPage)))
-          .push<void>(MaterialPageRoute<void>(builder: (_) => ledgerPage));
-      await settleNative(t);
-      final tile = find.byKey(
-        const ValueKey((type: LedgerFactType.timeBlock, id: blockId)),
-      );
-      await t.ensureVisible(tile);
-      await t.tap(tile);
-      await settleNative(t);
-      await time(t, '结束时间', '2025-12-31 10:00');
-      await enter(t, 'continuation-hint', '更正后的接续点');
-      await tapText(t, '保存更正');
-      expect(find.text('接续点：更正后的接续点'), findsOneWidget);
-      await t.runAsync(
-        () =>
-            DriftGoalRepository(app.db)
-                .rename(id: goalId, name: '当前名称', now: 5),
-      );
-      await back(t);
-      expect(find.byType(ReviewContextPage), findsOneWidget);
-      expect(find.text('已交代：2 小时'), findsOneWidget);
-      expect(find.text('尚未记录：22 小时'), findsOneWidget);
-      expect(find.text('第一步目标：当前名称（已归档）'), findsOneWidget);
-      expect(find.text('已存概述'), findsOneWidget);
-      expect(find.text('已存反思\n保留段落'), findsOneWidget);
-      expect(find.text('已存明天第一步'), findsOneWidget);
-      expect(await t.runAsync(app.reviewRows), original);
-      await back(t);
-      expect(find.text('接续点：更正后的接续点'), findsOneWidget);
-      await back(t);
-      await date(t, '查看日期', '2025-12-31');
-      await tapText(t, '打开基础摘要');
-      expect(find.text('已交代：2 小时'), findsOneWidget);
-      await tapText(t, '打开此日复盘');
-      expect(find.text('已交代：2 小时'), findsOneWidget);
-      expect(find.text('已存反思\n保留段落'), findsOneWidget);
-      expect(await t.runAsync(app.reviewRows), original);
-      // A second real SQLite connection reads exactly the persisted review,
-      // not a controller snapshot or a derived statistics record.
-      await t.runAsync(() async {
-        final reopened = await AppDatabase.open(
-          NativeDatabase(File('${app.dir.path}/facts.sqlite')),
-        );
-        try {
-          expect(
-            (await reopened
-                    .customSelect('SELECT * FROM daily_reviews ORDER BY id')
-                    .get())
-                .map((r) => r.data)
-                .toList(),
-            original,
-          );
-        } finally {
-          await reopened.close();
-        }
-      });
-    },
-  );
-
-  for (final summary in [true, false]) {
-    testWidgets(
-      '${summary ? 'summary' : 'ledger'} entry allows failed facts, rejects invalid dates and pins displayed today across midnight with one route',
-      (t) async {
-        final app = await RouteApp.open(t);
-        await app.mount(t);
-        await tapText(t, summary ? '打开基础摘要' : '打开日账本');
-        final label = summary ? '摘要日期 YYYY-MM-DD' : '账本日期';
-        await date(t, label, '2025-02-30');
-        if (summary) {
-          expect(
-            t
-                .widget<FilledButton>(
-                  find.widgetWithText(FilledButton, '打开此日复盘'),
-                )
-                .onPressed,
-            isNull,
-          );
-        } else {
-          expect(find.text('请输入有效日期 YYYY-MM-DD。'), findsOneWidget);
-          expect(find.byType(ReviewContextPage), findsNothing);
-          await tapText(t, '取消');
-          expect(find.text('日期：2026-10-02'), findsOneWidget);
-        }
-        await tapText(t, '今天');
-        app.reads.failFacts = true;
-        await tapText(t, summary ? '刷新摘要' : '刷新账本');
-        expect(
-          find.text(summary ? '摘要读取失败，请重试。' : '账本读取失败，请重试。'),
-          findsOneWidget,
-        );
-        app.reads.failFacts = false;
-        app.clock = DateTime(2026, 10, 3, 0, 5);
-        await date(t, label, '2026-10-01');
-        await date(t, label, '2026-10-02');
-        final open = summary
-            ? t
-                  .widget<FilledButton>(
-                    find.widgetWithText(FilledButton, '打开此日复盘'),
-                  )
-                  .onPressed!
-            : t
-                  .widget<TextButton>(find.byKey(const ValueKey('root-复盘')))
-                  .onPressed!;
-        open();
-        open();
-        await settleNative(t);
-        expect(find.byType(ReviewContextPage), findsOneWidget);
-        expect(find.text('当天事实上下文：2026-10-02'), findsOneWidget);
-        await tapText(t, '填写复盘');
-        expect(input(t, 'review-date'), '2026-10-02');
-        await enter(t, 'review-step', '当前所选日的用户行动');
-        await tapText(t, '保存复盘');
-        expect(find.text('已存复盘日期：2026-10-02'), findsOneWidget);
-        expect(find.text('下一自然日：2026-10-03'), findsOneWidget);
-        expect(
-          (await t.runAsync(() => app.reviews.findByDate(today)))!
-              .tomorrowFirstStep
-              .text,
-          '当前所选日的用户行动',
-        );
-        await back(t);
-        expect(find.text('日期：2026-10-02'), findsOneWidget);
-        await tapText(t, '今天');
-        await tapText(t, '打开此日复盘');
-        expect(find.text('当天事实上下文：2026-10-03'), findsOneWidget);
-        expect(find.text('这一天尚无复盘。'), findsOneWidget);
-        await back(t);
-        await date(t, label, '2026-10-02');
-        await tapText(t, '打开此日复盘');
-        expect(find.text('已有复盘'), findsOneWidget);
-        expect(find.text('当前所选日的用户行动'), findsOneWidget);
-      },
+    expect(find.text('这段时间已记为想不起来。'), findsOneWidget);
+    expect(find.text('未记录').evaluate().length, gapsBefore - 1);
+    final blocks = await t.runAsync(
+      () => h.db
+          .customSelect('SELECT knowledge_state FROM time_blocks ORDER BY id')
+          .get(),
     );
-  }
+    expect(
+      blocks!.map((row) => row.data['knowledge_state']).contains('unknown'),
+      isTrue,
+    );
+    expect(t.takeException(), isNull);
+    await h.close(t);
+  });
 }

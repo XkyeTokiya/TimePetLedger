@@ -12,9 +12,6 @@ import 'package:time_pet_ledger/features/ledger/domain/time_precision.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/recording_form.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/sleep_form.dart';
 import 'package:time_pet_ledger/features/ledger/presentation/sleep_form_controller.dart';
-import 'package:time_pet_ledger/features/review/domain/review_draft_store.dart';
-import 'package:time_pet_ledger/features/review/presentation/review_form.dart';
-import 'package:time_pet_ledger/features/review/presentation/review_form_controller.dart';
 
 import '../support/page_t01_fixture.dart';
 
@@ -273,68 +270,4 @@ void main() {
       model.dispose();
     },
   );
-
-  for (final expanded in [false, true]) {
-    testWidgets(
-      expanded
-          ? 'V04 expanded real review writing'
-          : 'V03 step-only real review save',
-      (t) async {
-        final f = (await t.runAsync(PageT01Fixture.open))!;
-        final model = ReviewFormController(
-          context: ReviewDraftContext.newEntry(date: PageT01Fixture.day),
-          store: f.reviewDrafts,
-          entrySaver: f.reviewSaver,
-          goals: f.goals,
-        );
-        await mount(
-          t,
-          ReviewForm(
-            controller: model,
-            loader: f.reviewLoader,
-            now: () => PageT01Fixture.now,
-            dateOfInstant: (_) => PageT01Fixture.day,
-          ),
-        );
-        await t.enterText(
-          find.byKey(const ValueKey('review-step')),
-          '打开设计稿，\n先画补记弹层。',
-        );
-        t.view.viewInsets = FakeViewPadding(bottom: expanded ? 184 : 232);
-        await settle(t);
-        if (expanded) {
-          await tap(t, '再写几句 ＋');
-          expect(
-            t
-                .widget<TextField>(find.byKey(const ValueKey('review-summary')))
-                .focusNode!
-                .hasFocus,
-            isTrue,
-          );
-          await t.enterText(
-            find.byKey(const ValueKey('review-reflection')),
-            '开始画图之前，先明确要解决的问题。',
-          );
-          await t.enterText(
-            find.byKey(const ValueKey('review-summary')),
-            '上午完成了首页草图。',
-          );
-          await t.ensureVisible(find.byKey(const ValueKey('review-summary')));
-          await settle(t);
-        }
-        await capture(t, expanded ? 'V04' : 'V03');
-        await tap(t, '保存复盘');
-        expect(find.byType(ReviewForm), findsNothing);
-        final saved = (await t.runAsync(
-          () => f.reviews.findByDate(PageT01Fixture.day),
-        ))!;
-        expect(saved.tomorrowFirstStep.intendedDate.year, 2026);
-        expect(saved.tomorrowFirstStep.intendedDate.month, 10);
-        expect(saved.tomorrowFirstStep.intendedDate.day, 3);
-        expect(saved.summary, expanded ? '上午完成了首页草图。' : isNull);
-        await unmount(t, f);
-        model.dispose();
-      },
-    );
-  }
 }

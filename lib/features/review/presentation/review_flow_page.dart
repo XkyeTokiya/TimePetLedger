@@ -250,24 +250,29 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
       ..showSnackBar(SnackBar(content: Text(text)));
   }
 
-  Future<void> _write(
+  /// 返回是否成功；失败时保留页面与输入，由调用方决定是否收尾。
+  Future<bool> _write(
     Future<void> Function() action, {
     String? notice,
     String failure = '没有保存成功，请重试。',
     bool resetNextStep = false,
   }) async {
-    if (_busy) return;
+    if (_busy) return false;
     setState(() => _busy = true);
     try {
       await action();
       await _reload(resetNextStep: resetNextStep);
       if (notice != null) _message(notice);
+      return true;
     } on ActivityUnderstandingException catch (error) {
       _message(error.message);
+      return false;
     } on ReviewSessionException catch (error) {
       _message(error.message);
+      return false;
     } catch (_) {
       _message(failure);
+      return false;
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -777,7 +782,7 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
     }
     await _saveStuckReason();
     if (!mounted) return;
-    await _write(
+    final saved = await _write(
       () => widget.session.complete(
         date: _date,
         original: _review,
@@ -787,7 +792,7 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
       notice: '今天的回顾已保存。',
       resetNextStep: true,
     );
-    if (mounted) {
+    if (saved && mounted) {
       setState(() {
         _step = 1;
         _resetFlowTracking();
@@ -817,12 +822,12 @@ class _ReviewFlowPageState extends State<ReviewFlowPage> {
       ),
     );
     if (confirmed != true || !mounted) return;
-    await _write(
+    final deleted = await _write(
       () => widget.session.deleteReview(review),
       notice: '已删除这次回顾；当天的记录保留。',
       resetNextStep: true,
     );
-    if (mounted) {
+    if (deleted && mounted) {
       setState(() {
         _step = 1;
         _reflow = false;

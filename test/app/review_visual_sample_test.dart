@@ -26,7 +26,7 @@ import 'package:time_pet_ledger/features/review/data/session_review_draft_store.
 import 'package:time_pet_ledger/features/review/presentation/review_flow_page.dart';
 import 'package:time_pet_ledger/features/settings/domain/app_preferences.dart';
 
-import 'review_form_entry_test.dart' show settleNative;
+import '../support/native_flow.dart';
 
 String id(int n) => '00000000-0000-4000-8000-${n.toString().padLeft(12, '0')}';
 final date = CivilDate(year: 2026, month: 10, day: 11);
